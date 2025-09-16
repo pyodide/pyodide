@@ -1,9 +1,6 @@
 import { describe, it, beforeEach, afterEach } from "mocha";
 import { expect } from "chai";
-import {
-  overrideRuntime,
-  detectEnvironment,
-} from "../../environments";
+import { overrideRuntime, detectEnvironment } from "../../environments";
 
 describe("Runtime Environment Detection", () => {
   let originalGlobals: Record<string, any>;
@@ -16,7 +13,7 @@ describe("Runtime Environment Detection", () => {
       window: (globalThis as any).window,
       document: (globalThis as any).document,
       self: (globalThis as any).self,
-      navigator: (globalThis as any).navigator
+      navigator: (globalThis as any).navigator,
     };
   });
 

@@ -31,14 +31,14 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
         typeof process.versions.node === "string" &&
         !(process as any).browser,
 
-      IN_NODE_COMMONJS: false,  // Derived from IN_NODE
-      IN_NODE_ESM: false,      // Derived from IN_NODE
+      IN_NODE_COMMONJS: false, // Derived from IN_NODE
+      IN_NODE_ESM: false, // Derived from IN_NODE
 
       IN_BUN: typeof (globalThis as any).Bun !== "undefined",
       IN_DENO: typeof (globalThis as any).Deno !== "undefined",
-      IN_BROWSER: true,        // Default true, will be updated in derived flags
-      IN_BROWSER_MAIN_THREAD: false,  // Derived from IN_BROWSER
-      IN_BROWSER_WEB_WORKER: false,   // Derived from IN_BROWSER,
+      IN_BROWSER: true, // Default true, will be updated in derived flags
+      IN_BROWSER_MAIN_THREAD: false, // Derived from IN_BROWSER
+      IN_BROWSER_WEB_WORKER: false, // Derived from IN_BROWSER,
 
       IN_SAFARI:
         typeof navigator === "object" &&
@@ -119,7 +119,12 @@ export function overrideRuntime(runtime: "browser" | "node" | "deno" | "bun") {
     case "node":
       runtimeEnv.IN_NODE = true;
       // Check for CommonJS environment
-      if (typeof module !== 'undefined' && module.exports && typeof require === 'function' && typeof __dirname === 'string') {
+      if (
+        typeof module !== "undefined" &&
+        module.exports &&
+        typeof require === "function" &&
+        typeof __dirname === "string"
+      ) {
         runtimeEnv.IN_NODE_COMMONJS = true;
       }
       break;
