@@ -6,7 +6,76 @@ js:module
 js:typealias
   exports.PyodideAPI
   pyodide.ffi.TypedArray
+js:interface
+  exports.PyodideConfig
+  pyodide.Lockfile
+  pyodide.LockfileInfo
+  pyodide.LockfilePackage
+  pyodide.PackageData
+js:attribute
+  exports.PyodideConfig.args
+  exports.PyodideConfig.checkAPIVersion
+  exports.PyodideConfig.convertNullToNone
+  exports.PyodideConfig.enableRunUntilComplete
+  exports.PyodideConfig.env
+  exports.PyodideConfig.fullStdLib?
+  exports.PyodideConfig.indexURL
+  exports.PyodideConfig.jsglobals?
+  exports.PyodideConfig.lockFileContents
+  exports.PyodideConfig.lockFileURL?
+  exports.PyodideConfig.packageBaseUrl?
+  exports.PyodideConfig.packageCacheDir
+  exports.PyodideConfig.packages
+  exports.PyodideConfig.pyproxyToStringRepr
+  exports.PyodideConfig.stdLibURL?
+  exports.version
+  pyodide.ERRNO_CODES
+  pyodide.FS
+  pyodide.Lockfile.info
+  pyodide.Lockfile.packages
+  pyodide.LockfileInfo.abi_version
+  pyodide.LockfileInfo.arch
+  pyodide.LockfileInfo.platform
+  pyodide.LockfileInfo.python
+  pyodide.LockfileInfo.version
+  pyodide.LockfilePackage.depends
+  pyodide.LockfilePackage.file_name
+  pyodide.LockfilePackage.imports
+  pyodide.LockfilePackage.install_dir
+  pyodide.LockfilePackage.name
+  pyodide.LockfilePackage.package_type
+  pyodide.LockfilePackage.sha256
+  pyodide.LockfilePackage.version
+  pyodide.PATH
+  pyodide.PackageData.fileName
+  pyodide.PackageData.name
+  pyodide.PackageData.packageType
+  pyodide.PackageData.version
+  pyodide.ffi.PyBufferView.c_contiguous
+  pyodide.ffi.PyBufferView.data
+  pyodide.ffi.PyBufferView.f_contiguous
+  pyodide.ffi.PyBufferView.format
+  pyodide.ffi.PyBufferView.itemsize
+  pyodide.ffi.PyBufferView.nbytes
+  pyodide.ffi.PyBufferView.ndim
+  pyodide.ffi.PyBufferView.offset
+  pyodide.ffi.PyBufferView.readonly
+  pyodide.ffi.PyBufferView.shape
+  pyodide.ffi.PyBufferView.strides
+  pyodide.ffi.PyProxy.type
+  pyodide.ffi.PyProxyWithLength.length
+  pyodide.ffi.PythonError.type
+  pyodide.globals
+  pyodide.loadedPackages
+  pyodide.lockfile
+  pyodide.lockfileBaseUrl
+  pyodide.pyodide_py
+  pyodide.version
 js:function
+  exports.PyodideConfig.fsInit
+  exports.PyodideConfig.stderr
+  exports.PyodideConfig.stdin
+  exports.PyodideConfig.stdout
   exports.loadPyodide
   pyodide.canvas.getCanvas2D
   pyodide.canvas.getCanvas3D
@@ -84,6 +153,7 @@ js:function
   pyodide.registerJsModule
   pyodide.runPython
   pyodide.runPythonAsync
+  pyodide.scheduleCallback
   pyodide.setDebug
   pyodide.setInterruptBuffer
   pyodide.setStderr
@@ -92,55 +162,6 @@ js:function
   pyodide.toPy
   pyodide.unpackArchive
   pyodide.unregisterJsModule
-js:attribute
-  exports.version
-  pyodide.ERRNO_CODES
-  pyodide.FS
-  pyodide.Lockfile.info
-  pyodide.Lockfile.packages
-  pyodide.LockfileInfo.abi_version
-  pyodide.LockfileInfo.arch
-  pyodide.LockfileInfo.platform
-  pyodide.LockfileInfo.python
-  pyodide.LockfileInfo.version
-  pyodide.LockfilePackage.depends
-  pyodide.LockfilePackage.file_name
-  pyodide.LockfilePackage.imports
-  pyodide.LockfilePackage.install_dir
-  pyodide.LockfilePackage.name
-  pyodide.LockfilePackage.package_type
-  pyodide.LockfilePackage.sha256
-  pyodide.LockfilePackage.version
-  pyodide.PATH
-  pyodide.PackageData.fileName
-  pyodide.PackageData.name
-  pyodide.PackageData.packageType
-  pyodide.PackageData.version
-  pyodide.ffi.PyBufferView.c_contiguous
-  pyodide.ffi.PyBufferView.data
-  pyodide.ffi.PyBufferView.f_contiguous
-  pyodide.ffi.PyBufferView.format
-  pyodide.ffi.PyBufferView.itemsize
-  pyodide.ffi.PyBufferView.nbytes
-  pyodide.ffi.PyBufferView.ndim
-  pyodide.ffi.PyBufferView.offset
-  pyodide.ffi.PyBufferView.readonly
-  pyodide.ffi.PyBufferView.shape
-  pyodide.ffi.PyBufferView.strides
-  pyodide.ffi.PyProxy.type
-  pyodide.ffi.PyProxyWithLength.length
-  pyodide.ffi.PythonError.type
-  pyodide.globals
-  pyodide.loadedPackages
-  pyodide.lockfile
-  pyodide.lockfileBaseUrl
-  pyodide.pyodide_py
-  pyodide.version
-js:interface
-  pyodide.Lockfile
-  pyodide.LockfileInfo
-  pyodide.LockfilePackage
-  pyodide.PackageData
 js:class
   pyodide.ffi.PyAsyncGenerator
   pyodide.ffi.PyAsyncIterable
