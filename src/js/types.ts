@@ -313,7 +313,7 @@ export interface EmscriptenModule {
   ) => string;
 }
 
-export interface PythonModule extends EmscriptenModule{
+export interface PythonModule extends EmscriptenModule {
   _Py_EMSCRIPTEN_SIGNAL_HANDLING: number;
   Py_EmscriptenSignalBuffer: TypedArray;
   _Py_Version: number;
@@ -349,9 +349,6 @@ export interface PyodideModule extends PythonModule {
   };
   getPromise(p: number): Promise<any>;
 }
-
-/** @deprecated Use PyodideModule instead. */
-export type Module = PyodideModule;
 
 /**
  * The lockfile platform info. The ``abi_version`` field is used to check if the
