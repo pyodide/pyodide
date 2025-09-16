@@ -53,8 +53,6 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
     globalThis.__PYODIDE_RUNTIME_ENV__ = env;
     // Update derived flags using the shared function
     updateDerivedFlags();
-
-    globalThis.__PYODIDE_RUNTIME_ENV__ = env;
   }
   return globalThis.__PYODIDE_RUNTIME_ENV__;
 }
