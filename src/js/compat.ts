@@ -1,7 +1,8 @@
 import ErrorStackParser from "./vendor/stackframe/error-stack-parser";
-import { RUNTIME_ENV } from "./environments";
+import { detectEnvironment } from "./environments";
 import { Lockfile } from "./types";
 
+const env = detectEnvironment();
 let nodeUrlMod: typeof import("node:url");
 let nodePath: typeof import("node:path");
 let nodeVmMod: typeof import("node:vm");
@@ -27,7 +28,7 @@ declare var globalThis: {
  * @private
  */
 export async function initNodeModules() {
-  if (!RUNTIME_ENV.IN_NODE) {
+  if (!env.IN_NODE) {
     return;
   }
   // @ts-ignore
@@ -85,9 +86,9 @@ function browser_resolvePath(path: string, base?: string): string {
 }
 
 export let resolvePath: (rest: string, base?: string) => string;
-if (RUNTIME_ENV.IN_NODE) {
+if (env.IN_NODE) {
   resolvePath = node_resolvePath;
-} else if (RUNTIME_ENV.IN_SHELL) {
+} else if (env.IN_SHELL) {
   resolvePath = (x) => x;
 } else {
   resolvePath = browser_resolvePath;
@@ -100,7 +101,7 @@ if (RUNTIME_ENV.IN_NODE) {
  */
 export let pathSep: string;
 
-if (!RUNTIME_ENV.IN_NODE) {
+if (!env.IN_NODE) {
   pathSep = "/";
 }
 
@@ -185,9 +186,9 @@ export let getBinaryResponse: (
 ) =>
   | { response: Promise<Response>; binary?: undefined }
   | { response?: undefined; binary: Promise<Uint8Array> };
-if (RUNTIME_ENV.IN_NODE) {
+if (env.IN_NODE) {
   getBinaryResponse = node_getBinaryResponse;
-} else if (RUNTIME_ENV.IN_SHELL) {
+} else if (env.IN_SHELL) {
   getBinaryResponse = shell_getBinaryResponse;
 } else {
   getBinaryResponse = browser_getBinaryResponse;
@@ -215,10 +216,10 @@ export async function loadBinaryFile(
  */
 export let loadScript: (url: string) => Promise<void>;
 
-if (RUNTIME_ENV.IN_BROWSER_MAIN_THREAD) {
+if (env.IN_BROWSER_MAIN_THREAD) {
   // browser
   loadScript = async (url) => await import(/* webpackIgnore: true */ url);
-} else if (RUNTIME_ENV.IN_BROWSER_WEB_WORKER) {
+} else if (env.IN_BROWSER_WEB_WORKER) {
   // webworker
   loadScript = async (url) => {
     try {
@@ -233,9 +234,9 @@ if (RUNTIME_ENV.IN_BROWSER_MAIN_THREAD) {
       }
     }
   };
-} else if (RUNTIME_ENV.IN_NODE) {
+} else if (env.IN_NODE) {
   loadScript = nodeLoadScript;
-} else if (RUNTIME_ENV.IN_SHELL) {
+} else if (env.IN_SHELL) {
   loadScript = load;
 } else {
   throw new Error("Cannot determine runtime environment");
@@ -262,13 +263,13 @@ async function nodeLoadScript(url: string) {
 }
 
 export async function loadLockFile(lockFileURL: string): Promise<Lockfile> {
-  if (RUNTIME_ENV.IN_NODE) {
+  if (env.IN_NODE) {
     await initNodeModules();
     const package_string = await nodeFsPromisesMod.readFile(lockFileURL, {
       encoding: "utf8",
     });
     return JSON.parse(package_string);
-  } else if (RUNTIME_ENV.IN_SHELL) {
+  } else if (env.IN_SHELL) {
     const package_string = read(lockFileURL);
     return JSON.parse(package_string);
   } else {
@@ -282,7 +283,7 @@ export async function loadLockFile(lockFileURL: string): Promise<Lockfile> {
  * This is used to guess the indexURL when it is not provided.
  */
 export async function calculateDirname(): Promise<string> {
-  if (RUNTIME_ENV.IN_NODE_COMMONJS) {
+  if (env.IN_NODE_COMMONJS) {
     return __dirname;
   }
 
@@ -294,11 +295,11 @@ export async function calculateDirname(): Promise<string> {
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
 
-  if (RUNTIME_ENV.IN_NODE && !fileName.startsWith("file://")) {
+  if (env.IN_NODE && !fileName.startsWith("file://")) {
     fileName = `file://${fileName}`; // Error stack filenames are not starting with `file://` in `Bun`
   }
 
-  if (RUNTIME_ENV.IN_NODE_ESM) {
+  if (env.IN_NODE_ESM) {
     const nodePath = await import("node:path");
     const nodeUrl = await import("node:url");
 
@@ -321,7 +322,7 @@ export async function calculateDirname(): Promise<string> {
  * @param dir The directory to ensure exists
  */
 export async function ensureDirNode(dir?: string) {
-  if (!RUNTIME_ENV.IN_NODE) {
+  if (!env.IN_NODE) {
     return;
   }
   if (!dir) {

@@ -8,7 +8,8 @@ import {
   PackageManagerModule,
   LoadedPackages,
 } from "./types";
-import { RUNTIME_ENV } from "./environments";
+import { detectEnvironment } from "./environments";
+const env = detectEnvironment();
 import type { PyProxy } from "generated/pyproxy";
 import { createResolvable } from "./common/resolveable";
 import { createLock } from "./common/lock";
@@ -152,7 +153,7 @@ export class PackageManager {
     this.#module = pyodideModule;
     this.#installer = new Installer(api, pyodideModule);
 
-    if (RUNTIME_ENV.IN_NODE) {
+    if (env.IN_NODE) {
       // In node, we'll try first to load from the packageCacheDir and then fall
       // back to cdnURL
       this.installBaseUrl =
@@ -479,7 +480,7 @@ export class PackageManager {
       return await loadBinaryFile(uri, fileSubResourceHash);
     } catch (e) {
       if (
-        !RUNTIME_ENV.IN_NODE ||
+        !env.IN_NODE ||
         pkg.channel !== this.defaultChannel ||
         !fileName ||
         fileName.startsWith("/")
@@ -490,7 +491,7 @@ export class PackageManager {
     this.logStdout(
       `Didn't find package ${fileName} locally, attempting to load from ${this.cdnURL}`,
     );
-    // If we are RUNTIME_ENV.IN_NODE, download the package from the cdn, then stash it into
+    // If we are env.IN_NODE, download the package from the cdn, then stash it into
     // the node_modules directory for future use.
     let binary = await loadBinaryFile(this.cdnURL + fileName);
     this.logStdout(
