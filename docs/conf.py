@@ -360,9 +360,9 @@ def typehints_formatter(annotation, config):
     if full_name == "ast.Module":
         return "`Module <https://docs.python.org/3/library/ast.html#module-ast>`_"
     # TODO: perhaps a more consistent way to handle JS xrefs / type annotations?
-    if full_name == "pyodide.http.pyfetch.AbortController":
+    if full_name == "pyodide.http._pyfetch.AbortController":
         return ":js:class:`AbortController`"
-    if full_name == "pyodide.http.pyfetch.AbortSignal":
+    if full_name == "pyodide.http._pyfetch.AbortSignal":
         return ":js:class:`AbortSignal`"
     return None
 
