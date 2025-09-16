@@ -180,6 +180,9 @@ export interface PyodideConfig {
   checkAPIVersion: boolean;
 
   /**
+   * This is a hook that allows modification of the file system before the
+   * main() function is called and the intereter is started. When this is
+   * called, it is guaranteed that there is an empty site-packages directory.
    * @experimental
    */
   fsInit?: (FS: FSType, info: { sitePackages: string }) => Promise<void>;
