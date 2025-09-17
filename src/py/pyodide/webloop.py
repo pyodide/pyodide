@@ -5,8 +5,10 @@ import os
 import sys
 import time
 import traceback
+import warnings
+import weakref
 from asyncio import Future, Task, sleep
-from collections.abc import Awaitable, Callable, Coroutine
+from collections.abc import AsyncGenerator, Awaitable, Callable, Coroutine
 from functools import wraps
 from typing import Any, TypeVar, overload
 
@@ -211,16 +213,94 @@ class WebLoop(asyncio.AbstractEventLoop):
         self._keyboard_interrupt_handler = None
         self._system_exit_handler = None
         # Debug mode is currently no-op (actual asyncio debug features not implemented)
-        self._debug = sys.flags.dev_mode or (not sys.flags.ignore_environment and
-                                             bool(os.environ.get('PYTHONASYNCIODEBUG')))
+        self._debug = sys.flags.dev_mode or (
+            not sys.flags.ignore_environment
+            and bool(os.environ.get("PYTHONASYNCIODEBUG"))
+        )
+        # The preserved state of async generator hooks
+        self._old_agen_hooks: tuple[Any, Any] | None = None
+        self._install_asyncgen_hooks()
+        self._asyncgens: weakref.WeakSet[AsyncGenerator[Any, Any]] = weakref.WeakSet()
+        self._asyncgens_shutdown_called: bool = False
 
     def get_debug(self):
         """Return the debug mode of the event loop."""
         return self._debug
-    
+
     def set_debug(self, enabled: bool) -> None:
         """Set the debug mode of the event loop."""
         self._debug = enabled
+
+    #
+    # Async generator lifecycle management
+    #
+
+    def _asyncgen_firstiter_hook(self, agen: AsyncGenerator[Any, Any]) -> None:
+        """Called when an async generator starts iteration.
+        Tracks new async generators and issues warnings if they're created
+        after shutdown_asyncgens() has been called.
+        """
+        if self._asyncgens_shutdown_called:
+            warnings.warn(
+                f"asynchronous generator {agen!r} was scheduled after "
+                f"loop.shutdown_asyncgens() call",
+                ResourceWarning,
+                source=self,
+                stacklevel=2,
+            )
+
+        self._asyncgens.add(agen)
+
+    def _asyncgen_finalizer_hook(self, agen: AsyncGenerator[Any, Any]) -> None:
+        """Called when an async generator is being finalized.
+        Removes the generator from tracking and schedules its cleanup.
+        """
+        self._asyncgens.discard(agen)
+
+        # WebLoop never closes, but keep check for consistency with asyncio
+        if not self.is_closed():
+            self.call_soon(asyncio.ensure_future, agen.aclose())
+
+    def _install_asyncgen_hooks(self) -> None:
+        """Install async generator hooks if not already installed."""
+        if self._old_agen_hooks is not None:
+            return
+
+        self._old_agen_hooks = sys.get_asyncgen_hooks()
+        sys.set_asyncgen_hooks(
+            firstiter=self._asyncgen_firstiter_hook,
+            finalizer=self._asyncgen_finalizer_hook,
+        )
+
+    async def shutdown_asyncgens(self) -> None:
+        """Shutdown all active async generators.
+
+        This closes all tracked async generators and prevents new ones from being created.
+        """
+        self._asyncgens_shutdown_called = True
+
+        closing_asyncgens = list(self._asyncgens)
+        self._asyncgens.clear()
+
+        if not closing_asyncgens:
+            return
+
+        results = await asyncio.gather(
+            *[ag.aclose() for ag in closing_asyncgens], return_exceptions=True
+        )
+
+        for result, agen in zip(results, closing_asyncgens, strict=False):
+            if isinstance(result, Exception):
+                self.call_exception_handler(
+                    {
+                        "message": (
+                            f"an error occurred during closing of "
+                            f"asynchronous generator {agen!r}"
+                        ),
+                        "exception": result,
+                        "asyncgen": agen,
+                    }
+                )
 
     #
     # Lifecycle methods: We ignore all lifecycle management
