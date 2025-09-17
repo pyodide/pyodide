@@ -1422,10 +1422,10 @@ class ToJsConverter(Protocol):
 
     def __call__(
         self,
-        /,
         value: Any,
         converter: Callable[[Any], JsProxy],
         cache: Callable[[Any, JsProxy], None],
+        /,
     ) -> JsProxy: ...
 
 
