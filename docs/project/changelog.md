@@ -20,6 +20,13 @@ myst:
 - {{ Fix }} In 0.28.2 we accidentally disabled a performance optimization that
   makes the foreign function interface about 5% slower. {pr}`5890`
 
+- {{ Enhancement }} Added ``get_debug``/``set_debug`` methods to webloop. These
+  are methods on ``AbstractEventLoop``. There are currently no differences in
+  behavior when debug mode is set on the event loop. {pr}`5886`
+
+- {{ Enhancement }} The typescript types for `pyodide.FS` are now slightly more
+  complete. {pr}`5863`
+
 ## Version 0.28.2
 
 _August 19, 2025_
