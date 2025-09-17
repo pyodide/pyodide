@@ -17,6 +17,10 @@ myst:
 
 ## Unreleased
 
+## Version 0.28.3
+
+_September 22, 2025_
+
 - {{ Fix }} In 0.28.2 we accidentally disabled a performance optimization that
   makes the foreign function interface about 5% slower. {pr}`5890`
 
