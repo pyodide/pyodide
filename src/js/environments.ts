@@ -19,7 +19,7 @@ interface RuntimeEnv {
 
 /**
  * Get or create the global runtime environment object
- * This ensures consistency across pyodide.mjs and pyodide.asm.wasm bundles
+ * Derived flags are computed during initialization
  * @private
  */
 function getGlobalRuntimeEnv(): RuntimeEnv {
@@ -52,7 +52,7 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
     };
     globalThis.__PYODIDE_RUNTIME_ENV__ = env;
     // Update derived flags using the shared function
-    updateDerivedFlags();
+    updateDerivedFlags(env);
   }
   return globalThis.__PYODIDE_RUNTIME_ENV__;
 }
@@ -60,20 +60,23 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
 /**
  * Singleton runtime environment object
  * This serves as the single source of truth for runtime detection
- * @private
  */
-/** @private Internal runtime environment state */
-const RUNTIME_ENV: RuntimeEnv = getGlobalRuntimeEnv();
-
-// Derived flags are computed during initialization in getGlobalRuntimeEnv
+export const RUNTIME_ENV: RuntimeEnv = getGlobalRuntimeEnv();
 
 /**
  * Update derived flags based on current runtime environment
  * This ensures consistency when runtime is overridden
  * @private
  */
-function updateDerivedFlags() {
-  const runtimeEnv = getGlobalRuntimeEnv();
+function updateDerivedFlags(runtimeEnv: RuntimeEnv) {
+  // Calculate IN_NODE_COMMONJS
+  if (runtimeEnv.IN_NODE) {
+    runtimeEnv.IN_NODE_COMMONJS =
+      typeof module !== "undefined" &&
+      module.exports &&
+      typeof require === "function" &&
+      typeof __dirname === "string";
+  }
 
   // Update derived flags
   runtimeEnv.IN_NODE_ESM = runtimeEnv.IN_NODE && !runtimeEnv.IN_NODE_COMMONJS;
@@ -103,42 +106,31 @@ export function overrideRuntime(runtime: "browser" | "node" | "deno" | "bun") {
   // Get the global runtime environment object
   const runtimeEnv = getGlobalRuntimeEnv();
 
-  // Reset all flags to false
-  runtimeEnv.IN_NODE = false;
-  runtimeEnv.IN_NODE_COMMONJS = false;
-  runtimeEnv.IN_NODE_ESM = false;
-  runtimeEnv.IN_BUN = false;
-  runtimeEnv.IN_DENO = false;
-  runtimeEnv.IN_BROWSER = false;
-  runtimeEnv.IN_BROWSER_MAIN_THREAD = false;
-  runtimeEnv.IN_BROWSER_WEB_WORKER = false;
+  // Reset all flags to false to prevent human error
+  Object.keys(runtimeEnv).forEach(
+    (key) => (runtimeEnv[key as keyof RuntimeEnv] = false),
+  );
 
   switch (runtime) {
     case "node":
       runtimeEnv.IN_NODE = true;
-      // Check for CommonJS environment
-      if (
-        typeof module !== "undefined" &&
-        module.exports &&
-        typeof require === "function" &&
-        typeof __dirname === "string"
-      ) {
-        runtimeEnv.IN_NODE_COMMONJS = true;
-      }
+      // IN_NODE_COMMONJS and IN_NODE_ESM will be derived in updateDerivedFlags()
       break;
     case "browser":
       runtimeEnv.IN_BROWSER = true;
       break;
     case "deno":
       runtimeEnv.IN_DENO = true;
+      runtimeEnv.IN_NODE = true; // Deno is Node-compatible
       break;
     case "bun":
       runtimeEnv.IN_BUN = true;
+      runtimeEnv.IN_NODE = true; // Bun is Node-compatible
       break;
   }
 
   // Update derived flags (including IN_NODE_*, IN_BROWSER_*)
-  updateDerivedFlags();
+  updateDerivedFlags(runtimeEnv);
 }
 
 // No individual flag exports; use RUNTIME_ENV directly
@@ -146,7 +138,7 @@ export function overrideRuntime(runtime: "browser" | "node" | "deno" | "bun") {
 /**
  * Detects the current environment and returns a record of boolean flags.
  * The flags indicate what kind of environment pyodide is running in.
- * @private
+ * @deprecated Use RUNTIME_ENV directly instead of this function
  */
 export function detectEnvironment(): Record<string, boolean> {
   const env = getGlobalRuntimeEnv();
@@ -162,4 +154,10 @@ export function detectEnvironment(): Record<string, boolean> {
     IN_SAFARI: env.IN_SAFARI,
     IN_SHELL: env.IN_SHELL,
   };
+}
+
+// Register functions with API if available
+if (typeof API !== "undefined") {
+  API.detectEnvironment = detectEnvironment;
+  API.overrideRuntime = overrideRuntime;
 }

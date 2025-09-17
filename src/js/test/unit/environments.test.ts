@@ -64,7 +64,7 @@ describe("Runtime Environment Detection", () => {
       overrideRuntime("deno");
 
       const env = detectEnvironment();
-      expect(env.IN_NODE).to.be.false;
+      expect(env.IN_NODE).to.be.true; // Deno is Node-compatible
       expect(env.IN_BROWSER).to.be.false;
       expect(env.IN_DENO).to.be.true;
       expect(env.IN_BUN).to.be.false;
@@ -74,7 +74,7 @@ describe("Runtime Environment Detection", () => {
       overrideRuntime("bun");
 
       const env = detectEnvironment();
-      expect(env.IN_NODE).to.be.false;
+      expect(env.IN_NODE).to.be.true; // Bun is Node-compatible
       expect(env.IN_BROWSER).to.be.false;
       expect(env.IN_DENO).to.be.false;
       expect(env.IN_BUN).to.be.true;
