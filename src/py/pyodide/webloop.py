@@ -219,7 +219,6 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
         # The preserved state of async generator hooks
         self._old_agen_hooks: tuple[Any, Any] | None = None
-        self._install_asyncgen_hooks()
         self._asyncgens: weakref.WeakSet[AsyncGenerator[Any, Any]] = weakref.WeakSet()
         self._asyncgens_shutdown_called: bool = False
 
@@ -359,6 +358,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         from pyodide_js._api import config
 
         if config.enableRunUntilComplete:
+            self._install_asyncgen_hooks()
             return run_sync(future)
         return asyncio.ensure_future(future)
 
@@ -423,6 +423,8 @@ class WebLoop(asyncio.AbstractEventLoop):
         h = asyncio.Handle(callback, args, self, context=context)
 
         def run_handle():
+            self._install_asyncgen_hooks()
+
             if h.cancelled():
                 return
             try:
