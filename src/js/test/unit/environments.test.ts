@@ -20,7 +20,20 @@ describe("Runtime Environment Detection", () => {
   afterEach(() => {
     // Restore original globalThis values
     for (const [key, value] of Object.entries(originalGlobals)) {
-      (globalThis as any)[key] = value;
+      try {
+        // Skip navigator in Node.js as it's a getter-only property
+        if (
+          key === "navigator" &&
+          typeof process !== "undefined" &&
+          process.versions?.node
+        ) {
+          continue;
+        }
+        (globalThis as any)[key] = value;
+      } catch (error) {
+        // Skip properties that can't be restored (like getter-only properties)
+        console.warn(`Could not restore globalThis.${key}:`, error);
+      }
     }
   });
 
