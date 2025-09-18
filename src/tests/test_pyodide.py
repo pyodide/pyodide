@@ -2124,7 +2124,7 @@ async def test_runtime_environment_override_integration(selenium_standalone):
         assert result["pythonWorks"], "Python code should execute successfully"
     else:
         # In browser environment, test the original scenario
-        result = await selenium.run_async_js("""
+        result = await selenium.run_async("""
             async () => {
                 // Clean up any existing instances and cached environment
                 if (globalThis.pyodide) delete globalThis.pyodide;
@@ -2209,7 +2209,7 @@ async def test_runtime_environment_override_browser_integration(selenium_standal
     )
     assert is_browser_env, "This test should only run in browser environment"
 
-    result = await selenium.run_async_js("""
+    result = await selenium.run_async("""
         async () => {
             // Clean up any existing instances and cached environment
             if (globalThis.pyodide) delete globalThis.pyodide;
