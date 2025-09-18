@@ -58,9 +58,13 @@ describe("Runtime Environment Detection", () => {
       };
       (globalThis as any).document = (globalThis as any).window.document;
       (globalThis as any).self = (globalThis as any).window;
-      (globalThis as any).navigator = {
-        userAgent: "Mozilla/5.0 (compatible; Test Browser)",
-      };
+
+      // Skip navigator assignment in Node.js as it's a getter-only property
+      if (typeof process === "undefined" || !process.versions?.node) {
+        (globalThis as any).navigator = {
+          userAgent: "Mozilla/5.0 (compatible; Test Browser)",
+        };
+      }
 
       overrideRuntime("browser");
 
@@ -203,9 +207,13 @@ describe("Runtime Environment Detection", () => {
       };
       (globalThis as any).document = (globalThis as any).window.document;
       (globalThis as any).self = (globalThis as any).window;
-      (globalThis as any).navigator = {
-        userAgent: "Mozilla/5.0 (compatible; Test Browser)",
-      };
+
+      // Skip navigator assignment in Node.js as it's a getter-only property
+      if (typeof process === "undefined" || !process.versions?.node) {
+        (globalThis as any).navigator = {
+          userAgent: "Mozilla/5.0 (compatible; Test Browser)",
+        };
+      }
 
       overrideRuntime("browser");
 
