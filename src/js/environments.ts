@@ -19,11 +19,11 @@ interface RuntimeEnv {
 
 /**
  * Get or create the global runtime environment object
- * Derived flags are computed during initialization
  * @private
  */
 function getGlobalRuntimeEnv(): RuntimeEnv {
   if (!globalThis.__PYODIDE_RUNTIME_ENV__) {
+    // Derived flags are computed during initialization
     const env: RuntimeEnv = {
       IN_NODE:
         typeof process === "object" &&
@@ -141,19 +141,7 @@ export function overrideRuntime(runtime: "browser" | "node" | "deno" | "bun") {
  * @deprecated Use RUNTIME_ENV directly instead of this function
  */
 export function detectEnvironment(): Record<string, boolean> {
-  const env = getGlobalRuntimeEnv();
-  return {
-    IN_NODE: env.IN_NODE,
-    IN_NODE_COMMONJS: env.IN_NODE_COMMONJS,
-    IN_NODE_ESM: env.IN_NODE_ESM,
-    IN_BUN: env.IN_BUN,
-    IN_DENO: env.IN_DENO,
-    IN_BROWSER: env.IN_BROWSER,
-    IN_BROWSER_MAIN_THREAD: env.IN_BROWSER_MAIN_THREAD,
-    IN_BROWSER_WEB_WORKER: env.IN_BROWSER_WEB_WORKER,
-    IN_SAFARI: env.IN_SAFARI,
-    IN_SHELL: env.IN_SHELL,
-  };
+  return getGlobalRuntimeEnv();
 }
 
 // Register functions with API if available
