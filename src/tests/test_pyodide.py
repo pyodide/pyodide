@@ -2147,7 +2147,7 @@ def test_runtime_environment_override_integration(selenium_standalone):
 
         # First, let's check what environment we're actually in
         env_check = selenium.run_js("""
-            {
+            return {
                 hasWindow: typeof window !== 'undefined',
                 hasDocument: typeof document !== 'undefined',
                 hasProcess: typeof process !== 'undefined',
@@ -2155,7 +2155,7 @@ def test_runtime_environment_override_integration(selenium_standalone):
                 hasModule: typeof module !== 'undefined',
                 hasRequire: typeof require !== 'undefined',
                 hasDirname: typeof __dirname !== 'undefined'
-            }
+            };
         """)
         print(f"DEBUG: Environment check = {env_check}")
 
@@ -2235,13 +2235,13 @@ def test_runtime_environment_override_integration(selenium_standalone):
 
             # Check if both steps are complete
             status = selenium.run_js(
-                "{ step1: globalThis.testResults?.step1Complete, step2: globalThis.testResults?.step2Complete }"
+                "return { step1: globalThis.testResults?.step1Complete, step2: globalThis.testResults?.step2Complete };"
             )
             if status and status.get("step1") and status.get("step2"):
                 break
 
         # Get the results
-        result = selenium.run_js("globalThis.testResults")
+        result = selenium.run_js("return globalThis.testResults;")
 
         # Debug: Print detailed results
         print(f"DEBUG: Test results = {result}")
@@ -2252,7 +2252,7 @@ def test_runtime_environment_override_integration(selenium_standalone):
                 "ERROR: JavaScript execution returned None - testResults not available"
             )
             # Try to get basic status
-            basic_status = selenium.run_js("typeof globalThis.testResults")
+            basic_status = selenium.run_js("return typeof globalThis.testResults;")
             print(f"DEBUG: testResults type = {basic_status}")
             raise AssertionError("JavaScript execution failed - testResults is None")
 
@@ -2374,7 +2374,7 @@ def test_runtime_environment_override_browser_integration(selenium_standalone):
 
         # Check if both steps are complete
         status = selenium.run_js(
-            "{ step1: globalThis.testResults?.step1Complete, step2: globalThis.testResults?.step2Complete }"
+            "return { step1: globalThis.testResults?.step1Complete, step2: globalThis.testResults?.step2Complete };"
         )
         if status and status.get("step1") and status.get("step2"):
             break
@@ -2389,7 +2389,7 @@ def test_runtime_environment_override_browser_integration(selenium_standalone):
     if result is None:
         print("ERROR: JavaScript execution returned None - testResults not available")
         # Try to get basic status
-        basic_status = selenium.run_js("typeof globalThis.testResults")
+        basic_status = selenium.run_js("return typeof globalThis.testResults;")
         print(f"DEBUG: testResults type = {basic_status}")
         raise AssertionError("JavaScript execution failed - testResults is None")
 
