@@ -2145,68 +2145,131 @@ def test_runtime_environment_override_integration(selenium_standalone):
             };
         """)
 
+        # First, let's check what environment we're actually in
+        env_check = selenium.run_js("""
+            {
+                hasWindow: typeof window !== 'undefined',
+                hasDocument: typeof document !== 'undefined',
+                hasProcess: typeof process !== 'undefined',
+                processVersions: typeof process !== 'undefined' ? process.versions : null,
+                hasModule: typeof module !== 'undefined',
+                hasRequire: typeof require !== 'undefined',
+                hasDirname: typeof __dirname !== 'undefined'
+            }
+        """)
+        print(f"DEBUG: Environment check = {env_check}")
+
         # Step 1: Try to load without runtime override - should fail
         selenium.run_js("""
             try {
                 loadPyodide().then(() => {
                     // Should not reach here
+                    console.log("Step 1: loadPyodide succeeded without runtime override - this should not happen");
                     globalThis.testResults.failedWithoutRuntime = false;
                 }).catch((err) => {
+                    console.log("Step 1: loadPyodide failed as expected:", err.message);
                     globalThis.testResults.failedWithoutRuntime = true;
                     globalThis.testResults.errorMessage = err.message || String(err);
+                }).finally(() => {
+                    globalThis.testResults.step1Complete = true;
                 });
             } catch (err) {
+                console.log("Step 1: loadPyodide threw synchronously:", err.message);
                 globalThis.testResults.failedWithoutRuntime = true;
                 globalThis.testResults.errorMessage = err.message || String(err);
+                globalThis.testResults.step1Complete = true;
             }
         """)
 
         # Wait a bit for the async operation
         import time
 
-        time.sleep(0.1)
+        time.sleep(1.0)
 
         # Step 2: Try to load with runtime override - should succeed
         selenium.run_js("""
+            console.log("Step 2: Starting loadPyodide with runtime override");
+
             // Clear cached environment detection before retry
             if (globalThis.__PYODIDE_RUNTIME_ENV__) {
+                console.log("Step 2: Clearing cached runtime env");
                 delete globalThis.__PYODIDE_RUNTIME_ENV__;
             }
 
-            loadPyodide({ runtime: "browser" }).then((pyodideInstance) => {
-                globalThis.testResults.succeededWithRuntime = true;
+            try {
+                loadPyodide({ runtime: "browser" }).then((pyodideInstance) => {
+                    console.log("Step 2: loadPyodide succeeded with runtime override");
+                    globalThis.testResults.succeededWithRuntime = true;
 
-                // Verify Python execution works
-                try {
-                    let result = pyodideInstance.runPython("2 + 3");
-                    globalThis.testResults.pythonWorks = (result === 5);
-                } catch (err) {
-                    console.error("Python execution failed:", err);
+                    // Verify Python execution works
+                    try {
+                        let result = pyodideInstance.runPython("2 + 3");
+                        console.log("Step 2: Python execution result:", result);
+                        globalThis.testResults.pythonWorks = (result === 5);
+                    } catch (err) {
+                        console.error("Step 2: Python execution failed:", err);
+                        globalThis.testResults.errorMessage = err.message || String(err);
+                    }
+                }).catch((err) => {
+                    console.error("Step 2: Failed to load with runtime override:", err);
                     globalThis.testResults.errorMessage = err.message || String(err);
-                }
-            }).catch((err) => {
-                console.error("Failed to load with runtime override:", err);
+                }).finally(() => {
+                    console.log("Step 2: Completed");
+                    globalThis.testResults.step2Complete = true;
+                });
+            } catch (err) {
+                console.error("Step 2: loadPyodide threw synchronously:", err);
                 globalThis.testResults.errorMessage = err.message || String(err);
-            });
+                globalThis.testResults.step2Complete = true;
+            }
         """)
 
-        # Wait for the async operation to complete
-        time.sleep(0.5)
+        # Wait for both async operations to complete
+        max_wait = 10  # Maximum 10 seconds
+        wait_interval = 0.1
+        waited = 0.0
+
+        while waited < max_wait:
+            time.sleep(wait_interval)
+            waited += wait_interval
+
+            # Check if both steps are complete
+            status = selenium.run_js(
+                "{ step1: globalThis.testResults?.step1Complete, step2: globalThis.testResults?.step2Complete }"
+            )
+            if status and status.get("step1") and status.get("step2"):
+                break
 
         # Get the results
-        result = selenium.run_js("return globalThis.testResults")
+        result = selenium.run_js("globalThis.testResults")
+
+        # Debug: Print detailed results
+        print(f"DEBUG: Test results = {result}")
+
+        # Handle None result
+        if result is None:
+            print(
+                "ERROR: JavaScript execution returned None - testResults not available"
+            )
+            # Try to get basic status
+            basic_status = selenium.run_js("typeof globalThis.testResults")
+            print(f"DEBUG: testResults type = {basic_status}")
+            raise AssertionError("JavaScript execution failed - testResults is None")
+
+        if result.get("errorMessage"):
+            print(f"DEBUG: Error message = {result['errorMessage']}")
 
         # In browser environment, the original test logic applies
         # Verify Step 1: loadPyodide should fail without runtime override
-        assert result["failedWithoutRuntime"], (
+        assert result.get("failedWithoutRuntime", False), (
             f"loadPyodide should fail when environment detection is confused. Got result: {result}"
         )
 
         # Verify Step 2: loadPyodide should succeed with runtime override
-        assert result["succeededWithRuntime"], (
+        assert result.get("succeededWithRuntime", False), (
             "loadPyodide should succeed with explicit runtime setting"
         )
-        assert result["pythonWorks"], (
+        assert result.get("pythonWorks", False), (
             "Python code should execute successfully after loading"
         )
 
@@ -2260,6 +2323,8 @@ def test_runtime_environment_override_browser_integration(selenium_standalone):
             }).catch((err) => {
                 globalThis.testResults.failedWithoutRuntime = true;
                 globalThis.testResults.errorMessage = err.message || String(err);
+            }).finally(() => {
+                globalThis.testResults.step1Complete = true;
             });
         } catch (err) {
             globalThis.testResults.failedWithoutRuntime = true;
@@ -2293,27 +2358,53 @@ def test_runtime_environment_override_browser_integration(selenium_standalone):
         }).catch((err) => {
             console.error("Failed to load with runtime override:", err);
             globalThis.testResults.errorMessage = err.message || String(err);
+        }).finally(() => {
+            globalThis.testResults.step2Complete = true;
         });
     """)
 
-    # Wait for the async operation to complete
-    time.sleep(0.5)
+    # Wait for both async operations to complete
+    max_wait = 10  # Maximum 10 seconds
+    wait_interval = 0.1
+    waited = 0.0
+
+    while waited < max_wait:
+        time.sleep(wait_interval)
+        waited += wait_interval
+
+        # Check if both steps are complete
+        status = selenium.run_js(
+            "{ step1: globalThis.testResults?.step1Complete, step2: globalThis.testResults?.step2Complete }"
+        )
+        if status and status.get("step1") and status.get("step2"):
+            break
 
     # Get the results
-    result = selenium.run_js("return globalThis.testResults")
+    result = selenium.run_js("globalThis.testResults")
 
     # Debug: Print the actual result to understand what happened
     print(f"DEBUG: Browser test result = {result}")
 
+    # Handle None result
+    if result is None:
+        print("ERROR: JavaScript execution returned None - testResults not available")
+        # Try to get basic status
+        basic_status = selenium.run_js("typeof globalThis.testResults")
+        print(f"DEBUG: testResults type = {basic_status}")
+        raise AssertionError("JavaScript execution failed - testResults is None")
+
+    if result.get("errorMessage"):
+        print(f"DEBUG: Error message = {result['errorMessage']}")
+
     # Verify Step 1: loadPyodide should fail without runtime override
-    assert result["failedWithoutRuntime"], (
+    assert result.get("failedWithoutRuntime", False), (
         f"loadPyodide should fail when environment detection is confused. Got result: {result}"
     )
 
     # Verify Step 2: loadPyodide should succeed with runtime override
-    assert result["succeededWithRuntime"], (
+    assert result.get("succeededWithRuntime", False), (
         "loadPyodide should succeed with explicit runtime setting"
     )
-    assert result["pythonWorks"], (
+    assert result.get("pythonWorks", False), (
         "Python code should execute successfully after loading"
     )
