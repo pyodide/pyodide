@@ -90,10 +90,10 @@ function ensureMountPathExists(path: string): void {
     follow_mount: false,
   });
 
-  if (FS.isMountpoint(node)) {
+  if (Module.FS.isMountpoint(node)) {
     throw new Error(`path '${path}' is already a file system mount point`);
   }
-  if (!FS.isDir(node.mode)) {
+  if (!Module.FS.isDir(node.mode)) {
     throw new Error(`path '${path}' points to a file not a directory`);
   }
   for (const _ in node.contents) {
