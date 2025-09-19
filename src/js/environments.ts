@@ -19,6 +19,7 @@ interface RuntimeEnv {
 
 /**
  * Get or create the global runtime environment object
+ * This serves as the single source of truth for runtime detection
  * @private
  */
 function getGlobalRuntimeEnv(): RuntimeEnv {
@@ -57,10 +58,7 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
   return globalThis.__PYODIDE_RUNTIME_ENV__;
 }
 
-/**
- * Singleton runtime environment object
- * This serves as the single source of truth for runtime detection
- */
+/** @private Internal runtime environment state */
 export const RUNTIME_ENV: RuntimeEnv = getGlobalRuntimeEnv();
 
 /**
