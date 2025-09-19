@@ -8,7 +8,7 @@ import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
 import { TypedArray, PackageData, FSType, Lockfile } from "./types";
-import { IN_NODE, detectEnvironment } from "./environments";
+import { detectEnvironment, overrideRuntime } from "./environments";
 // @ts-ignore
 import LiteralMap from "./common/literal-map";
 import abortSignalAny from "./common/abortSignalAny";
@@ -71,6 +71,8 @@ API.scheduleCallback = scheduleCallback;
 
 /** @private */
 API.detectEnvironment = detectEnvironment;
+/** @private */
+API.overrideRuntime = overrideRuntime;
 
 // @ts-ignore
 if (typeof AbortSignal !== "undefined" && AbortSignal.any) {
@@ -579,7 +581,7 @@ export class PyodideAPI_ {
    * @param hostPath The host path to mount. It must be a directory that exists.
    */
   static mountNodeFS(emscriptenPath: string, hostPath: string): void {
-    if (!IN_NODE) {
+    if (!detectEnvironment().IN_NODE) {
       throw new Error("mountNodeFS only works in Node");
     }
     ensureMountPathExists(emscriptenPath);

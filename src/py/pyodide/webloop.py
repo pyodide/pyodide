@@ -666,8 +666,6 @@ def _sleep(t):
 
 
 def _initialize_event_loop():
-    from .ffi import IN_BROWSER
-
     if not IN_BROWSER:
         return
 
