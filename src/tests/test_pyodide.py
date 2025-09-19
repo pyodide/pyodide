@@ -2075,8 +2075,7 @@ def test_compat_null_to_none(selenium_standalone_noload):
     assert not doc
 
 
-@pytest.mark.asyncio
-async def test_runtime_environment_override_integration(selenium_standalone):
+def test_runtime_environment_override_integration(selenium_standalone):
     """
     Integration test for runtime environment detection override.
 
@@ -2124,56 +2123,78 @@ async def test_runtime_environment_override_integration(selenium_standalone):
         assert result["pythonWorks"], "Python code should execute successfully"
     else:
         # In browser environment, test the original scenario
-        result = await selenium.run_async("""
-            async () => {
-                // Clean up any existing instances and cached environment
-                if (globalThis.pyodide) delete globalThis.pyodide;
-                if (globalThis.pyodideInstance) delete globalThis.pyodideInstance;
-                if (globalThis.__PYODIDE_RUNTIME_ENV__) delete globalThis.__PYODIDE_RUNTIME_ENV__;
+        # Use a different approach: run JavaScript without async wrapper
+        # First, set up fake environment
+        selenium.run_js("""
+            // Clean up any existing instances and cached environment
+            if (globalThis.pyodide) delete globalThis.pyodide;
+            if (globalThis.pyodideInstance) delete globalThis.pyodideInstance;
+            if (globalThis.__PYODIDE_RUNTIME_ENV__) delete globalThis.__PYODIDE_RUNTIME_ENV__;
 
-                // Set fake Node.js globals to deceive environment detection
-                globalThis.process = { versions: { node: "18.0.0" }, browser: false };
-                globalThis.module = { exports: {} };
-                globalThis.require = function() {};
-                globalThis.__dirname = "/fake/path";
+            // Set fake Node.js globals to deceive environment detection
+            globalThis.process = { versions: { node: "18.0.0" }, browser: false };
+            globalThis.module = { exports: {} };
+            globalThis.require = function() {};
+            globalThis.__dirname = "/fake/path";
 
-                let testResults = {
-                    failedWithoutRuntime: false,
-                    errorMessage: "",
-                    succeededWithRuntime: false,
-                    pythonWorks: false
-                };
+            globalThis.testResults = {
+                failedWithoutRuntime: false,
+                errorMessage: "",
+                succeededWithRuntime: false,
+                pythonWorks: false
+            };
+        """)
 
-                // Step 1: Call loadPyodide without setting runtime -> should fail
-                try {
-                    await loadPyodide();
-                } catch (err) {
-                    testResults.failedWithoutRuntime = true;
-                    testResults.errorMessage = err.message || String(err);
-                }
-
-                // Step 2: Call loadPyodide with setting runtime -> should pass
-                try {
-                    // Clear cached environment detection before retry
-                    if (globalThis.__PYODIDE_RUNTIME_ENV__) {
-                        delete globalThis.__PYODIDE_RUNTIME_ENV__;
-                    }
-
-                    let pyodideInstance = await loadPyodide({ runtime: "browser" });
-                    testResults.succeededWithRuntime = true;
-
-                    // Verify Python execution works
-                    let result = pyodideInstance.runPython("2 + 3");
-                    testResults.pythonWorks = (result === 5);
-
-                } catch (err) {
-                    console.error("Failed to load with runtime override:", err);
-                    testResults.errorMessage = err.message || String(err);
-                }
-
-                return testResults;
+        # Step 1: Try to load without runtime override - should fail
+        selenium.run_js("""
+            try {
+                loadPyodide().then(() => {
+                    // Should not reach here
+                    globalThis.testResults.failedWithoutRuntime = false;
+                }).catch((err) => {
+                    globalThis.testResults.failedWithoutRuntime = true;
+                    globalThis.testResults.errorMessage = err.message || String(err);
+                });
+            } catch (err) {
+                globalThis.testResults.failedWithoutRuntime = true;
+                globalThis.testResults.errorMessage = err.message || String(err);
             }
         """)
+
+        # Wait a bit for the async operation
+        import time
+
+        time.sleep(0.1)
+
+        # Step 2: Try to load with runtime override - should succeed
+        selenium.run_js("""
+            // Clear cached environment detection before retry
+            if (globalThis.__PYODIDE_RUNTIME_ENV__) {
+                delete globalThis.__PYODIDE_RUNTIME_ENV__;
+            }
+
+            loadPyodide({ runtime: "browser" }).then((pyodideInstance) => {
+                globalThis.testResults.succeededWithRuntime = true;
+
+                // Verify Python execution works
+                try {
+                    let result = pyodideInstance.runPython("2 + 3");
+                    globalThis.testResults.pythonWorks = (result === 5);
+                } catch (err) {
+                    console.error("Python execution failed:", err);
+                    globalThis.testResults.errorMessage = err.message || String(err);
+                }
+            }).catch((err) => {
+                console.error("Failed to load with runtime override:", err);
+                globalThis.testResults.errorMessage = err.message || String(err);
+            });
+        """)
+
+        # Wait for the async operation to complete
+        time.sleep(0.5)
+
+        # Get the results
+        result = selenium.run_js("return globalThis.testResults")
 
         # In browser environment, the original test logic applies
         # Verify Step 1: loadPyodide should fail without runtime override
@@ -2191,8 +2212,7 @@ async def test_runtime_environment_override_integration(selenium_standalone):
 
 
 @pytest.mark.xfail_browsers(node="Browser only test")
-@pytest.mark.asyncio
-async def test_runtime_environment_override_browser_integration(selenium_standalone):
+def test_runtime_environment_override_browser_integration(selenium_standalone):
     """
     Integration test for runtime environment detection override in browser environment.
 
@@ -2209,56 +2229,78 @@ async def test_runtime_environment_override_browser_integration(selenium_standal
     )
     assert is_browser_env, "This test should only run in browser environment"
 
-    result = await selenium.run_async("""
-        async () => {
-            // Clean up any existing instances and cached environment
-            if (globalThis.pyodide) delete globalThis.pyodide;
-            if (globalThis.pyodideInstance) delete globalThis.pyodideInstance;
-            if (globalThis.__PYODIDE_RUNTIME_ENV__) delete globalThis.__PYODIDE_RUNTIME_ENV__;
+    # Use a different approach: run JavaScript without async wrapper
+    # First, set up fake environment
+    selenium.run_js("""
+        // Clean up any existing instances and cached environment
+        if (globalThis.pyodide) delete globalThis.pyodide;
+        if (globalThis.pyodideInstance) delete globalThis.pyodideInstance;
+        if (globalThis.__PYODIDE_RUNTIME_ENV__) delete globalThis.__PYODIDE_RUNTIME_ENV__;
 
-            // Set fake Node.js globals to deceive environment detection
-            globalThis.process = { versions: { node: "18.0.0" }, browser: false };
-            globalThis.module = { exports: {} };
-            globalThis.require = function() {};
-            globalThis.__dirname = "/fake/path";
+        // Set fake Node.js globals to deceive environment detection
+        globalThis.process = { versions: { node: "18.0.0" }, browser: false };
+        globalThis.module = { exports: {} };
+        globalThis.require = function() {};
+        globalThis.__dirname = "/fake/path";
 
-            let testResults = {
-                failedWithoutRuntime: false,
-                errorMessage: "",
-                succeededWithRuntime: false,
-                pythonWorks: false
-            };
+        globalThis.testResults = {
+            failedWithoutRuntime: false,
+            errorMessage: "",
+            succeededWithRuntime: false,
+            pythonWorks: false
+        };
+    """)
 
-            // Step 1: Call loadPyodide without setting runtime -> should fail
-            try {
-                await loadPyodide();
-            } catch (err) {
-                testResults.failedWithoutRuntime = true;
-                testResults.errorMessage = err.message || String(err);
-            }
-
-            // Step 2: Call loadPyodide with setting runtime -> should pass
-            try {
-                // Clear cached environment detection before retry
-                if (globalThis.__PYODIDE_RUNTIME_ENV__) {
-                    delete globalThis.__PYODIDE_RUNTIME_ENV__;
-                }
-
-                let pyodideInstance = await loadPyodide({ runtime: "browser" });
-                testResults.succeededWithRuntime = true;
-
-                // Verify Python execution works
-                let result = pyodideInstance.runPython("2 + 3");
-                testResults.pythonWorks = (result === 5);
-
-            } catch (err) {
-                console.error("Failed to load with runtime override:", err);
-                testResults.errorMessage = err.message || String(err);
-            }
-
-            return testResults;
+    # Step 1: Try to load without runtime override - should fail
+    selenium.run_js("""
+        try {
+            loadPyodide().then(() => {
+                // Should not reach here
+                globalThis.testResults.failedWithoutRuntime = false;
+            }).catch((err) => {
+                globalThis.testResults.failedWithoutRuntime = true;
+                globalThis.testResults.errorMessage = err.message || String(err);
+            });
+        } catch (err) {
+            globalThis.testResults.failedWithoutRuntime = true;
+            globalThis.testResults.errorMessage = err.message || String(err);
         }
     """)
+
+    # Wait a bit for the async operation
+    import time
+
+    time.sleep(0.1)
+
+    # Step 2: Try to load with runtime override - should succeed
+    selenium.run_js("""
+        // Clear cached environment detection before retry
+        if (globalThis.__PYODIDE_RUNTIME_ENV__) {
+            delete globalThis.__PYODIDE_RUNTIME_ENV__;
+        }
+
+        loadPyodide({ runtime: "browser" }).then((pyodideInstance) => {
+            globalThis.testResults.succeededWithRuntime = true;
+
+            // Verify Python execution works
+            try {
+                let result = pyodideInstance.runPython("2 + 3");
+                globalThis.testResults.pythonWorks = (result === 5);
+            } catch (err) {
+                console.error("Python execution failed:", err);
+                globalThis.testResults.errorMessage = err.message || String(err);
+            }
+        }).catch((err) => {
+            console.error("Failed to load with runtime override:", err);
+            globalThis.testResults.errorMessage = err.message || String(err);
+        });
+    """)
+
+    # Wait for the async operation to complete
+    time.sleep(0.5)
+
+    # Get the results
+    result = selenium.run_js("return globalThis.testResults")
 
     # Debug: Print the actual result to understand what happened
     print(f"DEBUG: Browser test result = {result}")
