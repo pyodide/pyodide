@@ -1,19 +1,19 @@
-import * as chai from "chai";
-import sinon from "sinon";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { makeWarnOnce } from "../../../common/warning";
 
 describe("makeWarnOnce", () => {
   it("should return a function", () => {
     const warn = makeWarnOnce("warning");
-    chai.assert.isFunction(warn);
+    assert.ok(warn instanceof Function);
   });
 
-  it("should warn once", () => {
+  it("should warn once", (t) => {
     const warn = makeWarnOnce("warning");
-    const spy = sinon.spy(console, "warn");
+    const console_warn = t.mock.method(console, "warn");
     warn();
     warn();
 
-    chai.assert.isTrue(spy.calledOnce);
+    assert.ok(console_warn.mock.callCount() === 1);
   });
 });
