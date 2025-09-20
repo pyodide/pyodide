@@ -228,6 +228,10 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         If you need to compute the length in O(1) time, use a real
         :js:class:`Map` instead.
 
+        .. deprecated:: 0.29.0
+
+            Use :py:meth:`JsProxy.as_py_json` instead.
+
         Parameters
         ----------
         hereditary:
