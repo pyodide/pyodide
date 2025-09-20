@@ -18,8 +18,8 @@ def get_micropip_wheel() -> Path:
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
-def test_load_from_url(selenium_standalone, httpserver):
-    selenium = selenium_standalone
+def test_load_from_url(selenium_standalone_refresh, httpserver):
+    selenium = selenium_standalone_refresh
 
     micropip_path = get_micropip_wheel()
     micropip_data = micropip_path.read_bytes()
@@ -42,10 +42,10 @@ def test_load_from_url(selenium_standalone, httpserver):
     )
 
 
-def test_load_relative_url(request, selenium_standalone, playwright_browsers, tmp_path):
+def test_load_relative_url(request, selenium_standalone_refresh, playwright_browsers, tmp_path):
     test_html = (PYODIDE_ROOT / "src/templates/test.html").read_text()
     test_html = test_html.replace(
-        "./pyodide.js", f"{selenium_standalone.base_url}/pyodide.js"
+        "./pyodide.js", f"{selenium_standalone_refresh.base_url}/pyodide.js"
     )
     (tmp_path / "test_temp.html").write_text(test_html)
     micropip_wheel = get_micropip_wheel()
@@ -55,14 +55,14 @@ def test_load_relative_url(request, selenium_standalone, playwright_browsers, tm
         spawn_web_server(tmp_path) as web_server,
         selenium_common(
             request,
-            selenium_standalone.browser,
+            selenium_standalone_refresh.browser,
             web_server,
             load_pyodide=False,
             browsers=playwright_browsers,
             script_type="classic",
         ) as selenium,
         set_webdriver_script_timeout(
-            selenium_standalone, script_timeout=parse_driver_timeout(request.node)
+            selenium_standalone_refresh, script_timeout=parse_driver_timeout(request.node)
         ),
     ):
         if selenium.browser != "node":
@@ -80,8 +80,8 @@ def test_load_relative_url(request, selenium_standalone, playwright_browsers, tm
         )
 
 
-def test_list_loaded_urls(selenium_standalone):
-    selenium = selenium_standalone
+def test_list_loaded_urls(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
 
     selenium.load_package("micropip")
     assert "micropip" in selenium.run_js("return Object.keys(pyodide.loadedPackages)")
@@ -91,11 +91,11 @@ def test_list_loaded_urls(selenium_standalone):
     )
 
 
-def test_uri_mismatch(selenium_standalone):
-    selenium_standalone.load_package("micropip")
-    selenium_standalone.load_package("http://some_url/micropip-3.0.6-py3-none-any.whl")
+def test_uri_mismatch(selenium_standalone_refresh):
+    selenium_standalone_refresh.load_package("micropip")
+    selenium_standalone_refresh.load_package("http://some_url/micropip-3.0.6-py3-none-any.whl")
     assert (
-        "URI mismatch, attempting to load package micropip" in selenium_standalone.logs
+        "URI mismatch, attempting to load package micropip" in selenium_standalone_refresh.logs
     )
 
 
@@ -112,8 +112,8 @@ def test_invalid_package_name(selenium):
         selenium.load_package("tcp://some_url")
 
 
-def test_load_package_return(selenium_standalone):
-    selenium = selenium_standalone
+def test_load_package_return(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     package = selenium.run_js("return await pyodide.loadPackage('micropip')")
 
     assert package[0]["name"] == "micropip"
@@ -122,9 +122,9 @@ def test_load_package_return(selenium_standalone):
 
 @pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
 def test_load_package_return_from_url(
-    selenium_standalone,
+    selenium_standalone_refresh,
 ):
-    selenium = selenium_standalone
+    selenium = selenium_standalone_refresh
     micropip_wheel_name = get_micropip_wheel().name
     package = selenium.run_js(
         f"return await pyodide.loadPackage('{selenium.base_url}/{micropip_wheel_name}')"
@@ -139,8 +139,8 @@ def test_load_package_return_from_url(
 @pytest.mark.parametrize(
     "packages", [["micropip", "pytest"], ["pluggy", "pytest"]], ids="-".join
 )
-def test_load_packages_multiple(selenium_standalone, packages):
-    selenium = selenium_standalone
+def test_load_packages_multiple(selenium_standalone_refresh, packages):
+    selenium = selenium_standalone_refresh
     selenium.load_package(packages)
     selenium.run(f"import {packages[0]}")
     selenium.run(f"import {packages[1]}")
@@ -164,8 +164,8 @@ def test_load_packages_multiple(selenium_standalone, packages):
 @pytest.mark.parametrize(
     "packages", [["micropip", "pytest"], ["pluggy", "pytest"]], ids="-".join
 )
-def test_load_packages_sequential(selenium_standalone, packages):
-    selenium = selenium_standalone
+def test_load_packages_sequential(selenium_standalone_refresh, packages):
+    selenium = selenium_standalone_refresh
     promises = ",".join(f'pyodide.loadPackage("{x}")' for x in packages)
     selenium.run_js(f"return await Promise.all([{promises}])")
     selenium.run(f"import {packages[0]}")
@@ -187,8 +187,8 @@ def test_load_packages_sequential(selenium_standalone, packages):
 
 
 @pytest.mark.skip_refcount_check
-def test_load_handle_failure(selenium_standalone):
-    selenium = selenium_standalone
+def test_load_handle_failure(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     selenium.load_package("micropip")
     selenium.run("import micropip")
     with pytest.raises(
@@ -199,9 +199,9 @@ def test_load_handle_failure(selenium_standalone):
 
 
 @pytest.mark.skip_refcount_check
-def test_load_failure_retry(selenium_standalone):
+def test_load_failure_retry(selenium_standalone_refresh):
     """Check that a package can be loaded after failing to load previously"""
-    selenium = selenium_standalone
+    selenium = selenium_standalone_refresh
     selenium.load_package("http://invalidurl/micropip-2021.3-py3-none-any.whl")
     assert selenium.logs.count("Loading micropip") == 1
     assert (
@@ -213,14 +213,14 @@ def test_load_failure_retry(selenium_standalone):
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == ["micropip"]
 
 
-def test_load_twice(selenium_standalone):
-    selenium_standalone.load_package("micropip")
-    selenium_standalone.load_package("micropip")
-    assert "No new packages to load" in selenium_standalone.logs
+def test_load_twice(selenium_standalone_refresh):
+    selenium_standalone_refresh.load_package("micropip")
+    selenium_standalone_refresh.load_package("micropip")
+    assert "No new packages to load" in selenium_standalone_refresh.logs
 
 
-def test_load_twice_different_source(selenium_standalone):
-    selenium_standalone.load_package(
+def test_load_twice_different_source(selenium_standalone_refresh):
+    selenium_standalone_refresh.load_package(
         [
             "https://foo/micropip-2021.3-py3-none-any.whl",
             "https://bar/micropip-2021.3-py3-none-any.whl",
@@ -228,22 +228,22 @@ def test_load_twice_different_source(selenium_standalone):
     )
     assert (
         "Loading same package micropip from https://bar/micropip-2021.3-py3-none-any.whl and https://foo/micropip-2021.3-py3-none-any.whl"
-        in selenium_standalone.logs
+        in selenium_standalone_refresh.logs
     )
 
 
-def test_load_twice_same_source(selenium_standalone):
-    selenium_standalone.load_package(
+def test_load_twice_same_source(selenium_standalone_refresh):
+    selenium_standalone_refresh.load_package(
         [
             "https://foo/micropip-2021.3-py3-none-any.whl",
             "https://foo/micropip-2021.3-py3-none-any.whl",
         ]
     )
-    assert "Loading same package micropip" not in selenium_standalone.logs
+    assert "Loading same package micropip" not in selenium_standalone_refresh.logs
 
 
-def test_js_load_package_from_python(selenium_standalone):
-    selenium = selenium_standalone
+def test_js_load_package_from_python(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     to_load = ["micropip"]
     selenium.run_js(
         f"""
@@ -262,8 +262,8 @@ def test_js_load_package_from_python(selenium_standalone):
     "pkg",
     ["test-dummy-unNormalized", "test-dummy-unnormalized", "test-dummy_unNormalized"],
 )
-def test_load_package_mixed_case(selenium_standalone, pkg):
-    selenium_standalone.run_js(
+def test_load_package_mixed_case(selenium_standalone_refresh, pkg):
+    selenium_standalone_refresh.run_js(
         f"""
         await pyodide.loadPackage("{pkg}");
         pyodide.runPython(`
@@ -278,8 +278,8 @@ def test_load_package_mixed_case(selenium_standalone, pkg):
     "pkg",
     ["test-dummy-unNormalized", "test-dummy-unnormalized", "test-dummy_unNormalized"],
 )
-def test_install_mixed_case_micropip(selenium_standalone, pkg):
-    selenium_standalone.run_js(
+def test_install_mixed_case_micropip(selenium_standalone_refresh, pkg):
+    selenium_standalone_refresh.run_js(
         f"""
         await pyodide.loadPackage("micropip");
         await pyodide.runPythonAsync(`
@@ -292,8 +292,8 @@ def test_install_mixed_case_micropip(selenium_standalone, pkg):
 
 
 @pytest.mark.requires_dynamic_linking
-def test_unvendoring(selenium_standalone):
-    selenium = selenium_standalone
+def test_unvendoring(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     selenium.run_js(
         """
         await pyodide.loadPackage("test-dummy-unvendoring");
@@ -923,8 +923,8 @@ def test_lockfilecontents_absolute_file_name(selenium_standalone_noload, tmp_pat
     ],
 )
 @pytest.mark.requires_dynamic_linking  # only required for fpcast-test
-def test_normalized_name(selenium_standalone, load_name, normalized_name, real_name):
-    selenium = selenium_standalone
+def test_normalized_name(selenium_standalone_refresh, load_name, normalized_name, real_name):
+    selenium = selenium_standalone_refresh
 
     selenium.run_js(
         f"""
@@ -948,8 +948,8 @@ def test_normalized_name(selenium_standalone, load_name, normalized_name, real_n
     )
 
 
-def test_data_files_support(selenium_standalone, httpserver):
-    selenium = selenium_standalone
+def test_data_files_support(selenium_standalone_refresh, httpserver):
+    selenium = selenium_standalone_refresh
 
     test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
     test_file_path = Path(__file__).parent / "wheels" / test_file_name
@@ -984,8 +984,8 @@ def test_data_files_support(selenium_standalone, httpserver):
     _run(selenium)
 
 
-def test_install_api(selenium_standalone, httpserver):
-    selenium = selenium_standalone
+def test_install_api(selenium_standalone_refresh, httpserver):
+    selenium = selenium_standalone_refresh
 
     test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
     test_file_path = Path(__file__).parent / "wheels" / test_file_name
@@ -1030,8 +1030,8 @@ def test_install_api(selenium_standalone, httpserver):
     _run(selenium, install_dir)
 
 
-def test_load_package_stream(selenium_standalone, httpserver):
-    selenium = selenium_standalone
+def test_load_package_stream(selenium_standalone_refresh, httpserver):
+    selenium = selenium_standalone_refresh
 
     test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
     test_file_path = Path(__file__).parent / "wheels" / test_file_name
@@ -1061,9 +1061,9 @@ def test_load_package_stream(selenium_standalone, httpserver):
 
 
 @pytest.mark.skip_refcount_check
-def test_load_package_stream_and_callback(selenium_standalone, httpserver):
+def test_load_package_stream_and_callback(selenium_standalone_refresh, httpserver):
     # messageCallback and errorCallback should still take precedence over stdout stream
-    selenium = selenium_standalone
+    selenium = selenium_standalone_refresh
 
     micropip_path = get_micropip_wheel()
 
@@ -1093,8 +1093,8 @@ def test_load_package_stream_and_callback(selenium_standalone, httpserver):
 
 
 @pytest.mark.skip_refcount_check
-def test_micropip_list_pyodide_package(selenium_standalone):
-    selenium = selenium_standalone
+def test_micropip_list_pyodide_package(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     selenium.load_package("micropip")
     selenium.run_js(
         """
@@ -1119,8 +1119,8 @@ def test_micropip_list_pyodide_package(selenium_standalone):
 
 
 @pytest.mark.skip_refcount_check
-def test_micropip_list_loaded_from_js(selenium_standalone):
-    selenium = selenium_standalone
+def test_micropip_list_loaded_from_js(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     selenium.load_package("micropip")
     selenium.run_js(
         """
@@ -1136,8 +1136,8 @@ def test_micropip_list_loaded_from_js(selenium_standalone):
 
 
 @pytest.mark.skip_refcount_check
-def test_micropip_install_non_normalized_package(selenium_standalone):
-    selenium = selenium_standalone
+def test_micropip_install_non_normalized_package(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     selenium.load_package("micropip")
     selenium.run_async(
         """
