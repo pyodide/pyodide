@@ -1,9 +1,9 @@
-import { Module } from "./types";
+import { PyodideModule } from "./types";
 
 /**
  * @private
  */
-async function syncfs(m: Module, direction: boolean): Promise<void> {
+async function syncfs(m: PyodideModule, direction: boolean): Promise<void> {
   return new Promise((resolve, reject) => {
     m.FS.syncfs(direction, (err: any) => {
       if (err) {
@@ -18,21 +18,21 @@ async function syncfs(m: Module, direction: boolean): Promise<void> {
 /**
  * @private
  */
-export async function syncLocalToRemote(m: Module): Promise<void> {
+export async function syncLocalToRemote(m: PyodideModule): Promise<void> {
   return await syncfs(m, false);
 }
 
 /**
  * @private
  */
-export async function syncRemoteToLocal(m: Module): Promise<void> {
+export async function syncRemoteToLocal(m: PyodideModule): Promise<void> {
   return await syncfs(m, true);
 }
 
 /**
  * @private
  */
-export function initializeNativeFS(module: Module) {
+export function initializeNativeFS(module: PyodideModule) {
   const FS = module.FS;
   const MEMFS = module.FS.filesystems.MEMFS;
   const PATH = module.PATH;

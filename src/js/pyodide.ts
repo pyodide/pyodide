@@ -16,7 +16,7 @@ import { version as version_ } from "./version";
 import type { PyodideAPI } from "./api.js";
 import type {
   TypedArray,
-  Module,
+  PyodideModule,
   PackageData,
   FSType,
   Lockfile,
@@ -40,7 +40,7 @@ export const version: string = version_;
 
 declare function _createPyodideModule(
   settings: EmscriptenSettings,
-): Promise<Module>;
+): Promise<PyodideModule>;
 
 // BUILD_ID is generated from hashing together pyodide.asm.js and
 // pyodide.asm.wasm in esbuild.config.outer.mjs
