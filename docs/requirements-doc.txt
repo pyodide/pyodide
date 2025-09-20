@@ -21,5 +21,5 @@ sphinx-autodoc-typehints>=1.21.7
 sphinx-click @ git+https://github.com/hoodmane/sphinx-click@271ebdb3e5855f2901f5dd4390f26381a353224e
 sphinx-design>=0.3.0
 sphinx-issues
-sphinx-js @ git+https://github.com/pyodide/sphinx-js-fork@781dc61870a802222051bcc8f6b2a592cd5eec7b
+sphinx-js>=5.0.0
 sphinx_book_theme
