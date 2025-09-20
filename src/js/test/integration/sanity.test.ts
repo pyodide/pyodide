@@ -1,11 +1,11 @@
-import chai from "chai";
+import assert from "assert/strict";
+import { it } from "node:test";
 
 it("should pass a basic truthy sanity test (node)", async () => {
-  await chai.assert.isFulfilled(Promise.resolve());
+  assert.doesNotReject(Promise.resolve());
 });
 
-it("should pass a basic sanity test in browser (puppeteer)", async () => {
-  const title = await chai.assert.isFulfilled(page.title());
-  chai.assert.isString(title);
-  chai.assert.equal(title, "pyodide");
+it("should pass a basic sanity test in browser (playwright)", async () => {
+  const title = await page.title();
+  assert.equal(title, "pyodide");
 });

@@ -1,4 +1,5 @@
-const chai = require("chai");
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 
 // for a persistence-related browser test see /src/tests/test_filesystem.py
 
@@ -10,8 +11,8 @@ describe("FS", () => {
       );
       return result;
     };
-    const result = await chai.assert.isFulfilled(page.evaluate(factory));
-    chai.assert.isFalse(result);
+    const result = await page.evaluate(factory);
+    assert.ok(!result);
   });
   it("has directory", async () => {
     const factory = async () => {
@@ -21,28 +22,28 @@ describe("FS", () => {
       );
       return result;
     };
-    const result = await chai.assert.isFulfilled(page.evaluate(factory));
-    chai.assert.isTrue(result);
+    const result = await page.evaluate(factory);
+    assert.ok(result);
   });
 });
 
 describe("PATH", () => {
   it("exists", async () => {
-    chai.assert.exists(await page.evaluate(() => pyodide.PATH));
+    assert.ok(await page.evaluate(() => pyodide.PATH));
   });
   it("has expected keys", async () => {
-    chai.assert.exists(await page.evaluate(() => pyodide.PATH.dirname));
-    chai.assert.exists(await page.evaluate(() => pyodide.PATH.normalize));
+    assert.ok(await page.evaluate(() => pyodide.PATH.dirname));
+    assert.ok(await page.evaluate(() => pyodide.PATH.normalize));
   });
 });
 
 describe("ERRNO_CODES", () => {
   it("exists", async () => {
-    chai.assert.exists(await page.evaluate(() => pyodide.ERRNO_CODES));
+    assert.ok(await page.evaluate(() => pyodide.ERRNO_CODES));
   });
   it("has expected keys", async () => {
-    chai.assert.exists(await page.evaluate(() => pyodide.ERRNO_CODES.ENOENT));
-    chai.assert.exists(await page.evaluate(() => pyodide.ERRNO_CODES.EPERM));
-    chai.assert.exists(await page.evaluate(() => pyodide.ERRNO_CODES.EEXIST));
+    assert.ok(await page.evaluate(() => pyodide.ERRNO_CODES.ENOENT));
+    assert.ok(await page.evaluate(() => pyodide.ERRNO_CODES.EPERM));
+    assert.ok(await page.evaluate(() => pyodide.ERRNO_CODES.EEXIST));
   });
 });
