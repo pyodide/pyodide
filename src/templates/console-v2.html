@@ -290,6 +290,15 @@ of the stable console.
               prompt = ps1;
               historyIndex = null;
               break;
+            case "\u0016": // Ctrl-V
+              // paste from clipboard
+              const clipboard = await navigator.clipboard.readText();
+              const newBuf =
+                buffer.slice(0, cursorIndex) +
+                clipboard +
+                buffer.slice(cursorIndex);
+              setBuffer(newBuf, newBuf.length);
+              break;
             case "\u007F": // Backspace
               if (cursorIndex > 0) {
                 const before = buffer.slice(0, cursorIndex - 1);
