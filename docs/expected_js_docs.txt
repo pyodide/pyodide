@@ -72,10 +72,10 @@ js:attribute
   pyodide.pyodide_py
   pyodide.version
 js:function
-  exports.PyodideConfig.fsInit
-  exports.PyodideConfig.stderr
-  exports.PyodideConfig.stdin
-  exports.PyodideConfig.stdout
+  exports.PyodideConfig.fsInit?
+  exports.PyodideConfig.stderr?
+  exports.PyodideConfig.stdin?
+  exports.PyodideConfig.stdout?
   exports.loadPyodide
   pyodide.canvas.getCanvas2D
   pyodide.canvas.getCanvas3D
