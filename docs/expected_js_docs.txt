@@ -153,7 +153,6 @@ js:function
   pyodide.registerJsModule
   pyodide.runPython
   pyodide.runPythonAsync
-  pyodide.scheduleCallback
   pyodide.setDebug
   pyodide.setInterruptBuffer
   pyodide.setStderr
