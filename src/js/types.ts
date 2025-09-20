@@ -1,7 +1,7 @@
 export {};
 import type { PyProxy, PyAwaitable } from "generated/pyproxy";
 import { type PyodideAPI } from "./api";
-import { type ConfigType } from "./pyodide";
+import { type PyodideConfig } from "./pyodide";
 import { type InFuncType } from "./streams";
 import { SnapshotConfig } from "./snapshot";
 import { ResolvablePromise } from "./common/resolveable";
@@ -468,7 +468,7 @@ export interface API {
   debug_ffi: boolean;
   maybe_fatal_error: (e: any) => void;
   public_api: PyodideAPI;
-  config: ConfigType;
+  config: PyodideConfig;
   packageIndexReady: Promise<void>;
   bootstrapFinalizedPromise: Promise<void>;
   typedArrayAsUint8Array: (buffer: TypedArray | ArrayBuffer) => Uint8Array;
@@ -573,7 +573,7 @@ export type PackageManagerAPI = Pick<
   | "defaultLdLibraryPath"
   | "version"
 > & {
-  config: Pick<ConfigType, "packageCacheDir" | "packageBaseUrl" | "cdnUrl">;
+  config: Pick<PyodideConfig, "packageCacheDir" | "packageBaseUrl" | "cdnUrl">;
 };
 /**
  * @hidden
