@@ -343,21 +343,9 @@ async def test_console_imports(selenium):
     assert await get_result("pytest.__name__") == "pytest"
 
 
-@pytest.fixture(scope="function")
-def isolated_selenium(selenium):
-    """
-    Isolated selenium instance for tests that might cause fatal errors.
-
-    This is necessary because some tests (test_console_html, test_console_v2_html)
-    might cause fatal errors, and we want to make sure that the next test starts
-    with a new selenium instance.
-    """
-    return selenium
-
-
 @pytest.mark.xfail_browsers(node="Not available in node")
-def test_console_html(isolated_selenium):
-    selenium = isolated_selenium
+def test_console_html(selenium_standalone):
+    selenium = selenium_standalone
     selenium.goto(f"{selenium.base_url}/console.html")
     selenium.javascript_setup()
     selenium.run_js(
@@ -516,8 +504,8 @@ def test_console_html(isolated_selenium):
 
 
 @pytest.mark.xfail_browsers(node="Not available in node")
-def test_console_v2_html(isolated_selenium):
-    selenium = isolated_selenium
+def test_console_v2_html(selenium_standalone):
+    selenium = selenium_standalone
     selenium.goto(f"{selenium.base_url}/console-v2.html")
     selenium.javascript_setup()
 
