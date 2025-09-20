@@ -746,14 +746,8 @@ def _sleep(t):
 
 
 def _initialize_event_loop():
-    from .ffi import IN_BROWSER
-
     if not IN_BROWSER:
         return
-
-    import asyncio
-
-    from .webloop import WebLoopPolicy
 
     asyncio.run = _run
     time.sleep = _sleep
