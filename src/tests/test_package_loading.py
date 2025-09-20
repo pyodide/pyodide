@@ -39,7 +39,9 @@ def test_load_from_url(selenium_standalone_refresh, httpserver):
     )
 
 
-def test_load_relative_url(request, selenium_standalone_refresh, playwright_browsers, tmp_path):
+def test_load_relative_url(
+    request, selenium_standalone_refresh, playwright_browsers, tmp_path
+):
     test_html = (PYODIDE_ROOT / "src/templates/test.html").read_text()
     test_html = test_html.replace(
         "./pyodide.js", f"{selenium_standalone_refresh.base_url}/pyodide.js"
@@ -90,9 +92,12 @@ def test_list_loaded_urls(selenium_standalone_refresh):
 
 def test_uri_mismatch(selenium_standalone_refresh):
     selenium_standalone_refresh.load_package("micropip")
-    selenium_standalone_refresh.load_package("http://some_url/micropip-3.0.6-py3-none-any.whl")
+    selenium_standalone_refresh.load_package(
+        "http://some_url/micropip-3.0.6-py3-none-any.whl"
+    )
     assert (
-        "URI mismatch, attempting to load package micropip" in selenium_standalone_refresh.logs
+        "URI mismatch, attempting to load package micropip"
+        in selenium_standalone_refresh.logs
     )
 
 
@@ -955,7 +960,9 @@ def test_lockfilecontents_absolute_file_name(
     ],
 )
 @pytest.mark.requires_dynamic_linking  # only required for fpcast-test
-def test_normalized_name(selenium_standalone_refresh, load_name, normalized_name, real_name):
+def test_normalized_name(
+    selenium_standalone_refresh, load_name, normalized_name, real_name
+):
     selenium = selenium_standalone_refresh
 
     selenium.run_js(
