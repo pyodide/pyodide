@@ -17,6 +17,7 @@
   "license": "MPL-2.0",
   "devDependencies": {
     "@types/assert": "^1.5.6",
+    "@types/emscripten": "^1.40.1",
     "@types/expect": "^24.3.0",
     "@types/mocha": "^9.1.0",
     "@types/node": "^20.8.4",
