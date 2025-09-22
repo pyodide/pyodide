@@ -23,7 +23,7 @@ from typing import Any, NotRequired, TypedDict, Unpack
 from urllib.parse import urlencode
 
 from ..ffi import IN_BROWSER
-from .exceptions import HttpStatusError, XHRError, XHRNetworkError
+from ._exceptions import HttpStatusError, XHRError, XHRNetworkError
 
 if IN_BROWSER:
     try:
@@ -212,6 +212,7 @@ def _xhr_request(
         raise XHRError(f"XMLHttpRequest failed: {e}") from e
 
     return XHRResponse(req)
+
 
 def get(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
     """Make a GET request.

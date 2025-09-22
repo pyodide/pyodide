@@ -10,7 +10,11 @@ from typing import IO, Any, ParamSpec, TypeVar
 
 from .._package_loader import unpack_buffer
 from ..ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
-from .exceptions import AbortError, BodyUsedError, HttpStatusError
+from ._exceptions import (
+    AbortError,
+    BodyUsedError,
+    HttpStatusError,
+)
 
 if IN_BROWSER:
     try:
@@ -41,7 +45,7 @@ def _construct_abort_reason(reason: Any) -> JsException | None:
     return JsException("AbortError", reason)
 
 
-def _abort_on_cancel(method: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+def _abort_on_cancel(method: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:  # noqa: UP047
     @wraps(method)
     async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         try:

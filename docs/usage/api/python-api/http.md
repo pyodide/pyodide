@@ -1,6 +1,6 @@
 # pyodide.http
 
-The `pyodide.http` module provides HTTP client functionality specifically designed for browser and WebAssembly environments where traditional Python HTTP libraries (like `urllib` or `requests`) face significant limitations.
+The `pyodide.http` module provides HTTP client functionality specifically designed for browser and WebAssembly environments where traditional Python HTTP libraries (like `urllib`) face significant limitations.
 
 ## Network Limitations in Pyodide
 
@@ -21,7 +21,6 @@ Based on the browser's native Fetch API, `pyfetch` provides:
 - **Asynchronous operations**: Non-blocking HTTP requests using async/await
 - **Full browser integration**: Leverages browser's networking stack and security features
 - **Modern API**: Clean, Promise-based interface similar to JavaScript fetch()
-- **Advanced features**: Support for streaming, request/response manipulation, and abort signals
 
 ```python
 # Asynchronous HTTP request

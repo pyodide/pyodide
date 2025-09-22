@@ -2,16 +2,16 @@ from io import StringIO
 
 # Keep open_url in __init__ for now, will be moved to pyxhr.py later
 from ..ffi import IN_BROWSER
-from .exceptions import (
+from . import _pyxhr as pyxhr
+from ._exceptions import (
     AbortError,
     BodyUsedError,
     HttpStatusError,
     XHRError,
     XHRNetworkError,
 )
-from .pyfetch import FetchResponse, pyfetch
-from . import pyxhr
-from .pyxhr import XHRRequestParams, XHRResponse
+from ._pyfetch import FetchResponse, pyfetch
+from ._pyxhr import XHRRequestParams, XHRResponse
 
 if IN_BROWSER:
     try:
