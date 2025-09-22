@@ -274,11 +274,7 @@ export interface LDSO {
   };
 }
 
-/**
- * TODO: consider renaming the type to ModuleType to avoid name collisions
- * between Module and ModuleType?
- * @hidden
- */
+/** @hidden */
 export interface EmscriptenModule {
   locateFile: (file: string) => string;
   exited?: { toThrow: any };
@@ -299,11 +295,15 @@ export interface EmscriptenModule {
   stringToUTF8OnStack: (str: string) => number;
   HEAP8: Uint8Array;
   HEAPU32: Uint32Array;
+  getExceptionMessage(e: number): [string, string];
   exitCode: number | undefined;
   ExitStatus: { new (exitCode: number): Error };
   _free: (ptr: number) => void;
   stackSave: () => number;
   stackRestore: (ptr: number) => void;
+  promiseMap: {
+    free(id: number): void;
+  };
   _emscripten_dlopen_promise(lib: number, flags: number): number;
   _dlerror(): number;
   UTF8ToString: (
@@ -313,14 +313,14 @@ export interface EmscriptenModule {
   ) => string;
 }
 
+/** @hidden */
 export interface PythonModule extends EmscriptenModule {
   _Py_EMSCRIPTEN_SIGNAL_HANDLING: number;
   Py_EmscriptenSignalBuffer: TypedArray;
   _Py_Version: number;
-  _print_stdout: (ptr: number) => void;
-  _print_stderr: (ptr: number) => void;
 }
 
+/** @hidden */
 export interface PyodideModule extends PythonModule {
   API: API;
   _compat_to_string_repr: number;
@@ -342,11 +342,10 @@ export interface PyodideModule extends PythonModule {
   __hiwire_immortal_add(a: any): void;
   _jslib_init(): number;
   _init_pyodide_proxy(): number;
-  getExceptionMessage(e: number): [string, string];
+
   handle_js_error(e: any): void;
-  promiseMap: {
-    free(id: number): void;
-  };
+  _print_stdout: (ptr: number) => void;
+  _print_stderr: (ptr: number) => void;
   getPromise(p: number): Promise<any>;
 }
 
