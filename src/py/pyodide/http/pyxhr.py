@@ -2,6 +2,19 @@
 
 Provides a requests-like synchronous HTTP API using XMLHttpRequest,
 designed specifically for browser environments where traditional HTTP libraries don't work.
+
+Examples
+--------
+>>> from pyodide.http import pyxhr  # doctest: +RUN_IN_PYODIDE
+>>> try:
+...     from js import XMLHttpRequest
+... except ImportError:
+...     import pytest; pytest.skip("XMLHttpRequest not available")
+>>> response = pyxhr.get("data:text/plain,Hello World")
+>>> response.status_code
+200
+>>> response.text
+'Hello World'
 """
 
 import base64
@@ -200,184 +213,127 @@ def _xhr_request(
 
     return XHRResponse(req)
 
+def get(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+    """Make a GET request.
 
-class pyxhr:
-    """Namespace class providing requests-like HTTP methods using XMLHttpRequest.
+    Parameters
+    ----------
+    url : str
+        URL to request
+    **kwargs
+        Additional arguments (headers, params, data, json, auth)
 
-    Examples
-    --------
-    >>> from pyodide.http import pyxhr  # doctest: +RUN_IN_PYODIDE
-    >>> try:
-    ...     from js import XMLHttpRequest
-    ... except ImportError:
-    ...     import pytest; pytest.skip("XMLHttpRequest not available")
-    >>> response = pyxhr.get("data:text/plain,Hello World")
-    >>> response.status_code
-    200
-    >>> response.text
-    'Hello World'
+    Returns
+    -------
+    XHRResponse
+        Response object
     """
+    return _xhr_request("GET", url, **kwargs)
 
-    @staticmethod
-    def _xhr_request(
-        method: str, url: str, **kwargs: Unpack[XHRRequestParams]
-    ) -> XHRResponse:
-        """Make a synchronous HTTP request using XMLHttpRequest.
 
-        This is the core function that wraps XMLHttpRequest to provide
-        a requests-like interface for synchronous HTTP operations.
+def post(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+    """Make a POST request.
 
-        Parameters
-        ----------
-        method : str
-            HTTP method (GET, POST, PUT, DELETE, etc.)
-        url : str
-            URL to request
-        headers : dict, optional
-            HTTP headers to send
-        params : dict, optional
-            URL parameters to append as query string
-        data : str or bytes, optional
-            Data to send in the request body
-        json : dict, optional
-            JSON data to send (automatically sets Content-Type)
-        auth : tuple, optional
-            Basic authentication (username, password)
+    Parameters
+    ----------
+    url : str
+        URL to request
+    **kwargs
+        Additional arguments (headers, params, data, json, auth)
 
-        Returns
-        -------
-        XHRResponse
-            Wrapped XMLHttpRequest response
+    Returns
+    -------
+    XHRResponse
+        Response object
+    """
+    return _xhr_request("POST", url, **kwargs)
 
-        Raises
-        ------
-        XHRNetworkError
-            For network-related errors
-        """
-        return _xhr_request(method, url, **kwargs)
 
-    @staticmethod
-    def get(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
-        """Make a GET request.
+def put(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+    """Make a PUT request.
 
-        Parameters
-        ----------
-        url : str
-            URL to request
-        **kwargs
-            Additional arguments (headers, params, data, json, auth)
+    Parameters
+    ----------
+    url : str
+        URL to request
+    **kwargs
+        Additional arguments (headers, params, data, json, auth)
 
-        Returns
-        -------
-        XHRResponse
-            Response object
-        """
-        return pyxhr._xhr_request("GET", url, **kwargs)
+    Returns
+    -------
+    XHRResponse
+        Response object
+    """
+    return _xhr_request("PUT", url, **kwargs)
 
-    @staticmethod
-    def post(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
-        """Make a POST request.
 
-        Parameters
-        ----------
-        url : str
-            URL to request
-        **kwargs
-            Additional arguments (headers, params, data, json, auth)
+def delete(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+    """Make a DELETE request.
 
-        Returns
-        -------
-        XHRResponse
-            Response object
-        """
-        return pyxhr._xhr_request("POST", url, **kwargs)
+    Parameters
+    ----------
+    url : str
+        URL to request
+    **kwargs
+        Additional arguments (headers, params, data, json, auth)
 
-    @staticmethod
-    def put(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
-        """Make a PUT request.
+    Returns
+    -------
+    XHRResponse
+        Response object
+    """
+    return _xhr_request("DELETE", url, **kwargs)
 
-        Parameters
-        ----------
-        url : str
-            URL to request
-        **kwargs
-            Additional arguments (headers, params, data, json, auth)
 
-        Returns
-        -------
-        XHRResponse
-            Response object
-        """
-        return pyxhr._xhr_request("PUT", url, **kwargs)
+def head(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+    """Make a HEAD request.
 
-    @staticmethod
-    def delete(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
-        """Make a DELETE request.
+    Parameters
+    ----------
+    url : str
+        URL to request
+    **kwargs
+        Additional arguments (headers, params, data, json, auth)
 
-        Parameters
-        ----------
-        url : str
-            URL to request
-        **kwargs
-            Additional arguments (headers, params, data, json, auth)
+    Returns
+    -------
+    XHRResponse
+        Response object
+    """
+    return _xhr_request("HEAD", url, **kwargs)
 
-        Returns
-        -------
-        XHRResponse
-            Response object
-        """
-        return pyxhr._xhr_request("DELETE", url, **kwargs)
 
-    @staticmethod
-    def head(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
-        """Make a HEAD request.
+def patch(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+    """Make a PATCH request.
 
-        Parameters
-        ----------
-        url : str
-            URL to request
-        **kwargs
-            Additional arguments (headers, params, data, json, auth)
+    Parameters
+    ----------
+    url : str
+        URL to request
+    **kwargs
+        Additional arguments (headers, params, data, json, auth)
 
-        Returns
-        -------
-        XHRResponse
-            Response object
-        """
-        return pyxhr._xhr_request("HEAD", url, **kwargs)
+    Returns
+    -------
+    XHRResponse
+        Response object
+    """
+    return _xhr_request("PATCH", url, **kwargs)
 
-    @staticmethod
-    def patch(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
-        """Make a PATCH request.
 
-        Parameters
-        ----------
-        url : str
-            URL to request
-        **kwargs
-            Additional arguments (headers, params, data, json, auth)
+def options(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+    """Make an OPTIONS request.
 
-        Returns
-        -------
-        XHRResponse
-            Response object
-        """
-        return pyxhr._xhr_request("PATCH", url, **kwargs)
+    Parameters
+    ----------
+    url : str
+        URL to request
+    **kwargs
+        Additional arguments (headers, params, data, json, auth)
 
-    @staticmethod
-    def options(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
-        """Make an OPTIONS request.
-
-        Parameters
-        ----------
-        url : str
-            URL to request
-        **kwargs
-            Additional arguments (headers, params, data, json, auth)
-
-        Returns
-        -------
-        XHRResponse
-            Response object
-        """
-        return pyxhr._xhr_request("OPTIONS", url, **kwargs)
+    Returns
+    -------
+    XHRResponse
+        Response object
+    """
+    return _xhr_request("OPTIONS", url, **kwargs)

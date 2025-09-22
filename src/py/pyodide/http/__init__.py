@@ -10,7 +10,8 @@ from .exceptions import (
     XHRNetworkError,
 )
 from .pyfetch import FetchResponse, pyfetch
-from .pyxhr import XHRRequestParams, XHRResponse, pyxhr
+from . import pyxhr
+from .pyxhr import XHRRequestParams, XHRResponse
 
 if IN_BROWSER:
     try:
@@ -39,7 +40,7 @@ def open_url(url: str) -> StringIO:
     The download of binary files is not supported. To download binary files use
     :func:`pyodide.http.pyfetch` which is asynchronous.
 
-    It will not work in Node unless you include a polyfill for XMLHttpRequest.
+    It will not work in Node unless you include a polyfill for :js:class:`XMLHttpRequest`
 
     Parameters
     ----------
