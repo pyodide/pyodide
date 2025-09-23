@@ -891,6 +891,22 @@ class WebLoop(asyncio.AbstractEventLoop):
             "sock_sendfile() is not available in browser environments due to missing OS file descriptors and zero-copy facilities."
         )
 
+    #
+    # Subprocess — not available in browser environments
+    #
+
+    async def subprocess_shell(self, protocol_factory, cmd, **kwargs):
+        """Create a subprocess from string args; return (transport, protocol)."""
+        raise NotImplementedError(
+            "subprocess_shell() is not available in browser environments due to absence of OS process APIs."
+        )
+
+    async def subprocess_exec(self, protocol_factory, *args, **kwargs):
+        """Run a subprocess from a shell command line; return (transport, protocol)."""
+        raise NotImplementedError(
+            "subprocess_exec() is not available in browser environments due to absence of OS process APIs."
+        )
+
 
 class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
     """
