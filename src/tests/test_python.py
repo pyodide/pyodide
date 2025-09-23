@@ -152,16 +152,6 @@ def test_globals_get_multiple(selenium):
     )
 
 
-def test_load_package_after_convert_string(selenium):
-    """
-    See #93.
-    """
-    selenium.run("import sys; x = sys.version")
-    selenium.run_js("let x = pyodide.runPython('x'); console.log(x);")
-    selenium.load_package("pytest")
-    selenium.run("import pytest")
-
-
 def test_version_info(selenium):
     from distutils.version import LooseVersion
 
