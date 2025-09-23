@@ -725,6 +725,32 @@ class WebLoop(asyncio.AbstractEventLoop):
                     )
                     traceback.print_exc()
 
+    #
+    # File descriptor and pipe I/O methods - Not available in browser environments
+    #
+
+    def add_reader(self, fd, callback, *args):  # type: ignore[override]
+        """Register a reader callback for a file descriptor (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "add_reader() is not available in browser environments due to lack of POSIX file descriptors."
+        )
+
+    def add_writer(self, fd, callback, *args):  # type: ignore[override]
+        """Register a writer callback for a file descriptor (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "add_writer() is not available in browser environments due to lack of POSIX file descriptors."
+        )
+
+    def remove_reader(self, fd):
+        raise NotImplementedError(
+            "remove_reader() is not available in browser environments due to lack of POSIX file descriptors."
+        )
+
+    def remove_writer(self, fd):
+        raise NotImplementedError(
+            "remove_writer() is not available in browser environments due to lack of POSIX file descriptors."
+        )
+
 
 class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
     """
