@@ -833,6 +833,64 @@ class WebLoop(asyncio.AbstractEventLoop):
             "start_tls() is not available in browser environments due to lack of low-level TLS controls."
         )
 
+    #
+    # Low-level socket operations — not available in browser environments
+    #
+
+    async def sock_recv(self, sock, nbytes):
+        """Receive up to nbytes; return bytes."""
+        raise NotImplementedError(
+            "sock_recv() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_recv_into(self, sock, buf):
+        """Receive into buf; return number of bytes written."""
+        raise NotImplementedError(
+            "sock_recv_into() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_recvfrom(self, sock, bufsize):
+        """Receive a datagram up to bufsize; return (data, address)."""
+        raise NotImplementedError(
+            "sock_recvfrom() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_recvfrom_into(self, sock, buf, nbytes=0):
+        """Receive a datagram into buf; return (nbytes, address)."""
+        raise NotImplementedError(
+            "sock_recvfrom_into() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_sendall(self, sock, data):
+        """Send all data to the socket; return None on success."""
+        raise NotImplementedError(
+            "sock_sendall() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_sendto(self, sock, data, address):
+        """Send a datagram to address; return number of bytes sent."""
+        raise NotImplementedError(
+            "sock_sendto() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_connect(self, sock, address):
+        """Connect the socket to a remote address."""
+        raise NotImplementedError(
+            "sock_connect() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_accept(self, sock):
+        """Accept a connection; return (conn, address)."""
+        raise NotImplementedError(
+            "sock_accept() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_sendfile(self, sock, file, offset=0, count=None, *, fallback=None):
+        """Send a file (uses os.sendfile if possible); return total bytes sent."""
+        raise NotImplementedError(
+            "sock_sendfile() is not available in browser environments due to missing OS file descriptors and zero-copy facilities."
+        )
+
 
 class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
     """
