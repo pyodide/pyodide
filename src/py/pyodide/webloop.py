@@ -751,6 +751,24 @@ class WebLoop(asyncio.AbstractEventLoop):
             "remove_writer() is not available in browser environments due to lack of POSIX file descriptors."
         )
 
+    async def connect_read_pipe(self, protocol_factory, pipe):
+        """Connect a read pipe to the event loop."""
+        raise NotImplementedError(
+            "connect_read_pipe() is not available in browser environments due to absence of OS pipes."
+        )
+
+    async def connect_write_pipe(self, protocol_factory, pipe):
+        """Connect a write pipe to the event loop."""
+        raise NotImplementedError(
+            "connect_write_pipe() is not available in browser environments due to absence of OS pipes."
+        )
+
+    async def sendfile(self, transport, file, offset=0, count=None, *, fallback=True):
+        """Send a file through a transport."""
+        raise NotImplementedError(
+            "sendfile() is not available in browser environments due to lack of file descriptor operations."
+        )
+
 
 class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
     """
