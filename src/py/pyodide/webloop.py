@@ -726,7 +726,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                     traceback.print_exc()
 
     #
-    # File descriptor and pipe I/O methods - Not available in browser environments
+    # File descriptor readiness methods - Not available in browser environments
     #
 
     def add_reader(self, fd, callback, *args):  # type: ignore[override]
@@ -742,14 +742,20 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
 
     def remove_reader(self, fd):
+        """Remove a reader callback for a file descriptor."""
         raise NotImplementedError(
             "remove_reader() is not available in browser environments due to lack of POSIX file descriptors."
         )
 
     def remove_writer(self, fd):
+        """Remove a writer callback for a file descriptor."""
         raise NotImplementedError(
             "remove_writer() is not available in browser environments due to lack of POSIX file descriptors."
         )
+
+    #
+    # Pipes & zero-copy file transfer methods — not available in browser environments
+    #
 
     async def connect_read_pipe(self, protocol_factory, pipe):
         """Connect a read pipe to the event loop."""
@@ -764,9 +770,67 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
 
     async def sendfile(self, transport, file, offset=0, count=None, *, fallback=True):
-        """Send a file through a transport."""
+        """Send a file over a transport. Return the total number of bytes sent."""
         raise NotImplementedError(
-            "sendfile() is not available in browser environments due to lack of file descriptor operations."
+            "sendfile() is not available in browser environments due to missing OS file descriptors and zero-copy facilities."
+        )
+
+    #
+    # High-level networking (TCP/UDP/DNS/TLS) methods — not available in browser environments
+    #
+
+    async def getaddrinfo(self, host, port, *, family=0, type=0, proto=0, flags=0):
+        """Asynchronous version of socket.getaddrinfo().""" ""
+        raise NotImplementedError(
+            "getaddrinfo() is not available in browser environments due to restricted raw network access."
+        )
+
+    async def getnameinfo(self, sockaddr, flags=0):
+        """Asynchronous version of socket.getnameinfo()."""
+        raise NotImplementedError(
+            "getnameinfo() is not available in browser environments due to restricted raw network access."
+        )
+
+    async def create_connection(self, protocol_factory, host=None, port=None, **kwargs):
+        """Open a streaming transport connection to a given address (host, port)."""
+        raise NotImplementedError(
+            "create_connection() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def create_server(self, protocol_factory, host=None, port=None, **kwargs):
+        """Create a TCP server (SOCK_STREAM); return a Server object."""
+        raise NotImplementedError(
+            "create_server() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def create_unix_connection(self, protocol_factory, path=None, **kwargs):
+        """Open a connection to a UNIX domain socket."""
+        raise NotImplementedError(
+            "create_unix_connection() is not available in browser environments due to absence of Unix domain sockets."
+        )
+
+    async def create_unix_server(self, protocol_factory, path=None, **kwargs):
+        """Create a UNIX domain socket server."""
+        raise NotImplementedError(
+            "create_unix_server() is not available in browser environments due to absence of Unix domain sockets."
+        )
+
+    async def connect_accepted_socket(self, protocol_factory, sock, **kwargs):
+        """Wrap an already accepted socket into a (transport, protocol) pair."""
+        raise NotImplementedError(
+            "connect_accepted_socket() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def create_datagram_endpoint(self, protocol_factory, **kwargs):  # type: ignore[override]
+        """Create a datagram (UDP) connection; return (transport, protocol)."""
+        raise NotImplementedError(
+            "create_datagram_endpoint() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def start_tls(self, transport, protocol, sslcontext, **kwargs):
+        """Upgrade an existing connection to TLS."""
+        raise NotImplementedError(
+            "start_tls() is not available in browser environments due to lack of low-level TLS controls."
         )
 
 
