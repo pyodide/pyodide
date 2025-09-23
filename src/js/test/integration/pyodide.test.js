@@ -1,25 +1,26 @@
-import assert from "assert/strict";
-import { it, describe, before } from "node:test";
+import { expect, test } from "./fixture";
 
-describe("Pyodide", () => {
-  it("runPython", async () => {
+test.describe("Pyodide", () => {
+  test("runPython", async ({ page }) => {
     const factory = async () => {
       return pyodide.runPython("1+1");
     };
     const result = await page.evaluate(factory);
-    assert.equal(result, 2);
+    expect(result).toStrictEqual(2);
   });
-  describe("micropip", () => {
-    before(async () => {
+  test.describe("micropip", () => {
+    test.beforeEach(async ({ page }) => {
       const factory = async () => {
         return pyodide.loadPackage(["micropip"]);
       };
       const installedPackages = await page.evaluate(factory);
-      assert.ok(installedPackages.length > 0);
-      assert.ok(installedPackages.some((pkg) => pkg.name === "micropip"));
+      expect(installedPackages.length).toBeGreaterThan(0);
+      expect(installedPackages.some((pkg) => pkg.name === "micropip")).toBe(
+        true,
+      );
     });
 
-    it("install", async () => {
+    test("install", async ({ page }) => {
       const factory = async () => {
         await pyodide.runPythonAsync(
           'import micropip; await micropip.install("snowballstemmer")',
@@ -30,7 +31,7 @@ describe("Pyodide", () => {
         `);
       };
       const result = await page.evaluate(factory);
-      assert.equal(result, 3);
+      expect(result).toStrictEqual(3);
     });
   });
 });

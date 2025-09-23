@@ -1,11 +1,11 @@
-import assert from "assert/strict";
-import { it } from "node:test";
+import { expect, test } from "./fixture";
 
-it("should pass a basic truthy sanity test (node)", async () => {
-  assert.doesNotReject(Promise.resolve());
+test("should pass a basic truthy sanity test (node)", async () => {
+  expect(await Promise.resolve("success")).toStrictEqual("success");
 });
 
-it("should pass a basic sanity test in browser (playwright)", async () => {
-  const title = await page.title();
-  assert.equal(title, "pyodide");
+test("should pass a basic sanity test in browser (playwright)", async ({
+  page,
+}) => {
+  await expect(page).toHaveTitle("pyodide");
 });
