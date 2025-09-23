@@ -742,13 +742,13 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
 
     def remove_reader(self, fd):
-        """Remove a reader callback for a file descriptor."""
+        """Remove a reader callback for a file descriptor (unsupported on WebLoop)."""
         raise NotImplementedError(
             "remove_reader() is not available in browser environments due to lack of POSIX file descriptors."
         )
 
     def remove_writer(self, fd):
-        """Remove a writer callback for a file descriptor."""
+        """Remove a writer callback for a file descriptor (unsupported on WebLoop)."""
         raise NotImplementedError(
             "remove_writer() is not available in browser environments due to lack of POSIX file descriptors."
         )
@@ -758,19 +758,19 @@ class WebLoop(asyncio.AbstractEventLoop):
     #
 
     async def connect_read_pipe(self, protocol_factory, pipe):
-        """Connect a read pipe to the event loop."""
+        """Connect a read pipe to the event loop (unsupported on WebLoop)."""
         raise NotImplementedError(
             "connect_read_pipe() is not available in browser environments due to absence of OS pipes."
         )
 
     async def connect_write_pipe(self, protocol_factory, pipe):
-        """Connect a write pipe to the event loop."""
+        """Connect a write pipe to the event loop (unsupported on WebLoop)."""
         raise NotImplementedError(
             "connect_write_pipe() is not available in browser environments due to absence of OS pipes."
         )
 
     async def sendfile(self, transport, file, offset=0, count=None, *, fallback=True):
-        """Send a file over a transport. Return the total number of bytes sent."""
+        """Send a file over a transport (unsupported on WebLoop)."""
         raise NotImplementedError(
             "sendfile() is not available in browser environments due to missing OS file descriptors and zero-copy facilities."
         )
@@ -780,55 +780,55 @@ class WebLoop(asyncio.AbstractEventLoop):
     #
 
     async def getaddrinfo(self, host, port, *, family=0, type=0, proto=0, flags=0):
-        """Asynchronous version of socket.getaddrinfo().""" ""
+        """Asynchronous version of socket.getaddrinfo() (unsupported on WebLoop)."""
         raise NotImplementedError(
             "getaddrinfo() is not available in browser environments due to restricted raw network access."
         )
 
     async def getnameinfo(self, sockaddr, flags=0):
-        """Asynchronous version of socket.getnameinfo()."""
+        """Asynchronous version of socket.getnameinfo() (unsupported on WebLoop)."""
         raise NotImplementedError(
             "getnameinfo() is not available in browser environments due to restricted raw network access."
         )
 
     async def create_connection(self, protocol_factory, host=None, port=None, **kwargs):
-        """Open a streaming transport connection to a given address (host, port)."""
+        """Open a streaming transport connection to a given address (unsupported on WebLoop)."""
         raise NotImplementedError(
             "create_connection() is not available in browser environments due to restricted raw socket access."
         )
 
     async def create_server(self, protocol_factory, host=None, port=None, **kwargs):
-        """Create a TCP server (SOCK_STREAM); return a Server object."""
+        """Create a TCP server (unsupported on WebLoop)."""
         raise NotImplementedError(
             "create_server() is not available in browser environments due to restricted raw socket access."
         )
 
     async def create_unix_connection(self, protocol_factory, path=None, **kwargs):
-        """Open a connection to a UNIX domain socket."""
+        """Open a connection to a UNIX domain socket (unsupported on WebLoop)."""
         raise NotImplementedError(
             "create_unix_connection() is not available in browser environments due to absence of Unix domain sockets."
         )
 
     async def create_unix_server(self, protocol_factory, path=None, **kwargs):
-        """Create a UNIX domain socket server."""
+        """Create a UNIX domain socket server (unsupported on WebLoop)."""
         raise NotImplementedError(
             "create_unix_server() is not available in browser environments due to absence of Unix domain sockets."
         )
 
     async def connect_accepted_socket(self, protocol_factory, sock, **kwargs):
-        """Wrap an already accepted socket into a (transport, protocol) pair."""
+        """Wrap an already accepted socket into a transport and protocol pair (unsupported on WebLoop)."""
         raise NotImplementedError(
             "connect_accepted_socket() is not available in browser environments due to restricted raw socket access."
         )
 
     async def create_datagram_endpoint(self, protocol_factory, **kwargs):  # type: ignore[override]
-        """Create a datagram (UDP) connection; return (transport, protocol)."""
+        """Create a datagram (UDP) connection (unsupported on WebLoop)."""
         raise NotImplementedError(
             "create_datagram_endpoint() is not available in browser environments due to restricted raw socket access."
         )
 
     async def start_tls(self, transport, protocol, sslcontext, **kwargs):
-        """Upgrade an existing connection to TLS."""
+        """Upgrade an existing connection to TLS (unsupported on WebLoop)."""
         raise NotImplementedError(
             "start_tls() is not available in browser environments due to lack of low-level TLS controls."
         )
@@ -838,55 +838,55 @@ class WebLoop(asyncio.AbstractEventLoop):
     #
 
     async def sock_recv(self, sock, nbytes):
-        """Receive up to nbytes; return bytes."""
+        """Receive up to nbytes (unsupported on WebLoop)."""
         raise NotImplementedError(
             "sock_recv() is not available in browser environments due to restricted raw socket access."
         )
 
     async def sock_recv_into(self, sock, buf):
-        """Receive into buf; return number of bytes written."""
+        """Receive into buf (unsupported on WebLoop)."""
         raise NotImplementedError(
             "sock_recv_into() is not available in browser environments due to restricted raw socket access."
         )
 
     async def sock_recvfrom(self, sock, bufsize):
-        """Receive a datagram up to bufsize; return (data, address)."""
+        """Receive a datagram up to bufsize (unsupported on WebLoop)."""
         raise NotImplementedError(
             "sock_recvfrom() is not available in browser environments due to restricted raw socket access."
         )
 
     async def sock_recvfrom_into(self, sock, buf, nbytes=0):
-        """Receive a datagram into buf; return (nbytes, address)."""
+        """Receive a datagram into buf (unsupported on WebLoop)."""
         raise NotImplementedError(
             "sock_recvfrom_into() is not available in browser environments due to restricted raw socket access."
         )
 
     async def sock_sendall(self, sock, data):
-        """Send all data to the socket; return None on success."""
+        """Send all data to the socket (unsupported on WebLoop)."""
         raise NotImplementedError(
             "sock_sendall() is not available in browser environments due to restricted raw socket access."
         )
 
     async def sock_sendto(self, sock, data, address):
-        """Send a datagram to address; return number of bytes sent."""
+        """Send a datagram to address (unsupported on WebLoop)."""
         raise NotImplementedError(
             "sock_sendto() is not available in browser environments due to restricted raw socket access."
         )
 
     async def sock_connect(self, sock, address):
-        """Connect the socket to a remote address."""
+        """Connect the socket to a remote address (unsupported on WebLoop)."""
         raise NotImplementedError(
             "sock_connect() is not available in browser environments due to restricted raw socket access."
         )
 
     async def sock_accept(self, sock):
-        """Accept a connection; return (conn, address)."""
+        """Accept a connection (unsupported on WebLoop)."""
         raise NotImplementedError(
             "sock_accept() is not available in browser environments due to restricted raw socket access."
         )
 
     async def sock_sendfile(self, sock, file, offset=0, count=None, *, fallback=None):
-        """Send a file (uses os.sendfile if possible); return total bytes sent."""
+        """Send a file (uses os.sendfile if possible) (unsupported on WebLoop)."""
         raise NotImplementedError(
             "sock_sendfile() is not available in browser environments due to missing OS file descriptors and zero-copy facilities."
         )
@@ -896,13 +896,13 @@ class WebLoop(asyncio.AbstractEventLoop):
     #
 
     async def subprocess_shell(self, protocol_factory, cmd, **kwargs):
-        """Create a subprocess from string args; return (transport, protocol)."""
+        """Create a subprocess from string args (unsupported on WebLoop)."""
         raise NotImplementedError(
             "subprocess_shell() is not available in browser environments due to absence of OS process APIs."
         )
 
     async def subprocess_exec(self, protocol_factory, *args, **kwargs):
-        """Run a subprocess from a shell command line; return (transport, protocol)."""
+        """Run a subprocess from a shell command line (unsupported on WebLoop)."""
         raise NotImplementedError(
             "subprocess_exec() is not available in browser environments due to absence of OS process APIs."
         )
@@ -912,13 +912,13 @@ class WebLoop(asyncio.AbstractEventLoop):
     #
 
     def add_signal_handler(self, sig, callback, *args):  # type: ignore[override]
-        """Set callback as the handler for the given signal (Unix)."""
+        """Set callback as the handler for the given signal (unsupported on WebLoop)."""
         raise NotImplementedError(
             "add_signal_handler() is not available in browser environments due to lack of POSIX signals."
         )
 
     def remove_signal_handler(self, sig):
-        """Remove the handler for the given signal; return True if removed (Unix)."""
+        """Remove the handler for the given signal (unsupported on WebLoop)."""
         raise NotImplementedError(
             "remove_signal_handler() is not available in browser environments due to lack of POSIX signals."
         )
