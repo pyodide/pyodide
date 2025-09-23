@@ -30,7 +30,7 @@ def test_idbfs_persist_code(selenium_standalone):
     )
 
     @run_in_pyodide
-    def create_test_file(selenium_module):
+    def create_test_file(selenium_module, mount_dir):
         import sys
         from importlib import invalidate_caches
         from pathlib import Path
