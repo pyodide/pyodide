@@ -9,8 +9,8 @@ from io import StringIO
 
 # Keep open_url in __init__ for now, will be moved to pyxhr.py later
 from ..ffi import IN_BROWSER
-from .exceptions import AbortError, BodyUsedError, HttpStatusError
-from .pyfetch import FetchResponse, pyfetch
+from ._exceptions import AbortError, BodyUsedError, HttpStatusError
+from ._pyfetch import FetchResponse, pyfetch
 
 if IN_BROWSER:
     try:

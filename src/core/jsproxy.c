@@ -2133,7 +2133,7 @@ JsArray_index_js,
       return i;
     }
   }
-  return -1;
+  return -2;
 })
 // clang-format on
 
@@ -2183,7 +2183,7 @@ JsArray_index_helper(PyObject* self,
     goto error;
   } else {
     int result = JsArray_index_js(JsProxy_VAL(self), jsvalue, start, stop);
-    if (result == -1) {
+    if (result == -2) {
       goto error;
     }
     return result;

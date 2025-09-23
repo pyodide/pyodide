@@ -26,7 +26,7 @@ from .docs_argspec import docs_argspec
 # appropriately.
 
 # Sphinx uses __name__ to determine the paths and such. It looks better for it
-# to refer to e.g., `pyodide.JsProxy` than `_pyodide._core_docs.JsProxy`.
+# to refer to e.g., `pyodide.ffi.JsProxy` than `_pyodide._core_docs.JsProxy`.
 #
 # Use an empty name for the module of the type variables to prevent long
 # qualified names for the type variables from appearing in the docs.
@@ -1422,10 +1422,10 @@ class ToJsConverter(Protocol):
 
     def __call__(
         self,
-        /,
         value: Any,
         converter: Callable[[Any], JsProxy],
         cache: Callable[[Any, JsProxy], None],
+        /,
     ) -> JsProxy: ...
 
 
@@ -1717,10 +1717,6 @@ def can_run_sync() -> bool:
     raise NotImplementedError
 
 
-__name__ = _save_name
-del _save_name
-
-
 class JsNull:
     """The type of the Python representation of the JavaScript null object"""
 
@@ -1777,3 +1773,6 @@ __all__ = [
     "JsNull",
     "jsnull",
 ]
+
+__name__ = _save_name
+del _save_name

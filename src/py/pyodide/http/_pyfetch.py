@@ -10,7 +10,7 @@ from typing import IO, Any, ParamSpec, TypeVar
 
 from .._package_loader import unpack_buffer
 from ..ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
-from .exceptions import (
+from ._exceptions import (
     AbortError,
     BodyUsedError,
     HttpStatusError,

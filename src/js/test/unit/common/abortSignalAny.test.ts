@@ -1,4 +1,5 @@
-import * as chai from "chai";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import abortSignalAny from "../../../common/abortSignalAny";
 
 describe("abortSignalAny", () => {
@@ -8,7 +9,7 @@ describe("abortSignalAny", () => {
     controller.abort("reason");
 
     const result = abortSignalAny([signal]);
-    chai.assert.isTrue(result.aborted);
-    chai.assert.equal(result.reason, "reason");
+    assert.ok(result.aborted);
+    assert.equal(result.reason, "reason");
   });
 });

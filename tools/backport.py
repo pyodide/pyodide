@@ -596,7 +596,7 @@ def show_not_backported(args):
     needs_backport = set(get_needs_backport_pr_numbers())
     not_backported = [
         commit
-        for commit in commit_history.commits
+        for commit in commit_history.commits.values()
         if commit.pr_number not in needs_backport
     ]
     if args.web:
