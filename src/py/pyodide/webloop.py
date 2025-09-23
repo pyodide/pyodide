@@ -301,6 +301,13 @@ class WebLoop(asyncio.AbstractEventLoop):
                     }
                 )
 
+    async def shutdown_default_executor(self):
+        """Schedule the shutdown of the default executor.
+
+        This is a no-op since WebLoop doesn't use thread executors.
+        """
+        pass
+
     #
     # Lifecycle methods: We ignore all lifecycle management
     #
@@ -362,9 +369,24 @@ class WebLoop(asyncio.AbstractEventLoop):
             return run_sync(future)
         return asyncio.ensure_future(future)
 
+    def stop(self):
+        """Stop the event loop as soon as reasonable.
+
+        This is a no-op in WebLoop since it runs forever on the browser event loop.
+        """
+        pass
+
     #
     # Scheduling methods: use browser.setTimeout to schedule tasks on the browser event loop.
     #
+
+    def _timer_handle_cancelled(self, handle):
+        """Notification that a TimerHandle has been cancelled.
+
+        This is a no-op since we use browser setTimeout which handles
+        cancellation automatically.
+        """
+        pass
 
     def call_soon(  # type: ignore[override]
         self,
@@ -491,6 +513,14 @@ class WebLoop(asyncio.AbstractEventLoop):
         except BaseException as e:
             fut.set_exception(e)
         return fut
+
+    def set_default_executor(self, executor):
+        """Set the default executor.
+
+        This is a no-op since WebLoop doesn't use thread executors.
+        All functions are executed in the main thread via run_in_executor.
+        """
+        pass
 
     def create_future(self) -> asyncio.Future[Any]:
         """Create a Future object attached to the loop."""
