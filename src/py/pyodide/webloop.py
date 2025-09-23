@@ -834,7 +834,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
 
     #
-    # Low-level socket operations — not available in browser environments
+    # Low-level socket operations methods — not available in browser environments
     #
 
     async def sock_recv(self, sock, nbytes):
@@ -892,7 +892,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
 
     #
-    # Subprocess — not available in browser environments
+    # Subprocess methods — not available in browser environments
     #
 
     async def subprocess_shell(self, protocol_factory, cmd, **kwargs):
@@ -905,6 +905,22 @@ class WebLoop(asyncio.AbstractEventLoop):
         """Run a subprocess from a shell command line; return (transport, protocol)."""
         raise NotImplementedError(
             "subprocess_exec() is not available in browser environments due to absence of OS process APIs."
+        )
+
+    #
+    # Signals methods — not available in browser environments
+    #
+
+    def add_signal_handler(self, sig, callback, *args):  # type: ignore[override]
+        """Set callback as the handler for the given signal (Unix)."""
+        raise NotImplementedError(
+            "add_signal_handler() is not available in browser environments due to lack of POSIX signals."
+        )
+
+    def remove_signal_handler(self, sig):
+        """Remove the handler for the given signal; return True if removed (Unix)."""
+        raise NotImplementedError(
+            "remove_signal_handler() is not available in browser environments due to lack of POSIX signals."
         )
 
 
@@ -924,7 +940,7 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
     def new_event_loop(self) -> WebLoop:
         """Create a new event loop"""
-        self._default_loop = WebLoop()  # type: ignore[abstract]
+        self._default_loop = WebLoop()
         return self._default_loop
 
     def set_event_loop(self, loop: Any) -> None:
