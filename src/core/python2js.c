@@ -574,6 +574,16 @@ _JsMap_Set(ConversionContext *context, JsVal map, JsVal key, JsVal value)
   return JsvMap_Set(map, key, value);
 }
 
+static JsVal
+_JsObject_New(ConversionContext *context) {
+  return JsvObject_New();
+}
+
+static int
+_JsObject_Set(ConversionContext *context, JsVal obj, JsVal key, JsVal value) {
+  return JsvObject_SetAttr(obj, key, value);
+}
+
 /**
  * Do a conversion from Python to JavaScript, converting lists, dicts, and sets
  * down to depth "depth".
@@ -735,6 +745,9 @@ python2js_custom__create_jscontext,
 })
 // clang-format on
 
+EMSCRIPTEN_KEEPALIVE
+bool compat_dict_to_literalmap = false;
+
 /**
  * dict_converter should be a JavaScript function that converts an Iterable of
  * pairs into the desired JavaScript object. If dict_converter is NULL, we use
@@ -758,9 +771,14 @@ python2js_custom(PyObject* x,
                                 .jspostprocess_list =
                                   hiwire_new(JsvArray_New()) };
   if (JsvError_Check(dict_converter)) {
-    // No custom converter provided, go back to default conversion to Map.
-    context.dict_new = _JsMap_New;
-    context.dict_add_keyvalue = _JsMap_Set;
+    // No custom converter provided, use default
+    if (compat_dict_to_literalmap) {
+      context.dict_new = _JsMap_New;
+      context.dict_add_keyvalue = _JsMap_Set;
+    } else {
+      context.dict_new = _JsObject_New;
+      context.dict_add_keyvalue = _JsObject_Set;
+    }
     context.dict_postprocess = NULL;
   } else {
     context.dict_new = _JsArray_New;
