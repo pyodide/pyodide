@@ -13,14 +13,7 @@ from pytest_pyodide.hypothesis import std_hypothesis_settings
 def test_jsproxy_dir(selenium):
     from pyodide.code import run_js
 
-    run_js(
-        """
-        self.a = { x : 2, y : "9" };
-        self.b = function(){};
-        """
-    )
-
-    from js import a, b  # type: ignore[attr-defined]
+    a, b = run_js("""() => ([{ x: 2, y: "9" }, function(){}]);""")()
 
     result = [dir(a), dir(b)]
     jsproxy_items = {
@@ -56,8 +49,6 @@ def test_jsproxy_dir(selenium):
         """
     )
 
-    from js import a  # type: ignore[attr-defined]
-
     d = dir(a)
     assert "0" not in d
     assert "9" not in d
@@ -72,13 +63,7 @@ def test_jsproxy_dir(selenium):
 def test_jsproxy_getattr(selenium):
     from pyodide.code import run_js
 
-    run_js(
-        """
-        self.a = { x : 2, y : "9", typeof : 7 };
-        """
-    )
-
-    from js import a  # type: ignore[attr-defined]
+    a = run_js("""() => ({ x : 2, y : "9", typeof : 7 })""")()
 
     result = [a.x, a.y, a.typeof]
     assert result == [2, "9", "object"]
