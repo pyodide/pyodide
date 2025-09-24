@@ -15,7 +15,7 @@ LIBFFIREPO=https://github.com/libffi/libffi
 LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
 
 HIWIREBUILD=$(ROOT)/build/hiwire
-HIWIREREPO=https://github.com/hoodmane/hiwire
+HIWIREREPO=https://github.com/pyodide/hiwire
 HIWIRE_COMMIT=6a1e67280a15d929ebeceee54a6358c9c8d5f697
 
 ifdef CPYTHON_DEBUG
