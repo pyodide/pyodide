@@ -21,7 +21,7 @@ export type TypedArray =
   | Float64Array;
 
 declare global {
-  export var Module: Module;
+  export var Module: PyodideModule;
   export var API: API;
 }
 
@@ -263,7 +263,7 @@ interface PyodideFSType {
 export type FSType = Omit<typeof FS, "lookupPath"> & PyodideFSType;
 
 /** @hidden */
-export type PreRunFunc = (Module: Module) => void;
+export type PreRunFunc = (Module: PyodideModule) => void;
 
 type DSO = any;
 
@@ -274,13 +274,8 @@ export interface LDSO {
   };
 }
 
-/**
- * TODO: consider renaming the type to ModuleType to avoid name collisions
- * between Module and ModuleType?
- * @hidden
- */
-export interface Module {
-  API: API;
+/** @hidden */
+export interface EmscriptenModule {
   locateFile: (file: string) => string;
   exited?: { toThrow: any };
   ENV: { [key: string]: string };
@@ -298,6 +293,36 @@ export interface Module {
   ERRNO_CODES: { [k: string]: number };
   stringToNewUTF8(x: string): number;
   stringToUTF8OnStack: (str: string) => number;
+  HEAP8: Uint8Array;
+  HEAPU32: Uint32Array;
+  getExceptionMessage(e: number): [string, string];
+  exitCode: number | undefined;
+  ExitStatus: { new (exitCode: number): Error };
+  _free: (ptr: number) => void;
+  stackSave: () => number;
+  stackRestore: (ptr: number) => void;
+  promiseMap: {
+    free(id: number): void;
+  };
+  _emscripten_dlopen_promise(lib: number, flags: number): number;
+  _dlerror(): number;
+  UTF8ToString: (
+    ptr: number,
+    maxBytesToRead: number,
+    ignoreNul?: boolean,
+  ) => string;
+}
+
+/** @hidden */
+export interface PythonModule extends EmscriptenModule {
+  _Py_EMSCRIPTEN_SIGNAL_HANDLING: number;
+  Py_EmscriptenSignalBuffer: TypedArray;
+  _Py_Version: number;
+}
+
+/** @hidden */
+export interface PyodideModule extends PythonModule {
+  API: API;
   _compat_to_string_repr: number;
   _compat_null_to_none: number;
   js2python_convert: (
@@ -312,36 +337,16 @@ export interface Module {
     },
   ) => any;
   _PropagatePythonError: typeof Error;
-  _Py_EMSCRIPTEN_SIGNAL_HANDLING: number;
-  Py_EmscriptenSignalBuffer: TypedArray;
-  HEAP8: Uint8Array;
-  HEAPU32: Uint32Array;
   __hiwire_get(a: number): any;
   __hiwire_set(a: number, b: any): void;
   __hiwire_immortal_add(a: any): void;
   _jslib_init(): number;
   _init_pyodide_proxy(): number;
-  getExceptionMessage(e: number): [string, string];
+
   handle_js_error(e: any): void;
-  exitCode: number | undefined;
-  ExitStatus: { new (exitCode: number): Error };
-  _Py_Version: number;
   _print_stdout: (ptr: number) => void;
   _print_stderr: (ptr: number) => void;
-  _free: (ptr: number) => void;
-  stackSave: () => number;
-  stackRestore: (ptr: number) => void;
-  promiseMap: {
-    free(id: number): void;
-  };
-  _emscripten_dlopen_promise(lib: number, flags: number): number;
   getPromise(p: number): Promise<any>;
-  _dlerror(): number;
-  UTF8ToString: (
-    ptr: number,
-    maxBytesToRead: number,
-    ignoreNul?: boolean,
-  ) => string;
 }
 
 /**
@@ -579,7 +584,7 @@ export type PackageManagerAPI = Pick<
  * @hidden
  */
 export type PackageManagerModule = Pick<
-  Module,
+  PyodideModule,
   | "PATH"
   | "LDSO"
   | "stringToNewUTF8"

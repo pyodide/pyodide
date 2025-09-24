@@ -539,63 +539,103 @@ def test_pyproxy_mixins2(selenium):
     )
 
 
+@run_in_pyodide
 def test_pyproxy_mixins31(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    class Test:
+        prototype: int
+        name: int
+        length: int
+
+    test_class_and_instance = to_js([Test, Test()])
+
+    run_js(
         """
         "use strict";
-        let [Test, t] = pyodide.runPython(`
-            class Test: pass
-            from pyodide.ffi import to_js
-            to_js([Test, Test()])
-        `);
-        assert(() => Test.prototype === undefined);
-        assert(() => !("name" in Test));
-        assert(() => !("length" in Test));
+        ([Test, t]) => {
+            assert(() => Test.prototype === undefined);
+            assert(() => !("name" in Test));
+            assert(() => !("length" in Test));
 
-        assert(() => !("prototype" in t));
-        assert(() => !("caller" in t));
-        assert(() => !("name" in t));
-        assert(() => !("length" in t));
+            assert(() => !("prototype" in t));
+            assert(() => !("caller" in t));
+            assert(() => !("name" in t));
+            assert(() => !("length" in t));
 
-        Test.prototype = 7;
-        Test.name = 7;
-        Test.length = 7;
-        pyodide.runPython("assert Test.prototype == 7");
-        pyodide.runPython("assert Test.name == 7");
-        pyodide.runPython("assert Test.length == 7");
-        // prototype cannot be removed once added because it is nonconfigurable...
-        assertThrows(() => delete Test.prototype, "TypeError", "");
-        delete Test.name;
-        delete Test.length;
-        pyodide.runPython(`assert Test.prototype == 7`);
-        pyodide.runPython(`assert not hasattr(Test, "name")`);
-        pyodide.runPython(`assert not hasattr(Test, "length")`);
-
-        Test.$a = 7;
-        Object.defineProperty(Test, "a", {
-            get(){ return Test.$a + 1; },
-            set(v) {
-                Test.$a = v;
-            }
-        });
-
-        pyodide.runPython("assert Test.a == 7")
-        assert(() => Test.a === 8);
-        Test.a = 9;
-        assert(() => Test.a === 10);
-        pyodide.runPython("assert Test.a == 9")
-        assertThrows(() => delete Test.a, "TypeError", "");
-
-        Object.defineProperty(Test, "b", {
-            get(){ return Test.$a + 2; },
-        });
-        assert(() => Test.b === 11);
-        assertThrows(() => Test.b = 7,"TypeError", "");
-        assertThrows(() => delete Test.b, "TypeError", "");
-        Test.destroy();
-        t.destroy();
+            Test.prototype = 7;
+            Test.name = 7;
+            Test.length = 7;
+        }
         """
-    )
+    )(test_class_and_instance)
+
+    assert Test.prototype == 7
+    assert Test.name == 7
+    assert Test.length == 7
+
+    run_js(
+        """
+        "use strict";
+        ([Test, t]) => {
+            assertThrows(() => delete Test.prototype, "TypeError", "");
+            delete Test.name;
+            delete Test.length;
+        }
+        """
+    )(test_class_and_instance)
+
+    assert Test.prototype == 7
+    assert not hasattr(Test, "name")
+    assert not hasattr(Test, "length")
+
+    run_js(
+        """
+        "use strict";
+        ([Test, t]) => {
+            Test.$a = 7;
+            Object.defineProperty(Test, "a", {
+                get(){ return Test.$a + 1; },
+                set(v) {
+                    Test.$a = v;
+                }
+            });
+        }
+        """
+    )(test_class_and_instance)
+
+    assert Test.a == 7  # type: ignore[attr-defined]
+
+    run_js(
+        """
+        "use strict";
+        ([Test, t]) => {
+            assert(() => Test.a === 8);
+            Test.a = 9;
+            assert(() => Test.a === 10);
+        }
+        """
+    )(test_class_and_instance)
+
+    assert Test.a == 9  # type: ignore[attr-defined]
+
+    run_js(
+        """
+        "use strict";
+        ([Test, t]) => {
+            assertThrows(() => delete Test.a, "TypeError", "");
+            Object.defineProperty(Test, "b", {
+                get(){ return Test.$a + 2; },
+            });
+            assert(() => Test.b === 11);
+            assertThrows(() => Test.b = 7,"TypeError", "");
+            assertThrows(() => delete Test.b, "TypeError", "");
+            Test.destroy();
+            t.destroy();
+        }
+        """
+    )(test_class_and_instance)
 
 
 @pytest.mark.parametrize("configurable", [False, True])
@@ -646,68 +686,78 @@ def test_pyproxy_mixins32(selenium, configurable, writable):
     )
 
 
+@run_in_pyodide
 def test_pyproxy_mixins41(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    class Test:
+        caller = "fifty"
+        prototype = "prototype"
+        name = "me"
+        length = 7
+
+        def __call__(self, x):
+            return x + 1
+
+    test_objects = to_js([Test, Test()])
+
+    run_js(
         """
-        [Test, t] = pyodide.runPython(`
-            class Test:
-                caller="fifty"
-                prototype="prototype"
-                name="me"
-                length=7
-                def __call__(self, x):
-                    return x + 1
+        ([Test, t]) => {
+            assert(() => Test.$prototype === "prototype");
+            assert(() => Test.prototype === "prototype");
+            assert(() => Test.name==="me");
+            assert(() => Test.length === 7);
 
-            from pyodide.ffi import to_js
-            to_js([Test, Test()])
-        `);
-        assert(() => Test.$prototype === "prototype");
-        assert(() => Test.prototype === "prototype");
-        assert(() => Test.name==="me");
-        assert(() => Test.length === 7);
-
-        assert(() => t.caller === "fifty");
-        assert(() => "prototype" in t);
-        assert(() => t.prototype === "prototype");
-        assert(() => t.name==="me");
-        assert(() => t.length === 7);
-        assert(() => t(7) === 8);
-        Test.destroy();
-        t.destroy();
+            assert(() => t.caller === "fifty");
+            assert(() => "prototype" in t);
+            assert(() => t.prototype === "prototype");
+            assert(() => t.name==="me");
+            assert(() => t.length === 7);
+            assert(() => t(7) === 8);
+            Test.destroy();
+            t.destroy();
+        }
         """
-    )
+    )(test_objects)
 
 
+@run_in_pyodide
 def test_pyproxy_mixins42(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    class Test:
+        def __call__(self, x):
+            return x + 1
+
+    t = Test()
+
+    run_js(
         """
-        let t = pyodide.runPython(`
-            class Test:
-                def __call__(self, x):
-                    return x + 1
-
-            from pyodide.ffi import to_js
-            Test()
-        `);
-        assert(() => "prototype" in t);
-        assert(() => t.prototype === undefined);
-        t.destroy();
+        (t) => {
+            assert(() => "prototype" in t);
+            assert(() => t.prototype === undefined);
+            t.destroy();
+        }
         """
-    )
+    )(t)
 
 
+@run_in_pyodide
 def test_pyproxy_mixins5(selenium):
-    try:
-        r = selenium.run_js(
-            """
-            "use strict";
-            const [Test, t] = pyodide.runPython(`
-                class Test:
-                    def __len__(self):
-                        return 9
-                from pyodide.ffi import to_js
-                to_js([Test, Test()])
-            `);
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    class Test:
+        def __len__(self):
+            return 9
+
+    test_objects = to_js([Test, Test()])
+
+    run_js("""
+        "use strict";
+        ([Test, t]) => {
             assert(() => !("length" in Test));
             assert(() => t.length === 9);
             assert(() => t instanceof pyodide.ffi.PyProxyWithLength);
@@ -722,11 +772,8 @@ def test_pyproxy_mixins5(selenium):
 
             Test.destroy();
             t.destroy();
-            """
-        )
-        print(r)
-    finally:
-        print(selenium.logs)
+        }
+    """)(test_objects)
 
 
 def test_pyproxy_mixins6(selenium):
@@ -1090,21 +1137,19 @@ def test_fatal_error(selenium_standalone):
     )
 
 
+@run_in_pyodide(packages=["pytest"])
 def test_pyproxy_call(selenium):
-    selenium.run_js(
-        """
-        pyodide.runPython(`
-            from pyodide.ffi import to_js
-            def f(x=2, y=3):
-                return to_js([x, y])
-        `);
-        self.f = pyodide.globals.get("f");
-        """
-    )
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException, to_js
+
+    def f(x=2, y=3):
+        return to_js([x, y])
 
     def assert_call(s, val):
-        res = selenium.run_js(f"return {s};")
-        assert res == val
+        res = run_js(f"(f) => {s}")(f)
+        assert res.to_py() == val
 
     assert_call("f()", [2, 3])
     assert_call("f(7)", [7, 3])
@@ -1118,22 +1163,22 @@ def test_pyproxy_call(selenium):
     assert_call("f.callKwargs(8, { y : 4 })", [8, 4])
 
     msg = "TypeError: callKwargs requires at least one argument"
-    with pytest.raises(selenium.JavascriptException, match=msg):
-        selenium.run_js("f.callKwargs()")
+    with pytest.raises(JsException, match=msg):
+        run_js("(f) => f.callKwargs()")(f)
 
     msg = "TypeError: callKwargs requires at least one argument"
-    with pytest.raises(selenium.JavascriptException, match=msg):
-        selenium.run_js("f.callKwargs()")
+    with pytest.raises(JsException, match=msg):
+        run_js("(f) => f.callKwargs()")(f)
 
-    msg = r"TypeError: f\(\) got an unexpected keyword argument 'z'"
-    with pytest.raises(selenium.JavascriptException, match=msg):
-        selenium.run_js("f.callKwargs({z : 6})")
+    msg = r"test_pyproxy_call\.<locals>\.f\(\) got an unexpected keyword argument 'z'"
+    with pytest.raises(TypeError, match=msg):
+        run_js("(f) => f.callKwargs({z : 6})")(f)
 
-    msg = r"TypeError: f\(\) got multiple values for argument 'x'"
-    with pytest.raises(selenium.JavascriptException, match=msg):
-        selenium.run_js("f.callKwargs(76, {x : 6})")
+    msg = r"test_pyproxy_call\.\<locals\>\.f\(\) got multiple values for argument 'x'"
+    with pytest.raises(TypeError, match=msg):
+        run_js("(f) => f.callKwargs(76, {x : 6})")(f)
 
-    selenium.run_js("f.destroy()")
+    run_js("(f) => f.destroy()")(f)
 
 
 def test_pyproxy_call_relaxed(selenium):
