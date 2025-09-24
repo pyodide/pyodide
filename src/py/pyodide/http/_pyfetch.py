@@ -14,7 +14,6 @@ from ._exceptions import (
     AbortError,
     BodyUsedError,
     HttpStatusError,
-    _construct_abort_reason,
 )
 
 if IN_BROWSER:
@@ -39,7 +38,14 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 
-def _abort_on_cancel(method: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+def _construct_abort_reason(reason: Any) -> JsException | None:
+    """Construct an abort reason from a given value."""
+    if reason is None:
+        return None
+    return JsException("AbortError", reason)
+
+
+def _abort_on_cancel(method: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:  # noqa: UP047
     @wraps(method)
     async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         try:
