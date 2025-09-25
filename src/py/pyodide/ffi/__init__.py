@@ -7,7 +7,6 @@ from _pyodide._importhook import register_js_module, unregister_js_module
 
 IN_BROWSER = "_pyodide_core" in sys.modules
 
-
 if IN_BROWSER:
     import _pyodide_core
 

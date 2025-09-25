@@ -25,9 +25,9 @@ def test_webworker_zero_timeout2(selenium_webworker_standalone, script_type):
         import asyncio
         import time
 
-        from pyodide_js._api import detectEnvironment
+        from pyodide_js import RUNTIME_ENV
 
-        assert detectEnvironment().to_py().get("IN_BROWSER_WEB_WORKER") is True
+        assert RUNTIME_ENV.IN_BROWSER_WEB_WORKER is True
 
         now = time.time()
 
