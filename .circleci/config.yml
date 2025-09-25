@@ -374,7 +374,7 @@ jobs:
           name: test-browser
           command: |
             cd src/js
-            npx playwright install
+            npx playwright install chromium --only-shell --with-deps
             npm run test:browser
       # - run:
       #     name: check if Pyodide works with Webpack
