@@ -9,6 +9,7 @@ import {
   loadLockFile,
   calculateInstallBaseUrl,
 } from "./compat";
+import { overrideRuntime } from "./environments";
 
 import { createSettings } from "./emscripten-settings";
 import { version as version_ } from "./version";
@@ -240,6 +241,11 @@ export async function loadPyodide(
      * @deprecated
      */
     convertNullToNone?: boolean;
+    /**
+     * Override automatic runtime detection. This allows forcing a specific runtime
+     * environment for testing purposes.
+     */
+    runtime?: "browser" | "node" | "deno" | "bun";
     /** @ignore */
     _makeSnapshot?: boolean;
     /** @ignore */
@@ -254,6 +260,12 @@ export async function loadPyodide(
   if (options.lockFileContents && options.lockFileURL) {
     throw new Error("Can't pass both lockFileContents and lockFileURL");
   }
+
+  // Override runtime detection if specified
+  if (options.runtime) {
+    overrideRuntime(options.runtime);
+  }
+
   await initNodeModules();
 
   // Relative paths cause havoc.
