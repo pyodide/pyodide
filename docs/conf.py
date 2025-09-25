@@ -368,12 +368,18 @@ def typehints_formatter(annotation, config):
 
 
 def setup(app):
+    FILES_TO_IGNORE = ["playwright.config.ts"]
+
     sys.path = extra_sys_path_dirs + sys.path
     app.add_config_value("global_replacements", {}, True)
     app.add_config_value("CDN_URL", "", True)
     files = []
     for dir in ["core", "js"]:
-        files += [str(x) for x in (Path("../src") / dir).glob("*.ts")]
+        files += [
+            str(x)
+            for x in (Path("../src") / dir).glob("*.ts")
+            if x.name not in FILES_TO_IGNORE
+        ]
     app.config.js_source_path = files
     app.connect("source-read", global_replace)
 
