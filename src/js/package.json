@@ -17,6 +17,7 @@
   "license": "MPL-2.0",
   "dependencies": {
     "@types/emscripten": "^1.40.1",
+    "ws": "^8.5.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.1.1",
@@ -115,9 +116,6 @@
         "DOM"
       ]
     }
-  },
-  "dependencies": {
-    "ws": "^8.5.0"
   },
   "types": "./pyodide.d.ts",
   "engines": {
