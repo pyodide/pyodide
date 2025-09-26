@@ -1,7 +1,7 @@
 {
   "name": "pyodide",
   "version": "0.29.0-dev.0",
-  "type": "commonjs",
+  "type": "module",
   "description": "The Pyodide JavaScript package",
   "keywords": [
     "python",
@@ -40,11 +40,11 @@
     "typescript": "5.7",
     "wabt": "^1.0.32"
   },
-  "main": "pyodide.js",
+  "main": "pyodide.cjs",
   "exports": {
     ".": {
       "types": "./pyodide.d.ts",
-      "require": "./pyodide.js",
+      "require": "./pyodide.cjs",
       "import": "./pyodide.mjs"
     },
     "./ffi": {
