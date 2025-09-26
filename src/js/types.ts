@@ -556,8 +556,6 @@ export interface API {
   pyVersionTuple: [number, number, number];
   LiteralMap: any;
   sitePackages: string;
-  /** @deprecated Use RUNTIME_ENV instead */
-  detectEnvironment: () => any;
 }
 
 // Subset of the API and Module that the package manager needs

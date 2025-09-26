@@ -61,13 +61,6 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
 export const RUNTIME_ENV: RuntimeEnv = getGlobalRuntimeEnv();
 
 /**
- * @deprecated Use RUNTIME_ENV instead
- */
-export function detectEnvironment(): RuntimeEnv {
-  return getGlobalRuntimeEnv();
-}
-
-/**
  * Update derived flags based on current runtime environment
  * This ensures consistency when runtime is overridden
  * @private

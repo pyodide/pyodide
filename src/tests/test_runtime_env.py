@@ -195,49 +195,6 @@ class TestRuntimeEnvironmentDetection:
 class TestBackwardCompatibility:
     """Backward compatibility tests."""
 
-    def test_detect_environment_deprecated_function(self, selenium):
-        """Test deprecated detectEnvironment function."""
-        selenium.run("""
-            import pyodide_js
-            from pyodide_js import RUNTIME_ENV
-
-            # Test that detectEnvironment exists and is callable
-            assert hasattr(pyodide_js, 'detectEnvironment'), "pyodide_js should have detectEnvironment attribute"
-            assert callable(pyodide_js.detectEnvironment), "detectEnvironment should be callable"
-
-            # Test that detectEnvironment returns the same values as RUNTIME_ENV
-            detected_env = pyodide_js.detectEnvironment()
-
-            # Compare all runtime flags
-            runtime_flags = [
-                'IN_NODE', 'IN_BROWSER', 'IN_DENO', 'IN_BUN', 'IN_SHELL',
-                'IN_BROWSER_MAIN_THREAD', 'IN_BROWSER_WEB_WORKER',
-                'IN_NODE_COMMONJS', 'IN_NODE_ESM', 'IN_SAFARI'
-            ]
-
-            for flag in runtime_flags:
-                runtime_env_value = getattr(RUNTIME_ENV, flag)
-                detected_env_value = getattr(detected_env, flag)
-                assert runtime_env_value == detected_env_value, (
-                    f"detectEnvironment().{flag} ({detected_env_value}) should match "
-                    f"RUNTIME_ENV.{flag} ({runtime_env_value})"
-                )
-
-            # Test that they have the same values (since they may be different proxy objects)
-            # In JavaScript-Python bridge, objects may not be identical but should have same values
-            print(f"RUNTIME_ENV type: {type(RUNTIME_ENV)}")
-            print(f"detected_env type: {type(detected_env)}")
-
-            # The objects should at least have the same string representation of values
-            for flag in runtime_flags:
-                runtime_env_value = getattr(RUNTIME_ENV, flag)
-                detected_env_value = getattr(detected_env, flag)
-                assert runtime_env_value == detected_env_value, (
-                    f"Values should match even if objects are different proxies: "
-                    f"RUNTIME_ENV.{flag}={runtime_env_value}, detectEnvironment().{flag}={detected_env_value}"
-                )
-        """)
-
     def test_runtime_env_singleton_behavior(self, selenium, runtime_flags):
         """Test RUNTIME_ENV singleton behavior."""
         selenium.run(f"""
