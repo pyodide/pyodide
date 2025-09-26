@@ -18,8 +18,7 @@ interface RuntimeEnv {
 }
 
 /**
- * Get or create the global runtime environment object
- * This serves as the single source of truth for runtime detection
+ * Internal runtime environment state
  * @private
  */
 function getGlobalRuntimeEnv(): RuntimeEnv {
@@ -60,6 +59,13 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
 
 /** @private Internal runtime environment state */
 export const RUNTIME_ENV: RuntimeEnv = getGlobalRuntimeEnv();
+
+/**
+ * @deprecated Use RUNTIME_ENV instead
+ */
+export function detectEnvironment(): RuntimeEnv {
+  return getGlobalRuntimeEnv();
+}
 
 /**
  * Update derived flags based on current runtime environment

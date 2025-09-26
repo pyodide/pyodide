@@ -8,7 +8,7 @@ import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
 import { TypedArray, PackageData, FSType, Lockfile } from "./types";
-import { RUNTIME_ENV } from "./environments";
+import { RUNTIME_ENV, detectEnvironment } from "./environments";
 // @ts-ignore
 import LiteralMap from "./common/literal-map";
 import abortSignalAny from "./common/abortSignalAny";
@@ -724,6 +724,7 @@ function makePublicAPI(): PyodideAPI {
   pyodideAPI._module = Module;
   pyodideAPI._api = API;
   pyodideAPI.RUNTIME_ENV = RUNTIME_ENV;
+  pyodideAPI.detectEnvironment = detectEnvironment;
   return pyodideAPI;
 }
 

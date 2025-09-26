@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 // Import the module under test
-import { RUNTIME_ENV } from "../../environments";
+import { RUNTIME_ENV, detectEnvironment } from "../../environments";
 
 describe("RuntimeEnv", () => {
   it("should be a singleton across multiple imports", async () => {
@@ -155,5 +155,9 @@ describe("RuntimeEnv", () => {
       secondAccess,
       "Runtime flags should be consistent across accesses",
     );
+  });
+
+  it("detectEnvironment should return same values as RUNTIME_ENV", () => {
+    assert.deepStrictEqual(detectEnvironment(), RUNTIME_ENV);
   });
 });
