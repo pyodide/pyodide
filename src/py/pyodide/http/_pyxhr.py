@@ -22,10 +22,10 @@ import json
 from typing import Any, NotRequired, TypedDict, Unpack
 from urllib.parse import urlencode
 
-from ..ffi import IN_BROWSER
+from ..ffi import IN_PYODIDE
 from ._exceptions import HttpStatusError, XHRError, XHRNetworkError
 
-if IN_BROWSER:
+if IN_PYODIDE:
     try:
         from js import XMLHttpRequest
         from pyodide.ffi import JsException
@@ -165,7 +165,7 @@ def _xhr_request(
     XHRNetworkError
         For network-related errors
     """
-    if not IN_BROWSER:
+    if not IN_PYODIDE:
         raise RuntimeError("XMLHttpRequest is only available in browser environments")
 
     req = XMLHttpRequest.new()
