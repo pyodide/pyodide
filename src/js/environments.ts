@@ -62,7 +62,6 @@ export const RUNTIME_ENV: RuntimeEnv = getGlobalRuntimeEnv();
 
 /**
  * Update derived flags based on current runtime environment
- * This ensures consistency when runtime is overridden
  * @private
  */
 function updateDerivedFlags(runtimeEnv: RuntimeEnv) {

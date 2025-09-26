@@ -57,14 +57,9 @@ function scheduleCallbackImmediate(callback: () => void) {
   if (RUNTIME_ENV.IN_NODE) {
     // node has setImmediate, let's use it
     setImmediate(callback);
-  } else if (RUNTIME_ENV.IN_BUN) {
-    // Bun also supports setImmediate like Node.js
-    setImmediate(callback);
-  } else if (RUNTIME_ENV.IN_DENO) {
-    // Deno doesn't have setImmediate, but queueMicrotask works well
-    queueMicrotask(callback);
   } else if (
     !RUNTIME_ENV.IN_SAFARI &&
+    !RUNTIME_ENV.IN_DENO &&
     typeof globalThis.MessageChannel === "function"
   ) {
     const channel = new MessageChannel();

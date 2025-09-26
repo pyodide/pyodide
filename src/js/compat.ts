@@ -86,12 +86,6 @@ function browser_resolvePath(path: string, base?: string): string {
 export let resolvePath: (rest: string, base?: string) => string;
 if (RUNTIME_ENV.IN_NODE) {
   resolvePath = node_resolvePath;
-} else if (RUNTIME_ENV.IN_DENO) {
-  // Deno uses URL-based paths, similar to browsers but with some Node.js compatibility
-  resolvePath = browser_resolvePath;
-} else if (RUNTIME_ENV.IN_BUN) {
-  // Bun has Node.js-compatible path resolution
-  resolvePath = node_resolvePath;
 } else if (RUNTIME_ENV.IN_SHELL) {
   resolvePath = (x) => x;
 } else {
@@ -240,12 +234,6 @@ if (RUNTIME_ENV.IN_BROWSER_MAIN_THREAD) {
   };
 } else if (RUNTIME_ENV.IN_NODE) {
   loadScript = nodeLoadScript;
-} else if (RUNTIME_ENV.IN_DENO) {
-  // Deno supports dynamic import like browsers
-  loadScript = async (url) => await import(/* webpackIgnore: true */ url);
-} else if (RUNTIME_ENV.IN_BUN) {
-  // Bun supports both require and import, prefer import for consistency
-  loadScript = async (url) => await import(/* webpackIgnore: true */ url);
 } else if (RUNTIME_ENV.IN_SHELL) {
   loadScript = load;
 } else {
