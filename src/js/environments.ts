@@ -4,7 +4,7 @@
  * Internal runtime environment interface for type safety
  * @private
  */
-interface RuntimeEnv {
+export interface RuntimeEnv {
   IN_NODE: boolean;
   IN_NODE_COMMONJS: boolean;
   IN_NODE_ESM: boolean;
@@ -22,39 +22,41 @@ interface RuntimeEnv {
  * @private
  */
 function getGlobalRuntimeEnv(): RuntimeEnv {
-  if (!globalThis.__PYODIDE_RUNTIME_ENV__) {
-    // Derived flags are computed during initialization
-    const env: RuntimeEnv = {
-      IN_NODE:
-        typeof process === "object" &&
-        typeof process.versions === "object" &&
-        typeof process.versions.node === "string" &&
-        !(process as any).browser,
-
-      IN_NODE_COMMONJS: false, // Derived from IN_NODE
-      IN_NODE_ESM: false, // Derived from IN_NODE
-
-      IN_BUN: typeof (globalThis as any).Bun !== "undefined",
-      IN_DENO: typeof (globalThis as any).Deno !== "undefined",
-      IN_BROWSER: true, // Default true, will be updated in derived flags
-      IN_BROWSER_MAIN_THREAD: false, // Derived from IN_BROWSER
-      IN_BROWSER_WEB_WORKER: false, // Derived from IN_BROWSER,
-
-      IN_SAFARI:
-        typeof navigator === "object" &&
-        typeof (navigator as any).userAgent === "string" &&
-        (navigator as any).userAgent.indexOf("Chrome") == -1 &&
-        (navigator as any).userAgent.indexOf("Safari") > -1,
-
-      IN_SHELL:
-        typeof (globalThis as any).read == "function" &&
-        typeof (globalThis as any).load === "function",
-    };
-    // Update derived flags using the shared function
-    updateDerivedFlags(env);
-    globalThis.__PYODIDE_RUNTIME_ENV__ = env;
+  if (typeof API !== "undefined") {
+    // We're in pyodide.asm.js, get runtimeEnv off of API.
+    return API.runtimeEnv;
   }
-  return globalThis.__PYODIDE_RUNTIME_ENV__;
+  // We're in pyodide.mjs, do the feature detection.
+  // Derived flags are computed during initialization
+  const env: RuntimeEnv = {
+    IN_NODE:
+      typeof process === "object" &&
+      typeof process.versions === "object" &&
+      typeof process.versions.node === "string" &&
+      !(process as any).browser,
+
+    IN_NODE_COMMONJS: false, // Derived from IN_NODE
+    IN_NODE_ESM: false, // Derived from IN_NODE
+
+    IN_BUN: typeof (globalThis as any).Bun !== "undefined",
+    IN_DENO: typeof (globalThis as any).Deno !== "undefined",
+    IN_BROWSER: true, // Default true, will be updated in derived flags
+    IN_BROWSER_MAIN_THREAD: false, // Derived from IN_BROWSER
+    IN_BROWSER_WEB_WORKER: false, // Derived from IN_BROWSER,
+
+    IN_SAFARI:
+      typeof navigator === "object" &&
+      typeof (navigator as any).userAgent === "string" &&
+      (navigator as any).userAgent.indexOf("Chrome") == -1 &&
+      (navigator as any).userAgent.indexOf("Safari") > -1,
+
+    IN_SHELL:
+      typeof (globalThis as any).read == "function" &&
+      typeof (globalThis as any).load === "function",
+  };
+  // Update derived flags using the shared function
+  updateDerivedFlags(env);
+  return env;
 }
 
 /** @private Internal runtime environment state */

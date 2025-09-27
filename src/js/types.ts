@@ -3,6 +3,7 @@ import type { PyProxy, PyAwaitable } from "generated/pyproxy";
 import { type PyodideAPI } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
+import { type RuntimeEnv } from "./environments";
 import { SnapshotConfig } from "./snapshot";
 import { ResolvablePromise } from "./common/resolveable";
 import { PackageManager } from "./load-package";
@@ -468,6 +469,7 @@ export type PackageLoadMetadata = {
 
 /** @hidden */
 export interface API {
+  runtimeEnv: RuntimeEnv;
   fatal_error: (e: any) => never;
   isPyProxy: (e: any) => e is PyProxy;
   debug_ffi: boolean;
