@@ -1,7 +1,4 @@
-// @ts-nocheck
-
 /**
- * Internal runtime environment interface for type safety
  * @hidden
  */
 export interface RuntimeEnv {
@@ -17,9 +14,6 @@ export interface RuntimeEnv {
   IN_SHELL: boolean;
 }
 
-/**
- * Internal runtime environment state
- */
 function getGlobalRuntimeEnv(): RuntimeEnv {
   if (typeof API !== "undefined" && API !== globalThis.API) {
     // We're in pyodide.asm.js, get runtimeEnv off of API.
@@ -63,12 +57,7 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
 /** @private Internal runtime environment state */
 export const RUNTIME_ENV: RuntimeEnv = getGlobalRuntimeEnv();
 
-/**
- * Update derived flags based on current runtime environment
- * @private
- */
 function updateDerivedFlags(runtimeEnv: RuntimeEnv) {
-  // Calculate IN_NODE_COMMONJS
   runtimeEnv.IN_NODE_COMMONJS =
     runtimeEnv.IN_NODE &&
     typeof module !== "undefined" &&
@@ -76,7 +65,6 @@ function updateDerivedFlags(runtimeEnv: RuntimeEnv) {
     typeof require === "function" &&
     typeof __dirname === "string";
 
-  // Update derived flags
   runtimeEnv.IN_NODE_ESM = runtimeEnv.IN_NODE && !runtimeEnv.IN_NODE_COMMONJS;
   runtimeEnv.IN_BROWSER =
     !runtimeEnv.IN_NODE && !runtimeEnv.IN_DENO && !runtimeEnv.IN_BUN;
