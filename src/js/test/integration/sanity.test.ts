@@ -1,11 +1,11 @@
-import chai from "chai";
+import { expect, test } from "./fixture";
 
-it("should pass a basic truthy sanity test (node)", async () => {
-  await chai.assert.isFulfilled(Promise.resolve());
+test("should pass a basic truthy sanity test (node)", async () => {
+  expect(await Promise.resolve("success")).toStrictEqual("success");
 });
 
-it("should pass a basic sanity test in browser (puppeteer)", async () => {
-  const title = await chai.assert.isFulfilled(page.title());
-  chai.assert.isString(title);
-  chai.assert.equal(title, "pyodide");
+test("should pass a basic sanity test in browser (playwright)", async ({
+  page,
+}) => {
+  await expect(page).toHaveTitle("pyodide");
 });
