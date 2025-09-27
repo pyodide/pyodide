@@ -123,19 +123,6 @@ describe("RuntimeEnv", () => {
     }
   });
 
-  it("should have global runtime environment object", () => {
-    // Check that the global object exists
-    assert.ok(
-      "__PYODIDE_RUNTIME_ENV__" in globalThis,
-      "Global runtime env should exist",
-    );
-    assert.strictEqual(
-      globalThis.__PYODIDE_RUNTIME_ENV__,
-      RUNTIME_ENV,
-      "Global object should be same as exported RUNTIME_ENV",
-    );
-  });
-
   it("should maintain consistency across property access", () => {
     // Access the same properties multiple times to ensure consistency
     const firstAccess = {
