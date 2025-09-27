@@ -2,7 +2,7 @@
 
 /**
  * Internal runtime environment interface for type safety
- * @private
+ * @hidden
  */
 export interface RuntimeEnv {
   IN_NODE: boolean;
@@ -19,7 +19,6 @@ export interface RuntimeEnv {
 
 /**
  * Internal runtime environment state
- * @private
  */
 function getGlobalRuntimeEnv(): RuntimeEnv {
   if (typeof API !== "undefined") {
