@@ -611,8 +611,8 @@ def test_window_isnt_super_weird_anymore(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_mount_object(selenium_standalone):
-    selenium = selenium_standalone
+def test_mount_object(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     result = selenium.run_js(
         """
         function x1(){
@@ -745,8 +745,8 @@ def test_jsmod_import_star2(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_nested_import(selenium_standalone):
-    selenium = selenium_standalone
+def test_nested_import(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     assert (
         selenium.run_js(
             """
@@ -767,8 +767,8 @@ def test_nested_import(selenium_standalone):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_register_jsmodule_docs_example(selenium_standalone):
-    selenium = selenium_standalone
+def test_register_jsmodule_docs_example(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     selenium.run_js(
         """
         let my_module = {
@@ -805,8 +805,8 @@ def test_register_jsmodule_docs_example(selenium_standalone):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_register_non_extendable_jsmodule(selenium_standalone):
-    selenium_standalone.run_js(
+def test_register_non_extendable_jsmodule(selenium_standalone_refresh):
+    selenium_standalone_refresh.run_js(
         """
         pyodide.registerJsModule("x", Object.preventExtensions({aaa: 2, bbb: 7}))
         """
@@ -818,7 +818,7 @@ def test_register_non_extendable_jsmodule(selenium_standalone):
         exec("from x import *", a)
         assert set(a).issuperset({"aaa", "bbb"})
 
-    check_import_star(selenium_standalone)
+    check_import_star(selenium_standalone_refresh)
 
 
 @run_in_pyodide
