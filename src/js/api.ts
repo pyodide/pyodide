@@ -723,7 +723,6 @@ function makePublicAPI(): PyodideAPI {
   pyodideAPI.ERRNO_CODES = Module.ERRNO_CODES;
   pyodideAPI._module = Module;
   pyodideAPI._api = API;
-  pyodideAPI.RUNTIME_ENV = RUNTIME_ENV;
   return pyodideAPI;
 }
 
