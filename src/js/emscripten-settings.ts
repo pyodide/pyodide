@@ -42,8 +42,7 @@ export interface EmscriptenSettings {
  * @private
  */
 export function createSettings(config: ConfigType): EmscriptenSettings {
-  const partialAPI: Partial<API> = { config, runtimeEnv: RUNTIME_ENV };
-  const API = partialAPI as API;
+  const API = { config, runtimeEnv: RUNTIME_ENV } as API;
   const settings: EmscriptenSettings = {
     noImageDecoding: true,
     noAudioDecoding: true,

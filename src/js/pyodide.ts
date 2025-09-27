@@ -9,7 +9,6 @@ import {
   loadLockFile,
   calculateInstallBaseUrl,
 } from "./compat";
-import { RUNTIME_ENV } from "./environments";
 
 import { createSettings } from "./emscripten-settings";
 import { version as version_ } from "./version";
