@@ -21,8 +21,10 @@ export interface RuntimeEnv {
  * Internal runtime environment state
  */
 function getGlobalRuntimeEnv(): RuntimeEnv {
-  if (typeof API !== "undefined") {
+  if (typeof API !== "undefined" && API !== globalThis.API) {
     // We're in pyodide.asm.js, get runtimeEnv off of API.
+    // Hopefully this API !== globalThis.API prevents us from accidentally
+    // picking up a global.
     return API.runtimeEnv;
   }
   // We're in pyodide.mjs, do the feature detection.
