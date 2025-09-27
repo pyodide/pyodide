@@ -351,7 +351,7 @@ jobs:
 
   test-js:
     <<: *defaults
-    resource_class: small
+    resource_class: large
     steps:
       - attach_workspace:
           at: .
