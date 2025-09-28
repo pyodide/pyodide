@@ -128,14 +128,6 @@ dist/pyodide.asm.js: \
    # cat dist/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
 	$(SED) -i -E 's/var __Z[^;]*;//g' dist/pyodide.asm.js
 	$(SED) -i '1i "use strict";' dist/pyodide.asm.js
-	# Remove last 7 lines of pyodide.asm.js when not using ES6, see issue #2282
-	# Hopefully we will remove this after emscripten fixes it, upstream issue
-	# emscripten-core/emscripten#16518
-	# Sed nonsense from https://stackoverflow.com/a/13383331
-	# This is only needed when ES6 export is disabled
-	if [ "$(PYODIDE_ES6)" != "1" ]; then \
-		$(SED) -i -n -e :a -e '1,7!{P;N;D;};N;ba' dist/pyodide.asm.js; \
-	fi
 	# Add globalThis export for backward compatibility alongside ES6 export
 	echo "globalThis._createPyodideModule = _createPyodideModule;" >> dist/pyodide.asm.js
 
