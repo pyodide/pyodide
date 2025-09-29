@@ -158,7 +158,7 @@ To build on MacOS with Homebrew, you need:
 - `brew install coreutils autoconf automake libtool libffi ccache`
 - Pyodide requires CMake3 but Homebrew installs CMake4.
   Use pip for cmake `pip install cmake==3.31`
-- It is also recommended installing the GNU patch and
+- Install the GNU patch and
   GNU sed (`brew install gpatch gnu-sed`)
   and [re-defining them temporarily as `patch` and
   `sed`](https://formulae.brew.sh/formula/gnu-sed).
