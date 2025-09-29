@@ -5,11 +5,7 @@ export PYODIDE_ABI_VERSION ?= 2025_0
 
 export PYTHON_ARCHIVE_SHA256=b8d79530e3b7c96a5cb2d40d431ddb512af4a563e863728d8713039aa50203f9
 
-ifeq ($(PLATFORM),darwin)
-	export SED ?= gsed
-else
-	export SED ?= sed
-endif
+export SED ?= sed
 
 export RUST_TOOLCHAIN ?= nightly-2025-02-01
 export RUST_EMSCRIPTEN_TARGET_URL ?= https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot/releases/download/emcc-${PYODIDE_EMSCRIPTEN_VERSION}_${RUST_TOOLCHAIN}/emcc-${PYODIDE_EMSCRIPTEN_VERSION}_${RUST_TOOLCHAIN}.tar.bz2
