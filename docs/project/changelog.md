@@ -23,6 +23,11 @@ myst:
   common HTTP methods (GET, POST, PUT, DELETE, HEAD, PATCH, OPTIONS).
   {pr}`5841`
 
+- {{ Breaking }} The default behavior of `toJs()`/`to_js` was changed to convert
+  dictionaries to JavaScript objects. To opt into the old behavior, pass
+  `toJsLiteralMap: true` to `loadPyodide()`. This is deprecated.
+  {pr}`5912`
+
 ## Version 0.28.3
 
 _September 22, 2025_
