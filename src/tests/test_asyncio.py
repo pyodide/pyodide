@@ -183,34 +183,34 @@ def test_await_fetch(selenium):
         )
 
 
+@run_in_pyodide
 def test_await_error(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
         async function async_js_raises(){
             throw new Error("This is an error message!");
         }
         self.async_js_raises = async_js_raises;
-        pyodide.runPython(`
-            from js import async_js_raises
-            async def test():
-                c = await async_js_raises()
-                return c
-            c = test()
-            r1 = c.send(None)
-        `);
         """
     )
+
+    from js import async_js_raises  # type: ignore[attr-defined]
+
+    async def test():
+        c = await async_js_raises()
+        return c
+
+    c = test()
+    r1 = c.send(None)
+
     msg = "This is an error message!"
-    with pytest.raises(selenium.JavascriptException, match=msg):
-        # Wait for event loop to go around for chome
-        selenium.run(
-            """
-            try:
-                r2 = c.send(r1.result())
-            finally:
-                del async_js_raises
-            """
-        )
+    with pytest.raises(Exception, match=msg):
+        try:
+            r2 = c.send(r1.result())  # noqa: F841
+        finally:
+            del globals()["async_js_raises"]
 
 
 def test_eval_code_async_simple():
@@ -301,35 +301,31 @@ def test_eval_code_await_fetch(selenium):
         )
 
 
+@run_in_pyodide
 def test_eval_code_await_error(selenium):
-    selenium.run_js(
+    from pyodide.code import eval_code_async, run_js
+
+    run_js(
         """
         async function async_js_raises(){
             console.log("Hello there???");
             throw new Error("This is an error message!");
         }
         self.async_js_raises = async_js_raises;
-        pyodide.runPython(`
-            from js import async_js_raises
-            from pyodide.code import eval_code_async
-            c = eval_code_async(
-                '''
-                await async_js_raises()
-                ''',
-                globals=globals()
-            )
-            r1 = c.send(None)
-        `)
         """
     )
+
+    c = eval_code_async(
+        """
+        await async_js_raises()
+        """,
+        globals=globals(),
+    )
+    r1 = c.send(None)
+
     msg = "This is an error message!"
-    with pytest.raises(selenium.JavascriptException, match=msg):
-        # Wait for event loop to go around for chome
-        selenium.run(
-            """
-            r2 = c.send(r1.result())
-            """
-        )
+    with pytest.raises(Exception, match=msg):
+        r2 = c.send(r1.result())  # noqa: F841
 
 
 @run_in_pyodide
@@ -346,31 +342,39 @@ def test_ensure_future_memleak(selenium):
     asyncio.ensure_future(test())
 
 
+@run_in_pyodide
 def test_await_pyproxy_eval_async(selenium):
+    from pyodide.code import run_js
+
     assert (
-        selenium.run_js(
+        run_js(
             """
-            let c = pyodide._api.pyodide_code.eval_code_async("1+1");
-            let result = await c;
-            c.destroy();
-            return result;
+            async () => {
+                let c = pyodide._api.pyodide_code.eval_code_async("1+1");
+                let result = await c;
+                c.destroy();
+                return result;
+            }
             """
-        )
+        )()
         == 2
     )
 
-    assert selenium.run_js(
+    assert run_js(
         """
+        async () => {
             let finally_occurred = false;
             let c = pyodide._api.pyodide_code.eval_code_async("1+1");
             let result = await c.finally(() => { finally_occurred = true; });
             c.destroy();
             return [result, finally_occurred];
-            """
-    ) == [2, True]
-
-    assert selenium.run_js(
+        }
         """
+    )().to_py() == [2, True]
+
+    assert run_js(
+        """
+        async () => {
             let finally_occurred = false;
             let err_occurred = false;
             let c = pyodide._api.pyodide_code.eval_code_async("raise ValueError('hi')");
@@ -381,45 +385,55 @@ def test_await_pyproxy_eval_async(selenium):
             }
             c.destroy();
             return [finally_occurred, err_occurred];
-            """
-    ) == [True, True]
-
-    assert selenium.run_js(
-        """
-        let c = pyodide._api.pyodide_code.eval_code_async("raise ValueError('hi')");
-        try {
-            return await c.catch(e => e.constructor.name === "PythonError");
-        } finally {
-            c.destroy();
         }
         """
-    )
+    )().to_py() == [True, True]
 
-    assert selenium.run_js(
+    assert run_js(
         """
-        let c = pyodide._api.pyodide_code.eval_code_async(`
-            from js import fetch
-            await (await fetch('pyodide-lock.json')).json()
-        `);
-        let result = await c;
-        c.destroy();
-        return (!!result) && ("packages" in result);
+        async () => {
+            let c = pyodide._api.pyodide_code.eval_code_async("raise ValueError('hi')");
+            try {
+                return await c.catch(e => e.constructor.name === "PythonError");
+            } finally {
+                c.destroy();
+            }
+        }
         """
-    )
+    )()
+
+    assert run_js(
+        """
+        async () => {
+            let c = pyodide._api.pyodide_code.eval_code_async(`
+                from js import fetch
+                await (await fetch('pyodide-lock.json')).json()
+            `);
+            let result = await c;
+            c.destroy();
+            return (!!result) && ("packages" in result);
+        }
+        """
+    )()
 
 
+@run_in_pyodide
 def test_await_pyproxy_async_def(selenium):
-    assert selenium.run_js(
+    from pyodide.code import run_js
+
+    assert run_js(
         """
-        let packages = await pyodide.runPythonAsync(`
-            from js import fetch
-            async def temp():
-                return await (await fetch('pyodide-lock.json')).json()
-            await temp()
-        `);
-        return (!!packages.packages) && (!!packages.info);
+        async () => {
+            let packages = await pyodide.runPythonAsync(`
+                from js import fetch
+                async def temp():
+                    return await (await fetch('pyodide-lock.json')).json()
+                await temp()
+            `);
+            return (!!packages.packages) && (!!packages.info);
+        }
         """
-    )
+    )()
 
 
 def test_cancellation(selenium):

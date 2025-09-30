@@ -141,25 +141,32 @@ def test_import_js(selenium):
     assert "window" in result
 
 
+@run_in_pyodide
 def test_globals_get_multiple(selenium):
     """See #1151"""
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    v = 0.123  # noqa: F841
+    run_js(
         """
-        pyodide.runPython("v = 0.123");
         pyodide.globals.get('v')
         pyodide.globals.get('v')
         """
     )
 
 
+@run_in_pyodide(packages=["distutils"])
 def test_version_info(selenium):
     from distutils.version import LooseVersion
 
-    version_py_str = selenium.run("import pyodide; pyodide.__version__")
+    import pyodide
+    from pyodide.code import run_js
+
+    version_py_str = pyodide.__version__
     version_py = LooseVersion(version_py_str)
     assert version_py > LooseVersion("0.0.1")
 
-    version_js_str = selenium.run_js("return pyodide.version;")
+    version_js_str = run_js("pyodide.version")
     assert version_py_str == version_js_str
 
 
