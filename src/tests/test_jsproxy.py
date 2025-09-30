@@ -38,16 +38,19 @@ def test_jsproxy_dir(selenium):
     assert set1.issuperset(callable_items)
     assert set1.isdisjoint(a_items)
 
-    run_js(
+    a = run_js(
         """
-        self.a = [0,1,2,3,4,5,6,7,8,9];
-        a[27] = 0;
-        a[":"] = 0;
-        a["/"] = 0;
-        a.abcd = 0;
-        a.α = 0;
+        () => {
+            const a = [0,1,2,3,4,5,6,7,8,9];
+            a[27] = 0;
+            a[":"] = 0;
+            a["/"] = 0;
+            a.abcd = 0;
+            a.α = 0;
+            return a;
+        }
         """
-    )
+    )()
 
     d = dir(a)
     assert "0" not in d
@@ -158,17 +161,12 @@ def test_jsproxy_imagedata(selenium):
     assert ImageData.typeof == "function"
 
 
+@run_in_pyodide
 def test_jsproxy_function(selenium):
-    selenium.run_js("self.square = function (x) { return x*x; };")
-    assert (
-        selenium.run(
-            """
-            from js import square
-            square(2)
-            """
-        )
-        == 4
-    )
+    from pyodide.code import run_js
+
+    square = run_js("(function (x) { return x*x; })")
+    assert square(2) == 4
 
 
 def test_jsproxy_class(selenium):
@@ -732,13 +730,10 @@ def test_jsmod_import_star2(selenium):
 @pytest.mark.skip_pyproxy_check
 @run_in_pyodide
 def test_nested_import(selenium):
+    import js
     from pyodide.code import run_js
 
-    run_js(
-        """
-        self.a = { b : { c : { d : 2 } } };
-        """
-    )
+    js.a = run_js("() => ({ b : { c : { d : 2 } } })")()  # type: ignore[attr-defined]
 
     from js.a.b import c
 
@@ -1546,11 +1541,11 @@ def test_array_extend(selenium_module_scope, l1, l2):
 def test_typed_array(selenium):
     from pyodide.code import run_js
 
-    a = run_js("self.a = new Uint8Array([1,2,3,4]); a")
+    a = run_js("() => new Uint8Array([1,2,3,4])")()
     assert a[0] == 1
     assert a[-1] == 4
     a[-2] = 7
-    assert run_js("self.a[2]") == 7
+    assert run_js("(a) => a[2]")(a) == 7
 
     import pytest
 
