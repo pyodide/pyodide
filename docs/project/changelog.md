@@ -46,7 +46,6 @@ _September 22, 2025_
 - {{ Enhancement }} The typescript types for `pyodide.FS` are now slightly more
   complete. {pr}`5863`
 
-
 ## Version 0.28.2
 
 _August 19, 2025_
