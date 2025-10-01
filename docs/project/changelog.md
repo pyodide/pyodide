@@ -28,6 +28,10 @@ myst:
   `toJsLiteralMap: true` to `loadPyodide()`. This is deprecated.
   {pr}`5912`
 
+- {{ Breaking }} Deprecated `as_object_map`. It will be removed in Pyodide
+  0.31.0.
+  {pr}`5899`
+
 ## Version 0.28.3
 
 _September 22, 2025_
@@ -42,9 +46,6 @@ _September 22, 2025_
 - {{ Enhancement }} The typescript types for `pyodide.FS` are now slightly more
   complete. {pr}`5863`
 
-- {{ Breaking }} Deprecated `as_object_map`. It will be removed in Pyodide
-  0.31.0.
-  {pr}`5899`
 
 ## Version 0.28.2
 
