@@ -351,6 +351,7 @@ export class _PropagatePythonError extends Error {
     );
   }
 }
+Module._PropagatePythonError = _PropagatePythonError as any;
 function setName(errClass: any) {
   Object.defineProperty(errClass.prototype, "name", {
     value: errClass.name,
