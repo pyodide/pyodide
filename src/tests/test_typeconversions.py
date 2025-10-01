@@ -1399,6 +1399,9 @@ def test_to_py4(selenium, obj, msg):
     with pytest.raises((ConversionError, JsException), match=msg):
         a.to_py()
 
+    with pytest.raises((ConversionError, JsException), match=msg):
+        a = run_js(f"pyodide.toPy(new {obj})")
+
 
 @run_in_pyodide
 def test_to_py_default_converter(selenium):
