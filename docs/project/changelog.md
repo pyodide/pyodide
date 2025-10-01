@@ -28,8 +28,8 @@ myst:
   `toJsLiteralMap: true` to `loadPyodide()`. This is deprecated.
   {pr}`5912`
 
-- {{ Breaking }} Deprecated `as_object_map`. It will be removed in Pyodide
-  0.31.0.
+- {{ Breaking }} Deprecated `JsProxy.as_object_map()`. It will be removed in Pyodide
+  0.31.0. Use `JsProxy.as_js_json()` instead.
   {pr}`5899`
 
 ## Version 0.28.3
