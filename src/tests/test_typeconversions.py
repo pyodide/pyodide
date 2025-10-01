@@ -1158,7 +1158,9 @@ def test_tojs2(selenium):
     assert run_js("(o) => Array.isArray(o.toJs())")(o)
     serialized = run_js("(o) => JSON.stringify(o.toJs())")(o)
     assert json.loads(serialized) == [[1, 2], [3, 4], [5, 6], {"a": 1, "2": 3, "4": 9}]
-    serialized = run_js("(o) => JSON.stringify(Array.from(Object.entries(o.toJs()[3])))")(o)
+    serialized = run_js(
+        "(o) => JSON.stringify(Array.from(Object.entries(o.toJs()[3])))"
+    )(o)
     assert sorted(json.loads(serialized)) == [["2", 3], ["4", 9], ["a", 1]]
 
 
