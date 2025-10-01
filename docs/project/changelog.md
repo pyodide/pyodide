@@ -27,7 +27,7 @@ myst:
 - {{ Enhancement }} The typescript types for `pyodide.FS` are now slightly more
   complete. {pr}`5863`
 
-- {{ Breaking }} Deprecated `as_object_method`. It will be removed in Pyodide
+- {{ Breaking }} Deprecated `as_object_map`. It will be removed in Pyodide
   0.31.0.
   {pr}`5899`
 
