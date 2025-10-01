@@ -152,7 +152,7 @@ Then install the required Python version and other build dependencies in a separ
 
 To build on macOS with Homebrew, you need:
 
-- System command line tools: 
+- System command line tools:
   `xcode-select --install`
 - [Homebrew](https://brew.sh/) for installing dependencies
 - Pyodide requires CMake3 but Homebrew installs CMake4.
