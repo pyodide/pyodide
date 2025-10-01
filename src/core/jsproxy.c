@@ -3056,6 +3056,18 @@ JsProxy_as_object_map(PyObject* self,
                       Py_ssize_t nargs,
                       PyObject* kwnames)
 {
+  static bool warned = false;
+  if (!warned) {
+    warned = true;
+    // Use RuntimeWarning not DeprecationWarning because DeprecationWarning is
+    // hidden by default and therefore useless.
+    if (PyErr_WarnEx(
+          PyExc_RuntimeWarning,
+          "JsProxy.as_object_map() is deprecated. Use as_js_json() instead.",
+          1) == -1) {
+      return NULL;
+    }
+  }
   static const char* const _keywords[] = { "hereditary", 0 };
   static struct _PyArg_Parser _parser = {
     .format = "|$p:as_object_map",
