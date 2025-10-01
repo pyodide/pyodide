@@ -509,11 +509,11 @@ def test_python2js4(selenium):
                 (proxy) => {
                     let typename = proxy.type;
                     let x = proxy.toJs();
-                    return [proxy.type, x.constructor.name, x.get(42)];
+                    return [proxy.type, x.constructor.name, x[42]];
                 }
                 """
         )({42: 64})
-    ) == ["dict", "LiteralMap", 64]
+    ) == ["dict", "Object", 64]
 
 
 @run_in_pyodide
@@ -1157,9 +1157,9 @@ def test_tojs2(selenium):
 
     assert run_js("(o) => Array.isArray(o.toJs())")(o)
     serialized = run_js("(o) => JSON.stringify(o.toJs())")(o)
-    assert json.loads(serialized) == [[1, 2], [3, 4], [5, 6], {"a": 1}]
-    serialized = run_js("(o) => JSON.stringify(Array.from(o.toJs()[3].entries()))")(o)
-    assert json.loads(serialized) == [["a", 1], [2, 3], [4, 9]]
+    assert json.loads(serialized) == [[1, 2], [3, 4], [5, 6], {"a": 1, "2": 3, "4": 9}]
+    serialized = run_js("(o) => JSON.stringify(Array.from(Object.entries(o.toJs()[3])))")(o)
+    assert sorted(json.loads(serialized)) == [["2", 3], ["4", 9], ["a", 1]]
 
 
 def test_tojs4(selenium):
@@ -1265,53 +1265,55 @@ def test_tojs9(selenium):
     assert set(run_js("(x) => Array.from(x.values())")(result1)) == {1, "1"}
 
     result2 = to_js({1: 7, "1": 9})
-    assert dict(run_js("(x) => Array.from(x.entries())")(result2)) == {1: 7, "1": 9}
+    assert dict(run_js("(x) => Array.from(Object.entries(x))")(result2)) == {"1": 9}
 
 
-@run_in_pyodide
-def test_tojs_literalmap(selenium):
-    from pyodide.code import run_js
-    from pyodide.ffi import to_js
+def test_tojs_literalmap(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    selenium.run_js(
+        """
+        let pyodide = await loadPyodide({toJsLiteralMap: true});
+        const res = pyodide.runPython(`
+            from pyodide.ffi import to_js
 
-    res = to_js({"a": 6, "b": 10, 6: 9, "get": 77, True: 90})
-
-    run_js("""
-        (res) => {
-            assert(() => res.constructor.name === "LiteralMap");
-            assert(() => "a" in res);
-            assert(() => "b" in res);
-            assert(() => !(6 in res));
-            assert(() => "get" in res);
-            assert(() => !(true in res));
-            assert(() => res.has("a"));
-            assert(() => res.has("b"));
-            assert(() => res.has(6));
-            assert(() => res.has("get"));
-            assert(() => res.has(true));
-            assert(() => res.a === 6);
-            assert(() => res.b === 10);
-            assert(() => res[6] === undefined);
-            assert(() => typeof res.get === "function");
-            assert(() => res[true] === undefined);
-            assert(() => res.get("a") === 6);
-            assert(() => res.get("b") === 10);
-            assert(() => res.get(6) === 9);
-            assert(() => res.get("get") === 77);
-            assert(() => res.get(true) === 90);
-            res.delete("a");
-            assert(() => !("a" in res));
-            assert(() => !res.has("a"));
-            res.a = 7;
-            assert(() => res.a === 7);
-            assert(() => res.get("a") === 7);
-            res.set("a", 99);
-            assert(() => res.get("a") === 99);
-            assert(() => res.a === 99);
-            delete res.a
-            assert(() => !("a" in res));
-            assert(() => !res.has("a"));
-        }
-    """)(res)
+            res = to_js({"a": 6, "b": 10, 6: 9, "get": 77, True: 90})
+            res
+        `);
+        assert(() => res.constructor.name === "LiteralMap");
+        assert(() => "a" in res);
+        assert(() => "b" in res);
+        assert(() => !(6 in res));
+        assert(() => "get" in res);
+        assert(() => !(true in res));
+        assert(() => res.has("a"));
+        assert(() => res.has("b"));
+        assert(() => res.has(6));
+        assert(() => res.has("get"));
+        assert(() => res.has(true));
+        assert(() => res.a === 6);
+        assert(() => res.b === 10);
+        assert(() => res[6] === undefined);
+        assert(() => typeof res.get === "function");
+        assert(() => res[true] === undefined);
+        assert(() => res.get("a") === 6);
+        assert(() => res.get("b") === 10);
+        assert(() => res.get(6) === 9);
+        assert(() => res.get("get") === 77);
+        assert(() => res.get(true) === 90);
+        res.delete("a");
+        assert(() => !("a" in res));
+        assert(() => !res.has("a"));
+        res.a = 7;
+        assert(() => res.a === 7);
+        assert(() => res.get("a") === 7);
+        res.set("a", 99);
+        assert(() => res.get("a") === 99);
+        assert(() => res.a === 99);
+        delete res.a
+        assert(() => !("a" in res));
+        assert(() => !res.has("a"));
+        """
+    )
 
 
 @run_in_pyodide
