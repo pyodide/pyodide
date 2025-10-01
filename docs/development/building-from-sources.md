@@ -133,7 +133,7 @@ Then install the required Python version and other build dependencies in a separ
     conda activate pyodide-env
 
 ```
-```{tab-item} MacOS with conda
+```{tab-item} macOS with conda
 
 You would need,
 - System libraries in the root directory:
@@ -148,20 +148,22 @@ Then install the required Python version and other build dependencies in a separ
 
 ```
 
-```{tab-item} MacOS with Homebrew
+```{tab-item} macOS with Homebrew
 
-To build on MacOS with Homebrew, you need:
+To build on macOS with Homebrew, you need:
 
-- System command line tools
+- System command line tools:
   `xcode-select --install`
 - [Homebrew](https://brew.sh/) for installing dependencies
-- `brew install coreutils autoconf automake libtool libffi ccache`
 - Pyodide requires CMake3 but Homebrew installs CMake4.
   Use pip for cmake `pip install cmake==3.31`
+- `brew install coreutils cmake autoconf automake libtool libffi ccache wget rustup-init`
+- Initialize Rust (needed for building test-rust-* packages): `rustup-init`
 - Install the GNU patch and
   GNU sed (`brew install gpatch gnu-sed`)
   and [re-defining them temporarily as `patch` and
   `sed`](https://formulae.brew.sh/formula/gnu-sed).
+
 ```
 ````
 
