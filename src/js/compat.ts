@@ -309,7 +309,7 @@ export async function calculateDirname(): Promise<string> {
   const indexOfLastSlash = fileName.lastIndexOf(pathSep);
   if (indexOfLastSlash === -1) {
     throw new Error(
-      "Could not extract indexURL path from pyodide module location",
+      "Could not extract indexURL path from pyodide module location. Please pass the indexURL explicitly to loadPyodide.",
     );
   }
   return fileName.slice(0, indexOfLastSlash);
