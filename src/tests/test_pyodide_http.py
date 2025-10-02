@@ -312,7 +312,7 @@ async def test_pyfetch_custom_fetcher(selenium):
     )
 
     assert len(call_args) == 1
-    assert call_args[0][0] == "test_url"
+    assert call_args[0][0].url == "test_url"
     assert "headers" in call_args[0][1]
     assert call_args[0][1]["headers"]["X-Test"] == "true"
 
