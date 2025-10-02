@@ -233,7 +233,6 @@ export type FSStreamOpsGen<T> = {
  * @hidden
  */
 interface PyodideFSType {
-  mkdirTree: (path: string, mode?: number) => void;
   createDevice: ((
     parent: string,
     name: string,
@@ -248,12 +247,8 @@ interface PyodideFSType {
       follow_mount?: boolean;
     },
   ) => { node: FSNode };
-  open: (path: string, flags: string | number, mode?: number) => FSStream;
   filesystems: any;
-  isMountpoint: (node: FSNode) => boolean;
-  closeStream: (fd: number) => void;
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
-  writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
 }
 
 /**
