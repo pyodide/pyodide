@@ -579,9 +579,29 @@ _JsObject_New(ConversionContext *context) {
   return JsvObject_New();
 }
 
+EM_JS_NUM(int, _JsObject_Set_js, (JsVal obj, JsVal key, JsVal value), {
+  if (key in obj) {
+    return -2;
+  }
+  obj[key] = value;
+})
+
 static int
 _JsObject_Set(ConversionContext *context, JsVal obj, JsVal key, JsVal value) {
-  return JsvObject_SetAttr(obj, key, value);
+  int result = _JsObject_Set_js(obj, key, value);
+  if (result == -2) {
+    PyObject* pykey = js2python(key);
+    if (pykey == NULL) {
+      PyErr_SetString(
+        conversion_error, "Key collision when converting Python dictionary to JavaScript.", pykey);
+      return -1;
+    }
+    PyErr_Format(
+      conversion_error, "Key collision when converting Python dictionary to JavaScript. Key: %R", pykey);
+    Py_CLEAR(pykey);
+    return -1;
+  }
+  return result;
 }
 
 /**
