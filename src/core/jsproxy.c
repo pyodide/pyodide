@@ -3063,7 +3063,7 @@ JsProxy_as_object_map(PyObject* self,
     // hidden by default and therefore useless.
     if (PyErr_WarnEx(
           PyExc_RuntimeWarning,
-          "JsProxy.as_object_map() is deprecated. Use as_js_json() instead.",
+          "JsProxy.as_object_map() is deprecated. Use as_py_json() instead.",
           1) == -1) {
       return NULL;
     }
