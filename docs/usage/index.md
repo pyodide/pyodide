@@ -129,4 +129,5 @@ undefined
    webworker.md
    service-worker.md
    working-with-bundlers.md
+   cli.md
 ```
