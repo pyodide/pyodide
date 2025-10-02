@@ -377,7 +377,7 @@ def typehints_formatter(annotation, config):  # noqa: PLR0911
         return ":js:class:`AbortController`"
     if full_name == "pyodide.http._pyfetch.AbortSignal":
         return ":js:class:`AbortSignal`"
-    if full_name == "pyodide.http.pyfetch.Request":
+    if full_name == "pyodide.http._pyfetch.Request":
         return ":js:class:`Request`"
     return None
 
