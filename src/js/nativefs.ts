@@ -120,18 +120,18 @@ export function initializeNativeFS(module: PyodideModule) {
       return { type: "remote", entries, handles };
     },
     loadLocalEntry: (path: string) => {
-      const lookup = FS.lookupPath(path);
+      const lookup = FS.lookupPath(path, {});
       const node = lookup.node;
       const stat = FS.stat(path);
 
       if (FS.isDir(stat.mode)) {
         return { timestamp: stat.mtime, mode: stat.mode };
       } else if (FS.isFile(stat.mode)) {
-        node.contents = MEMFS.getFileDataAsTypedArray(node);
+        const contents = MEMFS.getFileDataAsTypedArray(node);
         return {
           timestamp: stat.mtime,
           mode: stat.mode,
-          contents: node.contents,
+          contents: contents,
         };
       } else {
         throw new Error("node type not supported");

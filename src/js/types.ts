@@ -241,12 +241,6 @@ interface PyodideFSType {
   ) => FSNode) & {
     major: number;
   };
-  lookupPath: (
-    path: string,
-    options?: {
-      follow_mount?: boolean;
-    },
-  ) => { node: FSNode };
   filesystems: any;
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
 }
@@ -256,7 +250,7 @@ interface PyodideFSType {
  * TODO: Consider upstreaming these APIs to `@types/emscripten`
  * @hidden
  */
-export type FSType = Omit<typeof FS, "lookupPath"> & PyodideFSType;
+export type FSType = typeof FS & PyodideFSType;
 
 /** @hidden */
 export type PreRunFunc = (Module: PyodideModule) => void;
