@@ -184,6 +184,16 @@ for ty, key, url in [
         "Record",
         "https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type",
     ),
+    (
+        "js:class",
+        "Omit",
+        "https://www.typescriptlang.org/docs/handbook/utility-types.html#omittype-keys",
+    ),
+    (
+        "js:class",
+        "FS",
+        "https://emscripten.org/docs/api_reference/Filesystem-API.html",
+    ),
 ]:
     INVDATA[ty][key] = (
         "typescript docs",

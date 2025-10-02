@@ -10,11 +10,10 @@ from typing import IO, TYPE_CHECKING, Any, ParamSpec, TypeVar
 
 from .._package_loader import unpack_buffer
 from ..ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
-from .exceptions import (
+from ._exceptions import (
     AbortError,
     BodyUsedError,
     HttpStatusError,
-    _construct_abort_reason,
 )
 
 if IN_BROWSER or TYPE_CHECKING:
@@ -42,7 +41,14 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 
-def _abort_on_cancel(method: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+def _construct_abort_reason(reason: Any) -> JsException | None:
+    """Construct an abort reason from a given value."""
+    if reason is None:
+        return None
+    return JsException("AbortError", reason)
+
+
+def _abort_on_cancel(method: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:  # noqa: UP047
     @wraps(method)
     async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         try:

@@ -2133,7 +2133,7 @@ JsArray_index_js,
       return i;
     }
   }
-  return -1;
+  return -2;
 })
 // clang-format on
 
@@ -2183,7 +2183,7 @@ JsArray_index_helper(PyObject* self,
     goto error;
   } else {
     int result = JsArray_index_js(JsProxy_VAL(self), jsvalue, start, stop);
-    if (result == -1) {
+    if (result == -2) {
       goto error;
     }
     return result;
@@ -3056,6 +3056,18 @@ JsProxy_as_object_map(PyObject* self,
                       Py_ssize_t nargs,
                       PyObject* kwnames)
 {
+  static bool warned = false;
+  if (!warned) {
+    warned = true;
+    // Use RuntimeWarning not DeprecationWarning because DeprecationWarning is
+    // hidden by default and therefore useless.
+    if (PyErr_WarnEx(
+          PyExc_RuntimeWarning,
+          "JsProxy.as_object_map() is deprecated. Use as_js_json() instead.",
+          1) == -1) {
+      return NULL;
+    }
+  }
   static const char* const _keywords[] = { "hereditary", 0 };
   static struct _PyArg_Parser _parser = {
     .format = "|$p:as_object_map",

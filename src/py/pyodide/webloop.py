@@ -1,11 +1,14 @@
 import asyncio
 import contextvars
 import inspect
+import os
 import sys
 import time
 import traceback
+import warnings
+import weakref
 from asyncio import Future, Task, sleep
-from collections.abc import Awaitable, Callable, Coroutine
+from collections.abc import AsyncGenerator, Awaitable, Callable, Coroutine
 from functools import wraps
 from typing import Any, TypeVar, overload
 
@@ -209,9 +212,101 @@ class WebLoop(asyncio.AbstractEventLoop):
         self._no_in_progress_handler = None
         self._keyboard_interrupt_handler = None
         self._system_exit_handler = None
+        # Debug mode is currently no-op (actual asyncio debug features not implemented)
+        self._debug = sys.flags.dev_mode or (
+            not sys.flags.ignore_environment
+            and bool(os.environ.get("PYTHONASYNCIODEBUG"))
+        )
+        # The preserved state of async generator hooks
+        self._old_agen_hooks: tuple[Any, Any] | None = None
+        self._asyncgens: weakref.WeakSet[AsyncGenerator[Any, Any]] = weakref.WeakSet()
+        self._asyncgens_shutdown_called: bool = False
 
     def get_debug(self):
-        return False
+        """Return the debug mode of the event loop."""
+        return self._debug
+
+    def set_debug(self, enabled: bool) -> None:
+        """Set the debug mode of the event loop."""
+        self._debug = enabled
+
+    #
+    # Async generator lifecycle management
+    #
+
+    def _asyncgen_firstiter_hook(self, agen: AsyncGenerator[Any, Any]) -> None:
+        """Called when an async generator starts iteration.
+        Tracks new async generators and issues warnings if they're created
+        after shutdown_asyncgens() has been called.
+        """
+        if self._asyncgens_shutdown_called:
+            warnings.warn(
+                f"asynchronous generator {agen!r} was scheduled after "
+                f"loop.shutdown_asyncgens() call",
+                ResourceWarning,
+                source=self,
+                stacklevel=2,
+            )
+
+        self._asyncgens.add(agen)
+
+    def _asyncgen_finalizer_hook(self, agen: AsyncGenerator[Any, Any]) -> None:
+        """Called when an async generator is being finalized.
+        Removes the generator from tracking and schedules its cleanup.
+        """
+        self._asyncgens.discard(agen)
+
+        # WebLoop never closes, but keep check for consistency with asyncio
+        if not self.is_closed():
+            self.call_soon(asyncio.ensure_future, agen.aclose())
+
+    def _install_asyncgen_hooks(self) -> None:
+        """Install async generator hooks if not already installed."""
+        if self._old_agen_hooks is not None:
+            return
+
+        self._old_agen_hooks = sys.get_asyncgen_hooks()
+        sys.set_asyncgen_hooks(
+            firstiter=self._asyncgen_firstiter_hook,
+            finalizer=self._asyncgen_finalizer_hook,
+        )
+
+    async def shutdown_asyncgens(self) -> None:
+        """Shutdown all active async generators.
+
+        This closes all tracked async generators and prevents new ones from being created.
+        """
+        self._asyncgens_shutdown_called = True
+
+        closing_asyncgens = list(self._asyncgens)
+        self._asyncgens.clear()
+
+        if not closing_asyncgens:
+            return
+
+        results = await asyncio.gather(
+            *[ag.aclose() for ag in closing_asyncgens], return_exceptions=True
+        )
+
+        for result, agen in zip(results, closing_asyncgens, strict=False):
+            if isinstance(result, Exception):
+                self.call_exception_handler(
+                    {
+                        "message": (
+                            f"an error occurred during closing of "
+                            f"asynchronous generator {agen!r}"
+                        ),
+                        "exception": result,
+                        "asyncgen": agen,
+                    }
+                )
+
+    async def shutdown_default_executor(self):
+        """Schedule the shutdown of the default executor.
+
+        This is a no-op since WebLoop doesn't use thread executors.
+        """
+        pass
 
     #
     # Lifecycle methods: We ignore all lifecycle management
@@ -270,12 +365,28 @@ class WebLoop(asyncio.AbstractEventLoop):
         from pyodide_js._api import config
 
         if config.enableRunUntilComplete:
+            self._install_asyncgen_hooks()
             return run_sync(future)
         return asyncio.ensure_future(future)
+
+    def stop(self):
+        """Stop the event loop as soon as reasonable.
+
+        This is a no-op in WebLoop since it runs forever on the browser event loop.
+        """
+        pass
 
     #
     # Scheduling methods: use browser.setTimeout to schedule tasks on the browser event loop.
     #
+
+    def _timer_handle_cancelled(self, handle):
+        """Notification that a TimerHandle has been cancelled.
+
+        This is a no-op since we use browser setTimeout which handles
+        cancellation automatically.
+        """
+        pass
 
     def call_soon(  # type: ignore[override]
         self,
@@ -334,6 +445,8 @@ class WebLoop(asyncio.AbstractEventLoop):
         h = asyncio.Handle(callback, args, self, context=context)
 
         def run_handle():
+            self._install_asyncgen_hooks()
+
             if h.cancelled():
                 return
             try:
@@ -400,6 +513,14 @@ class WebLoop(asyncio.AbstractEventLoop):
         except BaseException as e:
             fut.set_exception(e)
         return fut
+
+    def set_default_executor(self, executor):
+        """Set the default executor.
+
+        This is a no-op since WebLoop doesn't use thread executors.
+        All functions are executed in the main thread via run_in_executor.
+        """
+        pass
 
     def create_future(self) -> asyncio.Future[Any]:
         """Create a Future object attached to the loop."""
@@ -604,6 +725,204 @@ class WebLoop(asyncio.AbstractEventLoop):
                     )
                     traceback.print_exc()
 
+    #
+    # File descriptor readiness methods - Not available in browser environments
+    #
+
+    def add_reader(self, fd, callback, *args):  # type: ignore[override]
+        """Register a reader callback for a file descriptor (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "add_reader() is not available in browser environments due to lack of POSIX file descriptors."
+        )
+
+    def add_writer(self, fd, callback, *args):  # type: ignore[override]
+        """Register a writer callback for a file descriptor (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "add_writer() is not available in browser environments due to lack of POSIX file descriptors."
+        )
+
+    def remove_reader(self, fd):
+        """Remove a reader callback for a file descriptor (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "remove_reader() is not available in browser environments due to lack of POSIX file descriptors."
+        )
+
+    def remove_writer(self, fd):
+        """Remove a writer callback for a file descriptor (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "remove_writer() is not available in browser environments due to lack of POSIX file descriptors."
+        )
+
+    #
+    # Pipes & zero-copy file transfer methods — not available in browser environments
+    #
+
+    async def connect_read_pipe(self, protocol_factory, pipe):
+        """Connect a read pipe to the event loop (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "connect_read_pipe() is not available in browser environments due to absence of OS pipes."
+        )
+
+    async def connect_write_pipe(self, protocol_factory, pipe):
+        """Connect a write pipe to the event loop (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "connect_write_pipe() is not available in browser environments due to absence of OS pipes."
+        )
+
+    async def sendfile(self, transport, file, offset=0, count=None, *, fallback=True):
+        """Send a file over a transport (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "sendfile() is not available in browser environments due to missing OS file descriptors and zero-copy facilities."
+        )
+
+    #
+    # High-level networking (TCP/UDP/DNS/TLS) methods — not available in browser environments
+    #
+
+    async def getaddrinfo(self, host, port, *, family=0, type=0, proto=0, flags=0):
+        """Asynchronous version of socket.getaddrinfo() (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "getaddrinfo() is not available in browser environments due to restricted raw network access."
+        )
+
+    async def getnameinfo(self, sockaddr, flags=0):
+        """Asynchronous version of socket.getnameinfo() (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "getnameinfo() is not available in browser environments due to restricted raw network access."
+        )
+
+    async def create_connection(self, protocol_factory, host=None, port=None, **kwargs):
+        """Open a streaming transport connection to a given address (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "create_connection() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def create_server(self, protocol_factory, host=None, port=None, **kwargs):
+        """Create a TCP server (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "create_server() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def create_unix_connection(self, protocol_factory, path=None, **kwargs):
+        """Open a connection to a UNIX domain socket (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "create_unix_connection() is not available in browser environments due to absence of Unix domain sockets."
+        )
+
+    async def create_unix_server(self, protocol_factory, path=None, **kwargs):
+        """Create a UNIX domain socket server (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "create_unix_server() is not available in browser environments due to absence of Unix domain sockets."
+        )
+
+    async def connect_accepted_socket(self, protocol_factory, sock, **kwargs):
+        """Wrap an already accepted socket into a transport and protocol pair (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "connect_accepted_socket() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def create_datagram_endpoint(self, protocol_factory, **kwargs):  # type: ignore[override]
+        """Create a datagram (UDP) connection (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "create_datagram_endpoint() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def start_tls(self, transport, protocol, sslcontext, **kwargs):
+        """Upgrade an existing connection to TLS (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "start_tls() is not available in browser environments due to lack of low-level TLS controls."
+        )
+
+    #
+    # Low-level socket operations methods — not available in browser environments
+    #
+
+    async def sock_recv(self, sock, nbytes):
+        """Receive up to nbytes (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "sock_recv() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_recv_into(self, sock, buf):
+        """Receive into buf (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "sock_recv_into() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_recvfrom(self, sock, bufsize):
+        """Receive a datagram up to bufsize (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "sock_recvfrom() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_recvfrom_into(self, sock, buf, nbytes=0):
+        """Receive a datagram into buf (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "sock_recvfrom_into() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_sendall(self, sock, data):
+        """Send all data to the socket (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "sock_sendall() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_sendto(self, sock, data, address):
+        """Send a datagram to address (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "sock_sendto() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_connect(self, sock, address):
+        """Connect the socket to a remote address (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "sock_connect() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_accept(self, sock):
+        """Accept a connection (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "sock_accept() is not available in browser environments due to restricted raw socket access."
+        )
+
+    async def sock_sendfile(self, sock, file, offset=0, count=None, *, fallback=None):
+        """Send a file (uses os.sendfile if possible) (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "sock_sendfile() is not available in browser environments due to missing OS file descriptors and zero-copy facilities."
+        )
+
+    #
+    # Subprocess methods — not available in browser environments
+    #
+
+    async def subprocess_shell(self, protocol_factory, cmd, **kwargs):
+        """Create a subprocess from string args (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "subprocess_shell() is not available in browser environments due to absence of OS process APIs."
+        )
+
+    async def subprocess_exec(self, protocol_factory, *args, **kwargs):
+        """Run a subprocess from a shell command line (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "subprocess_exec() is not available in browser environments due to absence of OS process APIs."
+        )
+
+    #
+    # Signals methods — not available in browser environments
+    #
+
+    def add_signal_handler(self, sig, callback, *args):  # type: ignore[override]
+        """Set callback as the handler for the given signal (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "add_signal_handler() is not available in browser environments due to lack of POSIX signals."
+        )
+
+    def remove_signal_handler(self, sig):
+        """Remove the handler for the given signal (unsupported on WebLoop)."""
+        raise NotImplementedError(
+            "remove_signal_handler() is not available in browser environments due to lack of POSIX signals."
+        )
+
 
 class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
     """
@@ -621,7 +940,7 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
     def new_event_loop(self) -> WebLoop:
         """Create a new event loop"""
-        self._default_loop = WebLoop()  # type: ignore[abstract]
+        self._default_loop = WebLoop()
         return self._default_loop
 
     def set_event_loop(self, loop: Any) -> None:
@@ -655,14 +974,8 @@ def _sleep(t):
 
 
 def _initialize_event_loop():
-    from .ffi import IN_BROWSER
-
     if not IN_BROWSER:
         return
-
-    import asyncio
-
-    from .webloop import WebLoopPolicy
 
     asyncio.run = _run
     time.sleep = _sleep

@@ -17,6 +17,30 @@ myst:
 
 ## Unreleased
 
+- {{ Feature }} Added `pyxhr`, a synchronous HTTP client using XMLHttpRequest
+  that provides a requests-like API for making synchronous HTTP requests in
+  browser environments. This includes `XHRResponse` class and support for all
+  common HTTP methods (GET, POST, PUT, DELETE, HEAD, PATCH, OPTIONS).
+  {pr}`5841`
+
+## Version 0.28.3
+
+_September 22, 2025_
+
+- {{ Fix }} In 0.28.2 we accidentally disabled a performance optimization that
+  makes the foreign function interface about 5% slower. {pr}`5890`
+
+- {{ Enhancement }} Added ``get_debug``/``set_debug`` methods to webloop. These
+  are methods on ``AbstractEventLoop``. There are currently no differences in
+  behavior when debug mode is set on the event loop. {pr}`5886`
+
+- {{ Enhancement }} The typescript types for `pyodide.FS` are now slightly more
+  complete. {pr}`5863`
+
+- {{ Breaking }} Deprecated `as_object_map`. It will be removed in Pyodide
+  0.31.0.
+  {pr}`5899`
+
 ## Version 0.28.2
 
 _August 19, 2025_
