@@ -593,7 +593,7 @@ _JsObject_Set(ConversionContext *context, JsVal obj, JsVal key, JsVal value) {
     PyObject* pykey = js2python(key);
     if (pykey == NULL) {
       PyErr_SetString(
-        conversion_error, "Key collision when converting Python dictionary to JavaScript.", pykey);
+        conversion_error, "Key collision when converting Python dictionary to JavaScript.");
       return -1;
     }
     PyErr_Format(

@@ -1260,14 +1260,17 @@ def test_tojs8(selenium):
 
 @run_in_pyodide
 def test_tojs9(selenium):
+    import pytest
+
     from pyodide.code import run_js
-    from pyodide.ffi import to_js
+    from pyodide.ffi import ConversionError, to_js
 
     result1 = to_js({1, "1"})
     assert set(run_js("(x) => Array.from(x.values())")(result1)) == {1, "1"}
 
-    result2 = to_js({1: 7, "1": 9})
-    assert dict(run_js("(x) => Array.from(Object.entries(x))")(result2)) == {"1": 9}
+    msg = "Key collision when converting Python dictionary to JavaScript. Key: '1'"
+    with pytest.raises(ConversionError, match=msg):
+        to_js({1: 7, "1": 9})
 
 
 def test_tojs_literalmap(selenium_standalone_noload):
