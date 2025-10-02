@@ -20,7 +20,7 @@ requires an installation of NodeJS >= 20.
 
 ## Installation
 
-There are three ways to install the Pyodide CLI. 
+There are three ways to install the Pyodide CLI.
 
 
 ### Github releases
@@ -38,12 +38,12 @@ not work without pip installed.
 
 You can use `uv python install cpython-3.13.2-emscripten-wasm32-musl` to install
 Pyodide. Then you can create a Pyodide venv with
-```sh 
+```sh
 uv venv .venv-pyodide -p cpython-3.13.2-emscripten-wasm32-musl
 ```
 When you install packages you should use:
 ```sh
-uv pip install --no-build --extra-index-url https://index.pyodide.org/0.28.3/ --index-strategy unsafe-best-match 
+uv pip install --no-build --extra-index-url https://index.pyodide.org/0.28.3/ --index-strategy unsafe-best-match
 ```
 
 You can set these settings by default by putting the following in `uv.toml`:
