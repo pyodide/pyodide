@@ -193,7 +193,7 @@ If you need to access the fields in a JavaScript object, you must use
 `obj.field_name` or if the name of the field is not a valid Python identifier,
 `getattr(obj, "field name")`. If you want to access the fields of the object
 like `obj["field name"]` you can use
-{py:meth}`~pyodide.ffi.JsProxy.as_object_map`:
+{py:meth}`~pyodide.ffi.JsProxy.as_py_json`:
 
 ```py
 from pyodide.code import run_js
@@ -207,7 +207,7 @@ obj = run_js(
     })
     """
 )
-obj_map = obj.as_object_map()
+obj_map = obj.as_py_json()
 assert obj_map["$c"] == 11
 ```
 
