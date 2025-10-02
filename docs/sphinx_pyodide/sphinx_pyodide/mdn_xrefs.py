@@ -44,6 +44,7 @@ DATA = {
         "Float64Array": "$global/",
         "Map": "$global/",
         "Response": "API/",
+        "Request": "API/",
         "Set": "$global/",
         # the JavaScript domain has no exception type for some reason...
         "Error": "$global/",
