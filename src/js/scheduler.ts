@@ -112,7 +112,7 @@ function scheduleCallbackImmediate(callback: () => void) {
  */
 export function scheduleCallback(callback: () => void, timeout: number = 0) {
   if (timeout == 0) {
-    // for delay, use immediate callback
+    // for delay 0, use immediate callback
     scheduleCallbackImmediate(callback);
   } else {
     setTimeout(callback, timeout);
