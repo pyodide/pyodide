@@ -45,6 +45,17 @@ async def test_pyfetch_create_file(selenium):
     )
 
 
+@pytest.mark.xfail_browsers(node="Request requires fully qualified url")
+@run_in_pyodide
+async def test_pyfetch_js_request(selenium):
+    from js import Request
+    from pyodide.http import pyfetch
+
+    resp = await pyfetch(Request.new("console.html"))
+    assert resp.url.endswith("/console.html")
+    assert resp.status == 200
+
+
 @run_in_pyodide
 async def test_pyfetch_return_400_status_body(selenium, url_notfound):
     from pyodide.http import pyfetch
@@ -301,7 +312,7 @@ async def test_pyfetch_custom_fetcher(selenium):
     )
 
     assert len(call_args) == 1
-    assert call_args[0][0] == "test_url"
+    assert call_args[0][0].url.endswith("/test_url")
     assert "headers" in call_args[0][1]
     assert call_args[0][1]["headers"]["X-Test"] == "true"
 

@@ -160,3 +160,13 @@ class Response(_JsObject):
 class Promise(_JsObject):
     @staticmethod
     def resolve(value: Any) -> Promise: ...
+
+class Request(_JsObject):
+    @overload
+    @staticmethod
+    def new(url: str, options: Any) -> Request: ...
+    @overload
+    @staticmethod
+    def new(url: str, **kwargs: Any) -> Request: ...
+    @property
+    def url(self) -> str: ...
