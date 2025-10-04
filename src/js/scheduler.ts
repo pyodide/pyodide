@@ -45,7 +45,8 @@ installPostMessageHandler();
 function ensureSharedChannel() {
   if (sharedChannel) return;
 
-  if (RUNTIME_ENV.IN_SAFARI || RUNTIME_ENV.IN_DENO) return;
+  if (RUNTIME_ENV.IN_SAFARI || RUNTIME_ENV.IN_DENO || RUNTIME_ENV.IN_NODE)
+    return;
 
   if (typeof globalThis.MessageChannel === "function") {
     sharedChannel = new MessageChannel();
