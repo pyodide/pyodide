@@ -1,4 +1,4 @@
-import { loadPyodide } from "../dist/pyodide.mjs";
+import { loadPyodide } from "../dist/pyodide.js";
 
 console.log("Start!");
 const py = await loadPyodide();

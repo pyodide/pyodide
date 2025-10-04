@@ -1,6 +1,7 @@
 {
   "name": "pyodide",
   "version": "0.29.0-dev.0",
+  "type": "module",
   "description": "The Pyodide JavaScript package",
   "keywords": [
     "python",
@@ -45,8 +46,8 @@
   "exports": {
     ".": {
       "types": "./pyodide.d.ts",
-      "require": "./pyodide.js",
-      "import": "./pyodide.mjs"
+      "import": "./pyodide.js",
+      "default": "./pyodide.js"
     },
     "./ffi": {
       "types": "./ffi.d.ts"
@@ -54,7 +55,6 @@
     "./pyodide.asm.wasm": "./pyodide.asm.wasm",
     "./pyodide.asm.js": "./pyodide.asm.js",
     "./python_stdlib.zip": "./python_stdlib.zip",
-    "./pyodide.mjs": "./pyodide.mjs",
     "./pyodide.js": "./pyodide.js",
     "./package.json": "./package.json",
     "./pyodide-lock.json": "./pyodide-lock.json"
@@ -63,9 +63,8 @@
     "pyodide.asm.js",
     "pyodide.asm.wasm",
     "python_stdlib.zip",
-    "pyodide.mjs",
+    "pyodide.js",
     "pyodide.js.map",
-    "pyodide.mjs.map",
     "pyodide.d.ts",
     "ffi.d.ts",
     "pyodide-lock.json",
