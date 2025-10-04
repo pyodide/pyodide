@@ -7,7 +7,7 @@ const tasks: Record<number, () => void> = {};
 let nextTaskHandle = 0;
 
 let sharedChannel: MessageChannel | null = null;
-const queue: number[] = [];
+const taskQueue: number[] = [];
 
 /**
  * Setup global message event listener to handle immediate callbacks
@@ -53,8 +53,8 @@ function ensureSharedChannel() {
 
   sharedChannel.port1.onmessage = () => {
     // Drain the queue: process as many scheduled tasks as are currently queued.
-    while (queue.length) {
-      const handle = queue.shift()!;
+    while (taskQueue.length) {
+      const handle = taskQueue.shift()!;
       const task = tasks[handle];
       if (!task) continue;
       try {
@@ -64,11 +64,8 @@ function ensureSharedChannel() {
       }
     }
   };
-  if (typeof sharedChannel.port1.start === "function") {
-    try {
-      sharedChannel.port1.start();
-    } catch {}
-  }
+  // Redundant per spec (onmessage auto-starts the port); kept for clarity and potential edge runtimes.
+  sharedChannel.port1.start?.();
 }
 
 ensureSharedChannel();
@@ -94,7 +91,7 @@ function scheduleCallbackImmediate(callback: () => void) {
   } else if (sharedChannel) {
     const handle = nextTaskHandle++;
     tasks[handle] = callback;
-    queue.push(handle);
+    taskQueue.push(handle);
     sharedChannel.port2.postMessage(0);
   } else if (
     RUNTIME_ENV.IN_BROWSER_MAIN_THREAD &&
@@ -118,8 +115,8 @@ function scheduleCallbackImmediate(callback: () => void) {
  * @hidden
  */
 export function scheduleCallback(callback: () => void, timeout: number = 0) {
-  if (timeout === 0) {
-    // for delay 0, use immediate callback
+  if (timeout <= 2) {
+    // for a very short delay (0, 1), use immediate callback
     scheduleCallbackImmediate(callback);
   } else {
     setTimeout(callback, timeout);
