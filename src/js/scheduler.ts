@@ -7,6 +7,7 @@ const tasks: Record<number, () => void> = {};
 let nextTaskHandle = 0;
 
 let sharedChannel: MessageChannel | null = null;
+const queue: number[] = [];
 
 /**
  * Setup global message event listener to handle immediate callbacks
@@ -44,25 +45,29 @@ installPostMessageHandler();
 
 function ensureSharedChannel() {
   if (sharedChannel) return;
-
   if (RUNTIME_ENV.IN_SAFARI || RUNTIME_ENV.IN_DENO || RUNTIME_ENV.IN_NODE)
     return;
+  if (typeof globalThis.MessageChannel !== "function") return;
 
-  if (typeof globalThis.MessageChannel === "function") {
-    sharedChannel = new MessageChannel();
-    sharedChannel.port1.onmessage = (event: MessageEvent) => {
-      const handle = event.data;
+  sharedChannel = new MessageChannel();
+
+  sharedChannel.port1.onmessage = () => {
+    // Drain the queue: process as many scheduled tasks as are currently queued.
+    while (queue.length) {
+      const handle = queue.shift()!;
       const task = tasks[handle];
-      if (!task) {
-        return;
-      }
-
+      if (!task) continue;
       try {
         task();
       } finally {
         delete tasks[handle];
       }
-    };
+    }
+  };
+  if (typeof sharedChannel.port1.start === "function") {
+    try {
+      sharedChannel.port1.start();
+    } catch {}
   }
 }
 
@@ -87,19 +92,20 @@ function scheduleCallbackImmediate(callback: () => void) {
   if (RUNTIME_ENV.IN_NODE) {
     setImmediate(callback);
   } else if (sharedChannel) {
-    tasks[nextTaskHandle] = callback;
-    sharedChannel.port2.postMessage(nextTaskHandle);
-    nextTaskHandle++;
+    const handle = nextTaskHandle++;
+    tasks[handle] = callback;
+    queue.push(handle);
+    sharedChannel.port2.postMessage(0);
   } else if (
     RUNTIME_ENV.IN_BROWSER_MAIN_THREAD &&
     typeof globalThis.postMessage === "function"
   ) {
-    tasks[nextTaskHandle] = callback;
+    const handle = nextTaskHandle++;
+    tasks[handle] = callback;
     globalThis.postMessage(
-      scheduleCallbackImmediateMessagePrefix + nextTaskHandle,
+      scheduleCallbackImmediateMessagePrefix + handle,
       "*",
     );
-    nextTaskHandle++;
   } else {
     setTimeout(callback, 0);
   }
