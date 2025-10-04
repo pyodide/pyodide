@@ -11,9 +11,9 @@ from conftest import only_chrome, only_node
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_idbfs_persist_code(selenium_standalone):
+def test_idbfs_persist_code(selenium_standalone_refresh):
     """can we persist files created by user python code?"""
-    selenium = selenium_standalone
+    selenium = selenium_standalone_refresh
     if selenium.browser == "node":
         fstype = "NODEFS"
     else:
@@ -113,7 +113,7 @@ def test_idbfs_persist_code(selenium_standalone):
 
 @pytest.mark.requires_dynamic_linking
 @only_chrome
-def test_nativefs_dir(request, selenium_standalone):
+def test_nativefs_dir(request, selenium_standalone_refresh):
     # Note: Using *real* native file system requires
     # user interaction so it is not available in headless mode.
     # So in this test we use OPFS (Origin Private File System)
@@ -122,7 +122,7 @@ def test_nativefs_dir(request, selenium_standalone):
     if request.config.option.runner == "playwright":
         pytest.xfail("Playwright doesn't support file system access APIs")
 
-    selenium = selenium_standalone
+    selenium = selenium_standalone_refresh
 
     selenium.run_js(
         """
@@ -434,8 +434,8 @@ async def test_nativefs_dup(selenium, runner):
     file.close()
 
 
-def test_trackingDelegate(selenium_standalone):
-    selenium = selenium_standalone
+def test_trackingDelegate(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
 
     selenium.run_js(
         """
