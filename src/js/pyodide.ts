@@ -240,6 +240,12 @@ export async function loadPyodide(
      * @deprecated
      */
     convertNullToNone?: boolean;
+    /**
+     * Opt into the old behavior where Python dictionaries are converted to
+     * LiteralMap instead of Object.
+     * @deprecated
+     */
+    toJsLiteralMap?: boolean;
     /** @ignore */
     _makeSnapshot?: boolean;
     /** @ignore */
@@ -343,6 +349,9 @@ export async function loadPyodide(
   }
   if (options.convertNullToNone) {
     API.setCompatNullToNone(true);
+  }
+  if (options.toJsLiteralMap) {
+    API.setCompatToJsLiteralMap(true);
   }
 
   if (API.version !== version && config.checkAPIVersion) {
