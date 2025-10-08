@@ -23,6 +23,10 @@ myst:
   common HTTP methods (GET, POST, PUT, DELETE, HEAD, PATCH, OPTIONS).
   {pr}`5841`
 
+- {{ Fix }} Fixed a bug where a weird object was used as `this` when there is no
+  relevant `this`. See {issue}`5929`.
+  {pr}`5937`
+
 ### Packages
 
 - {{ Enhancement }} New packages added:
