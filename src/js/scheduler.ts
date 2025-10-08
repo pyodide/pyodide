@@ -93,8 +93,8 @@ function scheduleCallbackImmediate(callback: () => void) {
  * @hidden
  */
 export function scheduleCallback(callback: () => void, timeout: number = 0) {
-  if (timeout <= 2) {
-    // for a very short delay (0, 1), use immediate callback
+  if (timeout === 0) {
+    // for 0 delay, use immediate callback
     scheduleCallbackImmediate(callback);
   } else {
     setTimeout(callback, timeout);
