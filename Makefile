@@ -20,6 +20,8 @@ all-but-packages: \
 	check-emcc \
 	$(CPYTHONINSTALL)/.installed-pyodide \
 	dist/pyodide.asm.js \
+	dist/pyodide.mjs \
+	dist/pyodide.cjs \
 	dist/pyodide.js \
 	 \
 	dist/package.json \
@@ -128,11 +130,7 @@ dist/pyodide.asm.js: \
    # cat dist/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
 	$(SED) -i -E 's/var __Z[^;]*;//g' dist/pyodide.asm.js
 	$(SED) -i '1i "use strict";' dist/pyodide.asm.js
-	# Remove last 7 lines of pyodide.asm.js, see issue #2282
-	# Hopefully we will remove this after emscripten fixes it, upstream issue
-	# emscripten-core/emscripten#16518
-	# Sed nonsense from https://stackoverflow.com/a/13383331
-	$(SED) -i -n -e :a -e '1,7!{P;N;D;};N;ba' dist/pyodide.asm.js
+	# Add globalThis export for backward compatibility alongside ES6 export
 	echo "globalThis._createPyodideModule = _createPyodideModule;" >> dist/pyodide.asm.js
 
 	@date +"[%F %T] done building pyodide.asm.js."
@@ -157,13 +155,17 @@ src/js/generated/_pyodide.out.js:            \
 		node_modules/.installed
 	cd src/js && npm run build-inner && cd -
 
-dist/pyodide.js:                             \
+dist/pyodide.mjs dist/pyodide.cjs:           \
 		src/js/pyodide.ts                    \
 		src/js/compat.ts                     \
 		src/js/emscripten-settings.ts        \
 		src/js/version.ts                    \
 		src/core/sentinel.wasm
 	cd src/js && npm run build
+
+# CJS wrapper for pytest-pyodide compatibility
+dist/pyodide.js: dist/pyodide.cjs
+	echo 'module.exports = require("./pyodide.cjs");' > $@
 
 src/core/stack_switching/stack_switching.out.js : src/core/stack_switching/*.mjs
 	node src/core/stack_switching/esbuild.config.mjs

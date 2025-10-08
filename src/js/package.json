@@ -41,12 +41,13 @@
     "typescript": "5.7",
     "wabt": "^1.0.32"
   },
-  "main": "pyodide.js",
+  "main": "pyodide.cjs",
   "exports": {
     ".": {
       "types": "./pyodide.d.ts",
-      "require": "./pyodide.js",
-      "import": "./pyodide.mjs"
+      "import": "./pyodide.mjs",
+      "require": "./pyodide.cjs",
+      "default": "./pyodide.mjs"
     },
     "./ffi": {
       "types": "./ffi.d.ts"
@@ -55,7 +56,12 @@
     "./pyodide.asm.js": "./pyodide.asm.js",
     "./python_stdlib.zip": "./python_stdlib.zip",
     "./pyodide.mjs": "./pyodide.mjs",
-    "./pyodide.js": "./pyodide.js",
+    "./pyodide.cjs": "./pyodide.cjs",
+    "./pyodide": {
+      "import": "./pyodide.mjs",
+      "require": "./pyodide.cjs",
+      "default": "./pyodide.mjs"
+    },
     "./package.json": "./package.json",
     "./pyodide-lock.json": "./pyodide-lock.json"
   },
@@ -64,8 +70,9 @@
     "pyodide.asm.wasm",
     "python_stdlib.zip",
     "pyodide.mjs",
-    "pyodide.js.map",
     "pyodide.mjs.map",
+    "pyodide.cjs",
+    "pyodide.cjs.map",
     "pyodide.d.ts",
     "ffi.d.ts",
     "pyodide-lock.json",
