@@ -2,7 +2,7 @@ import { test as base } from "@playwright/test";
 import path from "node:path";
 const NODE = process.env.TEST_NODE;
 
-async function page_in_node({}, use) {
+async function pageInNode({}, use) {
   const root = path.resolve(__dirname, "../../../../", "dist");
   const { loadPyodide } = require(path.resolve(root, "pyodide"));
   const page = {
@@ -16,7 +16,7 @@ async function page_in_node({}, use) {
   await use(page);
 }
 
-async function page_in_browser({ page }, use) {
+async function pageInBrowser({ page }, use) {
   await page.goto("/test.html");
   await page.addScriptTag({
     url: "/pyodide.js",
@@ -27,7 +27,7 @@ async function page_in_browser({ page }, use) {
   await use(page);
 }
 export const test = base.extend({
-  page: NODE ? page_in_node : page_in_browser,
+  page: NODE ? pageInNode : pageInBrowser,
 });
 
 export { expect } from "@playwright/test";
