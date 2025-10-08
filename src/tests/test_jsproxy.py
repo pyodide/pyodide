@@ -2936,7 +2936,7 @@ def test_jsproxy_no_error_this(selenium):
         """
         () => new Proxy(() => 1, {
             apply(target, thisArg, argumentsList) {
-                return thisArg === null;
+                return thisArg === undefined;
             }
         })
         """
