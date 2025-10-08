@@ -649,7 +649,8 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
     pyresult =
       JsProxy_create_with_this(jsresult, JsProxy_VAL(self), attr_sig, false);
   } else if (attr_sig) {
-    pyresult = JsProxy_create_with_this(jsresult, Jsv_undefined, attr_sig, false);
+    pyresult =
+      JsProxy_create_with_this(jsresult, Jsv_undefined, attr_sig, false);
   } else {
     pyresult = js2python(jsresult);
   }
