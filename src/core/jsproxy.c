@@ -649,7 +649,7 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
     pyresult =
       JsProxy_create_with_this(jsresult, JsProxy_VAL(self), attr_sig, false);
   } else if (attr_sig) {
-    pyresult = JsProxy_create_with_this(jsresult, JS_ERROR, attr_sig, false);
+    pyresult = JsProxy_create_with_this(jsresult, Jsv_null, attr_sig, false);
   } else {
     pyresult = js2python(jsresult);
   }
@@ -4520,7 +4520,7 @@ JsProxy_create_with_this(JsVal object,
 EMSCRIPTEN_KEEPALIVE PyObject*
 JsProxy_create(JsVal object)
 {
-  return JsProxy_create_with_this(object, JS_ERROR, NULL, false);
+  return JsProxy_create_with_this(object, Jsv_null, NULL, false);
 }
 
 PyObject*
@@ -4531,7 +4531,7 @@ JsProxy_create_objmap(JsVal object, int flags)
   if ((flags & OBJMAP_HEREDITARY) && INCLUDE_OBJMAP_METHODS(typeflags)) {
     typeflags |= IS_OBJECT_MAP;
   }
-  return JsProxy_create_with_type(typeflags, object, JS_ERROR, NULL);
+  return JsProxy_create_with_type(typeflags, object, Jsv_null, NULL);
 }
 
 EMSCRIPTEN_KEEPALIVE bool

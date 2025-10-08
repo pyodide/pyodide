@@ -2925,3 +2925,18 @@ def test_bind_self_reference(selenium):
     assert a.a._sig == A
     assert a.a.a._sig == A
     assert a.f()._sig == A
+
+@run_in_pyodide
+def test_jsproxy_no_error_this(selenium):
+  from pyodide.code import run_js
+  test = run_js(
+    """
+    () => new Proxy(() => 1, {
+      apply(target, thisArg, argumentsList) {
+        console.log(thisArg);
+        for (const k in thisArg);
+      }
+    })
+    """
+  )
+  test()()
