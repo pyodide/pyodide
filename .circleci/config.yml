@@ -371,6 +371,12 @@ jobs:
             npm run test:unit
 
       - run:
+          name: test-node
+          command: |
+            cd src/js
+            npm run test:node
+
+      - run:
           name: test-browser
           command: |
             cd src/js

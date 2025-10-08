@@ -7,5 +7,6 @@ test("should pass a basic truthy sanity test (node)", async () => {
 test("should pass a basic sanity test in browser (playwright)", async ({
   page,
 }) => {
-  await expect(page).toHaveTitle("pyodide");
+  // To work properly in node, toStrictEqual is used instead of toHaveTitle
+  expect(await page.title()).toStrictEqual("pyodide");
 });

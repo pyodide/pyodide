@@ -1,9 +1,14 @@
 import { defineConfig, devices } from "@playwright/test";
 import path from "node:path";
+const NODE = process.env.TEST_NODE;
 
-export default defineConfig({
+const nodeConfig = {
   testDir: "test/integration",
   fullyParallel: true,
+};
+
+const browserConfig = {
+  ...nodeConfig,
   webServer: {
     command: "npx http-server -p 3000",
     url: "http://localhost:3000",
@@ -18,4 +23,8 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
+};
+
+export default defineConfig({
+  ...(NODE ? nodeConfig : browserConfig),
 });
