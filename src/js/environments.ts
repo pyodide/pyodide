@@ -24,7 +24,7 @@ declare var Bun: any;
 
 function getGlobalRuntimeEnv(): RuntimeEnv {
   if (typeof API !== "undefined" && API !== globalThis.API) {
-    // We're in pyodide.asm.js, get runtimeEnv off of API.
+    // We're in pyodide.asm.mjs, get runtimeEnv off of API.
     // Hopefully this API !== globalThis.API prevents us from accidentally
     // picking up a global.
     return API.runtimeEnv;
