@@ -143,7 +143,9 @@ finally:
 
 // Js2PyConverter
 
-typedef PyObject*(Js2PyConvertFunc)(PyObject* self, JsVal jsval, JsVal proxies);
+typedef PyObject*(Js2PyConvertFunc)(PyObject * self,
+                                    JsVal jsval,
+                                    JsVal proxies);
 
 typedef struct
 {
