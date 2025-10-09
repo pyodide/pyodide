@@ -352,7 +352,7 @@ def global_replace(app, docname, source):
 always_document_param_types = True
 
 
-def typehints_formatter(annotation, config):
+def typehints_formatter(annotation, config):  # noqa: PLR0911
     """Adjust the rendering of various types that sphinx_autodoc_typehints mishandles"""
     from sphinx_autodoc_typehints import (
         get_annotation_class_name,
@@ -377,6 +377,8 @@ def typehints_formatter(annotation, config):
         return ":js:class:`AbortController`"
     if full_name == "pyodide.http._pyfetch.AbortSignal":
         return ":js:class:`AbortSignal`"
+    if full_name == "pyodide.http._pyfetch.Request":
+        return ":js:class:`Request`"
     return None
 
 
