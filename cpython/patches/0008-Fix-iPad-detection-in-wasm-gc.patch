@@ -1,7 +1,7 @@
 From 6f119c924bb218b3cddc9c0683ac2efc56ebf463 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Wed, 11 Jun 2025 08:54:37 +0200
-Subject: [PATCH 09/10] Fix iPad detection in wasm-gc
+Subject: [PATCH 08/09] Fix iPad detection in wasm-gc
 
 Fixes iPad detection logic in wasm-gc, which was malfunctioning in recent iPadOS + safari.
 ---
