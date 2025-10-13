@@ -9,6 +9,16 @@ let nextTaskHandle = 0;
 let sharedChannel: MessageChannel | null = null;
 const taskQueue: number[] = [];
 
+let _loggedPostTaskOnce = false;
+
+/**
+ * Feature detection for Scheduler.postTask() API.
+ * Supported in: Chrome 94+, Firefox 142+ (not supported in Safari as of 2025-10-14).
+ * Allows explicit task prioritization and schedules tasks with minimal delay.
+ */
+const hasPostTask =
+  typeof (globalThis as any).scheduler?.postTask === "function";
+
 /**
  * Setup global message event listener to handle immediate callbacks
  */
@@ -16,7 +26,6 @@ function installPostMessageHandler() {
   if (!RUNTIME_ENV.IN_BROWSER_MAIN_THREAD) {
     return;
   }
-
   const onGlobalMessage = (event: MessageEvent) => {
     if (
       typeof event.data === "string" &&
@@ -26,10 +35,7 @@ function installPostMessageHandler() {
         scheduleCallbackImmediateMessagePrefix.length,
       );
       const task = tasks[handle];
-      if (!task) {
-        return;
-      }
-
+      if (!task) return;
       try {
         task();
       } finally {
@@ -37,10 +43,8 @@ function installPostMessageHandler() {
       }
     }
   };
-
   globalThis.addEventListener("message", onGlobalMessage, false);
 }
-
 installPostMessageHandler();
 
 function ensureSharedChannel() {
@@ -50,7 +54,6 @@ function ensureSharedChannel() {
   if (typeof globalThis.MessageChannel !== "function") return;
 
   sharedChannel = new MessageChannel();
-
   sharedChannel.port1.onmessage = () => {
     // Drain the queue: process as many scheduled tasks as are currently queued.
     while (taskQueue.length) {
@@ -67,7 +70,6 @@ function ensureSharedChannel() {
   // Redundant per spec (onmessage auto-starts the port); kept for clarity and potential edge runtimes.
   sharedChannel.port1.start?.();
 }
-
 ensureSharedChannel();
 
 /**
@@ -109,14 +111,48 @@ function scheduleCallbackImmediate(callback: () => void) {
 }
 
 /**
+ * Schedule a callback using the scheduler.postTask() API.
+ *
+ * @param callback The function to execute
+ * @param timeout Delay in milliseconds
+ * @param priority Task priority (defaults to "user-visible")
+ */
+function scheduleWithPostTask(
+  callback: () => void,
+  timeout: number,
+  priority: "user-blocking" | "user-visible" | "background" = "user-visible",
+) {
+  if (!_loggedPostTaskOnce) {
+    console.info(
+      `[scheduler] Using scheduler.postTask() (priority=${priority}, delay=${timeout}ms)`,
+    );
+    _loggedPostTaskOnce = true;
+  }
+
+  const options: any = { delay: timeout, priority };
+
+  (globalThis as any).scheduler.postTask(callback, options);
+}
+
+/**
  * Schedule a callback. Supports both immediate and delayed callbacks.
+ *
+ * Priority order:
+ * 1. scheduler.postTask() - Modern browsers (Chrome 94+, Firefox 142+)
+ * 2. MessageChannel/setImmediate/postMessage - Fast immediate scheduling
+ * 3. setTimeout - Fallback for delayed tasks
+ *
  * @param callback The callback to be scheduled
  * @param timeout The delay in milliseconds before the callback is called
  * @hidden
  */
 export function scheduleCallback(callback: () => void, timeout: number = 0) {
-  if (timeout <= 2) {
-    // for a very short delay (0, 1), use immediate callback
+  if (hasPostTask) {
+    scheduleWithPostTask(callback, timeout);
+    return;
+  }
+  // for 0 delay, use immediate callback
+  if (timeout === 0) {
     scheduleCallbackImmediate(callback);
   } else {
     setTimeout(callback, timeout);
