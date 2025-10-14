@@ -233,14 +233,6 @@ export type FSStreamOpsGen<T> = {
  * @hidden
  */
 interface PyodideFSType {
-  createDevice: ((
-    parent: string,
-    name: string,
-    input?: (() => number | null) | null,
-    output?: ((code: number) => void) | null,
-  ) => FSNode) & {
-    major: number;
-  };
   filesystems: any;
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
 }
