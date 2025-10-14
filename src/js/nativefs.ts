@@ -127,11 +127,11 @@ export function initializeNativeFS(module: PyodideModule) {
       if (FS.isDir(stat.mode)) {
         return { timestamp: stat.mtime, mode: stat.mode };
       } else if (FS.isFile(stat.mode)) {
-        const contents = MEMFS.getFileDataAsTypedArray(node);
+        node.contents = MEMFS.getFileDataAsTypedArray(node);
         return {
           timestamp: stat.mtime,
           mode: stat.mode,
-          contents: contents,
+          contents: node.contents,
         };
       } else {
         throw new Error("node type not supported");
