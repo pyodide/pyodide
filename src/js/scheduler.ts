@@ -129,7 +129,7 @@ function scheduleWithPostTask(
     _loggedPostTaskOnce = true;
   }
 
-  const options: any = { delay: timeout, priority };
+  const options = { delay: timeout, priority };
 
   (globalThis as any).scheduler.postTask(callback, options);
 }
