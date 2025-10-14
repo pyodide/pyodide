@@ -229,7 +229,6 @@ export type FSStreamOpsGen<T> = {
  * in `@types/emscripten`, but Pyodide uses quite a lot of private APIs that are not
  * defined there as well. Hence this interface.
  *
- * TODO: Consider upstreaming these APIs to `@types/emscripten`.
  * @hidden
  */
 interface PyodideFSType {
@@ -239,7 +238,6 @@ interface PyodideFSType {
 
 /**
  * Combined filesystem type that omits the incompatible lookupPath from `@types/emscripten` and adds Pyodide-specific filesystem methods.
- * TODO: Consider upstreaming these APIs to `@types/emscripten`
  * @hidden
  */
 export type FSType = typeof FS & PyodideFSType;
