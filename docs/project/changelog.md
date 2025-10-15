@@ -29,7 +29,7 @@ myst:
 
 - {{ Fix }} Removed redundant `_zoneinfo` cpython patch that modified error messages
   for missing tzdata. The standard Python documentation already covers this requirement.
-  {issue}`5874`
+  {pr}`5945`
 
 ### Packages
 
