@@ -161,8 +161,8 @@ To build on macOS with Homebrew, you need:
 - Initialize Rust (needed for building test-rust-* packages): `rustup-init`
 - Install the GNU patch and
   GNU sed (`brew install gpatch gnu-sed`)
-  and [re-defining them temporarily as `patch` and
-  `sed`](https://formulae.brew.sh/formula/gnu-sed).
+  and re-defining them temporarily as [`patch`](https://formulae.brew.sh/formula/gpatch) and
+  [`sed`](https://formulae.brew.sh/formula/gnu-sed).
 
 ```
 ````
