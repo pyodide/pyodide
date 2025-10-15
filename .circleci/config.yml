@@ -683,7 +683,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome-webworker
-          test-params: --runtime=chrome-no-host src/tests/test_webworker.py
+          test-params: --runtime=chrome-no-host src/tests/test_webworker.py src/tests/test_webloop_webworker.py
           requires:
             - test-core-chrome
           filters:
@@ -692,7 +692,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox-webworker
-          test-params: --runtime=firefox-no-host src/tests/test_webworker.py
+          test-params: --runtime=firefox-no-host src/tests/test_webworker.py src/tests/test_webloop_webworker.py
           requires:
             - test-core-firefox
           filters:
