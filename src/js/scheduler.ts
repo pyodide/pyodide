@@ -52,8 +52,9 @@ function ensureSharedChannel() {
   sharedChannel = new MessageChannel();
 
   sharedChannel.port1.onmessage = () => {
-    // Drain the queue: process as many scheduled tasks as are currently queued.
-    while (taskQueue.length) {
+    // Process tasks that were queued when this message arrived
+    const count = taskQueue.length;
+    for (let i = 0; i < count; i++) {
       const handle = taskQueue.shift()!;
       const task = tasks[handle];
       if (!task) continue;
