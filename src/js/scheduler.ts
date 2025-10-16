@@ -9,13 +9,6 @@ let nextTaskHandle = 0;
 let sharedChannel: MessageChannel | null = null;
 const taskQueue: number[] = [];
 
-let _loggedPostTaskOnce = false;
-
-/**
- * Feature detection for Scheduler.postTask() API.
- * Supported in: Chrome 94+, Firefox 142+ (not supported in Safari as of 2025-10-14).
- * Allows explicit task prioritization and schedules tasks with minimal delay.
- */
 const hasPostTask =
   typeof (globalThis as any).scheduler?.postTask === "function";
 
@@ -111,34 +104,10 @@ function scheduleCallbackImmediate(callback: () => void) {
 }
 
 /**
- * Schedule a callback using the scheduler.postTask() API.
- *
- * @param callback The function to execute
- * @param timeout Delay in milliseconds
- * @param priority Task priority (defaults to "user-visible")
- */
-function scheduleWithPostTask(
-  callback: () => void,
-  timeout: number,
-  priority: "user-blocking" | "user-visible" | "background" = "user-visible",
-) {
-  if (!_loggedPostTaskOnce) {
-    console.info(
-      `[scheduler] Using scheduler.postTask() (priority=${priority}, delay=${timeout}ms)`,
-    );
-    _loggedPostTaskOnce = true;
-  }
-
-  const options = { delay: timeout, priority };
-
-  (globalThis as any).scheduler.postTask(callback, options);
-}
-
-/**
  * Schedule a callback. Supports both immediate and delayed callbacks.
  *
  * Priority order:
- * 1. scheduler.postTask() - Modern browsers (Chrome 94+, Firefox 142+)
+ * 1. scheduler.postTask() - Modern browsers (Chrome 94+, Firefox 142+, not supported in Safari as of 2025-10-14)
  * 2. MessageChannel/setImmediate/postMessage - Fast immediate scheduling
  * 3. setTimeout - Fallback for delayed tasks
  *
@@ -148,11 +117,11 @@ function scheduleWithPostTask(
  */
 export function scheduleCallback(callback: () => void, timeout: number = 0) {
   if (hasPostTask) {
-    scheduleWithPostTask(callback, timeout);
+    (globalThis as any).scheduler.postTask(callback, { delay: timeout });
     return;
   }
-  // for 0 delay, use immediate callback
-  if (timeout === 0) {
+  if (timeout <= 2) {
+    // for a very short delay (0, 1), use immediate callback
     scheduleCallbackImmediate(callback);
   } else {
     setTimeout(callback, timeout);
