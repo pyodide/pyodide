@@ -229,39 +229,17 @@ export type FSStreamOpsGen<T> = {
  * in `@types/emscripten`, but Pyodide uses quite a lot of private APIs that are not
  * defined there as well. Hence this interface.
  *
- * TODO: Consider upstreaming these APIs to `@types/emscripten`.
  * @hidden
  */
 interface PyodideFSType {
-  mkdirTree: (path: string, mode?: number) => void;
-  createDevice: ((
-    parent: string,
-    name: string,
-    input?: (() => number | null) | null,
-    output?: ((code: number) => void) | null,
-  ) => FSNode) & {
-    major: number;
-  };
-  lookupPath: (
-    path: string,
-    options?: {
-      follow_mount?: boolean;
-    },
-  ) => { node: FSNode };
-  open: (path: string, flags: string | number, mode?: number) => FSStream;
   filesystems: any;
-  isMountpoint: (node: FSNode) => boolean;
-  closeStream: (fd: number) => void;
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
-  writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
 }
 
 /**
- * Combined filesystem type that omits the incompatible lookupPath from `@types/emscripten` and adds Pyodide-specific filesystem methods.
- * TODO: Consider upstreaming these APIs to `@types/emscripten`
  * @hidden
  */
-export type FSType = Omit<typeof FS, "lookupPath"> & PyodideFSType;
+export type FSType = typeof FS & PyodideFSType;
 
 /** @hidden */
 export type PreRunFunc = (Module: PyodideModule) => void;

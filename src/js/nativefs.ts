@@ -120,7 +120,7 @@ export function initializeNativeFS(module: PyodideModule) {
       return { type: "remote", entries, handles };
     },
     loadLocalEntry: (path: string) => {
-      const lookup = FS.lookupPath(path);
+      const lookup = FS.lookupPath(path, {});
       const node = lookup.node;
       const stat = FS.stat(path);
 
