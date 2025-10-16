@@ -237,7 +237,6 @@ interface PyodideFSType {
 }
 
 /**
- * Combined filesystem type that omits the incompatible lookupPath from `@types/emscripten` and adds Pyodide-specific filesystem methods.
  * @hidden
  */
 export type FSType = typeof FS & PyodideFSType;
