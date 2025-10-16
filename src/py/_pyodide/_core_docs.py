@@ -1551,19 +1551,11 @@ def to_js(
     >>> from pyodide.ffi import to_js
     >>> js_object = to_js({'age': 20, 'name': 'john'})
     >>> js_object
-    [object Map]
-    >>> js_object.keys(), js_object.values()
-    (KeysView([object Map]), ValuesView([object Map]))
-    >>> [(k, v) for k, v in zip(js_object.keys(), js_object.values())]
-    [('age', 20), ('name', 'john')]
-
-    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Object.fromEntries) # doctest: +RUN_IN_PYODIDE
+    [object Object]
     >>> js_object.age == 20
     True
     >>> js_object.name == 'john'
     True
-    >>> js_object
-    [object Object]
     >>> js_object.hasOwnProperty("age")
     True
     >>> js_object.hasOwnProperty("height")
