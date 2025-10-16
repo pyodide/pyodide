@@ -32,6 +32,27 @@ myst:
   0.31.0. Use `JsProxy.as_js_json()` instead.
   {pr}`5899`
 
+- {{ Fix }} Fixed a bug where a weird object was used as `this` when there is no
+  relevant `this`. See {issue}`5929`.
+  {pr}`5937`
+
+- {{ Fix }} Removed redundant `_zoneinfo` cpython patch that modified error messages
+  for missing tzdata. The standard Python documentation already covers this requirement.
+  {pr}`5945`
+
+### Packages
+
+- {{ Enhancement }} New packages added:
+  - bilby.cython (0.5.3)
+  - fastapi (0.116.1)
+  - highspy (1.11.0)
+  - jsonpatch (1.33)
+  - jsonpointer (3.0.0)
+  - pylimer-tools (0.3.11)
+  - python-calamine (0.4.0)
+  - starlette (0.47.2)
+  - vrplib (2.0.1)
+
 ## Version 0.28.3
 
 _September 22, 2025_
