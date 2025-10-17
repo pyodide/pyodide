@@ -1,7 +1,7 @@
 From ebcde519cfa69f0a514555e46436379789f6d1bb Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 11 Mar 2025 14:31:31 +0100
-Subject: [PATCH 07/10] Use wasm-gc based call adaptor if available
+Subject: [PATCH 06/09] Use wasm-gc based call adaptor if available
 
 Part of the ongoing quest to support JSPI. The JSPI spec removed its dependence on
 JS type reflection, and now the plan is for runtimes to ship JSPI while keeping

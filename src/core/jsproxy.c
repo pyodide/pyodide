@@ -649,7 +649,8 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
     pyresult =
       JsProxy_create_with_this(jsresult, JsProxy_VAL(self), attr_sig, false);
   } else if (attr_sig) {
-    pyresult = JsProxy_create_with_this(jsresult, JS_ERROR, attr_sig, false);
+    pyresult =
+      JsProxy_create_with_this(jsresult, Jsv_undefined, attr_sig, false);
   } else {
     pyresult = js2python(jsresult);
   }
@@ -3063,7 +3064,7 @@ JsProxy_as_object_map(PyObject* self,
     // hidden by default and therefore useless.
     if (PyErr_WarnEx(
           PyExc_RuntimeWarning,
-          "JsProxy.as_object_map() is deprecated. Use as_js_json() instead.",
+          "JsProxy.as_object_map() is deprecated. Use as_py_json() instead.",
           1) == -1) {
       return NULL;
     }
@@ -4520,7 +4521,7 @@ JsProxy_create_with_this(JsVal object,
 EMSCRIPTEN_KEEPALIVE PyObject*
 JsProxy_create(JsVal object)
 {
-  return JsProxy_create_with_this(object, JS_ERROR, NULL, false);
+  return JsProxy_create_with_this(object, Jsv_undefined, NULL, false);
 }
 
 PyObject*
@@ -4531,7 +4532,7 @@ JsProxy_create_objmap(JsVal object, int flags)
   if ((flags & OBJMAP_HEREDITARY) && INCLUDE_OBJMAP_METHODS(typeflags)) {
     typeflags |= IS_OBJECT_MAP;
   }
-  return JsProxy_create_with_type(typeflags, object, JS_ERROR, NULL);
+  return JsProxy_create_with_type(typeflags, object, Jsv_undefined, NULL);
 }
 
 EMSCRIPTEN_KEEPALIVE bool

@@ -50,6 +50,10 @@ API.setPyProxyToStringMethod = function (useRepr: boolean): void {
   Module.HEAP8[Module._compat_to_string_repr] = +useRepr;
 };
 
+API.setCompatToJsLiteralMap = function (useLiteralMap: boolean): void {
+  Module.HEAP8[Module._compat_dict_to_literalmap] = +useLiteralMap;
+};
+
 API.setCompatNullToNone = function (compat: boolean): void {
   Module.HEAP8[Module._compat_null_to_none] = +compat;
 };

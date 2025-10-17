@@ -102,7 +102,7 @@ Make sure the prerequisites for
 build a custom, patched version of emsdk, so there is no need to build it
 yourself prior.
 
-You need Python 3.11.2 to run the build scripts. To make sure that the correct
+You need Python 3.13.2 to run the build scripts. To make sure that the correct
 Python is used during the build it is recommended to use a [virtual
 environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment)
 or a conda environment.
@@ -161,8 +161,8 @@ To build on macOS with Homebrew, you need:
 - Initialize Rust (needed for building test-rust-* packages): `rustup-init`
 - Install the GNU patch and
   GNU sed (`brew install gpatch gnu-sed`)
-  and [re-defining them temporarily as `patch` and
-  `sed`](https://formulae.brew.sh/formula/gnu-sed).
+  and re-defining them temporarily as [`patch`](https://formulae.brew.sh/formula/gpatch) and
+  [`sed`](https://formulae.brew.sh/formula/gnu-sed).
 
 ```
 ````
