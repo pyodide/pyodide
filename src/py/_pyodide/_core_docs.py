@@ -1522,9 +1522,9 @@ def to_js(
         (JavaScript) pairs [key, value]. It is expected to return the desired
         result of the dict conversion. Some suggested values for this argument:
 
-          * ``js.Map.new`` -- similar to the default behavior
+          * ``js.Object.fromEntries`` -- similar to the default behavior
+          * ``js.Map.new`` -- convert to a map
           * ``js.Array.from`` -- convert to an array of entries
-          * ``js.Object.fromEntries`` -- convert to a JavaScript object
 
     default_converter:
         If present will be invoked whenever Pyodide does not have some built in
