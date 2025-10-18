@@ -32,6 +32,20 @@ if IN_BROWSER:
     except ImportError:
         pass
 
+__all__ = [
+    "delete",
+    "get",
+    "head",
+    "options",
+    "patch",
+    "post",
+    "put",
+    "XHRError",
+    "XHRNetworkError",
+    "XHRRequestParams",
+    "XHRResponse",
+]
+
 
 class XHRRequestParams(TypedDict):
     """Parameters for XMLHttpRequest operations."""

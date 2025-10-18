@@ -64,7 +64,7 @@ def set_configs():
         pyodide._api.pyodide_ffi.register_js_module;
         pyodide._api.pyodide_ffi.unregister_js_module;
         pyodide.pyimport("pyodide.ffi.wrappers").destroy();
-        pyodide.pyimport("pyodide.http").destroy();
+        pyodide.pyimport("pyodide.http.pyxhr").destroy();
         pyodide.pyimport("pyodide_js._api");
     """)
 
