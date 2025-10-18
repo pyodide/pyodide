@@ -47,9 +47,9 @@ export async function initNodeModules() {
   if (typeof require !== "undefined") {
     return;
   }
-  // These are all the packages required in pyodide.asm.js. You can get this
+  // These are all the packages required in pyodide.asm.mjs. You can get this
   // list with:
-  // $ grep -o 'require("[a-z]*")' pyodide.asm.js  | sort -u
+  // $ grep -o 'require("[a-z]*")' pyodide.asm.mjs  | sort -u
   const fs = nodeFSMod;
   const crypto = await import("node:crypto");
   const ws = await import("ws");
@@ -208,7 +208,7 @@ export async function loadBinaryFile(
 }
 
 /**
- * Currently loadScript is only used once to load `pyodide.asm.js`.
+ * Currently loadScript is only used once to load `pyodide.asm.mjs`.
  * @param url
  * @private
  */
