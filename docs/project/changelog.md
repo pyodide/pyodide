@@ -36,10 +36,6 @@ myst:
   relevant `this`. See {issue}`5929`.
   {pr}`5937`
 
-- {{ Fix }} Removed redundant `_zoneinfo` cpython patch that modified error messages
-  for missing tzdata. The standard Python documentation already covers this requirement.
-  {pr}`5945`
-
 ### Packages
 
 - {{ Enhancement }} New packages added:
