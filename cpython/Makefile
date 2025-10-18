@@ -28,7 +28,7 @@ libffi: $(PYINSTALL)/lib/libffi.a
 
 libhiwire: $(PYINSTALL)/lib/libhiwire.a
 
-.PHONY=sysconfigdata
+.PHONY: sysconfigdata
 sysconfigdata:
 	# Generate sysconfigdata. It outputs into a subfolder of build/, and
 	# the subfolder is written to pybuilddir.txt.
@@ -57,13 +57,13 @@ $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched
 	cp $(PYBUILD)/$(PYLIB) $(PYINSTALL)/lib/
 
 
-.PHONY=rebuild
+.PHONY: rebuild
 rebuild: sysconfigdata
 	CFLAGS="$(CFLAGS_BASE)" emmake make -C $(PYBUILD) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
 	cp $(PYBUILD)/$(PYLIB) $(PYINSTALL)/lib/
 
 
-.PHONY=rebuild-all
+.PHONY: rebuild-all
 rebuild-all:
 # touching abstract.h is enough to force most stuff to be rebuilt...
 	touch $(PYBUILD)/Include/abstract.h

@@ -2,7 +2,7 @@ PYODIDE_ROOT=$(abspath .)
 
 include Makefile.envs
 
-.PHONY=check
+.PHONY: check
 
 CC=emcc
 CXX=em++
