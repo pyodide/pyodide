@@ -202,6 +202,13 @@ export interface PyodideConfig {
   convertNullToNone: boolean;
 
   /**
+   * Opt into the old behavior where Python dictionaries are converted to
+   * LiteralMap instead of Object.
+   * @deprecated
+   */
+  toJsLiteralMap?: boolean;
+
+  /**
    * Determine the value of ``sys.executable``.
    * @ignore
    */
@@ -345,7 +352,7 @@ async function prepareSnapshot(
  */
 async function createPyodideModule(
   emscriptenSettings: EmscriptenSettings,
-): Promise<Module> {
+): Promise<PyodideModule> {
   // _createPyodideModule is specified in the Makefile by the linker flag:
   // `-s EXPORT_NAME="'_createPyodideModule'"`
   const module = await _createPyodideModule(emscriptenSettings);
@@ -361,7 +368,7 @@ async function createPyodideModule(
 /**
  * @private
  */
-function configureAPI(pyodideModule: Module, config: PyodideConfig): void {
+function configureAPI(pyodideModule: PyodideModule, config: PyodideConfig): void {
   const API = pyodideModule.API;
 
   if (config.pyproxyToStringRepr) {
@@ -369,6 +376,9 @@ function configureAPI(pyodideModule: Module, config: PyodideConfig): void {
   }
   if (config.convertNullToNone) {
     API.setCompatNullToNone(true);
+  }
+  if (config.toJsLiteralMap) {
+    API.setCompatToJsLiteralMap(true);
   }
 
   if (API.version !== version && config.checkAPIVersion) {
@@ -391,7 +401,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
  * @private
  */
 function bootstrapPyodide(
-  pyodideModule: Module,
+  pyodideModule: PyodideModule,
   snapshot: Uint8Array | undefined,
   config: PyodideConfig,
 ): PyodideAPI {
