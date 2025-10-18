@@ -368,7 +368,10 @@ async function createPyodideModule(
 /**
  * @private
  */
-function configureAPI(pyodideModule: PyodideModule, config: PyodideConfig): void {
+function configureAPI(
+  pyodideModule: PyodideModule,
+  config: PyodideConfig,
+): void {
   const API = pyodideModule.API;
 
   if (config.pyproxyToStringRepr) {
