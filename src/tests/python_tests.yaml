@@ -598,7 +598,10 @@
     skip:
       - test_utime*
 - test_osx_env
-- test_pathlib.test_pathlib
+- test_pathlib.test_pathlib:
+    skip:
+      # Regression in Emscripten 4.0.7
+      - test_glob_dotdot
 - test_pathlib.test_pathlib_abc
 - test_patma
 - test_pdb:

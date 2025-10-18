@@ -7,8 +7,8 @@ import { loadBinaryFile, nodeFSMod } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
-import { TypedArray, PackageData, FSType } from "./types";
-import { IN_NODE, detectEnvironment } from "./environments";
+import { TypedArray, PackageData, FSType, Lockfile } from "./types";
+import { RUNTIME_ENV } from "./environments";
 // @ts-ignore
 import LiteralMap from "./common/literal-map";
 import abortSignalAny from "./common/abortSignalAny";
@@ -50,6 +50,14 @@ API.setPyProxyToStringMethod = function (useRepr: boolean): void {
   Module.HEAP8[Module._compat_to_string_repr] = +useRepr;
 };
 
+API.setCompatToJsLiteralMap = function (useLiteralMap: boolean): void {
+  Module.HEAP8[Module._compat_dict_to_literalmap] = +useLiteralMap;
+};
+
+API.setCompatNullToNone = function (compat: boolean): void {
+  Module.HEAP8[Module._compat_null_to_none] = +compat;
+};
+
 /** @hidden */
 export type NativeFS = {
   syncfs: () => Promise<void>;
@@ -65,11 +73,8 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
 /** @private */
 API.scheduleCallback = scheduleCallback;
 
-/** @private */
-API.detectEnvironment = detectEnvironment;
-
 // @ts-ignore
-if (AbortSignal.any) {
+if (typeof AbortSignal !== "undefined" && AbortSignal.any) {
   /** @private */
   // @ts-ignore
   API.abortSignalAny = AbortSignal.any;
@@ -86,10 +91,10 @@ function ensureMountPathExists(path: string): void {
     follow_mount: false,
   });
 
-  if (FS.isMountpoint(node)) {
+  if (Module.FS.isMountpoint(node)) {
     throw new Error(`path '${path}' is already a file system mount point`);
   }
-  if (!FS.isDir(node.mode)) {
+  if (!Module.FS.isDir(node.mode)) {
     throw new Error(`path '${path}' points to a file not a directory`);
   }
   for (const _ in node.contents) {
@@ -112,7 +117,7 @@ function ensureMountPathExists(path: string): void {
  * We convert it back into an object in makePublicAPI.
  * @private
  */
-export class PyodideAPI {
+export class PyodideAPI_ {
   /** @hidden */
   static version = version;
   /** @hidden */
@@ -575,7 +580,7 @@ export class PyodideAPI {
    * @param hostPath The host path to mount. It must be a directory that exists.
    */
   static mountNodeFS(emscriptenPath: string, hostPath: string): void {
-    if (!IN_NODE) {
+    if (!RUNTIME_ENV.IN_NODE) {
       throw new Error("mountNodeFS only works in Node");
     }
     ensureMountPathExists(emscriptenPath);
@@ -667,9 +672,7 @@ export class PyodideAPI {
   }
 
   /**
-   *
-   * @param param0
-   * @returns
+   * @private
    */
   static makeMemorySnapshot({
     serializer,
@@ -689,19 +692,32 @@ export class PyodideAPI {
    * The format of the lockfile is defined in the `pyodide/pyodide-lock
    * <https://github.com/pyodide/pyodide-lock>`_ repository.
    */
-  static get lockfile() {
+  static get lockfile(): Lockfile {
     return API.lockfile;
+  }
+
+  /**
+   * Returns the URL or path with respect to which relative paths in the lock
+   * file are resolved, or undefined.
+   */
+  static get lockfileBaseUrl(): string | undefined {
+    return API.config.packageCacheDir ?? API.config.packageBaseUrl;
   }
 }
 
-/** @hidden */
-export type PyodideInterface = typeof PyodideAPI;
+/**
+ * The return type of :js:func:`~exports.loadPyodide`. See
+ * :ref:`the pyodide api docs <js-api-pyodide>` for more information.
+ * @hidetype
+ * @docgroup exports
+ */
+export type PyodideAPI = typeof PyodideAPI_;
 
 /** @private */
-function makePublicAPI(): PyodideInterface {
-  // Create a copy of PyodideAPI that is an object instead of a class. This
+function makePublicAPI(): PyodideAPI {
+  // Create a copy of PyodideAPI_ that is an object instead of a class. This
   // displays a bit better in debuggers / consoles.
-  let d = Object.getOwnPropertyDescriptors(PyodideAPI);
+  let d = Object.getOwnPropertyDescriptors(PyodideAPI_);
   // @ts-ignore
   delete d["prototype"];
   const pyodideAPI = Object.create({}, d);
@@ -756,7 +772,7 @@ API.bootstrapFinalizedPromise = new Promise<void>(
 API.finalizeBootstrap = function (
   snapshotConfig?: SnapshotConfig,
   snapshotDeserializer?: (obj: any) => any,
-): PyodideInterface {
+): PyodideAPI {
   if (snapshotConfig) {
     syncUpSnapshotLoad1();
   }

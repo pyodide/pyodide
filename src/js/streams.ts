@@ -1,9 +1,9 @@
-import { IN_NODE } from "./environments.js";
+import { RUNTIME_ENV } from "./environments.js";
 import "./constants";
 
 import type { FSStream, FSStreamOpsGen } from "./types";
-const fs: any = IN_NODE ? require("node:fs") : undefined;
-const tty: any = IN_NODE ? require("node:tty") : undefined;
+const fs: any = RUNTIME_ENV.IN_NODE ? require("node:fs") : undefined;
+const tty: any = RUNTIME_ENV.IN_NODE ? require("node:tty") : undefined;
 
 function nodeFsync(fd: number): void {
   try {
@@ -181,7 +181,11 @@ const stream_ops: StreamOps = {
       throw new FS.ErrnoError(cDefs.ENODEV);
     }
     stream.devops = devops;
-    stream.tty = stream.devops.isatty;
+    stream.tty = stream.devops.isatty
+      ? {
+          ops: {},
+        }
+      : undefined;
     stream.seekable = false;
   },
   close: function (stream) {
@@ -262,7 +266,7 @@ API.initializeStreams = function (
  * If in a browser, this calls setStdinError.
  */
 function setDefaultStdin() {
-  if (IN_NODE) {
+  if (RUNTIME_ENV.IN_NODE) {
     setStdin(new NodeReader(process.stdin.fd));
   } else {
     setStdin({ stdin: () => prompt() });
@@ -424,7 +428,7 @@ function _setStdwrite(
  * If in a browser, sets stdout to write to console.log and sets isatty(stdout) to false.
  */
 function _getStdoutDefaults(): StdwriteOpts & Partial<Writer> {
-  if (IN_NODE) {
+  if (RUNTIME_ENV.IN_NODE) {
     return new NodeWriter(process.stdout.fd);
   } else {
     return { batched: (x) => console.log(x) };
@@ -437,7 +441,7 @@ function _getStdoutDefaults(): StdwriteOpts & Partial<Writer> {
  * If in a browser, sets stdout to write to console.log and sets isatty(stdout) to false.
  */
 function _getStderrDefaults(): StdwriteOpts & Partial<Writer> {
-  if (IN_NODE) {
+  if (RUNTIME_ENV.IN_NODE) {
     return new NodeWriter(process.stderr.fd);
   } else {
     return { batched: (x) => console.warn(x) };
@@ -506,8 +510,8 @@ export function setStderr(
   _setStdwrite(options, _setStderrOps, _getStderrDefaults);
 }
 
-const textencoder = new TextEncoder();
-const textdecoder = new TextDecoder();
+const _TextEncoder = globalThis.TextEncoder ?? function () {};
+const textencoder = new _TextEncoder();
 
 // Reader implementations
 
@@ -678,7 +682,7 @@ class StringWriter {
   write(buffer: Uint8Array) {
     for (let val of buffer) {
       if (val === 10 /* charCode('\n') */) {
-        this.out(textdecoder.decode(new Uint8Array(this.output)));
+        this.out(UTF8ArrayToString(new Uint8Array(this.output)));
         this.output = [];
       } else if (val !== 0) {
         // val == 0 would cut text output off in the middle.
@@ -690,7 +694,7 @@ class StringWriter {
 
   fsync() {
     if (this.output && this.output.length > 0) {
-      this.out(textdecoder.decode(new Uint8Array(this.output)));
+      this.out(UTF8ArrayToString(new Uint8Array(this.output)));
       this.output = [];
     }
   }

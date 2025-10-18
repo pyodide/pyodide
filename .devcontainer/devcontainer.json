@@ -1,7 +1,7 @@
 {
   "name": "Docker",
   // keep in sync with "run_docker"
-  "image": "pyodide/pyodide-env:20250311-chrome134-firefox136-py313",
+  "image": "pyodide/pyodide-env:20250915-chrome140-firefox140-py313",
   "remoteUser": "root",
   "initializeCommand": "git submodule update --init",
   "onCreateCommand": ".devcontainer/onCreate-docker.sh"

@@ -55,8 +55,7 @@ of the round trip conversion is the original object (in the sense that they live
 at the same memory address). There are a few exceptions:
 
 1. `NaN` is converted to `NaN` after a round trip but `NaN !== NaN`,
-2. {js:data}`null` is converted to {js:data}`undefined` after a round trip, and
-3. a {js:data}`BigInt` will be converted to a {js:data}`Number` after a round
+2. a {js:data}`BigInt` will be converted to a {js:data}`Number` after a round
    trip unless its absolute value is greater than
    {js:data}`Number.MAX_SAFE_INTEGER` (i.e., 2^53).
 
@@ -76,13 +75,14 @@ and {py:class}`bytes` objects.
 The following immutable types are implicitly converted from Python to
 JavaScript:
 
-| Python            | JavaScript                               |
-| ----------------- | ---------------------------------------- |
-| {py:class}`int`   | {js:data}`Number` or {js:data}`BigInt`\* |
-| {py:class}`float` | {js:data}`Number`                        |
-| {py:class}`str`   | {js:data}`String`                        |
-| {py:class}`bool`  | {js:data}`Boolean`                       |
-| {py:data}`None`   | {js:data}`undefined`                     |
+| Python                        | JavaScript                               |
+| ----------------------------- | ---------------------------------------- |
+| {py:class}`int`               | {js:data}`Number` or {js:data}`BigInt`\* |
+| {py:class}`float`             | {js:data}`Number`                        |
+| {py:class}`str`               | {js:data}`String`                        |
+| {py:class}`bool`              | {js:data}`Boolean`                       |
+| {py:data}`None`               | {js:data}`undefined`                     |
+| {py:data}`pyodide.ffi.jsnull` | {js:data}`null`                          |
 
 \* An {py:class}`int` is converted to a {js:data}`Number` if the absolute value
 is less than or equal to {js:data}`Number.MAX_SAFE_INTEGER` otherwise it is
@@ -104,7 +104,7 @@ Python:
 | {js:data}`String`    | {py:class}`str`                                       |
 | {js:data}`Boolean`   | {py:class}`bool`                                      |
 | {js:data}`undefined` | {py:data}`None`                                       |
-| {js:data}`null`      | {py:data}`None`                                       |
+| {js:data}`null`      | {py:data}`pyodide.ffi.jsnull`                         |
 
 \* A {js:data}`Number` is converted to an {py:class}`int` if the absolute value
 is less than or equal to {js:data}`Number.MAX_SAFE_INTEGER` and its fractional
@@ -193,7 +193,7 @@ If you need to access the fields in a JavaScript object, you must use
 `obj.field_name` or if the name of the field is not a valid Python identifier,
 `getattr(obj, "field name")`. If you want to access the fields of the object
 like `obj["field name"]` you can use
-{py:meth}`~pyodide.ffi.JsProxy.as_object_map`:
+{py:meth}`~pyodide.ffi.JsProxy.as_py_json`:
 
 ```py
 from pyodide.code import run_js
@@ -207,7 +207,7 @@ obj = run_js(
     })
     """
 )
-obj_map = obj.as_object_map()
+obj_map = obj.as_py_json()
 assert obj_map["$c"] == 11
 ```
 
@@ -257,6 +257,11 @@ operations are more cumbersome on a {js:class}`~pyodide.ffi.PyProxy` than on a
 | `proxy.next()`                      | `next(x)` or `anext(x)` |
 | `await proxy`                       | `await x`               |
 
+As a special case, if a PyProxy is created of a dictionary, then `proxy[key]`
+will fall back to checking for an item in the dictionary if there is no
+attribute called key. Both PyProxy properties and dictionary attributes take
+precedence over dictionary keys.
+
 ````{admonition} Memory Leaks and PyProxy
 :class: warning
 
@@ -289,7 +294,7 @@ conversions:
 | Python                                    | JavaScript             |
 | ----------------------------------------- | ---------------------- |
 | {py:class}`list`, {py:class}`tuple`       | {js:class}`Array`      |
-| {py:class}`dict`                          | {js:class}`Map`        |
+| {py:class}`dict`                          | {js:data}`Object`      |
 | {py:class}`set`                           | {js:class}`Set`        |
 | {external:doc}`a buffer <c-api/buffer>`\* | {js:class}`TypedArray` |
 
@@ -300,14 +305,14 @@ If you need to convert {py:class}`dict` instead to {js:data}`Object`, you can
 pass {js:func}`Object.fromEntries` as the `dict_converter` argument:
 `proxy.toJs({dict_converter : Object.fromEntries})`.
 
-In JavaScript, {js:class}`Map` and {js:class}`Set` keys are compared using
-object identity unless the key is an immutable type (meaning a
-{js:data}`String`, a {js:data}`Number`, a {js:data}`BigInt`, a
-{js:data}`Boolean`, {js:data}`undefined`, or {js:data}`null`). On the other
-hand, in Python, {py:class}`dict` and {py:class}`set` keys are compared using
-deep equality. If a key is encountered in a {py:class}`dict` or {py:class}`set`
-that would have different semantics in JavaScript than in Python, then a
-{py:exc}`~pyodide.ffi.ConversionError` will be thrown.
+In JavaScript, {js:class}`Set` keys are compared using object identity unless
+the key is an immutable type (meaning a {js:data}`String`, a {js:data}`Number`,
+a {js:data}`BigInt`, a {js:data}`Boolean`, {js:data}`undefined`, or
+{js:data}`null`). {js:data}`Object` keys are all treated as strings. On the
+other hand, in Python, {py:class}`dict` and {py:class}`set` keys are compared
+using deep equality. If a key is encountered in a {py:class}`dict` or
+{py:class}`set` that would have different semantics in JavaScript than in
+Python, then a {py:exc}`~pyodide.ffi.ConversionError` will be thrown.
 
 See {ref}`buffer_tojs` for the behavior of {js:func}`~pyodide.ffi.PyProxy.toJs` on buffers.
 
@@ -747,7 +752,7 @@ If the JavaScript object's name is a reserved Python keyword, the {py:func}`geta
 
 ```pyodide
 lambda = (x) => {return x + 1};
-//'from js import lambda' will cause a Syntax Error, since 'lambda' is a Python reserved keyword. Instead:
+// 'from js import lambda' will cause a Syntax Error, since 'lambda' is a Python reserved keyword. Instead:
 pyodide.runPython(`
     import js
     js_lambda = getattr(js, 'lambda')
@@ -759,7 +764,7 @@ If a JavaScript object has a property that is a reserved Python keyword, the {py
 
 ```pyodide
 people = {global: "lots and lots"};
-//Trying to access 'people.global' will raise a Syntax Error, since 'global' is a Python reserved keyword. Instead:
+// Trying to access 'people.global' will raise a Syntax Error, since 'global' is a Python reserved keyword. Instead:
 pyodide.runPython(`
     from js import people
     setattr(people, 'global', 'even more')

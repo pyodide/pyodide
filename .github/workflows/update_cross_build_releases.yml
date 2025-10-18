@@ -51,7 +51,6 @@ jobs:
           branch: update-cross-build-metadata-${{ env.version }}
           base: main
           branch-suffix: timestamp
-          draft: true
 
       - name: Create an issue if the update fails
         if: failure() || steps.update_cross_build_metadata.outcome == 'failure'

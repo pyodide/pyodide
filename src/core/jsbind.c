@@ -74,7 +74,7 @@ Py2JsConverter_traverse(PyObject* o, visitproc visit, void* arg)
 static PyObject*
 py2js_python_from_c(PyObject* self, PyObject* pyval)
 {
-  JsVal jsresult = Py2JsConverter_converter(self)(self, pyval, JS_NULL);
+  JsVal jsresult = Py2JsConverter_converter(self)(self, pyval, JS_ERROR);
   return js2python(jsresult);
 }
 
@@ -117,7 +117,7 @@ JsVal
 Py2JsConverter_convert(PyObject* converter, PyObject* pyval, JsVal proxies)
 {
   PyObject* pre_converted = NULL;
-  JsVal result = JS_NULL;
+  JsVal result = JS_ERROR;
 
   int status = PyObject_IsInstance(converter, (PyObject*)&Py2JsConverterType);
   if (status == 0) {
@@ -206,7 +206,7 @@ static PyObject*
 js2py_python_from_c(PyObject* self, PyObject* pyval)
 {
   JsVal jsval = python2js(pyval);
-  return Js2PyConverter_converter(self)(self, jsval, JS_NULL);
+  return Js2PyConverter_converter(self)(self, jsval, JS_ERROR);
 }
 
 static PyMethodDef Js2PyConverter_methods[] = {
@@ -302,7 +302,8 @@ Py2Js_func_deep(PyObject* self, PyObject* pyval, JsVal proxies)
                           /* depth=*/-1,
                           proxies,
                           my_dict_converter(),
-                          /*default_converter=*/JS_NULL);
+                          /*default_converter=*/JS_ERROR,
+                          /*eager_converter=*/JS_ERROR);
 }
 
 JsVal
@@ -409,7 +410,7 @@ Js2Py_func_promise(PyObject* self, JsVal jsresult, JsVal proxies)
     return NULL;
   }
 
-  JsVal done_callback = JS_NULL;
+  JsVal done_callback = Jsv_null;
   if (!JsvNull_Check(proxies)) {
     gc_register_proxies(proxies);
     done_callback = get_async_js_call_done_callback(proxies);
@@ -539,7 +540,7 @@ Js2Py_func_default_call_result(PyObject* self, JsVal jsresult, JsVal proxies)
   } else if (is_async_generator) {
     jsresult = wrap_async_generator(jsresult, proxies);
   }
-  FAIL_IF_JS_NULL(jsresult);
+  FAIL_IF_JS_ERROR(jsresult);
   if (is_promise) {
     // Since we will destroy the result of the Promise when it resolves we deny
     // the user access to the Promise (which would destroyed proxy exceptions).
@@ -552,13 +553,13 @@ Js2Py_func_default_call_result(PyObject* self, JsVal jsresult, JsVal proxies)
     pyresult = js2python(jsresult);
   }
   FAIL_IF_NULL(pyresult);
-  if (JsvNull_Check(proxies)) {
+  if (JsvError_Check(proxies)) {
     // Nothing to do.
   } else if (destroy_args) {
     // If we succeeded and the result was a promise then we destroy the
     // arguments in async_done_callback instead of here. Otherwise, destroy the
     // arguments and return value now.
-    if (!JsvNull_Check(jsresult) && pyproxy_Check(jsresult)) {
+    if (!JsvError_Check(jsresult) && pyproxy_Check(jsresult)) {
       // TODO: don't destroy proxies with roundtrip = true?
       JsvArray_Push(proxies, jsresult);
     }

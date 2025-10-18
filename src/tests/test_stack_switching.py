@@ -137,7 +137,7 @@ def test_syncify_error(selenium):
 @run_in_pyodide
 def test_syncify_null(selenium):
     from pyodide.code import run_js
-    from pyodide.ffi import run_sync
+    from pyodide.ffi import jsnull, run_sync
 
     asyncNull = run_js(
         """
@@ -147,7 +147,7 @@ def test_syncify_null(selenium):
         })
         """
     )
-    assert run_sync(asyncNull()) is None
+    assert run_sync(asyncNull()) is jsnull
 
 
 @requires_jspi
@@ -168,7 +168,7 @@ def test_syncify_no_suspender(selenium):
                 })
                 '''
             )
-            with pytest.raises(RuntimeError, match="No suspender"):
+            with pytest.raises(RuntimeError, match="Cannot stack switch"):
                 run_sync(test())
             del test
         `);
@@ -178,7 +178,7 @@ def test_syncify_no_suspender(selenium):
 
 @pytest.mark.requires_dynamic_linking
 @requires_jspi
-@run_in_pyodide(packages=["fpcast-test"])
+@run_in_pyodide(packages=["test-fpcast"])
 def test_syncify_getset(selenium):
     from pyodide.code import run_js
     from pyodide.ffi import run_sync
@@ -260,7 +260,7 @@ def test_cpp_exceptions_and_syncify(selenium):
                 id(f)
             `);
 
-            await pyodide.loadPackage("cpp-exceptions-test")
+            await pyodide.loadPackage("test-cpp-exceptions")
             const Module = pyodide._module;
             const catchlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-catch.so"].exports;
             async function t(x){
@@ -292,7 +292,7 @@ def test_two_way_transfer(selenium):
                     l.append([n, i])
         `);
         f = pyodide.globals.get("f");
-        await Promise.all([f.callPromising("a", 15), f.callPromising("b", 25)])
+        await Promise.all([f.callPromising("a", 15), f.callPromising("b", 21)])
         f.destroy();
         const l = pyodide.globals.get("l");
         const res = l.toJs();
@@ -304,8 +304,8 @@ def test_two_way_transfer(selenium):
         ["a", 0],
         ["b", 0],
         ["a", 1],
-        ["a", 2],
         ["b", 1],
+        ["a", 2],
         ["a", 3],
         ["b", 2],
         ["a", 4],
@@ -589,9 +589,7 @@ def test(n):
 """
 
 
-@pytest.mark.xfail_browsers(
-    firefox="requires jspi", safari="requires jspi", chrome="mysterious crash"
-)
+@pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
 @pytest.mark.parametrize(
     "script", [LEAK_SCRIPT1, LEAK_SCRIPT2, LEAK_SCRIPT3, LEAK_SCRIPT4]
 )
@@ -719,3 +717,55 @@ def test_can_run_sync(selenium):
     for idx, [i, res, expected] in enumerate(results):
         assert idx == i
         assert res == expected
+
+
+@requires_jspi
+def test_async_promising_sync_error(selenium):
+    import pytest
+
+    with pytest.raises(selenium.JavascriptException, match="division by zero"):
+        selenium.run_js(
+            """
+            const test = pyodide.runPython(`
+                def test():
+                    1/0
+
+                test
+            `)
+
+            try {
+                await test.callPromising();
+            } finally {
+                test.destroy();
+            }
+            """
+        )
+    # In bad cases, the previous exception was a fatal error but we didn't
+    # notice. Check that no fatal error occurred by running Python.
+    selenium.run("")
+
+
+@requires_jspi
+def test_async_promising_async_error(selenium):
+    import pytest
+
+    with pytest.raises(selenium.JavascriptException, match="division by zero"):
+        selenium.run_js(
+            """
+            const test = pyodide.runPython(`
+                async def test():
+                    1/0
+
+                test
+            `)
+
+            try {
+                await test.callPromising();
+            } finally {
+                test.destroy();
+            }
+            """
+        )
+    # In bad cases, the previous exception was a fatal error but we didn't
+    # notice. Check that no fatal error occurred by running Python.
+    selenium.run("")

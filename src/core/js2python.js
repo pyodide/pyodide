@@ -6,13 +6,14 @@ function js2python_string(value) {
   // to determine if is needs to be a 1-, 2- or 4-byte string, since
   // Python handles all 3.
   let max_code_point = 0;
-  let num_code_points = 0;
+  const code_points = [];
   for (let c of value) {
-    num_code_points++;
     let code_point = c.codePointAt(0);
+    code_points.push(code_point);
     max_code_point = code_point > max_code_point ? code_point : max_code_point;
   }
 
+  let num_code_points = code_points.length;
   let result = _PyUnicode_New(num_code_points, max_code_point);
   if (result === 0) {
     throw new PropagateError();
@@ -20,19 +21,16 @@ function js2python_string(value) {
 
   let ptr = _PyUnicode_Data(result);
   if (max_code_point > 0xffff) {
-    for (let c of value) {
-      HEAPU32[ptr / 4] = c.codePointAt(0);
-      ptr += 4;
+    for (let i = 0; i < num_code_points; i++) {
+      ASSIGN_U32(ptr, i, code_points[i]);
     }
   } else if (max_code_point > 0xff) {
-    for (let c of value) {
-      HEAPU16[ptr / 2] = c.codePointAt(0);
-      ptr += 2;
+    for (let i = 0; i < num_code_points; i++) {
+      ASSIGN_U16(ptr, i, code_points[i]);
     }
   } else {
-    for (let c of value) {
-      HEAPU8[ptr] = c.codePointAt(0);
-      ptr += 1;
+    for (let i = 0; i < num_code_points; i++) {
+      ASSIGN_U8(ptr, i, code_points[i]);
     }
   }
 
@@ -50,21 +48,21 @@ function js2python_bigint(value) {
     length++;
     value >>= BigInt(32);
   }
-  let stackTop = stackSave();
-  let ptr = stackAlloc(length * 4);
+  const orig = stackSave();
+  const ptr = stackAlloc(length * 4);
   value = value_orig;
   for (let i = 0; i < length; i++) {
     ASSIGN_U32(ptr, i, Number(value & BigInt(0xffffffff)));
     value >>= BigInt(32);
   }
-  let result = __PyLong_FromByteArray(
+  const res = __PyLong_FromByteArray(
     ptr,
     length * 4 /* length in bytes */,
     true /* little endian */,
     true /* signed? */,
   );
-  stackRestore(stackTop);
-  return result;
+  stackRestore(orig);
+  return res;
 }
 
 /**
@@ -106,8 +104,10 @@ function js2python_convertImmutableInner(value) {
     }
   } else if (type === "bigint") {
     return js2python_bigint(value);
-  } else if (value === undefined || value === null) {
+  } else if (value === undefined) {
     return __js2python_none();
+  } else if (value === null) {
+    return __js2python_null();
   } else if (value === true) {
     return __js2python_true();
   } else if (value === false) {

@@ -10,6 +10,10 @@ state, this list is subject to change and some features can be removed without
 deprecation warnings. More details about each item can often be found in the
 {ref}`changelog`.
 
+## 0.31.0
+
+- `jsproxy.as_object_map()` will be removed. Use `jsproxy.as_py_json()` instead.
+
 ## 0.25.0
 
 - Typescript type imports for `PyProxy` subtypes from `pyodide` will be removed.
@@ -54,9 +58,8 @@ deprecation warnings. More details about each item can often be found in the
 - The default working directory (home directory) inside the Pyodide virtual file
   system has been changed from `/` to `/home/pyodide`. To get the previous
   behavior, you can
-
   - call `os.chdir("/")` in Python to change working directory or
-  - call {js:func}`~globalThis.loadPyodide` with the `homedir="/"`
+  - call {js:func}`~exports.loadPyodide` with the `homedir="/"`
     argument
 
 - When a JavaScript function is called from Python, PyProxy arguments and return

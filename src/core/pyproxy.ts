@@ -19,6 +19,7 @@ declare var Module: any;
 declare var validSuspender: { value: boolean };
 
 import { TypedArray } from "types";
+import type { PythonError } from "generated/error_handling";
 
 // pyodide-skip
 
@@ -50,6 +51,7 @@ declare var IS_SEQUENCE: number;
 declare var IS_MUTABLE_SEQUENCE: number;
 declare var IS_JSON_ADAPTOR_DICT: number;
 declare var IS_JSON_ADAPTOR_SEQUENCE: number;
+declare var IS_DICT: number;
 
 declare function DEREF_U32(ptr: number, offset: number): number;
 declare function Py_ENTER(): void;
@@ -226,6 +228,7 @@ function pyproxy_new(
   }
   const is_sequence = flags & IS_SEQUENCE;
   const is_dict_adaptor = flags & IS_JSON_ADAPTOR_DICT;
+  const is_dict = flags & IS_DICT;
   const cls = Module.getPyProxyClass(flags);
   let target: any;
   if (flags & IS_CALLABLE) {
@@ -279,6 +282,8 @@ function pyproxy_new(
     handlers = PyProxyJsonAdaptorDictHandlers;
   } else if (is_sequence) {
     handlers = PyProxySequenceHandlers;
+  } else if (is_dict) {
+    handlers = PyProxyDictHandlers;
   } else {
     handlers = PyProxyHandlers;
   }
@@ -529,7 +534,7 @@ function callPyObjectKwargs(ptrobj: number, jsargs: any[], kwargs: any) {
     API.maybe_fatal_error(e);
     return;
   }
-  if (result === null) {
+  if (result === Module.error) {
     _pythonexc2js();
   }
   // Automatically schedule coroutines
@@ -582,7 +587,12 @@ async function callPyObjectKwargsPromising(
     // promisingApply clears the error flag and saves any error into excStatus.
     // This ensures that tasks that are run between when promisingApply resolves
     // and when this task resumes here won't incorrectly observe the error flag.
-    // See test_stack_switching.test_throw_from_switcher for a detailed explanation.
+    // See test_stack_switching.test_throw_from_switcher for a detailed
+    // explanation.
+    //
+    // The result of promisingApply() is wrapped in a one element list
+    // (regardless of whether there was an error or not) to ensure that we only
+    // await the stack switches and not a thenable result.
     result = await Module.promisingApply(
       ptrobj,
       jsargs,
@@ -595,7 +605,9 @@ async function callPyObjectKwargsPromising(
   } catch (e) {
     API.fatal_error(e);
   }
-  if (result === null) {
+  // Unwrap result
+  result = result[0];
+  if (result === Module.error) {
     _PyErr_SetRaisedException(HEAPU32[exc / 4]);
     try {
       _pythonexc2js();
@@ -680,7 +692,7 @@ export class PyProxy {
   }
   /**
    * Returns `str(o)` (unless `pyproxyToStringRepr: true` was passed to
-   * :js:func:`~globalThis.loadPyodide` in which case it will return `repr(o)`)
+   * :js:func:`~exports.loadPyodide` in which case it will return `repr(o)`)
    */
   toString(): string {
     let ptrobj = _getPtr(this);
@@ -692,7 +704,7 @@ export class PyProxy {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       _pythonexc2js();
     }
     return result;
@@ -742,6 +754,7 @@ export class PyProxy {
     create_pyproxies = true,
     dict_converter = undefined,
     default_converter = undefined,
+    eager_converter = undefined,
   }: {
     /** How many layers deep to perform the conversion. Defaults to infinite */
     depth?: number;
@@ -778,12 +791,25 @@ export class PyProxy {
       convert: (obj: PyProxy) => any,
       cacheConversion: (obj: PyProxy, result: any) => void,
     ) => any;
+    /**
+     * Optional callback to convert objects which gets called after ``str``,
+     * ``int``, ``float``, ``bool``, ``None``, and ``JsProxy`` are converted but
+     * *before* any default conversions are applied to standard data structures.
+     *
+     * Its arguments are the same as `dict_converter`.
+     * See the documentation of :meth:`~pyodide.ffi.to_js`.
+     */
+    eager_converter?: (
+      obj: PyProxy,
+      convert: (obj: PyProxy) => any,
+      cacheConversion: (obj: PyProxy, result: any) => void,
+    ) => any;
   } = {}): any {
     let ptrobj = _getPtr(this);
     let result;
     let proxies;
     if (!create_pyproxies) {
-      proxies = null;
+      proxies = Module.error;
     } else if (pyproxies) {
       proxies = pyproxies;
     } else {
@@ -795,14 +821,15 @@ export class PyProxy {
         ptrobj,
         depth,
         proxies,
-        dict_converter || null,
-        default_converter || null,
+        dict_converter ?? Module.error,
+        default_converter ?? Module.error,
+        eager_converter ?? Module.error,
       );
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       _pythonexc2js();
     }
     return result;
@@ -913,7 +940,7 @@ export class PyGetItemMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       if (_PyErr_Occurred()) {
         _pythonexc2js();
       } else {
@@ -1065,7 +1092,7 @@ function* iter_helper(
       Py_ENTER();
       const item = __pyproxy_iter_next(iterptr, proxyCache, is_json_adaptor);
       Py_EXIT();
-      if (item === null) {
+      if (item === Module.error) {
         break;
       }
       yield item;
@@ -1172,7 +1199,7 @@ async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
         Py_ENTER();
         p = __pyproxy_aiter_next(iterptr);
         Py_EXIT();
-        if (p === null) {
+        if (p === Module.error) {
           break;
         }
       } catch (e) {
@@ -1292,7 +1319,7 @@ export class PyIteratorMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       _pythonexc2js();
     }
     return result;
@@ -1335,7 +1362,7 @@ export class PyGeneratorMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       _pythonexc2js();
     }
     return result;
@@ -1368,7 +1395,7 @@ export class PyGeneratorMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       _pythonexc2js();
     }
     return result;
@@ -1416,7 +1443,7 @@ export class PyAsyncIteratorMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (p === null) {
+    if (p === Module.error) {
       _pythonexc2js();
     }
     let value;
@@ -1475,7 +1502,7 @@ export class PyAsyncGeneratorMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (p === null) {
+    if (p === Module.error) {
       _pythonexc2js();
     }
     let value;
@@ -1520,7 +1547,7 @@ export class PyAsyncGeneratorMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (p === null) {
+    if (p === Module.error) {
       _pythonexc2js();
     }
     let value;
@@ -2055,7 +2082,7 @@ function python_getattr(jsobj: PyProxy, key: any) {
   } catch (e) {
     API.fatal_error(e);
   }
-  if (result === null) {
+  if (result === Module.error) {
     if (_PyErr_Occurred()) {
       _pythonexc2js();
     }
@@ -2109,7 +2136,7 @@ function python_slice_assign(
   } catch (e) {
     API.fatal_error(e);
   }
-  if (res === null) {
+  if (res === Module.error) {
     _pythonexc2js();
   }
   return res;
@@ -2125,11 +2152,18 @@ function python_pop(jsobj: any, pop_start: boolean): any {
   } catch (e) {
     API.fatal_error(e);
   }
-  if (res === null) {
+  if (res === Module.error) {
     _pythonexc2js();
   }
   return res;
 }
+
+const filteredHasKeySet: Set<string | symbol> = new Set([
+  "name",
+  "length",
+  "caller",
+  "arguments",
+]);
 
 function filteredHasKey(
   jsobj: PyProxy,
@@ -2144,17 +2178,12 @@ function filteredHasKey(
     return (
       jskey in jsobj &&
       !(
-        [
-          "name",
-          "length",
-          "caller",
-          "arguments",
-          // we are required by JS law to return `true` for `"prototype" in pycallable`
-          // but we are allowed to return the value of `getattr(pycallable, "prototype")`.
-          // So we filter prototype out of the "get" trap but not out of the "has" trap
-          filterProto ? "prototype" : undefined,
-        ] as (string | symbol)[]
-      ).includes(jskey)
+        filteredHasKeySet.has(jskey) ||
+        // we are required by JS law to return `true` for `"prototype" in pycallable`
+        // but we are allowed to return the value of `getattr(pycallable, "prototype")`.
+        // So we filter prototype out of the "get" trap but not out of the "has" trap
+        (filterProto && jskey === "prototype")
+      )
     );
   } else {
     return jskey in jsobj;
@@ -2243,7 +2272,7 @@ const PyProxyHandlers = {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       _pythonexc2js();
     }
     result.push(...Reflect.ownKeys(jsobj));
@@ -2254,7 +2283,7 @@ const PyProxyHandlers = {
   },
 };
 
-function isPythonError(e: any): boolean {
+function isPythonError(e: any): e is PythonError {
   return (
     e &&
     typeof e === "object" &&
@@ -2280,7 +2309,7 @@ const PyProxySequenceHandlers = {
       try {
         return PyGetItemMethods.prototype.get.call(jsobj, Number(jskey));
       } catch (e) {
-        if (isPythonError(e)) {
+        if (isPythonError(e) && e.type == "IndexError") {
           return undefined;
         }
         throw e;
@@ -2294,7 +2323,7 @@ const PyProxySequenceHandlers = {
         PySetItemMethods.prototype.set.call(jsobj, Number(jskey), jsval);
         return true;
       } catch (e) {
-        if (isPythonError(e)) {
+        if (isPythonError(e) && e.type == "IndexError") {
           return false;
         }
         throw e;
@@ -2308,7 +2337,7 @@ const PyProxySequenceHandlers = {
         PySetItemMethods.prototype.delete.call(jsobj, Number(jskey));
         return true;
       } catch (e) {
-        if (isPythonError(e)) {
+        if (isPythonError(e) && e.type == "IndexError") {
           return false;
         }
         throw e;
@@ -2326,80 +2355,89 @@ const PyProxySequenceHandlers = {
   },
 };
 
+const PyProxyJsonAdaptorDictHandlersSet = new Set([
+  "copy",
+  "constructor",
+  "$$flags",
+  "toString",
+  "destroy",
+]);
+
 const PyProxyJsonAdaptorDictHandlers = {
   isExtensible(): boolean {
     return true;
   },
-  has(jsobj: PyProxy, jskey: any): boolean {
+  has(jsobj: PyProxy, jskey: string | symbol): boolean {
     if (PyContainsMethods.prototype.has.call(jsobj, jskey)) {
       return true;
     }
     if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
-      jskey = Number(jskey);
-    }
-    if (PyContainsMethods.prototype.has.call(jsobj, jskey)) {
-      return true;
+      return PyContainsMethods.prototype.has.call(jsobj, Number(jskey));
     }
     return false;
   },
-  get(jsobj: PyProxy, jskey: any): any {
-    let result;
+  get(jsobj: PyProxy, jskey: string | symbol): any {
     if (
-      ["copy", "constructor", "$$flags", "toString", "destroy"].includes(
-        jskey,
-      ) ||
-      typeof jskey === "symbol"
+      typeof jskey === "symbol" ||
+      PyProxyJsonAdaptorDictHandlersSet.has(jskey)
     ) {
       // @ts-ignore
       return Reflect.get(...arguments);
     }
-    if (typeof jskey === "string") {
-      // TODO: consider adding an attribute cache for asJsJson
-      result = PyGetItemMethods.prototype.get.call(jsobj, jskey);
-    }
-    if (result) {
+    const result = PyGetItemMethods.prototype.get.call(jsobj, jskey);
+    if (
+      result !== undefined ||
+      PyContainsMethods.prototype.has.call(jsobj, jskey)
+    ) {
       return result;
     }
     if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
-      jskey = Number(jskey);
-      result = PyGetItemMethods.prototype.get.call(jsobj, jskey);
-    }
-    if (result) {
-      return result;
+      return PyGetItemMethods.prototype.get.call(jsobj, Number(jskey));
     }
     // @ts-ignore
     return Reflect.get(...arguments);
   },
-  set(jsobj: PyProxy, jskey: any, jsval: any): boolean {
-    if (typeof jskey === "string") {
-      if (/^[0-9]+$/.test(jskey)) {
-        jskey = Number(jskey);
-      }
-      try {
-        PySetItemMethods.prototype.set.call(jsobj, jskey, jsval);
-        return true;
-      } catch (e) {
-        if (isPythonError(e)) {
-          return false;
-        }
-        throw e;
-      }
+  set(jsobj: PyProxy, jskey: string | symbol | number, jsval: any): boolean {
+    if (typeof jskey === "symbol") {
+      return false;
     }
-    return false;
+    if (
+      !PyContainsMethods.prototype.has.call(jsobj, jskey) &&
+      typeof jskey === "string" &&
+      /^[0-9]+$/.test(jskey)
+    ) {
+      jskey = Number(jskey);
+    }
+    try {
+      PySetItemMethods.prototype.set.call(jsobj, jskey, jsval);
+      return true;
+    } catch (e) {
+      if (isPythonError(e) && e.type === "KeyError") {
+        return false;
+      }
+      throw e;
+    }
   },
-  deleteProperty(jsobj: PyProxy, jskey: any): boolean {
-    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
-      try {
-        PySetItemMethods.prototype.delete.call(jsobj, Number(jskey));
-        return true;
-      } catch (e) {
-        if (isPythonError(e)) {
-          return false;
-        }
-        throw e;
-      }
+  deleteProperty(jsobj: PyProxy, jskey: string | symbol | number): boolean {
+    if (typeof jskey === "symbol") {
+      return false;
     }
-    return false;
+    if (
+      !PyContainsMethods.prototype.has.call(jsobj, jskey) &&
+      typeof jskey === "string" &&
+      /^[0-9]+$/.test(jskey)
+    ) {
+      jskey = Number(jskey);
+    }
+    try {
+      PySetItemMethods.prototype.delete.call(jsobj, jskey);
+      return true;
+    } catch (e) {
+      if (isPythonError(e) && e.type === "KeyError") {
+        return false;
+      }
+      throw e;
+    }
   },
   getOwnPropertyDescriptor(jsobj: PyProxy, prop: any) {
     if (!PyProxyJsonAdaptorDictHandlers.has(jsobj, prop)) {
@@ -2414,11 +2452,66 @@ const PyProxyJsonAdaptorDictHandlers = {
     };
   },
   ownKeys(jsobj: PyProxy): (string | symbol)[] {
-    let dict_keys_view: Iterable<string> & PyProxy;
-    dict_keys_view = PyProxyHandlers.get(jsobj, "keys")();
-    const res = Array.from(dict_keys_view);
-    dict_keys_view.destroy();
-    return res;
+    const result: Set<string | symbol> = new Set();
+    dictOwnKeysHelper(jsobj, result);
+    return Array.from(result);
+  },
+};
+
+function dictOwnKeysHelper(jsobj: PyProxy, result: Set<string | symbol>): void {
+  const dictKeysView: Iterable<any> & PyProxy = PyProxyHandlers.get(
+    jsobj,
+    "keys",
+  )();
+  for (const key of dictKeysView) {
+    if (typeof key === "string") {
+      result.add(key);
+    } else if (typeof key === "number") {
+      result.add(key.toString());
+    }
+  }
+  dictKeysView.destroy();
+}
+
+const PyProxyDictHandlers = {
+  isExtensible(): boolean {
+    return true;
+  },
+  has(jsobj: PyProxy, jskey: string | symbol): boolean {
+    if (PyProxyHandlers.has(jsobj, jskey)) {
+      return true;
+    }
+    return PyProxyJsonAdaptorDictHandlers.has(jsobj, jskey);
+  },
+  get(jsobj: PyProxy, jskey: string | symbol): any {
+    let result = PyProxyHandlers.get(jsobj, jskey);
+    if (result !== undefined || PyProxyHandlers.has(jsobj, jskey)) {
+      return result;
+    }
+    return PyProxyJsonAdaptorDictHandlers.get(jsobj, jskey);
+  },
+  set(jsobj: PyProxy, jskey: string | symbol, jsval: any): boolean {
+    if (PyProxyHandlers.has(jsobj, jskey)) {
+      return PyProxyHandlers.set(jsobj, jskey, jsval);
+    }
+    return PyProxyJsonAdaptorDictHandlers.set(jsobj, jskey, jsval);
+  },
+  deleteProperty(jsobj: PyProxy, jskey: string | symbol): boolean {
+    if (PyProxyHandlers.has(jsobj, jskey)) {
+      return PyProxyHandlers.deleteProperty(jsobj, jskey);
+    }
+    return PyProxyJsonAdaptorDictHandlers.deleteProperty(jsobj, jskey);
+  },
+  getOwnPropertyDescriptor(jsobj: PyProxy, prop: any) {
+    return (
+      Reflect.getOwnPropertyDescriptor(jsobj, prop) ??
+      PyProxyJsonAdaptorDictHandlers.getOwnPropertyDescriptor(jsobj, prop)
+    );
+  },
+  ownKeys(jsobj: PyProxy): (string | symbol)[] {
+    const result = new Set(PyProxyHandlers.ownKeys(jsobj));
+    dictOwnKeysHelper(jsobj, result);
+    return Array.from(result);
   },
 };
 
@@ -2891,7 +2984,7 @@ export class PyBufferMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       _pythonexc2js();
     }
 
@@ -3181,6 +3274,6 @@ export class PyBufferView {
     }
     this._released = true;
     // @ts-ignore
-    this.data = null;
+    this.data = Module.error;
   }
 }

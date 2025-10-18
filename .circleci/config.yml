@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20250311-chrome134-firefox136-py313
+    - image: pyodide/pyodide-env:20250915-chrome140-firefox140-py313
   environment:
     EMSDK_NUM_CORES: 3
     EMCC_CORES: 3
@@ -18,7 +18,7 @@ defaults: &defaults
     PYODIDE_ZIP_COMPRESSION_LEVEL: 0
     # For maintainers: set this to 0 if you are making an ABI break, and
     # reset to 1 after updating the packages to the new ABI.
-    USE_PREBUILT_PACKAGES: 0
+    USE_PREBUILT_PACKAGES: 1
 
 jobs:
   build-core:
@@ -80,7 +80,7 @@ jobs:
             source pyodide_env.sh
 
             ccache -z
-            PYODIDE_PACKAGES="tag:core" make
+            PYODIDE_PACKAGES="tag:pytest,tag:pyodide.test" make
             ccache -s
 
       - run:
@@ -176,7 +176,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip dist/python dist/python_cli_entry.mjs
             tar cjf build-logs.tar.gz  packages/build-logs
 
       - run:
@@ -212,7 +212,6 @@ jobs:
       - run:
           name: build pyodide debug
           command: |
-            cp -r dist dist-release
             rm dist/pyodide.asm.js
             source pyodide_env.sh
             ccache -z
@@ -223,12 +222,11 @@ jobs:
             npx prettier -w pyodide.js
             cd ..
             mv dist dist-debug
-            mv dist-release dist
 
       - persist_to_workspace:
           root: .
           paths:
-            - .
+            - ./dist-debug
 
   create-xbuild-env:
     <<: *defaults
@@ -353,7 +351,7 @@ jobs:
 
   test-js:
     <<: *defaults
-    resource_class: small
+    resource_class: large
     steps:
       - attach_workspace:
           at: .
@@ -372,6 +370,18 @@ jobs:
             cd src/js
             npm run test:unit
 
+      - run:
+          name: test-node
+          command: |
+            cd src/js
+            npm run test:node
+
+      - run:
+          name: test-browser
+          command: |
+            cd src/js
+            npx playwright install chromium --only-shell --with-deps
+            npm run test:browser
       # - run:
       #     name: check if Pyodide works with Webpack
       #     command: |
@@ -396,6 +406,18 @@ jobs:
           name: test
           command: |
             ./tools/cmdline-runner-test.sh
+
+  test-d8:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: test
+          command: |
+            ./tools/d8-test.sh
+
   benchmark:
     <<: *defaults
     resource_class: medium+
@@ -458,7 +480,7 @@ jobs:
             cp -r cpython/installs /tmp/ghr/static-libraries
             cd /tmp/ghr
             tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
-            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip
+            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip pyodide/python pyodide/python_cli_entry.mjs
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
             tar cjf dist/static-libraries-${CIRCLE_TAG}.tar.bz2  static-libraries/
 
@@ -551,7 +573,7 @@ jobs:
             cp -r xbuildenv /tmp/ghr/xbuildenv
             cp -r cpython/installs /tmp/ghr/static-libraries
             cd /tmp/ghr
-            tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip
+            tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip pyodide/python pyodide/python_cli_entry.mjs
             tar cjf dist/xbuildenv.tar.bz2  xbuildenv/
             tar cjf dist/static-libraries.tar.bz2  static-libraries/
 
@@ -575,8 +597,8 @@ workflows:
               only: /.*/
 
       - build-packages:
-          name: build-static-libraries
-          packages: "tag:static_library"
+          name: build-core-packages
+          packages: "tag:core,tag:cross-build"
           requires:
             - build-core
           filters:
@@ -590,75 +612,11 @@ workflows:
                   - ./dist
 
       - build-packages:
-          name: build-libraries
-          packages: "tag:library"
-          requires:
-            - build-core
-            - build-static-libraries
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages
-                  - ./dist
-
-      - build-packages:
-          name: build-packages-no-numpy-dependents
-          packages: "*,no-numpy-dependents"
-          requires:
-            - build-core
-            - build-libraries
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages
-                  - ./dist
-
-      - build-packages:
-          name: build-packages-opencv-python
-          packages: opencv-python
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages/opencv-python/build
-                  - ./packages/opencv-python/dist
-                  - ./packages/build-logs/opencv*
-                  - ./dist/opencv*
-
-      - build-packages:
-          name: build-packages-numpy-dependents
-          packages: "*,!opencv-python"
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages
-                  - ./dist
-
-      - build-packages:
-          name: build-packages
+          name: build-full-packages
+          enable_prebuilt_packages: ${USE_PREBUILT_PACKAGES}
           packages: "*"
           requires:
-            - build-packages-numpy-dependents
-            - build-packages-opencv-python
+            - build-core-packages
           filters:
             tags:
               only: /.*/
@@ -666,29 +624,12 @@ workflows:
             - persist_to_workspace:
                 root: .
                 paths:
-                  - ./packages/.artifacts
+                  - ./packages
                   - ./dist
-
-      # - build-packages:
-      #     name: build-prebuilt-packages
-      #     enable_prebuilt_packages: ${USE_PREBUILT_PACKAGES}
-      #     packages: "*"
-      #     requires:
-      #       - build-core
-      #     filters:
-      #       tags:
-      #         only: /.*/
-      #     # TODO: enable this when we remove other package build jobs
-      #     post-steps:
-      #       - persist_to_workspace:
-      #           root: .
-      #           paths:
-      #             - ./packages/
-      #             - ./dist
 
       - test-main:
           name: test-core-chrome-nodylink
-          test-params: --runtime=chrome-no-host -m 'not requires_dynamic_linking' -k "not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ packages/buffer-test/
+          test-params: --runtime=chrome-no-host -m 'not requires_dynamic_linking' -k "not webworker" src packages/micropip  packages/test-fpcast packages/test-sharedlib-py/ packages/test-cpp-exceptions/ packages/test-buffer/
           requires:
             - build-core-nodylink
           filters:
@@ -697,7 +638,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox-nodylink
-          test-params: --runtime=firefox-no-host -m 'not requires_dynamic_linking' -k "not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ packages/buffer-test/
+          test-params: --runtime=firefox-no-host -m 'not requires_dynamic_linking' -k "not webworker" src packages/micropip packages/test-fpcast packages/test-sharedlib-py/ packages/test-cpp-exceptions/ packages/test-buffer/
           requires:
             - build-core-nodylink
           filters:
@@ -706,7 +647,7 @@ workflows:
 
       - test-main:
           name: test-core-node-nodylink
-          test-params: --runtime=node-no-host -m 'not requires_dynamic_linking' -k "not cmdline_runner" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ packages/buffer-test/
+          test-params: --runtime=node-no-host -m 'not requires_dynamic_linking' -k "not cmdline_runner" src packages/micropip packages/test-fpcast packages/test-sharedlib-py/ packages/test-cpp-exceptions/ packages/test-buffer/
           requires:
             - build-core-nodylink
           filters:
@@ -715,7 +656,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome
-          test-params: --runtime=chrome-no-host -k "not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ packages/buffer-test/
+          test-params: --runtime=chrome-no-host -k "not webworker" src packages/micropip  packages/test-fpcast packages/test-sharedlib-py/ packages/test-cpp-exceptions/ packages/test-buffer/
           requires:
             - build-core
           filters:
@@ -724,7 +665,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox
-          test-params: --runtime=firefox-no-host -k "not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ packages/buffer-test/
+          test-params: --runtime=firefox-no-host -k "not webworker" src packages/micropip packages/test-fpcast packages/test-sharedlib-py/ packages/test-cpp-exceptions/ packages/test-buffer/
           requires:
             - build-core
           filters:
@@ -733,7 +674,7 @@ workflows:
 
       - test-main:
           name: test-core-node
-          test-params: --runtime=node-no-host src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ packages/buffer-test/
+          test-params: --runtime=node-no-host src packages/micropip packages/test-fpcast packages/test-sharedlib-py/ packages/test-cpp-exceptions/ packages/test-buffer/
           requires:
             - build-core
           filters:
@@ -742,7 +683,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome-webworker
-          test-params: --runtime=chrome-no-host src/tests/test_webworker.py
+          test-params: --runtime=chrome-no-host src/tests/test_webworker.py src/tests/test_webloop_webworker.py
           requires:
             - test-core-chrome
           filters:
@@ -751,7 +692,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox-webworker
-          test-params: --runtime=firefox-no-host src/tests/test_webworker.py
+          test-params: --runtime=firefox-no-host src/tests/test_webworker.py src/tests/test_webloop_webworker.py
           requires:
             - test-core-firefox
           filters:
@@ -759,79 +700,58 @@ workflows:
               only: /.*/
 
       - test-main:
-          name: test-packages-chrome-no-numpy-dependents
-          test-params: --runtime=chrome-no-host packages/*/test*.py
-          cache-dir: .pytest_cache_chrome
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./.test_cache
-
-      - test-main:
-          name: test-packages-chrome
+          name: test-core-packages-chrome
           test-params: --runtime=chrome-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_chrome
           requires:
-            - test-packages-chrome-no-numpy-dependents
-            - build-packages
+            - build-core-packages
           filters:
             tags:
               only: /.*/
 
       - test-main:
-          name: test-packages-firefox-no-numpy-dependents
-          test-params: --runtime=firefox-no-host packages/*/test*.py
-          cache-dir: .pytest_cache_firefox
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./.test_cache
-
-      - test-main:
-          name: test-packages-firefox
+          name: test-core-packages-firefox
           test-params: --runtime=firefox-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_firefox
           requires:
-            - test-packages-firefox-no-numpy-dependents
-            - build-packages
+            - build-core-packages
           filters:
             tags:
               only: /.*/
 
       - test-main:
-          name: test-packages-node-no-numpy-dependents
-          test-params: --runtime=node-no-host packages/*/test*.py
-          cache-dir: .pytest_cache_node
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./.test_cache
-
-      - test-main:
-          name: test-packages-node
+          name: test-core-packages-node
           test-params: --runtime=node-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_node
           requires:
-            - test-packages-node-no-numpy-dependents
-            - build-packages
+            - build-core-packages
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          name: test-full-packages-chrome
+          test-params: --runtime=chrome-no-host packages/_tests
+          requires:
+            - build-full-packages
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          name: test-full-packages-firefox
+          test-params: --runtime=firefox-no-host packages/_tests
+          requires:
+            - build-full-packages
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          name: test-full-packages-node
+          test-params: --runtime=node-no-host packages/_tests
+          requires:
+            - build-full-packages
           filters:
             tags:
               only: /.*/
@@ -852,35 +772,42 @@ workflows:
 
       - benchmark:
           requires:
-            - build-packages
+            - build-full-packages
           filters:
             tags:
               only: /.*/
 
       - create-xbuild-env:
           requires:
-            - build-packages
+            - build-full-packages
           filters:
             tags:
               only: /.*/
 
       - test-cmdline-runner:
           requires:
-            - build-packages
+            - build-full-packages
+          filters:
+            tags:
+              only: /.*/
+
+      - test-d8:
+          requires:
+            - build-core
           filters:
             tags:
               only: /.*/
 
       - build-pyodide-debug:
           requires:
-            - build-packages
+            - build-full-packages
           filters:
             tags:
               only: /.*/
 
       - build-test-pyc-packages:
           requires:
-            - build-packages
+            - build-full-packages
           filters:
             tags:
               only: /.*/
@@ -895,8 +822,9 @@ workflows:
       - deploy-release:
           requires:
             - check-release-version
+            - build-full-packages
             - test-core-firefox
-            - test-packages-firefox
+            - test-full-packages-firefox
             - build-pyodide-debug
             - create-xbuild-env
             - build-test-pyc-packages
@@ -909,8 +837,9 @@ workflows:
             - s3-deployment
       - deploy-dev:
           requires:
+            - build-full-packages
             - test-core-firefox
-            - test-packages-firefox
+            - test-full-packages-firefox
             - build-pyodide-debug
             - create-xbuild-env
             - build-test-pyc-packages

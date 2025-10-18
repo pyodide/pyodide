@@ -7,16 +7,6 @@
 #include "stdbool.h"
 #include "stdint.h"
 
-#undef false
-#undef true
-// These work for both C and javascript.
-// In C !!0 ==> 0 and in javascript !!0 ==> false
-// In C !!1 ==> 1 and in javascript !!1 ==> true
-// clang-format off
-#define false (!!0)
-#define true (!!1)
-// clang-format on
-
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;

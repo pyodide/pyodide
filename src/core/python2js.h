@@ -57,9 +57,12 @@ python2js_custom(PyObject* x,
                  int depth,
                  JsVal proxies,
                  JsVal dict_converter,
-                 JsVal default_converter);
+                 JsVal default_converter,
+                 JsVal eager_converter);
 
 int
 python2js_init(PyObject* core);
+
+extern PyObject* py_jsnull;
 
 #endif /* PYTHON2JS_H */

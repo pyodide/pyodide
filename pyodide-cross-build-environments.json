@@ -1,11 +1,75 @@
 {
   "releases": {
+    "0.28.3": {
+      "version": "0.28.3",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.28.3/xbuildenv-0.28.3.tar.bz2",
+      "sha256": "7c1229a3d634e07a440fc916d56738ac4db61410dc6f50eb59a11e4a30f1b56a",
+      "python_version": "3.13.2",
+      "emscripten_version": "4.0.9",
+      "min_pyodide_build_version": "0.26.0"
+    },
+    "0.28.2": {
+      "version": "0.28.2",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.28.2/xbuildenv-0.28.2.tar.bz2",
+      "sha256": "5fe6766bb9bdcf238b93271ee915250c17df7f33ef87026d07b1ea2fce8c054b",
+      "python_version": "3.13.2",
+      "emscripten_version": "4.0.9",
+      "min_pyodide_build_version": "0.26.0"
+    },
+    "0.28.1": {
+      "version": "0.28.1",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.28.1/xbuildenv-0.28.1.tar.bz2",
+      "sha256": "580a82141a11f1c4ee28693b4c64af249e96437aef9f0977abfd88f67247edb7",
+      "python_version": "3.13.2",
+      "emscripten_version": "4.0.9",
+      "min_pyodide_build_version": "0.26.0"
+    },
+    "0.28.0": {
+      "version": "0.28.0",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.28.0/xbuildenv-0.28.0.tar.bz2",
+      "sha256": "4b0bf238554ff78ac07436c9d07d71633a4ba7a813b8a2f5f2f5d191a08d939d",
+      "python_version": "3.13.2",
+      "emscripten_version": "4.0.9",
+      "min_pyodide_build_version": "0.26.0"
+    },
+    "0.28.0a3": {
+      "version": "0.28.0a3",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.28.0a3/xbuildenv-0.28.0a3.tar.bz2",
+      "sha256": "260706c94a9e31d5c6117170c5c3770e965f10304952b1ef8b5af0f066fa767f",
+      "python_version": "3.13.2",
+      "emscripten_version": "4.0.9",
+      "min_pyodide_build_version": "0.26.0"
+    },
+    "0.28.0a2": {
+      "version": "0.28.0a2",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.28.0a2/xbuildenv-0.28.0a2.tar.bz2",
+      "sha256": "93e13de52919e19efa5b6a5e2fd3a6de16a903f495e0fe4a86ca6a88ada6e794",
+      "python_version": "3.13.2",
+      "emscripten_version": "4.0.8",
+      "min_pyodide_build_version": "0.26.0"
+    },
     "0.28.0a1": {
       "version": "0.28.0a1",
       "url": "https://github.com/pyodide/pyodide/releases/download/0.28.0a1/xbuildenv-0.28.0a1.tar.bz2",
       "sha256": "f78b65397f4f1e921e7715604e35648320c6f6ed8bb73792db15823ccccc5b3e",
       "python_version": "3.13.2",
       "emscripten_version": "4.0.6",
+      "min_pyodide_build_version": "0.26.0"
+    },
+    "0.27.7": {
+      "version": "0.27.7",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.27.7/xbuildenv-0.27.7.tar.bz2",
+      "sha256": "0c2e7db42efa5d1dac38b50f8b3d659a1e3885d0a233494831b8206281307d52",
+      "python_version": "3.12.7",
+      "emscripten_version": "3.1.58",
+      "min_pyodide_build_version": "0.26.0"
+    },
+    "0.27.6": {
+      "version": "0.27.6",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.27.6/xbuildenv-0.27.6.tar.bz2",
+      "sha256": "52492eff5065d7aa9b5f6898f8a4de9357d06c0f57ecdc72a49b0a5e9b7b9d7c",
+      "python_version": "3.12.7",
+      "emscripten_version": "3.1.58",
       "min_pyodide_build_version": "0.26.0"
     },
     "0.27.5": {

@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Package request
+    url: https://github.com/pyodide/pyodide-recipes/issues/new?template=package_request.md
+    about: Request a new Python package or a version update
   - name: Ask a Question
     url: https://github.com/pyodide/pyodide/discussions
     about: Ask and answer Pyodide related questions

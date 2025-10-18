@@ -195,7 +195,7 @@ def test_snapshot_serializer1(selenium_standalone_noload):
     )
 
 
-def test_snapshot_serializer_not_serializable(selenium_standalone_noload):
+def test_snapshot_serializer_not_serializable1(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     match = "Serializer returned result that cannot be JSON.stringify'd at index"
     with pytest.raises(selenium.JavascriptException, match=match):
@@ -208,6 +208,23 @@ def test_snapshot_serializer_not_serializable(selenium_standalone_noload):
                 a = run_js("(o = {}, o.o = o)")
             `);
             const snapshot = py1.makeMemorySnapshot({serializer: (obj) => obj});
+            """
+        )
+
+
+def test_snapshot_serializer_not_serializable2(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    match = "Comes from user serializer"
+    with pytest.raises(selenium.JavascriptException, match=match):
+        selenium.run_js(
+            """
+            const py1 = await loadPyodide({_makeSnapshot: true});
+            py1.runPython(`
+                from pyodide.code import run_js
+
+                a = run_js("(p = Proxy.revocable({}, {}), p.revoke(), p.proxy)")
+            `);
+            const snapshot = py1.makeMemorySnapshot({serializer: (obj) => {throw new Error("Comes from user serializer")}});
             """
         )
 
@@ -277,3 +294,17 @@ def test_make_snapshot_fetch(selenium_standalone_noload):
         assert "Illegal invocation" not in str(e)
         # Firefox
         assert "an object that does not implement interface Window." not in str(e)
+
+
+def test_snapshot_pyfetch(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    selenium.run_js(
+        """
+        const py1 = await loadPyodide({_makeSnapshot: true});
+        py1.runPython(`
+            from pyodide.http import pyfetch
+        `);
+        const snapshot = py1.makeMemorySnapshot();
+        const py2 = await loadPyodide({_loadSnapshot: snapshot});
+        """
+    )

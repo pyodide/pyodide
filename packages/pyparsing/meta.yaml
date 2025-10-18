@@ -1,6 +1,9 @@
 package:
   name: pyparsing
   version: 3.2.1
+  tag:
+    - core
+    - pytest
   top-level:
     - pyparsing
 source:

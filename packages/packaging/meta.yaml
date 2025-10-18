@@ -1,6 +1,9 @@
 package:
   name: packaging
   version: "24.2"
+  tag:
+    - pytest
+    - core
   top-level:
     - packaging
 source:

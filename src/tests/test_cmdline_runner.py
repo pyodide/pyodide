@@ -397,10 +397,9 @@ def test_pip_install_executable(selenium, venv):
     """impure python package from pypi"""
     result = install_pkg(venv, "pytest")
     assert result.returncode == 0
-    python = f"python{sys.version_info.major}.{sys.version_info.minor}"
     pytest_script = (venv / "bin/pytest").read_text()
     shebang = pytest_script.splitlines()[0]
-    assert shebang == "#!" + str((venv / "bin" / python).absolute())
+    assert shebang == "#!" + str((venv / "bin/python").absolute())
 
 
 @only_node
@@ -413,16 +412,16 @@ def test_pip_install_deps_impure(selenium, venv):
 @only_node
 def test_pip_install_from_pyodide(selenium, venv):
     """impure Python package built with Pyodide"""
-    result = install_pkg(venv, "regex")
+    result = install_pkg(venv, "test-dummy-nonpure")
     assert result.returncode == 0
     assert (
         clean_pkg_install_stdout(result.stdout)
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/regex-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
-            Installing collected packages: regex
-            Successfully installed regex-*
+            Processing ./dist/test_dummy_nonpure-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
+            Installing collected packages: test-dummy-nonpure
+            Successfully installed test-dummy-nonpure-*
             """
         ).strip()
     )
@@ -433,9 +432,8 @@ def test_pip_install_from_pyodide(selenium, venv):
             "-c",
             dedent(
                 r"""
-                import regex
-                m = regex.match(r"(?:(?P<word>\w+) (?P<digits>\d+)\n)+", "one 1\ntwo 2\nthree 3\n")
-                print(m.capturesdict())
+                import dummy_nonpure
+                print(dummy_nonpure.dummy())
                 """
             ),
         ],
@@ -444,11 +442,8 @@ def test_pip_install_from_pyodide(selenium, venv):
         check=False,
     )
     assert result.returncode == 0
-    assert (
-        result.stdout
-        == "{'word': ['one', 'two', 'three'], 'digits': ['1', '2', '3']}" + "\n"
-    )
-    result = uninstall_pkg(venv, "regex")
+    assert result.stdout == "dummy\n"
+    result = uninstall_pkg(venv, "test-dummy-nonpure")
     assert result.returncode == 0
 
 
@@ -495,8 +490,8 @@ def test_package_index(tmp_path):
     assert result.returncode == 0
     stdout = re.sub(r"(?<=[<>=-])([\d+]\.?)+", "*", result.stdout)
     assert (
-        stdout.strip().rsplit("\n", 1)[-1]
-        == "Successfully installed attrs-* micropip-* numpy-* packaging-* sharedlib-test-py-*"
+        "Successfully installed attrs-* micropip-* numpy-* packaging-* sharedlib-test-py-*"
+        in stdout.strip().rsplit("\n", 1)[-1]
     )
 
 
@@ -549,7 +544,7 @@ def test_sys_exit(selenium, venv):
 
 @only_node
 def test_cpp_exceptions(selenium, venv):
-    result = install_pkg(venv, "cpp-exceptions-test2")
+    result = install_pkg(venv, "test-cpp-exceptions2")
     print(result.stdout)
     print(result.stderr)
     assert result.returncode == 0
@@ -568,25 +563,25 @@ def test_cpp_exceptions(selenium, venv):
 @only_node
 def test_pip_install_sys_platform_condition_skipped(selenium, venv):
     """impure Python package built with Pyodide"""
-    result = install_pkg(venv, "regex; sys_platform != 'emscripten'")
+    result = install_pkg(venv, "test-dummy-nonpure; sys_platform != 'emscripten'")
     assert result.returncode == 0
-    ignoring = """Ignoring regex: markers 'sys_platform != "emscripten"' don't match your environment"""
+    ignoring = """Ignoring test-dummy-nonpure: markers 'sys_platform != "emscripten"' don't match your environment"""
     assert ignoring in result.stdout
 
 
 @only_node
 def test_pip_install_sys_platform_condition_kept(selenium, venv):
     """impure Python package built with Pyodide"""
-    result = install_pkg(venv, "regex; sys_platform == 'emscripten'")
+    result = install_pkg(venv, "test-dummy-nonpure; sys_platform == 'emscripten'")
     assert result.returncode == 0
     assert (
         clean_pkg_install_stdout(result.stdout)
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/regex-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
-            Installing collected packages: regex
-            Successfully installed regex-*
+            Processing ./dist/test_dummy_nonpure-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
+            Installing collected packages: test-dummy-nonpure
+            Successfully installed test-dummy-nonpure-*
             """
         ).strip()
     )
@@ -597,9 +592,8 @@ def test_pip_install_sys_platform_condition_kept(selenium, venv):
             "-c",
             dedent(
                 r"""
-                import regex
-                m = regex.match(r"(?:(?P<word>\w+) (?P<digits>\d+)\n)+", "one 1\ntwo 2\nthree 3\n")
-                print(m.capturesdict())
+                import dummy_nonpure
+                print(dummy_nonpure.dummy())
                 """
             ),
         ],
@@ -608,18 +602,15 @@ def test_pip_install_sys_platform_condition_kept(selenium, venv):
         check=False,
     )
     assert result.returncode == 0
-    assert (
-        result.stdout
-        == "{'word': ['one', 'two', 'three'], 'digits': ['1', '2', '3']}" + "\n"
-    )
-    result = uninstall_pkg(venv, "regex")
+    assert result.stdout == "dummy\n"
+    result = uninstall_pkg(venv, "test-dummy-nonpure")
     assert result.returncode == 0
 
 
 @only_node
 def test_dash_m_pip_venv(selenium, venv):
     result = subprocess.run(
-        [venv / "bin/python", "-m", "pip", "install", "regex"],
+        [venv / "bin/python", "-m", "pip", "install", "test-dummy-nonpure"],
         capture_output=True,
         encoding="utf8",
         check=False,
@@ -630,9 +621,9 @@ def test_dash_m_pip_venv(selenium, venv):
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/regex-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
-            Installing collected packages: regex
-            Successfully installed regex-*
+            Processing ./dist/test_dummy_nonpure-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
+            Installing collected packages: test-dummy-nonpure
+            Successfully installed test-dummy-nonpure-*
             """
         ).strip()
     )

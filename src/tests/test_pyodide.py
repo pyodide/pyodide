@@ -9,7 +9,6 @@ from typing import Any
 
 import pytest
 from pytest_pyodide import run_in_pyodide
-from pytest_pyodide.server import spawn_web_server
 
 from conftest import DIST_PATH, PYODIDE_ROOT, strip_assertions_stderr
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
@@ -278,12 +277,9 @@ def test_relaxed_call():
     def f4(a, /, *args, b=7):
         return [a, args, b]
 
-    with pytest.raises(
-        TypeError,
-        match=re.escape(
-            "test_relaxed_call.<locals>.f4() missing 1 required positional argument: 'a'"
-        ),
-    ):
+    # Since Python 3.13.3, the TypeError message for missing positional-only arguments has changed.
+    # See: https://github.com/python/cpython/pull/130192
+    with pytest.raises(TypeError, match=r"missing .* argument: 'a'"):
         relaxed_call(f4, a=2, b=7)
 
     def f5(a, *args, b=7, **kwargs):
@@ -343,12 +339,7 @@ def test_relaxed_wrap():
     def f4(a, /, *args, b=7):
         return [a, args, b]
 
-    with pytest.raises(
-        TypeError,
-        match=re.escape(
-            "test_relaxed_wrap.<locals>.f4() missing 1 required positional argument: 'a'"
-        ),
-    ):
+    with pytest.raises(TypeError, match=r"missing .* argument: 'a'"):
         f4(a=2, b=7)
 
     @relaxed_wrap
@@ -1035,6 +1026,8 @@ def test_fatal_error(selenium_standalone):
     import re
 
     def strip_stack_trace(x):
+        # Remove ANSI color codes
+        x = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", x)
         x = re.sub("\n.*site-packages.*", "", x)
         x = re.sub("/lib/python.*/", "", x)
         x = re.sub("/lib/python.*/", "", x)
@@ -1353,6 +1346,30 @@ def test_version_variable(selenium):
     assert js_version == py_version == core_version
 
 
+def test_abiVersion_variable(selenium):
+    core_abi_version = selenium.run_js(
+        """
+        return pyodide._api.abiVersion
+        """
+    )
+
+    lockfile_abi_version = selenium.run_js(
+        """
+        return pyodide._api.lockfile_info.abi_version
+        """
+    )
+
+    py_abi_version = selenium.run(
+        """
+        from sysconfig import get_config_var
+
+        get_config_var("PYODIDE_ABI_VERSION")
+        """
+    )
+
+    assert lockfile_abi_version == py_abi_version == core_abi_version
+
+
 @run_in_pyodide
 def test_default_sys_path(selenium):
     import sys
@@ -1373,16 +1390,11 @@ def test_default_sys_path(selenium):
         assert path in sys.path
 
 
+@run_in_pyodide
 def test_sys_path0(selenium):
-    selenium.run_js(
-        """
-        pyodide.runPython(`
-            import sys
-            import os
-            assert os.getcwd() == sys.path[0]
-        `)
-        """
-    )
+    import sys
+
+    assert sys.path[0] == ""
 
 
 @pytest.mark.requires_dynamic_linking
@@ -1467,7 +1479,9 @@ def test_module_not_found_note(selenium_standalone):
 
     unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
-    lockfile_packages = ["micropip", "packaging", "regex"]
+    lockfile_packages = [
+        "micropip",
+    ]
 
     # When error is wrapped, add_note_to_module_not_found_error is called
     with pytest.raises(ModuleNotFoundError) as e:
@@ -1717,7 +1731,7 @@ def test_csp(selenium_standalone_noload):
 
 
 @pytest.mark.xfail_browsers(node="static import test is browser-only")
-def test_static_import(selenium_standalone_noload, tmp_path):
+def test_static_import(selenium_standalone_noload, tmp_path, httpserver):
     selenium = selenium_standalone_noload
 
     # copy dist to tmp_path to perform file changes safely
@@ -1736,21 +1750,71 @@ def test_static_import(selenium_standalone_noload, tmp_path):
         PYODIDE_ROOT / "src/templates/module_static_import_test.html"
     ).read_text()
     test_html = test_html.replace("./pyodide.asm.js", f"./{hiding_dir}/pyodide.asm.js")
-    (tmp_path / "module_static_import_test.html").write_text(test_html)
+    test_html_content = test_html.encode()
 
-    with spawn_web_server(tmp_path) as web_server:
-        server_hostname, server_port, _ = web_server
-        base_url = f"http://{server_hostname}:{server_port}/"
-        selenium.goto(f"{base_url}/module_static_import_test.html")
-        selenium.javascript_setup()
-        selenium.load_pyodide()
-        selenium.run_js(
-            """
-            pyodide.runPython(`
-                print('Static import works')
-            `);
-            """
-        )
+    # Setup httpserver to serve all necessary files
+    httpserver.expect_oneshot_request(
+        "/module_static_import_test.html"
+    ).respond_with_data(
+        test_html_content,
+        content_type="text/html",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+
+    # Serve the moved pyodide.asm.js file
+    pyodide_asm_data = (tmp_path / hiding_dir / "pyodide.asm.js").read_bytes()
+    httpserver.expect_oneshot_request(
+        f"/{hiding_dir}/pyodide.asm.js"
+    ).respond_with_data(
+        pyodide_asm_data,
+        content_type="application/javascript",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+
+    # Serve other necessary pyodide files
+    for file_name in [
+        "pyodide.js",
+        "pyodide.mjs",
+        "pyodide-lock.json",
+        "python_stdlib.zip",
+        "pyodide.asm.wasm",
+    ]:
+        file_path = tmp_path / file_name
+        if file_path.exists():
+            file_data = file_path.read_bytes()
+            content_type = (
+                "application/javascript"
+                if file_name.endswith((".js", ".mjs"))
+                else (
+                    "application/json"
+                    if file_name.endswith(".json")
+                    else "application/zip"
+                    if file_name.endswith(".zip")
+                    else "application/wasm"
+                    if file_name.endswith(".wasm")
+                    else "application/octet-stream"
+                )
+            )
+            httpserver.expect_request(f"/{file_name}").respond_with_data(
+                file_data,
+                content_type=content_type,
+                headers={"Access-Control-Allow-Origin": "*"},
+                status=200,
+            )
+
+    url = httpserver.url_for("/module_static_import_test.html")
+    selenium.goto(url)
+    selenium.javascript_setup()
+    selenium.load_pyodide()
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            print('Static import works')
+        `);
+        """
+    )
 
 
 def test_python_error(selenium):
@@ -1991,3 +2055,21 @@ def test_fs_init(selenium_standalone_noload):
     # This may need to be updated when the Python version changes.
     assert res[-2].endswith("site-packages/foo")
     assert res[-1].endswith("site-packages/bar")
+
+
+def test_compat_null_to_none(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    doc = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            convertNullToNone: true
+        });
+        pyodide.runPython(`
+            from pyodide.code import run_js
+
+            assert run_js("null") == None
+        `);
+        """
+    )
+
+    assert not doc

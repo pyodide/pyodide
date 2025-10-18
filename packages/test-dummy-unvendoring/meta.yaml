@@ -1,0 +1,9 @@
+package:
+  name: test-dummy-unvendoring
+  version: 1.0.0
+  tag:
+    - pyodide.test
+  top-level:
+    - dummy_unvendoring
+source:
+  path: src

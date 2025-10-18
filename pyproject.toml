@@ -1,6 +1,6 @@
 [tool.mypy]
 python_version = "3.13"
-mypy_path = ["src/py", "pyodide-build"]
+mypy_path = ["src/py"]
 show_error_codes = true
 warn_unreachable = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
@@ -133,19 +133,17 @@ addopts = '''
 --ignore-glob="**/dist/"
 --ignore-glob="src/py/_pyodide/jsbind.py"
 --ignore-glob="packages/**/extras/"
---ignore-glob="packages/aiohttp/aiohttp_patch.py"
---ignore-glob="packages/openai/helper_test_openai.py"
 --ignore-glob="packages/scipy/cmdline_test_file.py"
 --tb=short
 --dist-dir=dist'''
 testpaths = [
-    "src",
-    "pyodide-build",
+    "src/tests",
     "packages",
 ]
 asyncio_mode = "strict"
 markers = [
     "requires_dynamic_linking",
+    "long_running: marks tests as long running (deselect with '-m \"not long_running\"')",
 ]
 
 [tool._pyodide]

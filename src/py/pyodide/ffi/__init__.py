@@ -7,7 +7,6 @@ from _pyodide._importhook import register_js_module, unregister_js_module
 
 IN_BROWSER = "_pyodide_core" in sys.modules
 
-
 if IN_BROWSER:
     import _pyodide_core
 
@@ -38,6 +37,7 @@ __all__ = [
     "JsAsyncIterable",
     "JsAsyncIterator",
     "JsBuffer",
+    "JsCallableDoubleProxy",
     "JsDoubleProxy",
     "JsException",
     "JsFetchResponse",
@@ -52,6 +52,8 @@ __all__ = [
     "JsDomElement",
     "JsCallable",
     "JsTypedArray",
+    "JsWeakRef",
+    "ToJsConverter",
     "create_once_callable",
     "create_proxy",
     "destroy_proxies",
@@ -60,4 +62,6 @@ __all__ = [
     "IN_BROWSER",
     "register_js_module",
     "unregister_js_module",
+    "JsNull",
+    "jsnull",
 ]

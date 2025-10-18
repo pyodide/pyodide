@@ -17,7 +17,7 @@ from collections.abc import (
 )
 from functools import reduce
 from types import TracebackType
-from typing import IO, Any, Generic, ParamSpec, Protocol, TypeVar, overload
+from typing import IO, Any, Generic, ParamSpec, Protocol, Self, TypeVar, overload
 
 from .docs_argspec import docs_argspec
 
@@ -26,7 +26,7 @@ from .docs_argspec import docs_argspec
 # appropriately.
 
 # Sphinx uses __name__ to determine the paths and such. It looks better for it
-# to refer to e.g., `pyodide.JsProxy` than `_pyodide._core_docs.JsProxy`.
+# to refer to e.g., `pyodide.ffi.JsProxy` than `_pyodide._core_docs.JsProxy`.
 #
 # Use an empty name for the module of the type variables to prevent long
 # qualified names for the type variables from appearing in the docs.
@@ -117,7 +117,33 @@ class JsProxy(metaclass=_JsProxyMetaClass):
             return super().__new__(cls)
         raise TypeError(f"{cls.__name__} cannot be instantiated.")
 
-    def bind_sig(self, signature: T) -> T:
+    def bind_class(self, signature: T) -> T:
+        """Creates a copy of the JsProxy with a signature bound to it.
+
+        ``proxy.bind_class(A)`` treats ``proxy`` as a class shaped like ``A``.
+        ``proxy.bind_sig(A)`` treats ``proxy`` as an instance of ``A``.
+
+        At runtime, ``proxy.bind_class(A)`` is equivalent to
+        ``proxy.bind_class(type[A])``, it only needs to be a separate method to
+        help mypy.
+
+        .. admonition:: Experimental
+           :class: warning
+
+           This feature is not yet stable, nor really documented.
+        """
+        raise NotImplementedError
+
+    # First overload is for if we bind a class, second overload is for if we
+    # bind a function.
+
+    @overload
+    def bind_sig(self, signature: type[T]) -> T: ...
+
+    @overload
+    def bind_sig(self, signature: T) -> T: ...
+
+    def bind_sig(self, signature: Any) -> Any:
         """Creates a copy of the JsProxy with a signature bound to it.
 
         .. admonition:: Experimental
@@ -125,7 +151,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
 
            This feature is not yet stable, nor really documented.
         """
-        return signature
+        raise NotImplementedError
 
     @property
     def js_id(self) -> int:
@@ -201,6 +227,10 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         over the object and counts how many :js:func:`~Reflect.ownKeys` it has).
         If you need to compute the length in O(1) time, use a real
         :js:class:`Map` instead.
+
+        .. deprecated:: 0.29.0
+
+            Use :py:meth:`JsProxy.as_py_json` instead.
 
         Parameters
         ----------
@@ -392,6 +422,29 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         infinite recurse. With it, we can successfully convert ``p`` to a list
         such that ``l[0] is l``.
         """
+        raise NotImplementedError
+
+    def to_weakref(self) -> "JsWeakRef[Self]":
+        """Wrap the proxy in a JavaScript WeakRef.
+
+        The WeakRef has deref() method which either returns the original object
+        or None if it has been freed.
+
+        This is just a helper method for:
+
+        .. code-block:: python
+
+            from js import WeakRef
+
+            weakref = WeakRef.new(jsproxy)
+        """
+        raise NotImplementedError
+
+
+class JsWeakRef(JsProxy, Generic[T]):
+    """A PyProxy of a JavaSCript WeakRef."""
+
+    def deref(self) -> T | None:
         raise NotImplementedError
 
 
@@ -1336,6 +1389,50 @@ def create_proxy(
 # from python2js
 
 
+class ToJsConverter(Protocol):
+    """Protocol for the ``default_converter`` and ``eager_converter`` arguments
+    of :py:func:`to_js`.
+
+    Parameters
+    ----------
+    value :
+
+        The object to convert to JavaScript
+
+    converter :
+
+        The default conversion behavior. You can use ``return converter(value)``
+        to get the default behavior in ``eager_converter``, but in
+        ``default_converter`` this will cause an infinite recurse and
+        ``converter`` should only be used on subobjects.
+
+    cache :
+
+        Cache the conversion for an object. Used to avoid an infinite recurse.
+        For example:
+
+        .. code-block:: python
+
+            from js import Array
+
+            def default_converter(value, convert, cache):
+                if not isinstance(value, Pair):
+                    return value
+                result = Array.new() cache(value, result)
+                result.push(convert(value.first))
+                result.push(convert(value.second))
+                return result
+    """
+
+    def __call__(
+        self,
+        value: Any,
+        converter: Callable[[Any], JsProxy],
+        cache: Callable[[Any, JsProxy], None],
+        /,
+    ) -> JsProxy: ...
+
+
 @overload
 def to_js(
     obj: list[Any] | tuple[Any],
@@ -1345,12 +1442,8 @@ def to_js(
     pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
     dict_converter: Callable[[Iterable[JsArray[Any]]], JsProxy] | None = None,
-    default_converter: (
-        Callable[
-            [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
-        ]
-        | None
-    ) = None,
+    default_converter: ToJsConverter | None = None,
+    eager_converter: ToJsConverter | None = None,
 ) -> JsArray[Any]: ...
 
 
@@ -1360,15 +1453,11 @@ def to_js(
     /,
     *,
     depth: int = -1,
-    pyproxies: JsProxy | None,
+    pyproxies: JsProxy | None = None,
     create_pyproxies: bool,
-    dict_converter: None,
-    default_converter: (
-        Callable[
-            [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
-        ]
-        | None
-    ) = None,
+    dict_converter: None = None,
+    default_converter: ToJsConverter | None = None,
+    eager_converter: ToJsConverter | None = None,
 ) -> JsMap[Any, Any]: ...
 
 
@@ -1381,12 +1470,8 @@ def to_js(
     pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
     dict_converter: Callable[[Iterable[JsArray[Any]]], JsProxy] | None = None,
-    default_converter: (
-        Callable[
-            [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
-        ]
-        | None
-    ) = None,
+    default_converter: ToJsConverter | None = None,
+    eager_converter: ToJsConverter | None = None,
 ) -> Any: ...
 
 
@@ -1398,19 +1483,16 @@ def to_js(
     pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
     dict_converter: Callable[[Iterable[JsArray[Any]]], JsProxy] | None = None,
-    default_converter: (
-        Callable[
-            [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
-        ]
-        | None
-    ) = None,
+    default_converter: ToJsConverter | None = None,
+    eager_converter: ToJsConverter | None = None,
 ) -> Any:
     """Convert the object to JavaScript.
 
-    This is similar to :js:meth:`~pyodide.ffi.PyProxy.toJs`, but for use from Python. If the
-    object can be implicitly translated to JavaScript, it will be returned
-    unchanged. If the object cannot be converted into JavaScript, this method
-    will return a :py:class:`JsProxy` of a :js:class:`~pyodide.ffi.PyProxy`, as if you had used
+    This is similar to :js:meth:`~pyodide.ffi.PyProxy.toJs`, but for use from
+    Python. If the object can be implicitly translated to JavaScript, it will be
+    returned unchanged. If the object cannot be converted into JavaScript, this
+    method will return a :py:class:`JsProxy` of a
+    :js:class:`~pyodide.ffi.PyProxy`, as if you had used
     :func:`~pyodide.ffi.create_proxy`.
 
     See :ref:`type-translations-pyproxy-to-js` for more information.
@@ -1426,22 +1508,23 @@ def to_js(
 
     pyproxies:
         Should be a JavaScript :js:class:`Array`. If provided, any ``PyProxies``
-        generated will be stored here. You can later use :py:meth:`destroy_proxies`
-        if you want to destroy the proxies from Python (or from JavaScript you
-        can just iterate over the :js:class:`Array` and destroy the proxies).
+        generated will be stored here. You can later use
+        :py:meth:`destroy_proxies` if you want to destroy the proxies from
+        Python (or from JavaScript you can just iterate over the
+        :js:class:`Array` and destroy the proxies).
 
     create_pyproxies:
-        If you set this to :py:data:`False`, :py:func:`to_js` will raise an error rather
-        than creating any pyproxies.
+        If you set this to :py:data:`False`, :py:func:`to_js` will raise an
+        error rather than creating any pyproxies.
 
     dict_converter:
         This converter if provided receives a (JavaScript) iterable of
         (JavaScript) pairs [key, value]. It is expected to return the desired
         result of the dict conversion. Some suggested values for this argument:
 
-          * ``js.Map.new`` -- similar to the default behavior
+          * ``js.Object.fromEntries`` -- similar to the default behavior
+          * ``js.Map.new`` -- convert to a map
           * ``js.Array.from`` -- convert to an array of entries
-          * ``js.Object.fromEntries`` -- convert to a JavaScript object
 
     default_converter:
         If present will be invoked whenever Pyodide does not have some built in
@@ -1450,42 +1533,46 @@ def to_js(
         be used as the conversion. ``default_converter`` takes three arguments.
         The first argument is the value to be converted.
 
+    eager_converter:
+        If present will be invoked whenever the object is not an ``int``,
+        ``float``, ``bool``, ``None``, or a ``JsProxy``. It is called before the
+        default conversions are applied to lists, tuples, dictionaries, and
+        sets, so it can be used to override these. By contrast,
+        ``default_converter`` is used as a fallback.
+
+        If ``eager_converter`` raises an error, the error will be allowed to
+        propagate. Otherwise, the object returned will be used as the
+        conversion. ``default_converter`` takes three arguments. The first
+        argument is the value to be converted.
+
     Examples
     --------
-    >>> from js import Object, Map, Array # doctest: +SKIP
-    >>> from pyodide.ffi import to_js # doctest: +SKIP
-    >>> js_object = to_js({'age': 20, 'name': 'john'}) # doctest: +SKIP
-    >>> js_object # doctest: +SKIP
-    [object Map]
-    >>> js_object.keys(), js_object.values() # doctest: +SKIP
-    KeysView([object Map]) ValuesView([object Map]) # doctest: +SKIP
-    >>> [(k, v) for k, v in zip(js_object.keys(), js_object.values())] # doctest: +SKIP
-    [('age', 20), ('name', 'john')]
-
-    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Object.fromEntries) # doctest: +SKIP
-    >>> js_object.age == 20 # doctest: +SKIP
-    True
-    >>> js_object.name == 'john' # doctest: +SKIP
-    True
-    >>> js_object # doctest: +SKIP
+    >>> from js import Object, Map, Array # doctest: +RUN_IN_PYODIDE
+    >>> from pyodide.ffi import to_js
+    >>> js_object = to_js({'age': 20, 'name': 'john'})
+    >>> js_object
     [object Object]
-    >>> js_object.hasOwnProperty("age") # doctest: +SKIP
+    >>> js_object.age == 20
     True
-    >>> js_object.hasOwnProperty("height") # doctest: +SKIP
+    >>> js_object.name == 'john'
+    True
+    >>> js_object.hasOwnProperty("age")
+    True
+    >>> js_object.hasOwnProperty("height")
     False
 
-    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Array.from_) # doctest: +SKIP
-    >>> [item for item in js_object] # doctest: +SKIP
+    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Array.from_) # doctest: +RUN_IN_PYODIDE
+    >>> [item for item in js_object]
     [age,20, name,john]
-    >>> js_object.toString() # doctest: +SKIP
-    age,20,name,john
+    >>> js_object.toString()
+    'age,20,name,john'
 
-    >>> class Bird: pass # doctest: +SKIP
-    >>> converter = lambda value, convert, cache: Object.new(size=1, color='red') if isinstance(value, Bird) else None # doctest: +SKIP
-    >>> js_nest = to_js([Bird(), Bird()], default_converter=converter) # doctest: +SKIP
-    >>> [bird for bird in js_nest] # doctest: +SKIP
+    >>> class Bird: pass # doctest: +RUN_IN_PYODIDE
+    >>> converter = lambda value, convert, cache: Object.new(size=1, color='red') if isinstance(value, Bird) else None
+    >>> js_nest = to_js([Bird(), Bird()], default_converter=converter)
+    >>> [bird for bird in js_nest]
     [[object Object], [object Object]]
-    >>> [(bird.size, bird.color) for bird in js_nest] # doctest: +SKIP
+    >>> [(bird.size, bird.color) for bird in js_nest]
     [(1, 'red'), (1, 'red')]
 
     Here are some examples demonstrating the usage of the ``default_converter``
@@ -1551,6 +1638,39 @@ def to_js(
     Without ``cache(value, result);``, converting ``p`` would lead to an
     infinite recurse. With it, we can successfully convert ``p`` to an Array
     such that ``l[0] === l``.
+
+    Here are some examples demonstrating the usage of the ``eager_converter``
+    argument. Calling `convert(value)` does the normal conversion, so setting
+    `eager_converter` to the following function is the same as leaving it unset
+    (except for being slower):
+
+    .. code-block:: python
+
+        def apply_normal_conversion(value, convert, cacheConversion):
+            return convert(value)
+
+
+    The following `eager_converter` will fail the conversion if a tuple is
+    passed:
+
+    .. code-block:: python
+
+        from pyodide.ffi import ConversionError
+
+        def reject_tuples(value, convert, cacheConversion):
+            if isinstance(value, tuple):
+                raise ConversionError("We don't convert tuples!")
+            return convert(value)
+
+    The following `eager_converter` makes tuples into a `PyProxy`:
+
+    .. code-block:: python
+
+        def proxy_tuples(value, convert, cacheConversion):
+            if isinstance(value, tuple):
+                return value
+            return convert(value)
+
     """
     return obj
 
@@ -1593,8 +1713,27 @@ def can_run_sync() -> bool:
     raise NotImplementedError
 
 
-__name__ = _save_name
-del _save_name
+class JsNull:
+    """The type of the Python representation of the JavaScript null object"""
+
+    def __new__(cls):
+        return jsnull
+
+    def __repr__(self):
+        return "jsnull"
+
+    def __bool__(self):
+        return False
+
+    typeof = "object"
+
+
+#: The Python representation of the JavaScript null object.
+jsnull: JsNull = object.__new__(JsNull)
+from json import encoder
+
+encoder._JSNULL = jsnull  # type:ignore[attr-defined]
+
 
 __all__ = [
     "ConversionError",
@@ -1604,6 +1743,7 @@ __all__ = [
     "JsAsyncIterable",
     "JsAsyncIterator",
     "JsBuffer",
+    "JsCallableDoubleProxy",
     "JsDoubleProxy",
     "JsException",
     "JsFetchResponse",
@@ -1618,10 +1758,17 @@ __all__ = [
     "JsCallable",
     "JsOnceCallable",
     "JsTypedArray",
+    "JsWeakRef",
+    "ToJsConverter",
     "run_sync",
     "can_run_sync",
     "create_once_callable",
     "create_proxy",
     "destroy_proxies",
     "to_js",
+    "JsNull",
+    "jsnull",
 ]
+
+__name__ = _save_name
+del _save_name

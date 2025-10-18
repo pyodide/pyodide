@@ -54,6 +54,25 @@ def test_cancel_handle(selenium_standalone):
     )
 
 
+def test_cancel_unhandled(selenium):
+    @run_in_pyodide
+    async def test(selenium):
+        import asyncio
+
+        loop = asyncio.get_running_loop()
+
+        async def f():
+            await asyncio.sleep(1)
+
+        t = loop.create_task(f())
+        print("done:", t.done())
+        print("cancel:", t.cancel())
+        await asyncio.sleep(2)
+
+    test(selenium)
+    assert "CancelledError" not in selenium.logs
+
+
 def test_return_result(selenium):
     # test return result
     run_with_resolve(
@@ -533,3 +552,113 @@ async def test_create_task_context(selenium):
 
     task = aio.create_task(get_cvar(), context=ctx_with_1)
     assert await task == 1
+
+
+@run_in_pyodide
+async def test_shutdown_closes_gens(selenium):
+    """shutdown_asyncgens() closes all active async generators."""
+    import asyncio
+
+    loop = asyncio.get_running_loop()
+
+    closed = set()
+
+    async def ag(name):
+        try:
+            yield name
+        finally:
+            closed.add(name)
+
+    g1 = ag("g1")
+    g2 = ag("g2")
+    assert await g1.__anext__() == "g1"
+    assert await g2.__anext__() == "g2"
+    assert closed == set()
+
+    await loop.shutdown_asyncgens()
+    assert closed == {"g1", "g2"}
+
+
+@run_in_pyodide
+async def test_shutdown_idempotent(selenium):
+    """Multiple shutdown_asyncgens() calls are safe and do nothing after first call."""
+    import asyncio
+
+    loop = asyncio.get_running_loop()
+
+    closed = []
+
+    async def ag(name):
+        try:
+            yield name
+        finally:
+            closed.append(name)
+
+    g = ag("g")
+    assert await g.__anext__() == "g"
+
+    await loop.shutdown_asyncgens()
+    assert closed == ["g"]
+
+    await loop.shutdown_asyncgens()
+    assert closed == ["g"]
+
+
+@run_in_pyodide
+async def test_shutdown_with_cancelled_tasks(selenium):
+    """Async generators in cancelled tasks are finalized by shutdown_asyncgens."""
+    import asyncio
+
+    loop = asyncio.get_running_loop()
+
+    finalized_gens = set()
+
+    async def ag(name):
+        try:
+            await asyncio.sleep(10)
+            yield
+        finally:
+            finalized_gens.add(name)
+
+    async def run_ag(name):
+        async for _ in ag(name):
+            pass
+
+    task1 = loop.create_task(run_ag("g1"))
+    task2 = loop.create_task(run_ag("g2"))
+
+    await asyncio.sleep(0)
+
+    task1.cancel()
+    task2.cancel()
+
+    assert finalized_gens == set(), "Generator was finalized prematurely."
+
+    await loop.shutdown_asyncgens()
+
+    assert finalized_gens == {"g1", "g2"}, (
+        "Not all generators in cancelled tasks were finalized."
+    )
+
+
+@run_in_pyodide
+async def test_warning_after_shutdown(selenium):
+    """Creating generators after shutdown emits ResourceWarning."""
+    import asyncio
+    import warnings
+
+    loop = asyncio.get_running_loop()
+
+    await loop.shutdown_asyncgens()
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always", ResourceWarning)
+
+        async def ag():
+            yield 1
+
+        g = ag()
+        await g.__anext__()
+        await g.aclose()
+
+    assert any(issubclass(warn.category, ResourceWarning) for warn in w)
