@@ -92,7 +92,7 @@ def set_configs():
         """,
     )
     pytest_pyodide_config.add_node_extra_globals(
-        ["URL", "Headers", "Request", "Response"]
+        ["URL", "Headers", "Response"]
     )
 
 
