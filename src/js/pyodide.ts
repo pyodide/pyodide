@@ -62,7 +62,7 @@ export interface PyodideConfig {
    * Default: The url that Pyodide is loaded from with the file name
    * (``pyodide.js`` or ``pyodide.mjs``) removed.
    */
-  indexURL: string;
+  indexURL?: string;
   /**
    * The file path where packages will be cached in node. If a package
    * exists in ``packageCacheDir`` it is loaded from there, otherwise it is
@@ -71,7 +71,7 @@ export interface PyodideConfig {
    *
    * Default: same as indexURL
    */
-  packageCacheDir: string;
+  packageCacheDir?: string;
 
   /**
    * The URL from which Pyodide will load the Pyodide ``pyodide-lock.json`` lock
@@ -84,7 +84,7 @@ export interface PyodideConfig {
    * ``JSON.parse()`` should return a ``Lockfile`` instance. See
    * :js:interface:`~pyodide.Lockfile` for the schema.
    */
-  lockFileContents: Lockfile | string | Promise<Lockfile | string>;
+  lockFileContents?: Lockfile | string | Promise<Lockfile | string>;
   /**
    * The base url relative to which a relative value of
    * :js:attr:`~pyodide.LockfilePackage.file_name` is interpreted. If
@@ -118,7 +118,7 @@ export interface PyodideConfig {
    * input. The :js:func:`pyodide.setStdin` function is more flexible and
    * should be preferred.
    */
-  stdin?: () => string;
+  stdin?: () => string | null;
   /**
    * Override the standard output callback. The :js:func:`pyodide.setStdout`
    * function is more flexible and should be preferred in most cases, but
@@ -146,7 +146,7 @@ export interface PyodideConfig {
    * <https://docs.python.org/3.10/using/cmdline.html#interface-options>`_ for
    * more details. Default: ``[]``
    */
-  args: string[];
+  args?: string[];
   /**
    * Environment variables to pass to Python. This can be accessed inside of
    * Python at runtime via :py:data:`os.environ`. Certain environment variables change
@@ -156,7 +156,7 @@ export interface PyodideConfig {
    * If ``env.HOME`` is undefined, it will be set to a default value of
    * ``"/home/pyodide"``
    */
-  env: { [key: string]: string };
+  env?: { [key: string]: string };
   /**
    * A list of packages to load as Pyodide is initializing.
    *
@@ -165,19 +165,19 @@ export interface PyodideConfig {
    * ``packages`` option is more efficient because the packages are downloaded
    * while Pyodide bootstraps itself.
    */
-  packages: string[];
+  packages?: string[];
 
   /**
    * Make loop.run_until_complete() function correctly using stack switching.
    * Default: ``true``.
    */
-  enableRunUntilComplete: boolean;
+  enableRunUntilComplete?: boolean;
 
   /**
    * If true (default), throw an error if the version of Pyodide core does not
    * match the version of the Pyodide js package.
    */
-  checkAPIVersion: boolean;
+  checkAPIVersion?: boolean;
 
   /**
    * This is a hook that allows modification of the file system before the
@@ -192,14 +192,14 @@ export interface PyodideConfig {
    * calls :py:func:`repr` and not :py:class:`str() <str>`. Deprecated.
    * @deprecated
    */
-  pyproxyToStringRepr: boolean;
+  pyproxyToStringRepr?: boolean;
 
   /**
    * Opt into the old behavior where JavaScript `null` is converted to `None`
    * instead of `jsnull`. Deprecated.
    * @deprecated
    */
-  convertNullToNone: boolean;
+  convertNullToNone?: boolean;
 
   /**
    * Opt into the old behavior where Python dictionaries are converted to
@@ -215,30 +215,37 @@ export interface PyodideConfig {
   _sysExecutable?: string;
 
   /** @ignore */
-  _makeSnapshot: boolean;
+  _makeSnapshot?: boolean;
 
   /** @ignore */
-  _loadSnapshot:
+  _loadSnapshot?:
     | Uint8Array
     | ArrayBuffer
     | PromiseLike<Uint8Array | ArrayBuffer>;
 
   /** @ignore */
-  _snapshotDeserializer: (obj: any) => any;
+  _snapshotDeserializer?: (obj: any) => any;
 
   /** @ignore */
-  BUILD_ID: string;
+  BUILD_ID?: string;
 
   /** @ignore */
-  cdnUrl: string;
+  cdnUrl?: string;
 }
 
 /**
+ * @hidden
+ */
+export type PyodideConfigWithDefaults = Required<PyodideConfig>;
+
+/**
  * @private
+ * Initialize the configuration for Pyodide.
+ * This function fills out all the fields that are not provided by the user and returns a
  */
 async function initializeConfiguration(
-  options: Partial<PyodideConfig> = {},
-): Promise<PyodideConfig> {
+  options: PyodideConfig = {},
+): Promise<PyodideConfigWithDefaults> {
   await initNodeModules();
 
   if (options.lockFileContents && options.lockFileURL) {
@@ -248,44 +255,45 @@ async function initializeConfiguration(
   let indexURL = options.indexURL || (await calculateDirname());
   indexURL = withTrailingSlash(resolvePath(indexURL)); // A relative indexURL causes havoc.
 
-  const options_ = options as PyodideConfig;
-
-  options_.packageBaseUrl = withTrailingSlash(options_.packageBaseUrl);
+  options.packageBaseUrl = withTrailingSlash(options.packageBaseUrl);
   // cdnUrl only for node. withTrailingSlash is a no-op, but just in case to prevent future human errors.
-  options_.cdnUrl = withTrailingSlash(
-    options_.packageBaseUrl ??
+  options.cdnUrl = withTrailingSlash(
+    options.packageBaseUrl ??
       `https://cdn.jsdelivr.net/pyodide/v${version}/full/`,
   );
 
-  if (!options_.lockFileContents) {
-    const lockFileURL = options_.lockFileURL ?? indexURL + "pyodide-lock.json";
-    options_.lockFileContents = loadLockFile(lockFileURL);
+  if (!options.lockFileContents) {
+    const lockFileURL = options.lockFileURL ?? indexURL + "pyodide-lock.json";
+    options.lockFileContents = loadLockFile(lockFileURL);
     // packageBaseUrl isn't present, try using base location of lockFileUrl. If
     // lockFileURL is relative, use location as the base URL.
-    options_.packageBaseUrl ??= calculateInstallBaseUrl(lockFileURL);
+    options.packageBaseUrl ??= calculateInstallBaseUrl(lockFileURL);
   }
 
-  options_.indexURL = indexURL;
+  options.indexURL = indexURL;
 
-  if (options_.packageCacheDir) {
-    options_.packageCacheDir = withTrailingSlash(
-      resolvePath(options_.packageCacheDir),
+  if (options.packageCacheDir) {
+    options.packageCacheDir = withTrailingSlash(
+      resolvePath(options.packageCacheDir),
     );
   }
 
-  const defaultConfig = {
+  const defaultConfig: PyodideConfig = {
     fullStdLib: false,
     jsglobals: globalThis,
-    stdin: globalThis.prompt ? globalThis.prompt : undefined,
+    stdin: globalThis.prompt ? () => globalThis.prompt() : undefined,
     args: [],
     env: {},
     packages: [],
-    packageCacheDir: options_.packageBaseUrl,
+    packageCacheDir: options.packageBaseUrl,
     enableRunUntilComplete: true,
     checkAPIVersion: true,
     BUILD_ID,
   };
-  const config = Object.assign(defaultConfig, options_) as PyodideConfig;
+  const config = Object.assign(
+    defaultConfig,
+    options,
+  ) as PyodideConfigWithDefaults;
   config.env.HOME ??= "/home/pyodide";
 
   /**
@@ -304,7 +312,9 @@ async function initializeConfiguration(
 /**
  * @private
  */
-function createEmscriptenSettings(config: PyodideConfig): EmscriptenSettings {
+function createEmscriptenSettings(
+  config: PyodideConfigWithDefaults,
+): EmscriptenSettings {
   const emscriptenSettings = createSettings(config);
   const API = emscriptenSettings.API;
   API.lockFilePromise = Promise.resolve(config.lockFileContents);
@@ -315,7 +325,9 @@ function createEmscriptenSettings(config: PyodideConfig): EmscriptenSettings {
 /**
  * @private
  */
-async function loadWasmScript(config: PyodideConfig): Promise<void> {
+async function loadWasmScript(
+  config: PyodideConfigWithDefaults,
+): Promise<void> {
   // If the pyodide.asm.js script has been imported, we can skip the dynamic import
   // Users can then do a static import of the script in environments where
   // dynamic importing is not allowed or not desirable, like module-type service workers
@@ -329,7 +341,7 @@ async function loadWasmScript(config: PyodideConfig): Promise<void> {
  * @private
  */
 async function prepareSnapshot(
-  config: PyodideConfig,
+  config: PyodideConfigWithDefaults,
   emscriptenSettings: EmscriptenSettings,
 ): Promise<Uint8Array | undefined> {
   if (!config._loadSnapshot) {
@@ -368,7 +380,10 @@ async function createPyodideModule(
 /**
  * @private
  */
-function configureAPI(pyodideModule: PyodideModule, config: PyodideConfig): void {
+function configureAPI(
+  pyodideModule: PyodideModule,
+  config: PyodideConfigWithDefaults,
+): void {
   const API = pyodideModule.API;
 
   if (config.pyproxyToStringRepr) {
@@ -403,7 +418,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
 function bootstrapPyodide(
   pyodideModule: PyodideModule,
   snapshot: Uint8Array | undefined,
-  config: PyodideConfig,
+  config: PyodideConfigWithDefaults,
 ): PyodideAPI {
   const API = pyodideModule.API;
 
@@ -426,7 +441,7 @@ function bootstrapPyodide(
  */
 async function finalizeSetup(
   pyodide: PyodideAPI,
-  config: PyodideConfig,
+  config: PyodideConfigWithDefaults,
 ): Promise<PyodideAPI> {
   const API = (pyodide as any)._api;
 
@@ -457,7 +472,7 @@ async function finalizeSetup(
  * main();
  */
 export async function loadPyodide(
-  options: Partial<PyodideConfig> = {},
+  options: PyodideConfig = {},
 ): Promise<PyodideAPI> {
   // Stage 1: Initialize configuration
   const config = await initializeConfiguration(options);

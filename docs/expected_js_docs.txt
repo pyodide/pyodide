@@ -13,20 +13,20 @@ js:interface
   pyodide.LockfilePackage
   pyodide.PackageData
 js:attribute
-  exports.PyodideConfig.args
-  exports.PyodideConfig.checkAPIVersion
-  exports.PyodideConfig.convertNullToNone
-  exports.PyodideConfig.enableRunUntilComplete
-  exports.PyodideConfig.env
+  exports.PyodideConfig.args?
+  exports.PyodideConfig.checkAPIVersion?
+  exports.PyodideConfig.convertNullToNone?
+  exports.PyodideConfig.enableRunUntilComplete?
+  exports.PyodideConfig.env?
   exports.PyodideConfig.fullStdLib?
-  exports.PyodideConfig.indexURL
+  exports.PyodideConfig.indexURL?
   exports.PyodideConfig.jsglobals?
-  exports.PyodideConfig.lockFileContents
+  exports.PyodideConfig.lockFileContents?
   exports.PyodideConfig.lockFileURL?
   exports.PyodideConfig.packageBaseUrl?
-  exports.PyodideConfig.packageCacheDir
-  exports.PyodideConfig.packages
-  exports.PyodideConfig.pyproxyToStringRepr
+  exports.PyodideConfig.packageCacheDir?
+  exports.PyodideConfig.packages?
+  exports.PyodideConfig.pyproxyToStringRepr?
   exports.PyodideConfig.stdLibURL?
   exports.PyodideConfig.toJsLiteralMap?
   exports.version
