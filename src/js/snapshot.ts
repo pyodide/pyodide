@@ -55,11 +55,7 @@ export function makeGlobalsProxy(
       // If thisArg is a GlobalsProxy it may break APIs that expect the receiver
       // to be unmodified. Unwrap any GlobalsProxy before making the call.
       thisArg = thisArg?.[getObject] ?? thisArg;
-      return Reflect.apply(
-        target,
-        thisArg,
-        argumentList,
-      );
+      return Reflect.apply(target, thisArg, argumentList);
     },
     getPrototypeOf() {
       // @ts-ignore
