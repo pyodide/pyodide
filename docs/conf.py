@@ -236,7 +236,7 @@ def write_console_html(app):
     os.makedirs(app.outdir, exist_ok=True)
     os.makedirs("../dist", exist_ok=True)
     res = subprocess.check_output(
-        ["make", "-C", "..", "dist/console.html"],
+        ["make", "-C", "..", "dist/console.html", "dist/console-v2.html"],
         env=env,
         stderr=subprocess.STDOUT,
         encoding="utf-8",
@@ -247,21 +247,34 @@ def write_console_html(app):
     console_html_lines = (
         Path("../dist/console.html").read_text().splitlines(keepends=True)
     )
-    for idx, line in enumerate(list(console_html_lines)):
-        if "</style>" in line:
-            # insert the analytics script after the end of the inline CSS block
-            console_html_lines.insert(
-                idx,
-                "<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{\"token\": \"4405a86c36a84efca5dbde1b25edd153\"}'></script>\n",
-            )
-            break
-    else:
-        raise ValueError("Could not find a CSS block in the <head> section")
+    console_v2_html_lines = (
+        Path("../dist/console-v2.html").read_text().splitlines(keepends=True)
+    )
+
+    def insert_analytics_script(html_lines):
+        for idx, line in enumerate(list(html_lines)):
+            if "</style>" in line:
+                # insert the analytics script after the end of the inline CSS block
+                html_lines.insert(
+                    idx + 1,
+                    "    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{\"token\": \"4405a86c36a84efca5dbde1b25edd153\"}'></script>\n",
+                )
+                break
+        else:
+            raise ValueError("Could not find a CSS block in the <head> section")
+
+    insert_analytics_script(console_html_lines)
+    insert_analytics_script(console_v2_html_lines)
+
     output_path = Path(app.outdir) / "console.html"
     output_path.write_text("".join(console_html_lines))
 
+    v2_output_path = Path(app.outdir) / "console-v2.html"
+    v2_output_path.write_text("".join(console_v2_html_lines))
+
     def remove_console_html():
         Path("../dist/console.html").unlink(missing_ok=True)
+        Path("../dist/console-v2.html").unlink(missing_ok=True)
 
     atexit.register(remove_console_html)
 
@@ -368,12 +381,18 @@ def typehints_formatter(annotation, config):
 
 
 def setup(app):
+    FILES_TO_IGNORE = ["playwright.config.ts"]
+
     sys.path = extra_sys_path_dirs + sys.path
     app.add_config_value("global_replacements", {}, True)
     app.add_config_value("CDN_URL", "", True)
     files = []
     for dir in ["core", "js"]:
-        files += [str(x) for x in (Path("../src") / dir).glob("*.ts")]
+        files += [
+            str(x)
+            for x in (Path("../src") / dir).glob("*.ts")
+            if x.name not in FILES_TO_IGNORE
+        ]
     app.config.js_source_path = files
     app.connect("source-read", global_replace)
 

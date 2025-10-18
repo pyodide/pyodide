@@ -351,7 +351,7 @@ jobs:
 
   test-js:
     <<: *defaults
-    resource_class: small
+    resource_class: large
     steps:
       - attach_workspace:
           at: .
@@ -370,6 +370,18 @@ jobs:
             cd src/js
             npm run test:unit
 
+      - run:
+          name: test-node
+          command: |
+            cd src/js
+            npm run test:node
+
+      - run:
+          name: test-browser
+          command: |
+            cd src/js
+            npx playwright install chromium --only-shell --with-deps
+            npm run test:browser
       # - run:
       #     name: check if Pyodide works with Webpack
       #     command: |
@@ -671,7 +683,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome-webworker
-          test-params: --runtime=chrome-no-host src/tests/test_webworker.py
+          test-params: --runtime=chrome-no-host src/tests/test_webworker.py src/tests/test_webloop_webworker.py
           requires:
             - test-core-chrome
           filters:
@@ -680,7 +692,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox-webworker
-          test-params: --runtime=firefox-no-host src/tests/test_webworker.py
+          test-params: --runtime=firefox-no-host src/tests/test_webworker.py src/tests/test_webloop_webworker.py
           requires:
             - test-core-firefox
           filters:

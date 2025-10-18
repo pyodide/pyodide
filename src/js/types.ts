@@ -3,6 +3,7 @@ import type { PyProxy, PyAwaitable } from "generated/pyproxy";
 import { type PyodideAPI } from "./api";
 import { type PyodideConfig } from "./pyodide";
 import { type InFuncType } from "./streams";
+import { type RuntimeEnv } from "./environments";
 import { SnapshotConfig } from "./snapshot";
 import { ResolvablePromise } from "./common/resolveable";
 import { PackageManager } from "./load-package";
@@ -21,7 +22,7 @@ export type TypedArray =
   | Float64Array;
 
 declare global {
-  export var Module: Module;
+  export var Module: PyodideModule;
   export var API: API;
 }
 
@@ -228,42 +229,20 @@ export type FSStreamOpsGen<T> = {
  * in `@types/emscripten`, but Pyodide uses quite a lot of private APIs that are not
  * defined there as well. Hence this interface.
  *
- * TODO: Consider upstreaming these APIs to `@types/emscripten`.
  * @hidden
  */
 interface PyodideFSType {
-  mkdirTree: (path: string, mode?: number) => void;
-  createDevice: ((
-    parent: string,
-    name: string,
-    input?: (() => number | null) | null,
-    output?: ((code: number) => void) | null,
-  ) => FSNode) & {
-    major: number;
-  };
-  lookupPath: (
-    path: string,
-    options?: {
-      follow_mount?: boolean;
-    },
-  ) => { node: FSNode };
-  open: (path: string, flags: string | number, mode?: number) => FSStream;
   filesystems: any;
-  isMountpoint: (node: FSNode) => boolean;
-  closeStream: (fd: number) => void;
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
-  writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
 }
 
 /**
- * Combined filesystem type that omits the incompatible lookupPath from `@types/emscripten` and adds Pyodide-specific filesystem methods.
- * TODO: Consider upstreaming these APIs to `@types/emscripten`
  * @hidden
  */
-export type FSType = Omit<typeof FS, "lookupPath"> & PyodideFSType;
+export type FSType = typeof FS & PyodideFSType;
 
 /** @hidden */
-export type PreRunFunc = (Module: Module) => void;
+export type PreRunFunc = (Module: PyodideModule) => void;
 
 type DSO = any;
 
@@ -274,13 +253,8 @@ export interface LDSO {
   };
 }
 
-/**
- * TODO: consider renaming the type to ModuleType to avoid name collisions
- * between Module and ModuleType?
- * @hidden
- */
-export interface Module {
-  API: API;
+/** @hidden */
+export interface EmscriptenModule {
   locateFile: (file: string) => string;
   exited?: { toThrow: any };
   ENV: { [key: string]: string };
@@ -298,8 +272,39 @@ export interface Module {
   ERRNO_CODES: { [k: string]: number };
   stringToNewUTF8(x: string): number;
   stringToUTF8OnStack: (str: string) => number;
+  HEAP8: Uint8Array;
+  HEAPU32: Uint32Array;
+  getExceptionMessage(e: number): [string, string];
+  exitCode: number | undefined;
+  ExitStatus: { new (exitCode: number): Error };
+  _free: (ptr: number) => void;
+  stackSave: () => number;
+  stackRestore: (ptr: number) => void;
+  promiseMap: {
+    free(id: number): void;
+  };
+  _emscripten_dlopen_promise(lib: number, flags: number): number;
+  _dlerror(): number;
+  UTF8ToString: (
+    ptr: number,
+    maxBytesToRead: number,
+    ignoreNul?: boolean,
+  ) => string;
+}
+
+/** @hidden */
+export interface PythonModule extends EmscriptenModule {
+  _Py_EMSCRIPTEN_SIGNAL_HANDLING: number;
+  Py_EmscriptenSignalBuffer: TypedArray;
+  _Py_Version: number;
+}
+
+/** @hidden */
+export interface PyodideModule extends PythonModule {
+  API: API;
   _compat_to_string_repr: number;
   _compat_null_to_none: number;
+  _compat_dict_to_literalmap: number;
   js2python_convert: (
     obj: any,
     options: {
@@ -312,36 +317,16 @@ export interface Module {
     },
   ) => any;
   _PropagatePythonError: typeof Error;
-  _Py_EMSCRIPTEN_SIGNAL_HANDLING: number;
-  Py_EmscriptenSignalBuffer: TypedArray;
-  HEAP8: Uint8Array;
-  HEAPU32: Uint32Array;
   __hiwire_get(a: number): any;
   __hiwire_set(a: number, b: any): void;
   __hiwire_immortal_add(a: any): void;
   _jslib_init(): number;
   _init_pyodide_proxy(): number;
-  getExceptionMessage(e: number): [string, string];
+
   handle_js_error(e: any): void;
-  exitCode: number | undefined;
-  ExitStatus: { new (exitCode: number): Error };
-  _Py_Version: number;
   _print_stdout: (ptr: number) => void;
   _print_stderr: (ptr: number) => void;
-  _free: (ptr: number) => void;
-  stackSave: () => number;
-  stackRestore: (ptr: number) => void;
-  promiseMap: {
-    free(id: number): void;
-  };
-  _emscripten_dlopen_promise(lib: number, flags: number): number;
   getPromise(p: number): Promise<any>;
-  _dlerror(): number;
-  UTF8ToString: (
-    ptr: number,
-    maxBytesToRead: number,
-    ignoreNul?: boolean,
-  ) => string;
 }
 
 /**
@@ -463,6 +448,7 @@ export type PackageLoadMetadata = {
 
 /** @hidden */
 export interface API {
+  runtimeEnv: RuntimeEnv;
   fatal_error: (e: any) => never;
   isPyProxy: (e: any) => e is PyProxy;
   debug_ffi: boolean;
@@ -491,6 +477,7 @@ export interface API {
   deserializeError: (name: string, message: string, stack: string) => Error;
   setPyProxyToStringMethod: (useRepr: boolean) => void;
   setCompatNullToNone: (compat: boolean) => void;
+  setCompatToJsLiteralMap: (compat: boolean) => void;
 
   _pyodide: any;
   pyodide_py: any;
@@ -504,7 +491,6 @@ export interface API {
   saveState: () => any;
   restoreState: (state: any) => void;
   scheduleCallback: (callback: () => void, timeout: number) => void;
-  detectEnvironment: () => Record<string, boolean>;
 
   package_loader: any;
   importlib: any;
@@ -579,7 +565,7 @@ export type PackageManagerAPI = Pick<
  * @hidden
  */
 export type PackageManagerModule = Pick<
-  Module,
+  PyodideModule,
   | "PATH"
   | "LDSO"
   | "stringToNewUTF8"

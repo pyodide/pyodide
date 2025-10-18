@@ -274,6 +274,28 @@ def test_syncify_in_snapshot_load(selenium_standalone_noload):
     )
 
 
+def test_make_snapshot_fetch(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    # It's okay for the fetch to succeed (node) or fail with TypeError: Failed to fetch ()
+    # TypeError: Failed to execute 'fetch' on 'Window': Illegal invocation
+    try:
+        selenium.run_js(
+            """
+            const py1 = await loadPyodide({_makeSnapshot: true});
+            await py1.runPythonAsync(`
+                from js import fetch
+
+                await fetch("https://example.com")
+            `);
+            """
+        )
+    except selenium.JavascriptException as e:
+        # Chrome
+        assert "Illegal invocation" not in str(e)
+        # Firefox
+        assert "an object that does not implement interface Window." not in str(e)
+
+
 def test_snapshot_pyfetch(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     selenium.run_js(

@@ -15,7 +15,7 @@ LIBFFIREPO=https://github.com/libffi/libffi
 LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
 
 HIWIREBUILD=$(ROOT)/build/hiwire
-HIWIREREPO=https://github.com/hoodmane/hiwire
+HIWIREREPO=https://github.com/pyodide/hiwire
 HIWIRE_COMMIT=6a1e67280a15d929ebeceee54a6358c9c8d5f697
 
 ifdef CPYTHON_DEBUG
@@ -28,7 +28,7 @@ libffi: $(PYINSTALL)/lib/libffi.a
 
 libhiwire: $(PYINSTALL)/lib/libhiwire.a
 
-.PHONY=sysconfigdata
+.PHONY: sysconfigdata
 sysconfigdata:
 	# Generate sysconfigdata. It outputs into a subfolder of build/, and
 	# the subfolder is written to pybuilddir.txt.
@@ -44,10 +44,10 @@ LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS) $$(LIBHACL_SHA2_OBJS
 
 $(PYBUILD)/.patched_makefile:
 	# Clear out libinstall deps (we build what we want explicitly first)
-	cd $(PYBUILD) && sed -i -e 's/libinstall:.*/libinstall:/' Makefile;
+	cd $(PYBUILD) && $(SED) -i -e 's/libinstall:.*/libinstall:/' Makefile;
 	# Inject extra objects into libpython3.13.a so we don't have to link them
 	# separately
-	cd $(PYBUILD) && sed -i '/MODOBJS=/s/$$/ $(LIBPYTHON_EXTRA_OBJECTS)/' Makefile
+	cd $(PYBUILD) && $(SED) -i '/MODOBJS=/s/$$/ $(LIBPYTHON_EXTRA_OBJECTS)/' Makefile
 	touch $(PYBUILD)/.patched_makefile
 
 $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched_makefile
@@ -57,13 +57,13 @@ $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched
 	cp $(PYBUILD)/$(PYLIB) $(PYINSTALL)/lib/
 
 
-.PHONY=rebuild
+.PHONY: rebuild
 rebuild: sysconfigdata
 	CFLAGS="$(CFLAGS_BASE)" emmake make -C $(PYBUILD) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
 	cp $(PYBUILD)/$(PYLIB) $(PYINSTALL)/lib/
 
 
-.PHONY=rebuild-all
+.PHONY: rebuild-all
 rebuild-all:
 # touching abstract.h is enough to force most stuff to be rebuilt...
 	touch $(PYBUILD)/Include/abstract.h

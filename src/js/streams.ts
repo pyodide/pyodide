@@ -1,9 +1,9 @@
-import { IN_NODE, IN_SHELL } from "./environments.js";
+import { RUNTIME_ENV } from "./environments.js";
 import "./constants";
 
 import type { FSStream, FSStreamOpsGen } from "./types";
-const fs: any = IN_NODE ? require("node:fs") : undefined;
-const tty: any = IN_NODE ? require("node:tty") : undefined;
+const fs: any = RUNTIME_ENV.IN_NODE ? require("node:fs") : undefined;
+const tty: any = RUNTIME_ENV.IN_NODE ? require("node:tty") : undefined;
 
 function nodeFsync(fd: number): void {
   try {
@@ -266,7 +266,7 @@ API.initializeStreams = function (
  * If in a browser, this calls setStdinError.
  */
 function setDefaultStdin() {
-  if (IN_NODE) {
+  if (RUNTIME_ENV.IN_NODE) {
     setStdin(new NodeReader(process.stdin.fd));
   } else {
     setStdin({ stdin: () => prompt() });
@@ -428,7 +428,7 @@ function _setStdwrite(
  * If in a browser, sets stdout to write to console.log and sets isatty(stdout) to false.
  */
 function _getStdoutDefaults(): StdwriteOpts & Partial<Writer> {
-  if (IN_NODE) {
+  if (RUNTIME_ENV.IN_NODE) {
     return new NodeWriter(process.stdout.fd);
   } else {
     return { batched: (x) => console.log(x) };
@@ -441,7 +441,7 @@ function _getStdoutDefaults(): StdwriteOpts & Partial<Writer> {
  * If in a browser, sets stdout to write to console.log and sets isatty(stdout) to false.
  */
 function _getStderrDefaults(): StdwriteOpts & Partial<Writer> {
-  if (IN_NODE) {
+  if (RUNTIME_ENV.IN_NODE) {
     return new NodeWriter(process.stderr.fd);
   } else {
     return { batched: (x) => console.warn(x) };

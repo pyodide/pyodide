@@ -1,15 +1,12 @@
-"""
-Pyodide HTTP module for web requests.
-
-This module provides utilities for making HTTP requests in the browser environment,
-including synchronous XMLHttpRequest support and async fetch API.
-"""
-
 from io import StringIO
 
 # Keep open_url in __init__ for now, will be moved to pyxhr.py later
 from ..ffi import IN_BROWSER
-from ._exceptions import AbortError, BodyUsedError, HttpStatusError
+from ._exceptions import (
+    AbortError,
+    BodyUsedError,
+    HttpStatusError,
+)
 from ._pyfetch import FetchResponse, pyfetch
 
 if IN_BROWSER:
@@ -34,7 +31,7 @@ def open_url(url: str) -> StringIO:
     The download of binary files is not supported. To download binary files use
     :func:`pyodide.http.pyfetch` which is asynchronous.
 
-    It will not work in Node unless you include an polyfill for :js:class:`XMLHttpRequest`.
+    It will not work in Node unless you include a polyfill for :js:class:`XMLHttpRequest`
 
     Parameters
     ----------

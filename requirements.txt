@@ -6,12 +6,11 @@ hypothesis
 mypy==1.11.0
 # lint
 pre-commit
-# (FIXME: 2024/01/28) The latest pytest-asyncio 0.23.3 is not compatible with pytest 8.0.0
-pytest<8.0.0
+pytest<8
 pytest-asyncio
 pytest-benchmark
 pytest-cov
 pytest-httpserver
-pytest-pyodide==0.58.6
+pytest-pyodide==0.58.8
 setuptools; python_version>='3.12'
 sphinx-click

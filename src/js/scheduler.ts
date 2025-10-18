@@ -1,23 +1,24 @@
-import {
-  IN_BROWSER_MAIN_THREAD,
-  IN_NODE,
-  IN_DENO,
-  IN_SAFARI,
-} from "./environments";
+import { RUNTIME_ENV } from "./environments";
 
 const scheduleCallbackImmediateMessagePrefix =
   "sched$" + Math.random().toString(36).slice(2) + "$";
+
 const tasks: Record<number, () => void> = {};
 let nextTaskHandle = 0;
+
+let sharedChannel: MessageChannel | null = null;
+const taskQueue: number[] = [];
+
+const hasPostTask =
+  typeof (globalThis as any).scheduler?.postTask === "function";
 
 /**
  * Setup global message event listener to handle immediate callbacks
  */
 function installPostMessageHandler() {
-  if (!IN_BROWSER_MAIN_THREAD) {
+  if (!RUNTIME_ENV.IN_BROWSER_MAIN_THREAD) {
     return;
   }
-
   const onGlobalMessage = (event: MessageEvent) => {
     if (
       typeof event.data === "string" &&
@@ -27,10 +28,7 @@ function installPostMessageHandler() {
         scheduleCallbackImmediateMessagePrefix.length,
       );
       const task = tasks[handle];
-      if (!task) {
-        return;
-      }
-
+      if (!task) return;
       try {
         task();
       } finally {
@@ -38,11 +36,35 @@ function installPostMessageHandler() {
       }
     }
   };
-
   globalThis.addEventListener("message", onGlobalMessage, false);
 }
-
 installPostMessageHandler();
+
+function ensureSharedChannel() {
+  if (sharedChannel) return;
+  if (RUNTIME_ENV.IN_SAFARI || RUNTIME_ENV.IN_DENO || RUNTIME_ENV.IN_NODE)
+    return;
+  if (typeof globalThis.MessageChannel !== "function") return;
+
+  sharedChannel = new MessageChannel();
+  sharedChannel.port1.onmessage = () => {
+    // Process tasks that were queued when this message arrived
+    const count = taskQueue.length;
+    for (let i = 0; i < count; i++) {
+      const handle = taskQueue.shift()!;
+      const task = tasks[handle];
+      if (!task) continue;
+      try {
+        task();
+      } finally {
+        delete tasks[handle];
+      }
+    }
+  };
+  // Redundant per spec (onmessage auto-starts the port); kept for clarity and potential edge runtimes.
+  sharedChannel.port1.start?.();
+}
+ensureSharedChannel();
 
 /**
  * Implementation of zero-delay scheduler for immediate callbacks
@@ -60,45 +82,45 @@ installPostMessageHandler();
  *   - Ref: https://github.com/YuzuJS/setImmediate/issues/80
  */
 function scheduleCallbackImmediate(callback: () => void) {
-  if (IN_NODE) {
-    // node has setImmediate, let's use it
+  if (RUNTIME_ENV.IN_NODE) {
     setImmediate(callback);
+  } else if (sharedChannel) {
+    const handle = nextTaskHandle++;
+    tasks[handle] = callback;
+    taskQueue.push(handle);
+    sharedChannel.port2.postMessage(0);
   } else if (
-    !IN_SAFARI &&
-    !IN_DENO &&
-    typeof globalThis.MessageChannel === "function"
-  ) {
-    const channel = new MessageChannel();
-    channel.port1.onmessage = () => {
-      channel.port1.onmessage = null;
-      channel.port1.close();
-      channel.port2.close();
-      callback();
-    };
-    channel.port2.postMessage("");
-  } else if (
-    IN_BROWSER_MAIN_THREAD &&
+    RUNTIME_ENV.IN_BROWSER_MAIN_THREAD &&
     typeof globalThis.postMessage === "function"
   ) {
-    tasks[nextTaskHandle] = callback;
+    const handle = nextTaskHandle++;
+    tasks[handle] = callback;
     globalThis.postMessage(
-      scheduleCallbackImmediateMessagePrefix + nextTaskHandle,
+      scheduleCallbackImmediateMessagePrefix + handle,
       "*",
     );
-    nextTaskHandle++;
   } else {
-    // fallback to setTimeout if nothing else is available
     setTimeout(callback, 0);
   }
 }
 
 /**
  * Schedule a callback. Supports both immediate and delayed callbacks.
+ *
+ * Priority order:
+ * 1. scheduler.postTask() - Modern browsers (Chrome 94+, Firefox 142+, not supported in Safari as of 2025-10-14)
+ * 2. MessageChannel/setImmediate/postMessage - Fast immediate scheduling
+ * 3. setTimeout - Fallback for delayed tasks
+ *
  * @param callback The callback to be scheduled
  * @param timeout The delay in milliseconds before the callback is called
  * @hidden
  */
 export function scheduleCallback(callback: () => void, timeout: number = 0) {
+  if (hasPostTask) {
+    (globalThis as any).scheduler.postTask(callback, { delay: timeout });
+    return;
+  }
   if (timeout <= 2) {
     // for a very short delay (0, 1), use immediate callback
     scheduleCallbackImmediate(callback);

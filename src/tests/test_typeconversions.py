@@ -509,11 +509,11 @@ def test_python2js4(selenium):
                 (proxy) => {
                     let typename = proxy.type;
                     let x = proxy.toJs();
-                    return [proxy.type, x.constructor.name, x.get(42)];
+                    return [proxy.type, x.constructor.name, x[42]];
                 }
                 """
         )({42: 64})
-    ) == ["dict", "LiteralMap", 64]
+    ) == ["dict", "Object", 64]
 
 
 @run_in_pyodide
@@ -1157,9 +1157,11 @@ def test_tojs2(selenium):
 
     assert run_js("(o) => Array.isArray(o.toJs())")(o)
     serialized = run_js("(o) => JSON.stringify(o.toJs())")(o)
-    assert json.loads(serialized) == [[1, 2], [3, 4], [5, 6], {"a": 1}]
-    serialized = run_js("(o) => JSON.stringify(Array.from(o.toJs()[3].entries()))")(o)
-    assert json.loads(serialized) == [["a", 1], [2, 3], [4, 9]]
+    assert json.loads(serialized) == [[1, 2], [3, 4], [5, 6], {"a": 1, "2": 3, "4": 9}]
+    serialized = run_js(
+        "(o) => JSON.stringify(Array.from(Object.entries(o.toJs()[3])))"
+    )(o)
+    assert sorted(json.loads(serialized)) == [["2", 3], ["4", 9], ["a", 1]]
 
 
 def test_tojs4(selenium):
@@ -1256,38 +1258,32 @@ def test_tojs8(selenium):
         to_js({(2, 2)})
 
 
+@run_in_pyodide
 def test_tojs9(selenium):
-    assert set(
-        selenium.run_js(
-            """
-            return Array.from(pyodide.runPython(`
-                from pyodide.ffi import to_js
-                to_js({ 1, "1" })
-            `).values())
-            """
-        )
-    ) == {1, "1"}
+    import pytest
 
-    assert dict(
-        selenium.run_js(
-            """
-            return Array.from(pyodide.runPython(`
-                from pyodide.ffi import to_js
-                to_js({ 1 : 7, "1" : 9 })
-            `).entries())
-            """
-        )
-    ) == {1: 7, "1": 9}
+    from pyodide.code import run_js
+    from pyodide.ffi import ConversionError, to_js
+
+    result1 = to_js({1, "1"})
+    assert set(run_js("(x) => Array.from(x.values())")(result1)) == {1, "1"}
+
+    msg = "Key collision when converting Python dictionary to JavaScript. Key: '1'"
+    with pytest.raises(ConversionError, match=msg):
+        to_js({1: 7, "1": 9})
 
 
-def test_tojs_literalmap(selenium):
+def test_tojs_literalmap(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
     selenium.run_js(
         """
+        let pyodide = await loadPyodide({toJsLiteralMap: true});
         const res = pyodide.runPython(`
             from pyodide.ffi import to_js
-            to_js({ "a" : 6, "b" : 10, 6 : 9, "get": 77, True: 90})
-        `);
 
+            res = to_js({"a": 6, "b": 10, 6: 9, "get": 77, True: 90})
+            res
+        `);
         assert(() => res.constructor.name === "LiteralMap");
         assert(() => "a" in res);
         assert(() => "b" in res);
@@ -1405,6 +1401,9 @@ def test_to_py4(selenium, obj, msg):
 
     with pytest.raises((ConversionError, JsException), match=msg):
         a.to_py()
+
+    with pytest.raises((ConversionError, JsException), match=msg):
+        a = run_js(f"pyodide.toPy(new {obj})")
 
 
 @run_in_pyodide

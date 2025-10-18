@@ -2925,3 +2925,20 @@ def test_bind_self_reference(selenium):
     assert a.a._sig == A
     assert a.a.a._sig == A
     assert a.f()._sig == A
+
+
+@run_in_pyodide
+def test_jsproxy_no_error_this(selenium):
+    from pyodide.code import run_js
+
+    # thisArg should be null and not JS_ERROR
+    test = run_js(
+        """
+        () => new Proxy(() => 1, {
+            apply(target, thisArg, argumentsList) {
+                return thisArg === undefined;
+            }
+        })
+        """
+    )
+    assert test()()

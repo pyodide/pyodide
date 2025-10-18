@@ -3,8 +3,9 @@
 import { PyodideConfig } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
-import { API, PreRunFunc, type Module, type FSType } from "./types";
+import { API, PreRunFunc, type PyodideModule, type FSType } from "./types";
 import { getSentinelImport } from "generated/sentinel";
+import { RUNTIME_ENV } from "./environments";
 
 /**
  * @private
@@ -41,6 +42,7 @@ export interface EmscriptenSettings {
  * @private
  */
 export function createSettings(config: PyodideConfig): EmscriptenSettings {
+  const API = { config, runtimeEnv: RUNTIME_ENV } as API;
   const settings: EmscriptenSettings = {
     noImageDecoding: true,
     noAudioDecoding: true,
@@ -53,7 +55,7 @@ export function createSettings(config: PyodideConfig): EmscriptenSettings {
     },
     thisProgram: config._sysExecutable,
     arguments: config.args,
-    API: { config } as API,
+    API,
     // Emscripten calls locateFile exactly one time with argument
     // pyodide.asm.wasm to get the URL it should download it from.
     //
@@ -122,7 +124,7 @@ function callFsInitHook(
   ];
 }
 
-function computeVersionTuple(Module: Module): [number, number, number] {
+function computeVersionTuple(Module: PyodideModule): [number, number, number] {
   const versionInt = Module.HEAPU32[Module._Py_Version >>> 2];
   const major = (versionInt >>> 24) & 0xff;
   const minor = (versionInt >>> 16) & 0xff;
@@ -144,7 +146,7 @@ function computeVersionTuple(Module: Module): [number, number, number] {
  */
 function installStdlib(stdlibURL: string): PreRunFunc {
   const stdlibPromise: Promise<Uint8Array> = loadBinaryFile(stdlibURL);
-  return async (Module: Module) => {
+  return async (Module: PyodideModule) => {
     Module.API.pyVersionTuple = computeVersionTuple(Module);
     const [pymajor, pyminor] = Module.API.pyVersionTuple;
     Module.FS.mkdirTree("/lib");
