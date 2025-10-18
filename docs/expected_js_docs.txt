@@ -28,6 +28,7 @@ js:attribute
   exports.PyodideConfig.packages
   exports.PyodideConfig.pyproxyToStringRepr
   exports.PyodideConfig.stdLibURL?
+  exports.PyodideConfig.toJsLiteralMap?
   exports.version
   pyodide.ERRNO_CODES
   pyodide.FS
