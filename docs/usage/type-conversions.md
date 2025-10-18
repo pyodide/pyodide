@@ -294,7 +294,7 @@ conversions:
 | Python                                    | JavaScript             |
 | ----------------------------------------- | ---------------------- |
 | {py:class}`list`, {py:class}`tuple`       | {js:class}`Array`      |
-| {py:class}`dict`                          | {js:class}`Object`     |
+| {py:class}`dict`                          | {js:data}`Object`      |
 | {py:class}`set`                           | {js:class}`Set`        |
 | {external:doc}`a buffer <c-api/buffer>`\* | {js:class}`TypedArray` |
 
@@ -308,7 +308,7 @@ pass {js:func}`Object.fromEntries` as the `dict_converter` argument:
 In JavaScript, {js:class}`Set` keys are compared using object identity unless
 the key is an immutable type (meaning a {js:data}`String`, a {js:data}`Number`,
 a {js:data}`BigInt`, a {js:data}`Boolean`, {js:data}`undefined`, or
-{js:data}`null`). {js:class}`Object` keys are all treated as strings. On the
+{js:data}`null`). {js:data}`Object` keys are all treated as strings. On the
 other hand, in Python, {py:class}`dict` and {py:class}`set` keys are compared
 using deep equality. If a key is encountered in a {py:class}`dict` or
 {py:class}`set` that would have different semantics in JavaScript than in
