@@ -15,7 +15,7 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.29.0
 
 - {{ Feature }} Added `pyxhr`, a synchronous HTTP client using XMLHttpRequest
   that provides a requests-like API for making synchronous HTTP requests in
