@@ -1,0 +1,11 @@
+# packages/test-openblas-simd/meta.yaml
+package:
+  name: test-openblas-simd
+  version: "0.1"
+  tag:
+    - core
+    - pyodide.test
+  top-level:
+    - test_openblas_simd
+source:
+  path: src
