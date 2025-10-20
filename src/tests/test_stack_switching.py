@@ -292,7 +292,7 @@ def test_two_way_transfer(selenium):
                     l.append([n, i])
         `);
         f = pyodide.globals.get("f");
-        await Promise.all([f.callPromising("a", 15), f.callPromising("b", 25)])
+        await Promise.all([f.callPromising("a", 15), f.callPromising("b", 21)])
         f.destroy();
         const l = pyodide.globals.get("l");
         const res = l.toJs();
@@ -304,8 +304,8 @@ def test_two_way_transfer(selenium):
         ["a", 0],
         ["b", 0],
         ["a", 1],
-        ["a", 2],
         ["b", 1],
+        ["a", 2],
         ["a", 3],
         ["b", 2],
         ["a", 4],

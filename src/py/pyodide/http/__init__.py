@@ -2,16 +2,12 @@ from io import StringIO
 
 # Keep open_url in __init__ for now, will be moved to pyxhr.py later
 from ..ffi import IN_PYODIDE
-from . import _pyxhr as pyxhr
 from ._exceptions import (
     AbortError,
     BodyUsedError,
     HttpStatusError,
-    XHRError,
-    XHRNetworkError,
 )
 from ._pyfetch import FetchResponse, pyfetch
-from ._pyxhr import XHRRequestParams, XHRResponse
 
 if IN_PYODIDE:
     try:
@@ -26,11 +22,6 @@ __all__ = [
     "HttpStatusError",
     "BodyUsedError",
     "AbortError",
-    "pyxhr",
-    "XHRResponse",
-    "XHRRequestParams",
-    "XHRError",
-    "XHRNetworkError",
 ]
 
 

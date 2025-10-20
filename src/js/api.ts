@@ -8,7 +8,7 @@ import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
 import { TypedArray, PackageData, FSType, Lockfile } from "./types";
-import { IN_NODE, detectEnvironment } from "./environments";
+import { RUNTIME_ENV } from "./environments";
 // @ts-ignore
 import LiteralMap from "./common/literal-map";
 import abortSignalAny from "./common/abortSignalAny";
@@ -50,6 +50,10 @@ API.setPyProxyToStringMethod = function (useRepr: boolean): void {
   Module.HEAP8[Module._compat_to_string_repr] = +useRepr;
 };
 
+API.setCompatToJsLiteralMap = function (useLiteralMap: boolean): void {
+  Module.HEAP8[Module._compat_dict_to_literalmap] = +useLiteralMap;
+};
+
 API.setCompatNullToNone = function (compat: boolean): void {
   Module.HEAP8[Module._compat_null_to_none] = +compat;
 };
@@ -68,9 +72,6 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
 // Used in webloop
 /** @private */
 API.scheduleCallback = scheduleCallback;
-
-/** @private */
-API.detectEnvironment = detectEnvironment;
 
 // @ts-ignore
 if (typeof AbortSignal !== "undefined" && AbortSignal.any) {
@@ -579,7 +580,7 @@ export class PyodideAPI_ {
    * @param hostPath The host path to mount. It must be a directory that exists.
    */
   static mountNodeFS(emscriptenPath: string, hostPath: string): void {
-    if (!IN_NODE) {
+    if (!RUNTIME_ENV.IN_NODE) {
       throw new Error("mountNodeFS only works in Node");
     }
     ensureMountPathExists(emscriptenPath);

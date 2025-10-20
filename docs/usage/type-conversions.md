@@ -193,7 +193,7 @@ If you need to access the fields in a JavaScript object, you must use
 `obj.field_name` or if the name of the field is not a valid Python identifier,
 `getattr(obj, "field name")`. If you want to access the fields of the object
 like `obj["field name"]` you can use
-{py:meth}`~pyodide.ffi.JsProxy.as_object_map`:
+{py:meth}`~pyodide.ffi.JsProxy.as_py_json`:
 
 ```py
 from pyodide.code import run_js
@@ -207,7 +207,7 @@ obj = run_js(
     })
     """
 )
-obj_map = obj.as_object_map()
+obj_map = obj.as_py_json()
 assert obj_map["$c"] == 11
 ```
 
@@ -294,7 +294,7 @@ conversions:
 | Python                                    | JavaScript             |
 | ----------------------------------------- | ---------------------- |
 | {py:class}`list`, {py:class}`tuple`       | {js:class}`Array`      |
-| {py:class}`dict`                          | {js:class}`Map`        |
+| {py:class}`dict`                          | {js:data}`Object`      |
 | {py:class}`set`                           | {js:class}`Set`        |
 | {external:doc}`a buffer <c-api/buffer>`\* | {js:class}`TypedArray` |
 
@@ -305,14 +305,14 @@ If you need to convert {py:class}`dict` instead to {js:data}`Object`, you can
 pass {js:func}`Object.fromEntries` as the `dict_converter` argument:
 `proxy.toJs({dict_converter : Object.fromEntries})`.
 
-In JavaScript, {js:class}`Map` and {js:class}`Set` keys are compared using
-object identity unless the key is an immutable type (meaning a
-{js:data}`String`, a {js:data}`Number`, a {js:data}`BigInt`, a
-{js:data}`Boolean`, {js:data}`undefined`, or {js:data}`null`). On the other
-hand, in Python, {py:class}`dict` and {py:class}`set` keys are compared using
-deep equality. If a key is encountered in a {py:class}`dict` or {py:class}`set`
-that would have different semantics in JavaScript than in Python, then a
-{py:exc}`~pyodide.ffi.ConversionError` will be thrown.
+In JavaScript, {js:class}`Set` keys are compared using object identity unless
+the key is an immutable type (meaning a {js:data}`String`, a {js:data}`Number`,
+a {js:data}`BigInt`, a {js:data}`Boolean`, {js:data}`undefined`, or
+{js:data}`null`). {js:data}`Object` keys are all treated as strings. On the
+other hand, in Python, {py:class}`dict` and {py:class}`set` keys are compared
+using deep equality. If a key is encountered in a {py:class}`dict` or
+{py:class}`set` that would have different semantics in JavaScript than in
+Python, then a {py:exc}`~pyodide.ffi.ConversionError` will be thrown.
 
 See {ref}`buffer_tojs` for the behavior of {js:func}`~pyodide.ffi.PyProxy.toJs` on buffers.
 

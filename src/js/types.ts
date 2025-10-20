@@ -1,8 +1,9 @@
 export {};
 import type { PyProxy, PyAwaitable } from "generated/pyproxy";
 import { type PyodideAPI } from "./api";
-import { type ConfigType } from "./pyodide";
+import { type PyodideConfigWithDefaults } from "./pyodide";
 import { type InFuncType } from "./streams";
+import { type RuntimeEnv } from "./environments";
 import { SnapshotConfig } from "./snapshot";
 import { ResolvablePromise } from "./common/resolveable";
 import { PackageManager } from "./load-package";
@@ -228,39 +229,17 @@ export type FSStreamOpsGen<T> = {
  * in `@types/emscripten`, but Pyodide uses quite a lot of private APIs that are not
  * defined there as well. Hence this interface.
  *
- * TODO: Consider upstreaming these APIs to `@types/emscripten`.
  * @hidden
  */
 interface PyodideFSType {
-  mkdirTree: (path: string, mode?: number) => void;
-  createDevice: ((
-    parent: string,
-    name: string,
-    input?: (() => number | null) | null,
-    output?: ((code: number) => void) | null,
-  ) => FSNode) & {
-    major: number;
-  };
-  lookupPath: (
-    path: string,
-    options?: {
-      follow_mount?: boolean;
-    },
-  ) => { node: FSNode };
-  open: (path: string, flags: string | number, mode?: number) => FSStream;
   filesystems: any;
-  isMountpoint: (node: FSNode) => boolean;
-  closeStream: (fd: number) => void;
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
-  writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
 }
 
 /**
- * Combined filesystem type that omits the incompatible lookupPath from `@types/emscripten` and adds Pyodide-specific filesystem methods.
- * TODO: Consider upstreaming these APIs to `@types/emscripten`
  * @hidden
  */
-export type FSType = Omit<typeof FS, "lookupPath"> & PyodideFSType;
+export type FSType = typeof FS & PyodideFSType;
 
 /** @hidden */
 export type PreRunFunc = (Module: PyodideModule) => void;
@@ -325,6 +304,7 @@ export interface PyodideModule extends PythonModule {
   API: API;
   _compat_to_string_repr: number;
   _compat_null_to_none: number;
+  _compat_dict_to_literalmap: number;
   js2python_convert: (
     obj: any,
     options: {
@@ -468,12 +448,13 @@ export type PackageLoadMetadata = {
 
 /** @hidden */
 export interface API {
+  runtimeEnv: RuntimeEnv;
   fatal_error: (e: any) => never;
   isPyProxy: (e: any) => e is PyProxy;
   debug_ffi: boolean;
   maybe_fatal_error: (e: any) => void;
   public_api: PyodideAPI;
-  config: ConfigType;
+  config: PyodideConfigWithDefaults;
   packageIndexReady: Promise<void>;
   bootstrapFinalizedPromise: Promise<void>;
   typedArrayAsUint8Array: (buffer: TypedArray | ArrayBuffer) => Uint8Array;
@@ -496,6 +477,7 @@ export interface API {
   deserializeError: (name: string, message: string, stack: string) => Error;
   setPyProxyToStringMethod: (useRepr: boolean) => void;
   setCompatNullToNone: (compat: boolean) => void;
+  setCompatToJsLiteralMap: (compat: boolean) => void;
 
   _pyodide: any;
   pyodide_py: any;
@@ -509,7 +491,6 @@ export interface API {
   saveState: () => any;
   restoreState: (state: any) => void;
   scheduleCallback: (callback: () => void, timeout: number) => void;
-  detectEnvironment: () => Record<string, boolean>;
 
   package_loader: any;
   importlib: any;
@@ -578,7 +559,10 @@ export type PackageManagerAPI = Pick<
   | "defaultLdLibraryPath"
   | "version"
 > & {
-  config: Pick<ConfigType, "packageCacheDir" | "packageBaseUrl" | "cdnUrl">;
+  config: Pick<
+    PyodideConfigWithDefaults,
+    "packageCacheDir" | "packageBaseUrl" | "cdnUrl"
+  >;
 };
 /**
  * @hidden

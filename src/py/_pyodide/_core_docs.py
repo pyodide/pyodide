@@ -228,6 +228,10 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         If you need to compute the length in O(1) time, use a real
         :js:class:`Map` instead.
 
+        .. deprecated:: 0.29.0
+
+            Use :py:meth:`JsProxy.as_py_json` instead.
+
         Parameters
         ----------
         hereditary:
@@ -1518,9 +1522,9 @@ def to_js(
         (JavaScript) pairs [key, value]. It is expected to return the desired
         result of the dict conversion. Some suggested values for this argument:
 
-          * ``js.Map.new`` -- similar to the default behavior
+          * ``js.Object.fromEntries`` -- similar to the default behavior
+          * ``js.Map.new`` -- convert to a map
           * ``js.Array.from`` -- convert to an array of entries
-          * ``js.Object.fromEntries`` -- convert to a JavaScript object
 
     default_converter:
         If present will be invoked whenever Pyodide does not have some built in
@@ -1547,19 +1551,11 @@ def to_js(
     >>> from pyodide.ffi import to_js
     >>> js_object = to_js({'age': 20, 'name': 'john'})
     >>> js_object
-    [object Map]
-    >>> js_object.keys(), js_object.values()
-    (KeysView([object Map]), ValuesView([object Map]))
-    >>> [(k, v) for k, v in zip(js_object.keys(), js_object.values())]
-    [('age', 20), ('name', 'john')]
-
-    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Object.fromEntries) # doctest: +RUN_IN_PYODIDE
+    [object Object]
     >>> js_object.age == 20
     True
     >>> js_object.name == 'john'
     True
-    >>> js_object
-    [object Object]
     >>> js_object.hasOwnProperty("age")
     True
     >>> js_object.hasOwnProperty("height")

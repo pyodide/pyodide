@@ -1,10 +1,11 @@
 /** @private */
 
-import { ConfigType } from "./pyodide";
+import { PyodideConfigWithDefaults } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type PyodideModule, type FSType } from "./types";
 import { getSentinelImport } from "generated/sentinel";
+import { RUNTIME_ENV } from "./environments";
 
 /**
  * @private
@@ -40,7 +41,10 @@ export interface EmscriptenSettings {
  *
  * @private
  */
-export function createSettings(config: ConfigType): EmscriptenSettings {
+export function createSettings(
+  config: PyodideConfigWithDefaults,
+): EmscriptenSettings {
+  const API = { config, runtimeEnv: RUNTIME_ENV } as API;
   const settings: EmscriptenSettings = {
     noImageDecoding: true,
     noAudioDecoding: true,
@@ -53,7 +57,7 @@ export function createSettings(config: ConfigType): EmscriptenSettings {
     },
     thisProgram: config._sysExecutable,
     arguments: config.args,
-    API: { config } as API,
+    API,
     // Emscripten calls locateFile exactly one time with argument
     // pyodide.asm.wasm to get the URL it should download it from.
     //
@@ -168,7 +172,9 @@ function installStdlib(stdlibURL: string): PreRunFunc {
  * Initialize the virtual file system, before loading Python interpreter.
  * @private
  */
-function getFileSystemInitializationFuncs(config: ConfigType): PreRunFunc[] {
+function getFileSystemInitializationFuncs(
+  config: PyodideConfigWithDefaults,
+): PreRunFunc[] {
   let stdLibURL;
   if (config.stdLibURL != undefined) {
     stdLibURL = config.stdLibURL;
