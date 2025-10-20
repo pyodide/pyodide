@@ -40,7 +40,7 @@ build:
         USE_THREAD=0 \
         LDFLAGS="${SIDE_MODULE_LDFLAGS}"
     mkdir -p dist
-    
+
     # Add libf2c symbols to libopenblas.so
     emcc ${WASM_LIBRARY_DIR}/lib/libf2c.a libopenblas.a \
         ${SIDE_MODULE_LDFLAGS} \

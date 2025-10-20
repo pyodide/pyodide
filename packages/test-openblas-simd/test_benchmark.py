@@ -12,9 +12,9 @@ Expected outcomes:
 """
 
 import os
+
 import pytest
 from pytest_pyodide import run_in_pyodide
-
 
 RUN_BENCHMARKS = os.environ.get("PYODIDE_RUN_OPENBLAS_BENCH") == "1"
 
@@ -23,13 +23,14 @@ pytestmark = pytest.mark.skipif(
     reason="OpenBLAS benchmarks run only when PYODIDE_RUN_OPENBLAS_BENCH=1",
 )
 
+
 @pytest.mark.requires_dynamic_linking
 @run_in_pyodide(packages=["libopenblas", "libopenblas-og", "libopenblas-simd-o3"])
 def test_benchmark_sdot(selenium):
     """cblas_sdot benchmark (single-precision vector dot product)."""
     import time
     from collections import OrderedDict
-    from ctypes import CDLL, c_int, c_float, POINTER
+    from ctypes import CDLL, POINTER, c_float, c_int
 
     libs = OrderedDict(
         [
@@ -41,7 +42,13 @@ def test_benchmark_sdot(selenium):
 
     # Configure signatures
     for lib in libs.values():
-        lib.cblas_sdot.argtypes = [c_int, POINTER(c_float), c_int, POINTER(c_float), c_int]
+        lib.cblas_sdot.argtypes = [
+            c_int,
+            POINTER(c_float),
+            c_int,
+            POINTER(c_float),
+            c_int,
+        ]
         lib.cblas_sdot.restype = c_float
 
     sizes = [10_000, 50_000, 307_200, 921_600, 2_073_600]
@@ -67,7 +74,9 @@ def test_benchmark_sdot(selenium):
         for variant, res in outputs.items():
             if variant == "baseline":
                 continue
-            assert abs(base_res - res) < 1.0, f"Results differ: baseline={base_res}, {variant}={res}"
+            assert abs(base_res - res) < 1.0, (
+                f"Results differ: baseline={base_res}, {variant}={res}"
+            )
 
     # Pretty print summary
     print("\n" + "=" * 90)
@@ -106,7 +115,7 @@ def test_benchmark_sgemm(selenium):
     """cblas_sgemm benchmark (single-precision matrix multiplication)."""
     import time
     from collections import OrderedDict
-    from ctypes import CDLL, c_int, c_float, POINTER
+    from ctypes import CDLL, POINTER, c_float, c_int
 
     libs = OrderedDict(
         [
@@ -190,10 +199,10 @@ def test_benchmark_sgemm(selenium):
         for variant, buf in c_buffers.items():
             if variant == "baseline":
                 continue
-            max_diff = max(
-                abs(base_buf[i] - buf[i]) for i in range(min(10, m * n))
+            max_diff = max(abs(base_buf[i] - buf[i]) for i in range(min(10, m * n)))
+            assert max_diff < 0.01, (
+                f"Results differ too much ({variant}): max_diff={max_diff}"
             )
-            assert max_diff < 0.01, f"Results differ too much ({variant}): max_diff={max_diff}"
 
     print("\n" + "=" * 90)
     print("cblas_sgemm Benchmark Results (Matrix-Matrix Multiplication)")
@@ -239,7 +248,7 @@ def test_benchmark_sgemm(selenium):
 def test_verify_simd_instructions(selenium):
     """SIMD build verification: ensure outputs match the baseline"""
     from collections import OrderedDict
-    from ctypes import CDLL, c_int, c_float, POINTER
+    from ctypes import CDLL, POINTER, c_float, c_int
 
     libs = OrderedDict(
         [
@@ -250,7 +259,13 @@ def test_verify_simd_instructions(selenium):
     )
 
     for lib in libs.values():
-        lib.cblas_sdot.argtypes = [c_int, POINTER(c_float), c_int, POINTER(c_float), c_int]
+        lib.cblas_sdot.argtypes = [
+            c_int,
+            POINTER(c_float),
+            c_int,
+            POINTER(c_float),
+            c_int,
+        ]
         lib.cblas_sdot.restype = c_float
 
     # Simple test
@@ -259,13 +274,15 @@ def test_verify_simd_instructions(selenium):
     b = (c_float * size)(5.0, 6.0, 7.0, 8.0)
 
     results = {name: lib.cblas_sdot(size, a, 1, b, 1) for name, lib in libs.items()}
-    expected = 1*5 + 2*6 + 3*7 + 4*8  # 70.0
+    expected = 1 * 5 + 2 * 6 + 3 * 7 + 4 * 8  # 70.0
 
-    print(f"\nVerification test (dot product of [1,2,3,4] and [5,6,7,8]):")
+    print("\nVerification test (dot product of [1,2,3,4] and [5,6,7,8]):")
     print(f"  Expected: {expected}")
     for name in ["baseline", "simd", "simd_o3"]:
         print(f"  {name}: {results[name]}")
-        assert abs(results[name] - expected) < 0.001, f"{name} result incorrect: {results[name]}"
+        assert abs(results[name] - expected) < 0.001, (
+            f"{name} result incorrect: {results[name]}"
+        )
 
     base_res = results["baseline"]
     for variant, res in results.items():
