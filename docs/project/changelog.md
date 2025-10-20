@@ -23,6 +23,9 @@ myst:
   common HTTP methods (GET, POST, PUT, DELETE, HEAD, PATCH, OPTIONS).
   {pr}`5841`
 
+- {{ Feature }} `pyfetch` now works when passed a JS Request object instead of a
+  url. {pr}`5866`
+
 - {{ Breaking }} The default behavior of `toJs()`/`to_js` was changed to convert
   dictionaries to JavaScript objects. To opt into the old behavior, pass
   `toJsLiteralMap: true` to `loadPyodide()`. This is deprecated.
