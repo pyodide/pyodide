@@ -1,0 +1,59 @@
+package:
+  name: libopenblas-simd-o3
+  version: 0.3.26
+  tag:
+    - core
+    - library
+    - shared_library
+source:
+  sha256: 4e6e4f5cb14c209262e33e6816d70221a2fe49eb69eaf0a06f065598ac602c68
+  url: https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.26/OpenBLAS-0.3.26.tar.gz
+  patches:
+    - patches/0001-Add-Wno-return-type-flag.patch
+    - patches/0002-Align-xerbla_array-signature-with-scipy-expectation.patch
+    - patches/0003-Skip-linktest.patch
+
+build:
+  type: shared_library
+  script: |
+    # seems like .zip does not maintain executable flags, need to reset these
+    chmod u+x c_check
+    chmod u+x f_check
+    chmod u+x exports/gensymbol
+    # Replace void returns by int returns
+    sed -ri 's/void(\s+)BLASFUNC/int\1BLASFUNC/g' common_interface.h
+    sed -ri 's/void(\s+)cblas_/int\1cblas_/g' cblas.h ctest/*.c
+    sed -ri 's/void(\s+)(C?NAME)/int\1\2/g' interface/*.c
+    sed -ri 's/((extern)?.+) void ([a-z0-9]+_)/\1\2 int \3/g' lapack-netlib/SRC/*.c \
+        lapack-netlib/SRC/DEPRECATED/*.c
+    # For some functions (mostly handling complex I think) f2c actually
+    # generate a function that returns void so I need to revert the void to int
+    # change the previous line does.
+    sed -ri 's@int ([cz](dotc|dotu|ladiv))@void \1@g' lapack-netlib/SRC/*.c\
+        lapack-netlib/SRC/DEPRECATED/*.c
+
+    emmake make -j${PYODIDE_JOBS:-${JOBS:-$(nproc || echo 4)}} libs shared \
+        CC="emcc -O3 -msimd128" \
+        HOSTCC=gcc \
+        TARGET=RISCV64_GENERIC \
+        NOFORTRAN=1 NO_LAPACKE=1 \
+        USE_THREAD=0 \
+        LIBNAMESUFFIX=simd_o3 \
+        LDFLAGS="${SIDE_MODULE_LDFLAGS}"
+    mkdir -p dist
+
+    # Add libf2c symbols to libopenblas_simd_o3.so
+    emcc ${WASM_LIBRARY_DIR}/lib/libf2c.a libopenblas_simd_o3.a \
+        ${SIDE_MODULE_LDFLAGS} \
+        -O3 -msimd128 \
+        -o libopenblas_simd_o3.so
+
+    cp libopenblas_simd_o3.so dist
+    emmake make install PREFIX=${WASM_LIBRARY_DIR} LIBNAMESUFFIX=simd_o3
+
+requirements:
+  host:
+    - libf2c
+about:
+  home: https://www.openblas.net/
+  license: BSD-3-Clause

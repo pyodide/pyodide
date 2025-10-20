@@ -1,0 +1,25 @@
+From 8ce75f14b82ed67eaf0eaceea0c8092851af00c2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Lo=C3=AFc=20Est=C3=A8ve?= <loic.esteve@ymail.com>
+Date: Fri, 7 Apr 2023 10:27:59 +0200
+Subject: [PATCH 2/3] Align xerbla_array signature with scipy expectation
+
+---
+ lapack-netlib/SRC/xerbla_array.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lapack-netlib/SRC/xerbla_array.c b/lapack-netlib/SRC/xerbla_array.c
+index fe7d6d898..74d3ca96a 100644
+--- a/lapack-netlib/SRC/xerbla_array.c
++++ b/lapack-netlib/SRC/xerbla_array.c
+@@ -600,7 +600,7 @@ array.f"> */
+ 
+ /*  ===================================================================== */
+ /* Subroutine */ void xerbla_array_(char *srname_array__, integer *
+-	srname_len__, integer *info, integer srname_array_len)
++	srname_len__, integer *info)
+ {
+     /* System generated locals */
+     integer i__1, i__2, i__3;
+-- 
+2.34.1
+
