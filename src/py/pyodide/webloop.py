@@ -12,9 +12,9 @@ from collections.abc import AsyncGenerator, Awaitable, Callable, Coroutine
 from functools import wraps
 from typing import Any, TypeVar, overload
 
-from .ffi import IN_BROWSER, can_run_sync, create_once_callable, run_sync
+from .ffi import IN_PYODIDE, can_run_sync, create_once_callable, run_sync
 
-if IN_BROWSER:
+if IN_PYODIDE:
     from pyodide_js._api import scheduleCallback
 
 T = TypeVar("T")
@@ -974,7 +974,7 @@ def _sleep(t):
 
 
 def _initialize_event_loop():
-    if not IN_BROWSER:
+    if not IN_PYODIDE:
         return
 
     asyncio.run = _run
