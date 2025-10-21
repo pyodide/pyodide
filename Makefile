@@ -158,6 +158,8 @@ src/js/generated/_pyodide.out.js:            \
 	cd src/js && npm run build-inner && cd -
 
 dist/pyodide.js:                             \
+		dist/pyodide.asm.js            		 \
+		src/js/generated/_pyodide.out.js  	 \
 		src/js/pyodide.ts                    \
 		src/js/compat.ts                     \
 		src/js/emscripten-settings.ts        \
@@ -165,7 +167,7 @@ dist/pyodide.js:                             \
 		src/core/sentinel.wasm
 	cd src/js && npm run build
 
-src/core/stack_switching/stack_switching.out.js : src/core/stack_switching/*.mjs
+src/core/stack_switching/stack_switching.out.js : src/core/stack_switching/*.mjs node_modules/.installed
 	node src/core/stack_switching/esbuild.config.mjs
 
 dist/package.json : src/js/package.json
@@ -175,7 +177,7 @@ dist/package.json : src/js/package.json
 npm-link: dist/package.json
 	cd src/test-js && npm ci && npm link ../../dist
 
-dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/generated/pyproxy.ts node_modules/.installed
+dist/pyodide.d.ts dist/pyodide/ffi.d.ts: dist/pyodide.js src/js/*.ts src/js/generated/pyproxy.ts node_modules/.installed
 	npx dts-bundle-generator src/js/{pyodide,ffi}.ts --export-referenced-types false --project src/js/tsconfig.json
 	mv src/js/{pyodide,ffi}.d.ts dist
 	python3 tools/fixup-type-definitions.py dist/pyodide.d.ts
