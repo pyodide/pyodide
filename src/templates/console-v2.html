@@ -188,13 +188,29 @@ of the stable console.
         const history = [];
         let historyIndex = null; // null means not navigating history
 
+        // Load history from localStorage
+        try {
+          const savedHistory = localStorage.getItem("0_commands");
+          if (savedHistory) {
+            const parsed = JSON.parse(savedHistory);
+            if (Array.isArray(parsed)) {
+              history.push(...parsed);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load history from localStorage:", e);
+        }
+
         term.write(prompt);
 
         function addToHistory(command) {
           const trimmed = command.trimEnd();
           if (!trimmed) return;
           const last = history[history.length - 1];
-          if (last !== trimmed) history.push(trimmed);
+          if (last !== trimmed) {
+            history.push(trimmed);
+            localStorage.setItem("0_commands", JSON.stringify(history));
+          }
         }
 
         function refreshLine() {
