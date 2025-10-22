@@ -188,6 +188,12 @@ of the stable console.
         const history = [];
         let historyIndex = null; // null means not navigating history
 
+        // Reverse search state
+        let reverseSearchMode = false;
+        let reverseSearchQuery = "";
+        let reverseSearchIndex = -1; // index in history
+        let savedBuffer = ""; // buffer before entering search mode
+
         // Load history from localStorage
         try {
           const savedHistory = localStorage.getItem("0_commands");
@@ -231,6 +237,93 @@ of the stable console.
             cursorIndex = Math.max(0, Math.min(newCursorIndex, buffer.length));
           }
           refreshLine();
+        }
+
+        function searchHistory(query, startIndex = -1) {
+          // Search backwards through history from startIndex
+          if (startIndex === -1) {
+            startIndex = history.length - 1;
+          }
+          for (let i = startIndex; i >= 0; i--) {
+            if (history[i].includes(query)) {
+              return i;
+            }
+          }
+          return -1;
+        }
+
+        function enterReverseSearchMode() {
+          reverseSearchMode = true;
+          reverseSearchQuery = "";
+          reverseSearchIndex = -1;
+          savedBuffer = buffer;
+          buffer = "";
+          cursorIndex = 0;
+          updateReverseSearchDisplay();
+        }
+
+        function exitReverseSearchMode(accept = true) {
+          reverseSearchMode = false;
+          if (!accept) {
+            buffer = savedBuffer;
+            cursorIndex = buffer.length;
+          }
+          reverseSearchQuery = "";
+          reverseSearchIndex = -1;
+          savedBuffer = "";
+          refreshLine();
+        }
+
+        function updateReverseSearchDisplay() {
+          const searchPrompt = `(reverse-i-search)\`${reverseSearchQuery}': `;
+          let displayText = "";
+          if (reverseSearchIndex >= 0) {
+            displayText = history[reverseSearchIndex];
+          }
+          // Clear line and write search prompt with matched command
+          term.write(`\r\x1b[K${searchPrompt}${displayText}`);
+        }
+
+        function reverseSearchAddChar(char) {
+          reverseSearchQuery += char;
+          reverseSearchIndex = searchHistory(reverseSearchQuery);
+          if (reverseSearchIndex >= 0) {
+            buffer = history[reverseSearchIndex];
+            cursorIndex = buffer.length;
+          }
+          updateReverseSearchDisplay();
+        }
+
+        function reverseSearchBackspace() {
+          if (reverseSearchQuery.length > 0) {
+            reverseSearchQuery = reverseSearchQuery.slice(0, -1);
+            if (reverseSearchQuery) {
+              reverseSearchIndex = searchHistory(reverseSearchQuery);
+              if (reverseSearchIndex >= 0) {
+                buffer = history[reverseSearchIndex];
+                cursorIndex = buffer.length;
+              }
+            } else {
+              reverseSearchIndex = -1;
+              buffer = "";
+              cursorIndex = 0;
+            }
+            updateReverseSearchDisplay();
+          }
+        }
+
+        function reverseSearchNext() {
+          if (reverseSearchQuery && reverseSearchIndex > 0) {
+            reverseSearchIndex = searchHistory(
+              reverseSearchQuery,
+              reverseSearchIndex - 1
+            );
+            if (reverseSearchIndex >= 0) {
+              buffer = history[reverseSearchIndex];
+              cursorIndex = buffer.length;
+            }
+            updateReverseSearchDisplay();
+          }
         }
 
         async function execLine(line) {
@@ -290,6 +383,44 @@ of the stable console.
         }
 
         term.onData(async (data) => {
+          // Handle reverse search mode separately
+          if (reverseSearchMode) {
+            switch (data) {
+              case "\r": // Enter - accept search result
+                exitReverseSearchMode(true);
+                term.write("\r\n");
+                await execLine(buffer);
+                buffer = "";
+                cursorIndex = 0;
+                term.write(prompt);
+                break;
+              case "\u0003": // Ctrl-C - cancel search
+              case "\u0007": // Ctrl-G - cancel search
+                exitReverseSearchMode(false);
+                term.write("^C\r\n" + prompt);
+                break;
+              case "\u0012": // Ctrl-R - find next match
+                reverseSearchNext();
+                break;
+              case "\u007F": // Backspace
+                reverseSearchBackspace();
+                break;
+              case "\x1B[A": // Up arrow - exit search, keep result
+              case "\x1B[B": // Down arrow - exit search, keep result
+              case "\x1B[C": // Right arrow - exit search, keep result
+              case "\x1B[D": // Left arrow - exit search, keep result
+                exitReverseSearchMode(true);
+                break;
+              default:
+                // Add printable characters to search query
+                if (data && data.length === 1 && data >= " " && data <= "~") {
+                  reverseSearchAddChar(data);
+                }
+            }
+            return;
+          }
+
+          // Normal mode
           switch (data) {
             case "\r": // Enter
               term.write("\r\n");
@@ -305,6 +436,11 @@ of the stable console.
               term.write("^C\r\nKeyboardInterrupt\r\n" + ps1);
               prompt = ps1;
               historyIndex = null;
+              break;
+            case "\u0012": // Ctrl-R - enter reverse search mode
+              if (prompt === ps1 && history.length > 0) {
+                enterReverseSearchMode();
+              }
               break;
             case "\u0016": // Ctrl-V
               // paste from clipboard
