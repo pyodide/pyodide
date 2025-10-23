@@ -65,7 +65,7 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 
 # Don't use ccache here because it does not support #embed properly.
 # https://github.com/ccache/ccache/discussions/1366
-src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat
+src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat | check-emcc
 	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
 src/core/sentinel.wasm: src/core/sentinel.wat | emsdk/emsdk/.complete
@@ -299,7 +299,7 @@ clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
 
-%.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
+%.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js) | check-emcc
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 $(CPYTHONLIB): emsdk/emsdk/.complete | check-emcc
