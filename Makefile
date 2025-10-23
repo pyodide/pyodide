@@ -68,7 +68,7 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat
 	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
-src/core/sentinel.wasm: $(CPYTHONINSTALL)/.installed-pyodide src/core/sentinel.wat
+src/core/sentinel.wasm: src/core/sentinel.wat | emsdk/emsdk/.complete
 	./emsdk/emsdk/upstream/bin/wasm-as $< -o $@ -all
 
 src/core/libpyodide.a: \
@@ -251,7 +251,7 @@ dist/makesnap.mjs: src/templates/makesnap.mjs
 	cp $< $@
 	@echo "[END] dist/makesnap.mjs."
 
-dist/snapshot.bin: all-but-packages dist/pyodide-lock.json dist/pyodide.d.ts dist/makesnap.mjs
+dist/snapshot.bin: all-but-packages dist/pyodide-lock.json dist/makesnap.mjs
 	@echo "[START] Building snapshot.bin..."
 	cd dist && node --experimental-wasm-stack-switching makesnap.mjs
 	@echo "[END] Built snapshot.bin."
@@ -324,7 +324,7 @@ clean-all: clean
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 	@echo "[END] Compiled $<"
 
-$(CPYTHONLIB): emsdk/emsdk/.complete
+$(CPYTHONLIB): emsdk/emsdk/.complete | check-emcc
 	@echo "[START] Building cpython..."
 	@date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
