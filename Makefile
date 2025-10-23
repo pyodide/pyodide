@@ -92,13 +92,11 @@ src/core/libpyodide.a: \
 
 	emar rcs src/core/libpyodide.a $(filter %.o,$^)
 
-# #(CPYTHONLIB) 이전에 수행
 $(CPYTHONINSTALL)/include/pyodide/.installed: src/core/*.h
 	mkdir -p $(@D)
 	cp $? $(@D)
 	touch $@
 
-# $(CPYTHONLIB 호출 주체)
 $(CPYTHONINSTALL)/lib/libpyodide.a: src/core/libpyodide.a
 	mkdir -p $(@D)
 	cp $< $@
@@ -187,7 +185,6 @@ dist/pyodide.d.ts dist/pyodide/ffi.d.ts: dist/pyodide.js src/js/*.ts src/js/gene
 define preprocess-js
 
 src/js/generated/$1: $(CPYTHONLIB) src/core/$1 src/core/pyproxy.c src/core/*.h
-	echo "[START] src/js/generated/\$1"
 	# We can't input a js/ts file directly because CC will be unhappy about the file
 	# extension. Instead cat it and have CC read from stdin.
 	# -E : Only apply prepreocessor
@@ -211,7 +208,6 @@ src/js/generated/$1: $(CPYTHONLIB) src/core/$1 src/core/pyproxy.c src/core/*.h
 		$(CC) -E -C -P -imacros src/core/pyproxy.c $(MAIN_MODULE_CFLAGS) - | \
 		$(SED) 's/^#pragma clang.*//g' \
 		>> $$@
-	echo "[END] src/js/generated/\$1"
 endef
 
 
