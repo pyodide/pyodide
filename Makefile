@@ -90,29 +90,21 @@ src/core/libpyodide.a: \
 	src/core/stack_switching/suspenders.o \
 	src/core/print.o
 
-	@echo "[START] Creating /src/core/libpyodide.a..."
 	emar rcs src/core/libpyodide.a $(filter %.o,$^)
-	@echo "[END] Created /src/core/libpyodide.a."
 
 # #(CPYTHONLIB) 이전에 수행
 $(CPYTHONINSTALL)/include/pyodide/.installed: src/core/*.h
-	@echo "[START] include/pyodide/.installed headers..."
 	mkdir -p $(@D)
 	cp $? $(@D)
 	touch $@
-	@echo "[END] include/pyodide/.installed to $(@D)"
 
 # $(CPYTHONLIB 호출 주체)
 $(CPYTHONINSTALL)/lib/libpyodide.a: src/core/libpyodide.a
-	@echo "[START] /lib/libpyodide.a ..."
 	mkdir -p $(@D)
 	cp $< $@
-	@echo "[END] /lib/libpyodide.a to $(@D)"
 
 $(CPYTHONINSTALL)/.installed-pyodide: $(CPYTHONINSTALL)/include/pyodide/.installed $(CPYTHONINSTALL)/lib/libpyodide.a
-	@echo "[START] .installed-pyodide."
 	touch $@
-	@echo "[END] .installed-pyodide."
 
 dist/pyodide.asm.js: \
 	src/core/main.o  \
@@ -120,7 +112,6 @@ dist/pyodide.asm.js: \
 	$(CPYTHONLIB) \
 	$(CPYTHONINSTALL)/.installed-pyodide
 
-	@echo "[START] Building pyodide.asm.js..."
 	@date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
    # TODO(ryanking13): Link libgl to a side module not to the main module.
@@ -146,7 +137,6 @@ dist/pyodide.asm.js: \
 	echo "globalThis._createPyodideModule = _createPyodideModule;" >> dist/pyodide.asm.js
 
 	@date +"[%F %T] done building pyodide.asm.js."
-	@echo "[END] Built pyodide.asm.js."
 
 env:
 	env
@@ -242,19 +232,13 @@ dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB) .pyodide_build_
 	pyodide create-zipfile $(CPYTHONLIB) src/py --exclude "$(PYZIP_EXCLUDE_FILES)" --stub "$(PYZIP_JS_STUBS)" --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
 dist/test.html: src/templates/test.html
-	@echo "[START] dist/test.html..."
 	cp $< $@
-	@echo "[END] dist/test.html."
 
 dist/makesnap.mjs: src/templates/makesnap.mjs
-	@echo "[START] dist/makesnap.mjs..."
 	cp $< $@
-	@echo "[END] dist/makesnap.mjs."
 
 dist/snapshot.bin: all-but-packages dist/pyodide-lock.json dist/makesnap.mjs
-	@echo "[START] Building snapshot.bin..."
 	cd dist && node --experimental-wasm-stack-switching makesnap.mjs
-	@echo "[END] Built snapshot.bin."
 
 dist/module_test.html: src/templates/module_test.html
 	cp $< $@
@@ -320,16 +304,12 @@ clean-all: clean
 	make -C cpython clean-all
 
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
-	@echo "[START] Compiling $<"
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
-	@echo "[END] Compiled $<"
 
 $(CPYTHONLIB): emsdk/emsdk/.complete | check-emcc
-	@echo "[START] Building cpython..."
 	@date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	@date +"[%F %T] done building cpython..."
-	@echo "[END] Built cpython."
 
 dist/pyodide-lock.json: .pyodide_build_installed
 	@date +"[%F %T] Building packages..."
@@ -338,11 +318,9 @@ dist/pyodide-lock.json: .pyodide_build_installed
 
 
 emsdk/emsdk/.complete:
-	@echo "[START] Building emsdk..."
 	@date +"[%F %T] Building emsdk..."
 	make -C emsdk
 	@date +"[%F %T] done building emsdk."
-	@echo "[END] emsdk build complete."
 
 rust:
 	echo -e '\033[0;31m[WARNING] The target `make rust` is only for development and we do not guarantee that it will work or be maintained.\033[0m'
@@ -352,15 +330,11 @@ rust:
 
 
 check:
-	@echo "[START] check dependencies..."
 	@./tools/dependency-check.sh
-	@echo "[END] check dependencies."
 
 
 check-emcc: | emsdk/emsdk/.complete
-	@echo "[START] check-emcc..."
 	@python3 tools/check_ccache.py
-	@echo "[END] check-emcc."
 
 
 debug:
