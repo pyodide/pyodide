@@ -307,7 +307,7 @@ $(CPYTHONLIB): emsdk/emsdk/.complete | check-emcc
 	make -C $(CPYTHONROOT)
 	@date +"[%F %T] done building cpython..."
 
-dist/pyodide-lock.json: .pyodide_build_installed
+dist/pyodide-lock.json: all-but-packages .pyodide_build_installed
 	@date +"[%F %T] Building packages..."
 	make -C packages
 	@date +"[%F %T] done building packages..."
