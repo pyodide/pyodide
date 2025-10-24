@@ -65,10 +65,10 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 
 # Don't use ccache here because it does not support #embed properly.
 # https://github.com/ccache/ccache/discussions/1366
-src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat | check-emcc
+src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat emsdk/emsdk/.complete
 	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
-src/core/sentinel.wasm: src/core/sentinel.wat | check-emcc
+src/core/sentinel.wasm: src/core/sentinel.wat emsdk/emsdk/.complete
 	./emsdk/emsdk/upstream/bin/wasm-as $< -o $@ -all
 
 src/core/libpyodide.a: \
@@ -140,7 +140,7 @@ env:
 	env
 
 
-node_modules/.installed : $(CPYTHONLIB) src/js/package.json src/js/package-lock.json
+node_modules/.installed: src/js/package.json src/js/package-lock.json
 	cd src/js && npm ci
 	ln -sfn src/js/node_modules/ node_modules
 	touch $@
@@ -165,10 +165,10 @@ dist/pyodide.js:                             \
 		src/core/sentinel.wasm
 	cd src/js && npm run build
 
-src/core/stack_switching/stack_switching.out.js : src/core/stack_switching/*.mjs node_modules/.installed
+src/core/stack_switching/stack_switching.out.js: src/core/stack_switching/*.mjs node_modules/.installed
 	node src/core/stack_switching/esbuild.config.mjs
 
-dist/package.json : src/js/package.json
+dist/package.json: src/js/package.json
 	cp $< $@
 
 .PHONY: npm-link
@@ -299,10 +299,10 @@ clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
 
-%.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js) | check-emcc
+%.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
-$(CPYTHONLIB): emsdk/emsdk/.complete | check-emcc
+$(CPYTHONLIB): emsdk/emsdk/.complete check-emcc
 	@date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	@date +"[%F %T] done building cpython..."
@@ -329,7 +329,7 @@ check:
 	@./tools/dependency-check.sh
 
 
-check-emcc: | emsdk/emsdk/.complete
+check-emcc: emsdk/emsdk/.complete
 	@python3 tools/check_ccache.py
 
 
