@@ -68,7 +68,7 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat | check-emcc
 	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
-src/core/sentinel.wasm: src/core/sentinel.wat | emsdk/emsdk/.complete
+src/core/sentinel.wasm: src/core/sentinel.wat | check-emcc
 	./emsdk/emsdk/upstream/bin/wasm-as $< -o $@ -all
 
 src/core/libpyodide.a: \
@@ -215,7 +215,7 @@ $(eval $(call preprocess-js,pyproxy.ts))
 $(eval $(call preprocess-js,python2js_buffer.js))
 $(eval $(call preprocess-js,js2python.js))
 
-pyodide_build .pyodide_build_installed: $(CPYTHONLIB)
+pyodide_build .pyodide_build_installed:
 	pip install -e ./pyodide-build
 	@which pyodide >/dev/null
 	touch .pyodide_build_installed
