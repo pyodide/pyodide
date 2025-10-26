@@ -6,11 +6,11 @@ hypothesis
 mypy==1.11.0
 # lint
 pre-commit
-pytest<8
+pytest
 pytest-asyncio
 pytest-benchmark
 pytest-cov
 pytest-httpserver
-pytest-pyodide==0.58.8
+pytest-pyodide==0.58.9
 setuptools; python_version>='3.12'
 sphinx-click

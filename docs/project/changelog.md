@@ -15,13 +15,16 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.29.0
 
 - {{ Feature }} Added `pyxhr`, a synchronous HTTP client using XMLHttpRequest
   that provides a requests-like API for making synchronous HTTP requests in
   browser environments. This includes `XHRResponse` class and support for all
   common HTTP methods (GET, POST, PUT, DELETE, HEAD, PATCH, OPTIONS).
   {pr}`5841`
+
+- {{ Feature }} `pyfetch` now works when passed a JS Request object instead of a
+  url. {pr}`5866`
 
 - {{ Breaking }} The default behavior of `toJs()`/`to_js` was changed to convert
   dictionaries to JavaScript objects. To opt into the old behavior, pass

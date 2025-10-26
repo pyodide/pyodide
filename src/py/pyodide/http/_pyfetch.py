@@ -6,7 +6,7 @@ import json
 from asyncio import CancelledError
 from collections.abc import Awaitable, Callable
 from functools import wraps
-from typing import IO, Any, ParamSpec, TypeVar
+from typing import IO, TYPE_CHECKING, Any, ParamSpec, TypeVar
 
 from .._package_loader import unpack_buffer
 from ..ffi import IN_PYODIDE, JsBuffer, JsException, JsFetchResponse, to_js
@@ -16,9 +16,9 @@ from ._exceptions import (
     HttpStatusError,
 )
 
-if IN_PYODIDE:
+if IN_PYODIDE or TYPE_CHECKING:
     try:
-        from js import AbortController, AbortSignal, Object
+        from js import AbortController, AbortSignal, Object, Request
         from js import fetch as _jsfetch
         from pyodide_js._api import abortSignalAny
     except ImportError:
@@ -31,6 +31,9 @@ else:
         pass
 
     class AbortSignal:  # type:ignore[no-redef]
+        pass
+
+    class Request:  # type:ignore[no-redef]
         pass
 
 
@@ -81,14 +84,23 @@ class FetchResponse:
         The abort signal that was used for the fetch request.
     """
 
+    js_request: "Request"
+    js_response: JsFetchResponse
+    _url: str
+    abort_controller: "AbortController | None"
+    abort_signal: "AbortSignal | None"
+
     def __init__(
         self,
-        url: str,
+        request: "str | Request",
         js_response: JsFetchResponse,
         abort_controller: "AbortController | None" = None,
         abort_signal: "AbortSignal | None" = None,
     ):
-        self._url = url
+        if isinstance(request, str):
+            request = Request.new(request)
+        self.js_request = request
+        self._url = self.js_request.url
         self.js_response = js_response
         self.abort_controller = abort_controller
         self.abort_signal = abort_signal
@@ -177,7 +189,7 @@ class FetchResponse:
         if self.js_response.bodyUsed:
             raise BodyUsedError
         return FetchResponse(
-            self._url,
+            self.js_request,
             self.js_response.clone(),
             self.abort_controller,
             self.abort_signal,
@@ -306,7 +318,12 @@ class FetchResponse:
 
 
 async def pyfetch(
-    url: str, /, *, signal: Any = None, fetcher: Any = None, **kwargs: Any
+    request: "str | Request",
+    /,
+    *,
+    signal: Any = None,
+    fetcher: Any = None,
+    **kwargs: Any,
 ) -> FetchResponse:
     r"""Fetch the url and return the response.
 
@@ -317,8 +334,8 @@ async def pyfetch(
 
     Parameters
     ----------
-    url :
-        URL to fetch.
+    request :
+        Either a string URL or a JavaScript Request object to fetch.
 
     signal :
         Abort signal to use for the fetch request.
@@ -351,10 +368,13 @@ async def pyfetch(
         signal = controller.signal
     kwargs["signal"] = signal
     fetcher = fetcher or _jsfetch
+    args = to_js(kwargs, dict_converter=Object.fromEntries)
+    if isinstance(request, str):
+        request = Request.new(request, args)
     try:
         return FetchResponse(
-            url,
-            await fetcher(url, to_js(kwargs, dict_converter=Object.fromEntries)),
+            request,
+            await fetcher(request, args),
             controller,
             signal,
         )
