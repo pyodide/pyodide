@@ -1386,3 +1386,22 @@ def test_package_manager_urls_browsers(selenium_standalone_noload, httpserver):
         assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(base_url)}');
         """
     )
+
+
+def test_load_packages_before_python_init(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    selenium.run_js(
+        """
+        await loadPyodide({
+            packages: ['test-dummy'],
+            fsInit: (FS, { sitePackages }) => {
+                FS.writeFile(
+                    `${sitePackages}/example.pth`,
+                    'import dummy; print("Got", dummy.dummy());',
+                );
+            }
+        });
+        """
+    )
+    assert "Error processing" not in selenium.logs
+    assert "Got dummy" in selenium.logs
