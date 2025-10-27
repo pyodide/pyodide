@@ -258,7 +258,12 @@ export interface EmscriptenModule {
   locateFile: (file: string) => string;
   exited?: { toThrow: any };
   ENV: { [key: string]: string };
-  PATH: any;
+  PATH: {
+    join2(a: string, b: string): string;
+    dirname(path: string): string;
+    basename(path: string): string;
+    normalize(path: string): string;
+  };
   TTY: any;
   FS: FSType;
   LDSO: LDSO;
