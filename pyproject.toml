@@ -63,7 +63,7 @@ lint.select = [
   "UP",     # pyupgrade
   "W",      # pycodestyles
 ]
-lint.ignore = ["E402", "E501", "E731", "E741", "PLW2901", "UP031"]
+lint.ignore = ["E402", "E501", "E731", "E741", "PLW2901", "UP031", "UP038"]
 lint.flake8-comprehensions.allow-dict-calls-with-keyword-arguments = true
 # line-length = 219  # E501: Recommended goal is 88 to match black
 target-version = "py313"
