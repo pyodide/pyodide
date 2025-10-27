@@ -310,7 +310,7 @@ export class PackageManager {
       }
 
       await Promise.all(
-        Array.from(toLoad.values()).map(({ installPromise }) => installPromise),
+        Array.from(toLoad.values(), ({ installPromise }) => installPromise),
       );
 
       if (loadedPackageData.size > 0) {
