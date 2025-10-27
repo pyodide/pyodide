@@ -1,5 +1,5 @@
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from importlib.abc import Loader, MetaPathFinder
 from importlib.machinery import ModuleSpec
 from importlib.util import spec_from_loader
