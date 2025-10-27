@@ -262,7 +262,7 @@ export interface EmscriptenModule {
     join2(a: string, b: string): string;
     dirname(path: string): string;
     basename(path: string): string;
-    normalize(path:string): string;
+    normalize(path: string): string;
   };
   TTY: any;
   FS: FSType;
