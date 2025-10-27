@@ -81,7 +81,7 @@ export function initializeNativeFS(module: PyodideModule) {
         .map(toAbsolute(mount.mountpoint));
 
       while (check.length) {
-        let path = check.pop();
+        let path = check.pop()!;
         let stat = FS.stat(path);
 
         if (FS.isDir(stat.mode)) {
