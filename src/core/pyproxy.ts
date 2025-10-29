@@ -307,7 +307,8 @@ function pyproxy_new(
 Module.pyproxy_new = pyproxy_new;
 
 function gc_register_proxy(shared: PyProxyShared) {
-  const shared_copy = Object.assign({}, shared);
+  const { ptr, cache } = shared;
+  const shared_copy = { ptr, cache };
   shared.gcRegistered = true;
   Module.finalizationRegistry.register(shared, shared_copy, shared);
 }
@@ -1965,7 +1966,7 @@ export class PyMutableSequenceMethods {
   splice(start: number, deleteCount?: number, ...items: any[]) {
     if (deleteCount === undefined) {
       // Max ssize
-      deleteCount = 1 << (31 - 1);
+      deleteCount = (1 << 31) - 1;
     }
     return python_slice_assign(this, start, start + deleteCount, items);
   }
