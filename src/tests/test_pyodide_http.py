@@ -581,10 +581,10 @@ def test_xhr_not_in_browser(monkeypatch):
     """Test that _xhr_request raises RuntimeError when not in a browser environment."""
     import pytest
 
-    # Mock the IN_BROWSER flag to simulate non-browser environment
+    # Mock the IN_PYODIDE flag to simulate non-browser environment
     import pyodide.http
 
-    monkeypatch.setattr(pyodide.http, "IN_BROWSER", False)
+    monkeypatch.setattr(pyodide.http, "IN_PYODIDE", False)
 
     # Test that _xhr_request raises RuntimeError when called outside browser
     with pytest.raises(
