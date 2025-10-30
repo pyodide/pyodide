@@ -9,9 +9,6 @@ let nextTaskHandle = 0;
 let sharedChannel: MessageChannel | null = null;
 const taskQueue: number[] = [];
 
-const hasPostTask =
-  typeof (globalThis as any).scheduler?.postTask === "function";
-
 /**
  * Setup global message event listener to handle immediate callbacks
  */
@@ -19,6 +16,7 @@ function installPostMessageHandler() {
   if (!RUNTIME_ENV.IN_BROWSER_MAIN_THREAD) {
     return;
   }
+
   const onGlobalMessage = (event: MessageEvent) => {
     if (
       typeof event.data === "string" &&
@@ -28,7 +26,10 @@ function installPostMessageHandler() {
         scheduleCallbackImmediateMessagePrefix.length,
       );
       const task = tasks[handle];
-      if (!task) return;
+      if (!task) {
+        return;
+      }
+
       try {
         task();
       } finally {
@@ -36,8 +37,10 @@ function installPostMessageHandler() {
       }
     }
   };
+
   globalThis.addEventListener("message", onGlobalMessage, false);
 }
+
 installPostMessageHandler();
 
 function ensureSharedChannel() {
@@ -47,6 +50,7 @@ function ensureSharedChannel() {
   if (typeof globalThis.MessageChannel !== "function") return;
 
   sharedChannel = new MessageChannel();
+
   sharedChannel.port1.onmessage = () => {
     // Process tasks that were queued when this message arrived
     const count = taskQueue.length;
@@ -64,6 +68,7 @@ function ensureSharedChannel() {
   // Redundant per spec (onmessage auto-starts the port); kept for clarity and potential edge runtimes.
   sharedChannel.port1.start?.();
 }
+
 ensureSharedChannel();
 
 /**
@@ -106,21 +111,11 @@ function scheduleCallbackImmediate(callback: () => void) {
 
 /**
  * Schedule a callback. Supports both immediate and delayed callbacks.
- *
- * Priority order:
- * 1. scheduler.postTask() - Modern browsers (Chrome 94+, Firefox 142+, not supported in Safari as of 2025-10-14)
- * 2. MessageChannel/setImmediate/postMessage - Fast immediate scheduling
- * 3. setTimeout - Fallback for delayed tasks
- *
  * @param callback The callback to be scheduled
  * @param timeout The delay in milliseconds before the callback is called
  * @hidden
  */
 export function scheduleCallback(callback: () => void, timeout: number = 0) {
-  if (hasPostTask) {
-    (globalThis as any).scheduler.postTask(callback, { delay: timeout });
-    return;
-  }
   if (timeout <= 2) {
     // for a very short delay (0, 1), use immediate callback
     scheduleCallbackImmediate(callback);
