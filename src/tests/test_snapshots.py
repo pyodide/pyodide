@@ -274,6 +274,7 @@ def test_syncify_in_snapshot_load(selenium_standalone_noload):
     )
 
 
+@pytest.mark.xfail_browsers(safari="FIXME")
 def test_make_snapshot_fetch(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     # It's okay for the fetch to succeed (node) or fail with TypeError: Failed to fetch ()

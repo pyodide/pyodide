@@ -372,7 +372,8 @@ def test_install_archive(selenium):
 
 
 @pytest.mark.requires_dynamic_linking
-def test_load_bad_so_file(selenium):
+def test_load_bad_so_file(selenium_standalone):
+    selenium = selenium_standalone
     # If we load a bad so file, it will raise with a message
     with pytest.raises(
         selenium.JavascriptException, match="Failed to load dynamic library /a.so"
@@ -386,7 +387,8 @@ def test_load_bad_so_file(selenium):
 
 
 @pytest.mark.requires_dynamic_linking
-def test_load_dlerror(selenium):
+def test_load_dlerror(selenium_standalone):
+    selenium = selenium_standalone
     so_file_with_link_error = (
         Path(__file__).parent / "test_data" / "dlerror_test" / "main_func.so"
     )
