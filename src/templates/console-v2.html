@@ -134,7 +134,7 @@ of the stable console.
         }
 
         execute(data) {
-          this.context.transitionTo(new ReverseSearchState(this.context));
+          this.context.transitionTo("reverseSearch");
         }
       }
 
@@ -218,8 +218,7 @@ of the stable console.
       // ============================================================================
       class AcceptSearchCommand extends Command {
         async execute(data) {
-          this.context.state.acceptSearch();
-          this.context.transitionTo(new NormalInputState(this.context));
+          this.context.transitionTo("normal");
           this.context.term.write("\r\n");
           await this.context.executeCommand();
           this.context.buffer = "";
@@ -231,7 +230,7 @@ of the stable console.
       class CancelSearchCommand extends Command {
         execute(data) {
           this.context.state.cancelSearch();
-          this.context.transitionTo(new NormalInputState(this.context));
+          this.context.transitionTo("normal");
           this.context.term.write("^C\r\n" + this.context.prompt);
         }
       }
@@ -256,8 +255,7 @@ of the stable console.
 
       class ExitSearchKeepResultCommand extends Command {
         execute(data) {
-          this.context.state.acceptSearch();
-          this.context.transitionTo(new NormalInputState(this.context));
+          this.context.transitionTo("normal");
         }
       }
 
@@ -438,10 +436,6 @@ of the stable console.
           }
         }
 
-        acceptSearch() {
-          // Keep current buffer (already set from search)
-        }
-
         cancelSearch() {
           this.context.buffer = this.savedBuffer;
           this.context.cursorIndex = this.savedBuffer.length;
@@ -587,7 +581,12 @@ of the stable console.
           this.historyIndex = null;
 
           this.historyManager = new HistoryManager();
-          this.state = new NormalInputState(this);
+
+          this.states = {
+            normal: new NormalInputState(this),
+            reverseSearch: new ReverseSearchState(this),
+          };
+          this.state = this.states.normal;
 
           this.pyconsole.stdout_callback = (s) => this.term.write(s);
           this.pyconsole.stderr_callback = (s) =>
@@ -596,9 +595,9 @@ of the stable console.
           this.term.write(this.prompt);
         }
 
-        transitionTo(newState) {
+        transitionTo(stateName) {
           this.state.exit();
-          this.state = newState;
+          this.state = this.states[stateName];
           this.state.enter();
         }
 
