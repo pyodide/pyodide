@@ -224,13 +224,13 @@ pyodide_build .pyodide_build_installed:
 # Recursive wildcard
 rwildcard=$(wildcard $1) $(foreach d,$1,$(call rwildcard,$(addsuffix /$(notdir $d),$(wildcard $(dir $d)*))))
 
-dist: 
+dist:
 	[ -d dist ] || mkdir dist
 
 dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB) .pyodide_build_installed
 	pyodide create-zipfile $(CPYTHONLIB) src/py --exclude "$(PYZIP_EXCLUDE_FILES)" --stub "$(PYZIP_JS_STUBS)" --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
-dist/test.html: src/templates/test.html dist 
+dist/test.html: src/templates/test.html dist
 	cp $< $@
 
 dist/makesnap.mjs: src/templates/makesnap.mjs dist
