@@ -171,7 +171,7 @@ jobs:
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           ccache -z
-          PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make
+          PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make -j${{ env.PYODIDE_JOBS }}
           ccache -s
 
       - name: check-size
