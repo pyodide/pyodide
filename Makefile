@@ -168,7 +168,7 @@ dist/pyodide.js:                             \
 src/core/stack_switching/stack_switching.out.js: src/core/stack_switching/*.mjs node_modules/.installed
 	node src/core/stack_switching/esbuild.config.mjs
 
-dist/package.json: dist/pyodide.asm.js src/js/package.json
+dist/package.json: src/js/package.json dist
 	cp $< $@
 
 .PHONY: npm-link
@@ -249,7 +249,7 @@ dist/python_cli_entry.mjs: src/templates/python_cli_entry.mjs dist
 	cp $< $@
 
 
-.PHONY: dist/console.html  dist/console-v2.html
+.PHONY: dist/console.html dist/console-v2.html
 dist/console.html: src/templates/console.html dist
 	cp $< $@
 	$(SED) -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
