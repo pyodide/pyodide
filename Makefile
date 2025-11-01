@@ -2,7 +2,7 @@ PYODIDE_ROOT=$(abspath .)
 
 include Makefile.envs
 
-.PHONY: check
+.PHONY: check check-emcc
 
 CC=emcc
 CXX=em++
@@ -17,7 +17,7 @@ all: \
 
 all-but-packages: \
 	check \
-	emsdk/emsdk/.prepare \
+	check-emcc \
 	$(CPYTHONINSTALL)/.installed-pyodide \
 	dist/pyodide.asm.js \
 	dist/pyodide.js \
@@ -65,10 +65,10 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 
 # Don't use ccache here because it does not support #embed properly.
 # https://github.com/ccache/ccache/discussions/1366
-src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat emsdk/emsdk/.prepare
+src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat emsdk/emsdk/.complete
 	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
-src/core/sentinel.wasm: src/core/sentinel.wat emsdk/emsdk/.prepare
+src/core/sentinel.wasm: src/core/sentinel.wat emsdk/emsdk/.complete
 	./emsdk/emsdk/upstream/bin/wasm-as $< -o $@ -all
 
 src/core/libpyodide.a: \
@@ -283,7 +283,7 @@ benchmark: all
 
 
 clean:
-	rm -fr dist/*
+	rm -fr dist
 	rm -fr node_modules
 	find src -name '*.o' -delete
 	find src -name '*.wasm' -delete
@@ -304,7 +304,7 @@ clean-all: clean
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
-$(CPYTHONLIB): emsdk/emsdk/.prepare
+$(CPYTHONLIB): emsdk/emsdk/.complete
 	@date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	@date +"[%F %T] done building cpython..."
@@ -330,11 +330,8 @@ rust:
 check:
 	@./tools/dependency-check.sh
 
-# To guarantee the emsdk is built correctly, also to check emcc work properly whether emsdk already built or not.
-emsdk/emsdk/.prepare: emsdk/emsdk/.complete
+check-emcc: emsdk/emsdk/.complete
 	@python3 tools/check_ccache.py
-	touch $@
-
 
 debug:
 	EXTRA_CFLAGS+=" -D DEBUG_F" \
