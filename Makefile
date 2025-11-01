@@ -17,7 +17,7 @@ all: \
 
 all-but-packages: \
 	check \
-	emsdk/emsdk/.prepared \
+	emsdk/emsdk/.prepare \
 	$(CPYTHONINSTALL)/.installed-pyodide \
 	dist/pyodide.asm.js \
 	dist/pyodide.js \
@@ -65,10 +65,10 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 
 # Don't use ccache here because it does not support #embed properly.
 # https://github.com/ccache/ccache/discussions/1366
-src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat emsdk/emsdk/.complete
+src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat emsdk/emsdk/.prepare
 	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
-src/core/sentinel.wasm: src/core/sentinel.wat emsdk/emsdk/.complete
+src/core/sentinel.wasm: src/core/sentinel.wat emsdk/emsdk/.prepare
 	./emsdk/emsdk/upstream/bin/wasm-as $< -o $@ -all
 
 src/core/libpyodide.a: \
@@ -302,7 +302,7 @@ clean-all: clean
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
-$(CPYTHONLIB): emsdk/emsdk/.prepared
+$(CPYTHONLIB): emsdk/emsdk/.prepare
 	@date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	@date +"[%F %T] done building cpython..."
@@ -329,7 +329,7 @@ check:
 	@./tools/dependency-check.sh
 
 
-emsdk/emsdk/.prepared: emsdk/emsdk/.complete
+emsdk/emsdk/.prepare: emsdk/emsdk/.complete
 	@python3 tools/check_ccache.py
 	touch $@
 
