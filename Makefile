@@ -105,13 +105,13 @@ $(CPYTHONINSTALL)/.installed-pyodide: $(CPYTHONINSTALL)/include/pyodide/.install
 	touch $@
 
 dist/pyodide.asm.js: \
+	dist \
 	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB) \
 	$(CPYTHONINSTALL)/.installed-pyodide
 
 	@date +"[%F %T] Building pyodide.asm.js..."
-	[ -d dist ] || mkdir dist
    # TODO(ryanking13): Link libgl to a side module not to the main module.
    # For unknown reason, a side module cannot see symbols when libGL is linked to it.
 	embuilder build libgl
@@ -168,7 +168,7 @@ dist/pyodide.js:                             \
 src/core/stack_switching/stack_switching.out.js: src/core/stack_switching/*.mjs node_modules/.installed
 	node src/core/stack_switching/esbuild.config.mjs
 
-dist/package.json: src/js/package.json
+dist/package.json: dist/pyodide.asm.js src/js/package.json
 	cp $< $@
 
 .PHONY: npm-link
@@ -224,35 +224,37 @@ pyodide_build .pyodide_build_installed:
 # Recursive wildcard
 rwildcard=$(wildcard $1) $(foreach d,$1,$(call rwildcard,$(addsuffix /$(notdir $d),$(wildcard $(dir $d)*))))
 
+dist: 
+	[ -d dist ] || mkdir dist
+
 dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB) .pyodide_build_installed
 	pyodide create-zipfile $(CPYTHONLIB) src/py --exclude "$(PYZIP_EXCLUDE_FILES)" --stub "$(PYZIP_JS_STUBS)" --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
-dist/test.html: src/templates/test.html
+dist/test.html: src/templates/test.html dist 
 	cp $< $@
 
-dist/makesnap.mjs: src/templates/makesnap.mjs
+dist/makesnap.mjs: src/templates/makesnap.mjs dist
 	cp $< $@
 
 dist/snapshot.bin: all-but-packages dist/pyodide-lock.json dist/makesnap.mjs
 	cd dist && node --experimental-wasm-stack-switching makesnap.mjs
 
-dist/module_test.html: src/templates/module_test.html
+dist/module_test.html: src/templates/module_test.html dist
 	cp $< $@
 
-dist/python: src/templates/python
+dist/python: src/templates/python dist
 	cp $< $@
 
-dist/python_cli_entry.mjs: src/templates/python_cli_entry.mjs
+dist/python_cli_entry.mjs: src/templates/python_cli_entry.mjs dist
 	cp $< $@
 
 
-.PHONY: dist/console.html
-dist/console.html: src/templates/console.html
+.PHONY: dist/console.html  dist/console-v2.html
+dist/console.html: src/templates/console.html dist
 	cp $< $@
 	$(SED) -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
-.PHONY: dist/console-v2.html
-dist/console-v2.html: src/templates/console-v2.html
+dist/console-v2.html: src/templates/console-v2.html dist
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
@@ -328,7 +330,7 @@ rust:
 check:
 	@./tools/dependency-check.sh
 
-
+# To guarantee the emsdk is built correctly, also to check emcc work properly whether emsdk already built or not.
 emsdk/emsdk/.prepare: emsdk/emsdk/.complete
 	@python3 tools/check_ccache.py
 	touch $@
