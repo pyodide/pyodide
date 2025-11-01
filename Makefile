@@ -302,7 +302,7 @@ clean-all: clean
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
-$(CPYTHONLIB): emsdk/emsdk/.prepared 
+$(CPYTHONLIB): emsdk/emsdk/.prepared
 	@date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	@date +"[%F %T] done building cpython..."
