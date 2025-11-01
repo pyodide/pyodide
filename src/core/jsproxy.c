@@ -3264,6 +3264,7 @@ static PyTypeObject JsProxyType = {
   .tp_name = "pyodide.ffi.JsProxy",
   .tp_basicsize = sizeof(JsProxy),
   .tp_dealloc = (destructor)JsProxy_dealloc,
+  .tp_clear = (destructor)JsProxy_Clear,
   .tp_getattro = JsProxy_GetAttr,
   .tp_setattro = JsProxy_SetAttr,
   .tp_richcompare = JsProxy_RichCompare,
