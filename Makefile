@@ -2,7 +2,7 @@ PYODIDE_ROOT=$(abspath .)
 
 include Makefile.envs
 
-.PHONY: check check-emcc
+.PHONY: check
 
 CC=emcc
 CXX=em++
@@ -17,7 +17,7 @@ all: \
 
 all-but-packages: \
 	check \
-	check-emcc \
+	emsdk/emsdk/.prepared \
 	$(CPYTHONINSTALL)/.installed-pyodide \
 	dist/pyodide.asm.js \
 	dist/pyodide.js \
@@ -302,7 +302,7 @@ clean-all: clean
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
-$(CPYTHONLIB): emsdk/emsdk/.complete
+$(CPYTHONLIB): emsdk/emsdk/.prepared 
 	@date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	@date +"[%F %T] done building cpython..."
@@ -329,8 +329,9 @@ check:
 	@./tools/dependency-check.sh
 
 
-check-emcc: emsdk/emsdk/.complete
+emsdk/emsdk/.prepared: emsdk/emsdk/.complete
 	@python3 tools/check_ccache.py
+	touch $@
 
 
 debug:
