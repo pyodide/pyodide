@@ -411,7 +411,10 @@ of the stable console.
         }
 
         enter() {
+          this.savedBuffer = this.context.buffer;
           this.context.buffer = "";
+          this.query = "";
+          this.index = -1;
           this.context.cursorIndex = 0;
           this.updateDisplay();
         }
