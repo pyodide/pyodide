@@ -227,11 +227,21 @@ of the stable console.
         }
       }
 
+      class CancelSearchWithInterruptCommand extends Command {
+        execute(data) {
+          this.context.state.cancelSearch();
+          this.context.transitionTo("normal");
+          this.context.term.write(
+            "\r\nKeyboardInterrupt\r\n" + this.context.prompt
+          );
+        }
+      }
+
       class CancelSearchCommand extends Command {
         execute(data) {
           this.context.state.cancelSearch();
           this.context.transitionTo("normal");
-          this.context.term.write("^C\r\n" + this.context.prompt);
+          this.context.term.write("");
         }
       }
 
@@ -256,6 +266,8 @@ of the stable console.
       class ExitSearchKeepResultCommand extends Command {
         execute(data) {
           this.context.transitionTo("normal");
+          // Clear the search line and refresh with normal prompt
+          this.context.refreshLine();
         }
       }
 
@@ -313,7 +325,10 @@ of the stable console.
 
         setupCommands() {
           this.commands.set("\r", new AcceptSearchCommand(this.context)); // Enter key
-          this.commands.set("\u0003", new CancelSearchCommand(this.context)); // Ctrl+C
+          this.commands.set(
+            "\u0003",
+            new CancelSearchWithInterruptCommand(this.context)
+          ); // Ctrl+C
           this.commands.set("\u0007", new CancelSearchCommand(this.context)); // Ctrl+G
           this.commands.set("\u0012", new NextSearchMatchCommand(this.context)); // Ctrl+R
           this.commands.set("\u007F", new SearchBackspaceCommand(this.context)); // Backspace
@@ -333,6 +348,10 @@ of the stable console.
             "\x1B[D",
             new ExitSearchKeepResultCommand(this.context)
           ); // Left arrow
+          this.commands.set(
+            "\x09",
+            new ExitSearchKeepResultCommand(this.context)
+          ); // Tab key
           this.commands.set("default", new AddSearchCharCommand(this.context));
         }
 
