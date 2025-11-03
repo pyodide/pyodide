@@ -234,6 +234,7 @@ of the stable console.
           this.context.term.write(
             "\r\nKeyboardInterrupt\r\n" + this.context.prompt
           );
+          this.context.refreshLine();
         }
       }
 
@@ -241,7 +242,7 @@ of the stable console.
         execute(data) {
           this.context.state.cancelSearch();
           this.context.transitionTo("normal");
-          this.context.term.write("");
+          this.context.refreshLine();
         }
       }
 
@@ -267,6 +268,7 @@ of the stable console.
         execute(data) {
           this.context.transitionTo("normal");
           // Clear the search line and refresh with normal prompt
+          this.context.term.write("\r\x1b[K");
           this.context.refreshLine();
         }
       }
@@ -412,7 +414,6 @@ of the stable console.
 
         enter() {
           this.savedBuffer = this.context.buffer;
-          this.context.buffer = "";
           this.query = "";
           this.index = -1;
           this.context.cursorIndex = 0;
@@ -465,7 +466,7 @@ of the stable console.
 
         updateDisplay() {
           const searchPrompt = `(reverse-i-search)\`${this.query}': `;
-          let displayText = "";
+          let displayText = this.context.buffer;
           if (this.index >= 0) {
             displayText = this.context.history[this.index];
           }
