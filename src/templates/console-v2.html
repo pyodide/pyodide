@@ -275,6 +275,13 @@ of the stable console.
           refreshLine();
         }
 
+        function applyReverseSearchSelection() {
+          if (reverseSearchIndex >= 0) {
+            buffer = history[reverseSearchIndex];
+            cursorIndex = buffer.length;
+          }
+        }
+
         function updateReverseSearchDisplay() {
           const searchPrompt = `(reverse-i-search)\`${reverseSearchQuery}': `;
           let displayText = "";
@@ -288,10 +295,7 @@ of the stable console.
         function reverseSearchAddChar(char) {
           reverseSearchQuery += char;
           reverseSearchIndex = searchHistory(reverseSearchQuery);
-          if (reverseSearchIndex >= 0) {
-            buffer = history[reverseSearchIndex];
-            cursorIndex = buffer.length;
-          }
+          applyReverseSearchSelection();
           updateReverseSearchDisplay();
         }
 
@@ -300,10 +304,7 @@ of the stable console.
             reverseSearchQuery = reverseSearchQuery.slice(0, -1);
             if (reverseSearchQuery) {
               reverseSearchIndex = searchHistory(reverseSearchQuery);
-              if (reverseSearchIndex >= 0) {
-                buffer = history[reverseSearchIndex];
-                cursorIndex = buffer.length;
-              }
+              applyReverseSearchSelection();
             } else {
               reverseSearchIndex = -1;
               buffer = "";
@@ -319,10 +320,7 @@ of the stable console.
               reverseSearchQuery,
               reverseSearchIndex - 1
             );
-            if (reverseSearchIndex >= 0) {
-              buffer = history[reverseSearchIndex];
-              cursorIndex = buffer.length;
-            }
+            applyReverseSearchSelection();
             updateReverseSearchDisplay();
           }
         }
@@ -419,7 +417,7 @@ of the stable console.
                 break;
               default:
                 // Add printable characters to search query
-                if (data && data.length === 1 && data >= " " && data <= "~") {
+                if (data && data.length === 1) {
                   reverseSearchAddChar(data);
                 }
             }
@@ -444,7 +442,7 @@ of the stable console.
               historyIndex = null;
               break;
             case "\u0012": // Ctrl-R - enter reverse search mode
-              if (prompt === ps1 && history.length > 0) {
+              if (prompt === ps1) {
                 enterReverseSearchMode();
               }
               break;
