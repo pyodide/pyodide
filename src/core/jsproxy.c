@@ -57,7 +57,7 @@
 #define IS_BUFFER          (1 << 8)
 #define IS_CALLABLE        (1 << 9)
 #define IS_ARRAY           (1 << 10)
-#define IS_NODE_LIST       (1 << 11)
+#define IS_ARRAY_LIKE        (1 << 11)
 #define IS_TYPEDARRAY      (1 << 12)
 #define IS_DOUBLE_PROXY    (1 << 13)
 #define IS_OBJECT_MAP      (1 << 14)
@@ -275,7 +275,7 @@ js2python_as_py_json(JsVal jsval)
 }
 
 #define INCLUDE_OBJMAP_METHODS(flags)                                          \
-  !((flags) & (IS_ARRAY | IS_TYPEDARRAY | IS_NODE_LIST | IS_BUFFER |           \
+  !((flags) & (IS_ARRAY | IS_TYPEDARRAY | IS_ARRAY_LIKE | IS_BUFFER |            \
                IS_DOUBLE_PROXY | IS_ITERATOR | IS_CALLABLE | IS_ERROR))
 
 static int
@@ -1699,16 +1699,16 @@ JsTypedArray_subscript(PyObject* o, PyObject* item)
 }
 
 /**
- * __getitem__ for proxies of HTMLCollection or NodeList, controlled by
- * IS_NODE_LIST
+ * __getitem__ for proxies of array-like objects like HTMLCollection or
+ * NodeList, controlled by IS_ARRAY_LIKE
  */
 static PyObject*
-JsNodeList_subscript(PyObject* o, PyObject* item)
+JsArrayLike_subscript(PyObject* o, PyObject* item)
 {
   if (PySlice_Check(item)) {
     PyErr_SetString(
       PyExc_NotImplementedError,
-      "Slice subscripting isn't implemented for HTMLCollection or NodeList");
+      "Slice subscripting is only implemented for arrays, not for array-like objects");
     return NULL;
   }
   return JsArray_subscript(o, item);
@@ -3100,7 +3100,7 @@ static PyObject*
 JsProxy_as_py_json(PyObject* self, PyObject* _unused)
 {
   int flags = JsProxy_getflags(self);
-  if (flags & (IS_ARRAY | IS_NODE_LIST)) {
+  if (flags & (IS_ARRAY | IS_ARRAY_LIKE)) {
     flags |= IS_PY_JSON_SEQUENCE;
   } else {
     flags |= IS_PY_JSON_DICT;
@@ -4103,7 +4103,7 @@ skip_container_slots:
     };
   }
   if (flags & IS_ARRAY) {
-    // If the object is an array (or a HTMLCollection or NodeList), then we want
+    // If the object is an array (or an array like), then we want
     // subscripting `proxy[idx]` to go to `jsobj[idx]` instead of
     // `jsobj.get(idx)`. Hopefully anyone else who defines a custom array object
     // will subclass Array.
@@ -4158,9 +4158,9 @@ skip_container_slots:
     methods[cur_method++] = JsArray_reversed_MethodDef;
     methods[cur_method++] = JsArray_reverse_MethodDef;
   }
-  if (flags & IS_NODE_LIST) {
+  if (flags & IS_ARRAY_LIKE) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
-                                       .pfunc = (void*)JsNodeList_subscript };
+                                       .pfunc = (void*)JsArrayLike_subscript };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_sq_length, .pfunc = (void*)JsProxy_length };
     slots[cur_slot++] =
@@ -4186,7 +4186,7 @@ skip_container_slots:
     methods[cur_method++] = JsProxy_as_object_map_MethodDef;
     methods[cur_method++] = JsProxy_as_py_json_MethodDef;
   }
-  if (flags & (IS_ARRAY | IS_NODE_LIST)) {
+  if (flags & (IS_ARRAY | IS_ARRAY_LIKE)) {
     methods[cur_method++] = JsProxy_as_py_json_MethodDef;
   }
   if (flags & IS_ERROR) {
@@ -4292,7 +4292,7 @@ skip_container_slots:
   PyObject* abc = NULL;
   if (flags & (IS_ARRAY | IS_TYPEDARRAY)) {
     abc = MutableSequence;
-  } else if (flags & IS_NODE_LIST) {
+  } else if (flags & IS_ARRAY_LIKE) {
     abc = Sequence;
   } else if (mutable_mapping) {
     abc = MutableMapping;
@@ -4379,6 +4379,7 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
   const isBufferView = safeBool(() => ArrayBuffer.isView(obj));
   const isArray = safeBool(() => Array.isArray(obj));
   const constructorName = safeBool(() => obj.constructor.name) || "";
+  const hasLength = isArray || (hasProperty(obj, "length") && typeof obj !== "function");
 
   // If we somehow set more than one of IS_CALLABLE, IS_BUFFER, and IS_ERROR,
   // we'll run into trouble. I think that for this to happen, someone would have
@@ -4390,9 +4391,7 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
   SET_FLAG_IF_HAS_METHOD(IS_ASYNC_ITERABLE, Symbol.asyncIterator);
   SET_FLAG_IF(IS_ITERATOR, hasMethod(obj, "next") && (hasMethod(obj, Symbol.iterator) || !hasMethod(obj, Symbol.asyncIterator)));
   SET_FLAG_IF(IS_ASYNC_ITERATOR, hasMethod(obj, "next") && (!hasMethod(obj, Symbol.iterator) || hasMethod(obj, Symbol.asyncIterator)));
-  SET_FLAG_IF(HAS_LENGTH,
-    (hasProperty(obj, "size")) ||
-    (hasProperty(obj, "length") && typeof obj !== "function"));
+  SET_FLAG_IF(HAS_LENGTH, (hasLength || hasProperty(obj, "size")));
   SET_FLAG_IF_HAS_METHOD(HAS_GET, "get");
   SET_FLAG_IF_HAS_METHOD(HAS_SET, "set");
   SET_FLAG_IF_HAS_METHOD(HAS_HAS, "has");
@@ -4401,10 +4400,7 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
               (isBufferView || (typeTag === '[object ArrayBuffer]')) && !(type_flags & IS_CALLABLE));
   SET_FLAG_IF(IS_DOUBLE_PROXY, API.isPyProxy(obj));
   SET_FLAG_IF(IS_ARRAY, isArray);
-  SET_FLAG_IF(IS_NODE_LIST,
-              typeTag === "[object HTMLCollection]" ||
-              typeTag === "[object NodeList]" ||
-              typeTag === "[object FileList]");
+  SET_FLAG_IF(IS_ARRAY_LIKE, !isArray && hasLength && (flags & IS_ITERABLE));
   SET_FLAG_IF(IS_TYPEDARRAY,
               isBufferView && typeTag !== '[object DataView]');
   SET_FLAG_IF(IS_GENERATOR, typeTag === "[object Generator]");
