@@ -4403,7 +4403,8 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
   SET_FLAG_IF(IS_ARRAY, isArray);
   SET_FLAG_IF(IS_NODE_LIST,
               typeTag === "[object HTMLCollection]" ||
-              typeTag === "[object NodeList]");
+              typeTag === "[object NodeList]" ||
+              typeTag === "[object FileList]");
   SET_FLAG_IF(IS_TYPEDARRAY,
               isBufferView && typeTag !== '[object DataView]');
   SET_FLAG_IF(IS_GENERATOR, typeTag === "[object Generator]");
