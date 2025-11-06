@@ -275,7 +275,7 @@ js2python_as_py_json(JsVal jsval)
 }
 
 #define INCLUDE_OBJMAP_METHODS(flags)                                          \
-  !((flags) & (IS_ARRAY | IS_TYPEDARRAY | IS_ARRAY_LIKE | IS_BUFFER |            \
+  !((flags) & (IS_ARRAY | IS_TYPEDARRAY | IS_ARRAY_LIKE | IS_BUFFER |          \
                IS_DOUBLE_PROXY | IS_ITERATOR | IS_CALLABLE | IS_ERROR))
 
 static int
@@ -1706,9 +1706,9 @@ static PyObject*
 JsArrayLike_subscript(PyObject* o, PyObject* item)
 {
   if (PySlice_Check(item)) {
-    PyErr_SetString(
-      PyExc_NotImplementedError,
-      "Slice subscripting is only implemented for arrays, not for array-like objects");
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Slice subscripting is only implemented for arrays, not "
+                    "for array-like objects");
     return NULL;
   }
   return JsArray_subscript(o, item);
