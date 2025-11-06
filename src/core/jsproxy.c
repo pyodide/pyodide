@@ -57,7 +57,7 @@
 #define IS_BUFFER          (1 << 8)
 #define IS_CALLABLE        (1 << 9)
 #define IS_ARRAY           (1 << 10)
-#define IS_ARRAY_LIKE        (1 << 11)
+#define IS_ARRAY_LIKE      (1 << 11)
 #define IS_TYPEDARRAY      (1 << 12)
 #define IS_DOUBLE_PROXY    (1 << 13)
 #define IS_OBJECT_MAP      (1 << 14)
