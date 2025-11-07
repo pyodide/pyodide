@@ -4428,7 +4428,7 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
       )
     ) && !(type_flags & (IS_CALLABLE | IS_BUFFER)));
 
-  if (is_py_json && (type_flags & (IS_ARRAY | IS_NODE_LIST | IS_ITERATOR))) {
+  if (is_py_json && (type_flags & (IS_ARRAY | IS_ARRAY_LIKE | IS_ITERATOR))) {
     // tagging IS_PY_JSON_SEQUENCE on IS_ITERATOR is a bit of a hack
     type_flags |= IS_PY_JSON_SEQUENCE;
   }
@@ -4789,7 +4789,7 @@ jsproxy_init(PyObject* core_module)
   AddFlag(IS_BUFFER);
   AddFlag(IS_CALLABLE);
   AddFlag(IS_ARRAY);
-  AddFlag(IS_NODE_LIST);
+  AddFlag(IS_ARRAY_LIKE);
   AddFlag(IS_TYPEDARRAY);
   AddFlag(IS_DOUBLE_PROXY);
   AddFlag(IS_OBJECT_MAP);
