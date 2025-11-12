@@ -1,7 +1,7 @@
 from io import StringIO
 
 # Keep open_url in __init__ for now, will be moved to pyxhr.py later
-from ..ffi import IN_BROWSER
+from ..ffi import IN_PYODIDE
 from ._exceptions import (
     AbortError,
     BodyUsedError,
@@ -9,7 +9,7 @@ from ._exceptions import (
 )
 from ._pyfetch import FetchResponse, pyfetch
 
-if IN_BROWSER:
+if IN_PYODIDE:
     try:
         from js import XMLHttpRequest
     except ImportError:

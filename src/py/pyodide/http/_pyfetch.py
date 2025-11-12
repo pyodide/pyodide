@@ -9,14 +9,14 @@ from functools import wraps
 from typing import IO, TYPE_CHECKING, Any, ParamSpec, TypeVar
 
 from .._package_loader import unpack_buffer
-from ..ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
+from ..ffi import IN_PYODIDE, JsBuffer, JsException, JsFetchResponse, to_js
 from ._exceptions import (
     AbortError,
     BodyUsedError,
     HttpStatusError,
 )
 
-if IN_BROWSER or TYPE_CHECKING:
+if IN_PYODIDE or TYPE_CHECKING:
     try:
         from js import AbortController, AbortSignal, Object, Request
         from js import fetch as _jsfetch

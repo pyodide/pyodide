@@ -1,3 +1,3 @@
-from .ffi import IN_BROWSER
+from .ffi import IN_PYODIDE
 
-__all__ = ["IN_BROWSER"]
+__all__ = ["IN_PYODIDE"]
