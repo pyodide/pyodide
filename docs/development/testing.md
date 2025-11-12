@@ -60,7 +60,7 @@ possible to disable these checks with these markers.
 
 ### Running the JavaScript test suite
 
-To run tests on the JavaScript Pyodide package using Mocha, run the following
+To run tests on the JavaScript Pyodide package, run the following
 commands,
 
 ```sh
