@@ -4400,7 +4400,7 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
               (isBufferView || (typeTag === '[object ArrayBuffer]')) && !(type_flags & IS_CALLABLE));
   SET_FLAG_IF(IS_DOUBLE_PROXY, API.isPyProxy(obj));
   SET_FLAG_IF(IS_ARRAY, isArray);
-  SET_FLAG_IF(IS_ARRAY_LIKE, !isArray && hasLength && (flags & IS_ITERABLE));
+  SET_FLAG_IF(IS_ARRAY_LIKE, !isArray && hasLength && (type_flags & IS_ITERABLE));
   SET_FLAG_IF(IS_TYPEDARRAY,
               isBufferView && typeTag !== '[object DataView]');
   SET_FLAG_IF(IS_GENERATOR, typeTag === "[object Generator]");
