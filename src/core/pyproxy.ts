@@ -307,7 +307,11 @@ function pyproxy_new(
 Module.pyproxy_new = pyproxy_new;
 
 function gc_register_proxy(shared: PyProxyShared) {
-  const shared_copy = Object.assign({}, shared);
+  // Originally this said shared_copy = Object.assign({}, shared) but this
+  // version is 100 times faster. Bizarrely, that call to Object.assign
+  // accounted for over 20% of PyProxy creation time.
+  const { ptr, cache } = shared;
+  const shared_copy = { ptr, cache };
   shared.gcRegistered = true;
   Module.finalizationRegistry.register(shared, shared_copy, shared);
 }
