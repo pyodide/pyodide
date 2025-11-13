@@ -1969,7 +1969,7 @@ export class PyMutableSequenceMethods {
   splice(start: number, deleteCount?: number, ...items: any[]) {
     if (deleteCount === undefined) {
       // Max ssize
-      deleteCount = ~(1 << 31);
+      deleteCount = 1 << (31 - 1);
     }
     return python_slice_assign(this, start, start + deleteCount, items);
   }
