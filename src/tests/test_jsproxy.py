@@ -852,21 +852,25 @@ def test_mixins_feature_presence(selenium):
                     if actual_val != expected_val:
                         console.log(obj)
                         console.log(key)
+                        console.log(expected_val)
                         console.log(actual_val)
                         assert False
             test_object
         `);
 
-        for(let flags = 0; flags < (1 << fields.length); flags ++){
+        for (let flags = 0; flags < (1 << fields.length); flags ++) {
             let o = {};
             let keys_expected = {};
-            for(let [idx, [obj, ...keys]] of fields.entries()){
-                if(flags & (1<<idx)){
+            for (let [idx, [obj, ...keys]] of fields.entries()) {
+                if (flags & (1<<idx)) {
                     Object.assign(o, obj);
                 }
-                for(let key of keys){
+                for (let key of keys) {
                     keys_expected[key] = keys_expected[key] || !!(flags & (1<<idx));
                 }
+            }
+            if (keys_expected["__len__"] && keys_expected["__iter__"] && !keys_expected["__next__"]) {
+                keys_expected["__getitem__"] = true;
             }
             test_object(o, keys_expected);
         }
@@ -1324,11 +1328,9 @@ def test_very_large_length(selenium, n):
     with raises:
         len(o)
 
-    # 1. Set toStringTag to NodeList to force JsProxy to feature detect this object
-    # as an array
-    # 2. Return a very large length
-    # 3. JsProxy_subscript_array should successfully handle this and propagate the error.
-    a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
+    # Return a very large length. JsProxy_subscript_array should successfully
+    # handle this and propagate the error.
+    a = run_js(f"({{[Symbol.iterator](){{}}, length: {n}}})")
     with raises:
         a[-1]
 
@@ -1350,11 +1352,9 @@ def test_negative_length(selenium, n):
     with raises:
         len(o)
 
-    # 1. Set toStringTag to NodeList to force JsProxy to feature detect this object
-    # as an array
-    # 2. Return a negative length
-    # 3. JsProxy_subscript_array should successfully handle this and propagate the error.
-    a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
+    # Return a negative length. JsProxy_subscript_array should successfully
+    # handle this and propagate the error.
+    a = run_js(f"({{[Symbol.iterator](){{}}, length: {n}}})")
     with raises:
         a[-1]
 

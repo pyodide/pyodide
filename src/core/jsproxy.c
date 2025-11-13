@@ -4357,9 +4357,9 @@ finally:
 #define SET_FLAG_IF_HAS_METHOD(flag, meth)                                     \
   SET_FLAG_IF(flag, hasMethod(obj, meth))
 
+// clang-format off
 EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
   let type_flags = 0;
-  // clang-format off
   if (API.isPyProxy(obj) && !pyproxyIsAlive(obj)) {
     return 0;
   }
@@ -4372,14 +4372,15 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
   function safeBool(cb) {
     try {
       return cb();
-    } catch(e) {
+    } catch (e) {
       return false;
     }
   }
   const isBufferView = safeBool(() => ArrayBuffer.isView(obj));
   const isArray = safeBool(() => Array.isArray(obj));
   const constructorName = safeBool(() => obj.constructor.name) || "";
-  const hasLength = isArray || (hasProperty(obj, "length") && typeof obj !== "function");
+  const hasLength =
+    isArray || (hasProperty(obj, "length") && typeof obj !== "function");
 
   // If we somehow set more than one of IS_CALLABLE, IS_BUFFER, and IS_ERROR,
   // we'll run into trouble. I think that for this to happen, someone would have
@@ -4389,20 +4390,36 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
   SET_FLAG_IF_HAS_METHOD(IS_AWAITABLE, "then");
   SET_FLAG_IF_HAS_METHOD(IS_ITERABLE, Symbol.iterator);
   SET_FLAG_IF_HAS_METHOD(IS_ASYNC_ITERABLE, Symbol.asyncIterator);
-  SET_FLAG_IF(IS_ITERATOR, hasMethod(obj, "next") && (hasMethod(obj, Symbol.iterator) || !hasMethod(obj, Symbol.asyncIterator)));
-  SET_FLAG_IF(IS_ASYNC_ITERATOR, hasMethod(obj, "next") && (!hasMethod(obj, Symbol.iterator) || hasMethod(obj, Symbol.asyncIterator)));
-  SET_FLAG_IF(HAS_LENGTH, (hasLength || hasProperty(obj, "size")));
+  SET_FLAG_IF(
+    IS_ITERATOR,
+    hasMethod(obj, "next") &&
+      (hasMethod(obj, Symbol.iterator) || !hasMethod(obj, Symbol.asyncIterator))
+  );
+  SET_FLAG_IF(
+    IS_ASYNC_ITERATOR,
+    hasMethod(obj, "next") &&
+      (!hasMethod(obj, Symbol.iterator) || hasMethod(obj, Symbol.asyncIterator))
+  );
+  SET_FLAG_IF(HAS_LENGTH, hasLength || hasProperty(obj, "size"));
   SET_FLAG_IF_HAS_METHOD(HAS_GET, "get");
   SET_FLAG_IF_HAS_METHOD(HAS_SET, "set");
   SET_FLAG_IF_HAS_METHOD(HAS_HAS, "has");
   SET_FLAG_IF_HAS_METHOD(HAS_INCLUDES, "includes");
-  SET_FLAG_IF(IS_BUFFER,
-              (isBufferView || (typeTag === '[object ArrayBuffer]')) && !(type_flags & IS_CALLABLE));
+  SET_FLAG_IF(
+    IS_BUFFER,
+    (isBufferView || typeTag === "[object ArrayBuffer]") &&
+      !(type_flags & IS_CALLABLE)
+  );
   SET_FLAG_IF(IS_DOUBLE_PROXY, API.isPyProxy(obj));
   SET_FLAG_IF(IS_ARRAY, isArray);
-  SET_FLAG_IF(IS_ARRAY_LIKE, !isArray && hasLength && (type_flags & IS_ITERABLE));
-  SET_FLAG_IF(IS_TYPEDARRAY,
-              isBufferView && typeTag !== '[object DataView]');
+  SET_FLAG_IF(IS_TYPEDARRAY, isBufferView && typeTag !== "[object DataView]");
+  SET_FLAG_IF(
+    IS_ARRAY_LIKE,
+    !isArray &&
+      hasLength &&
+      type_flags & IS_ITERABLE &&
+      !(type_flags & (IS_ITERATOR | IS_TYPEDARRAY))
+  );
   SET_FLAG_IF(IS_GENERATOR, typeTag === "[object Generator]");
   SET_FLAG_IF(IS_ASYNC_GENERATOR, typeTag === "[object AsyncGenerator]");
 
@@ -4418,26 +4435,24 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
    * Firefox respects this and has DOMException.stack. But Safari and Chrome do
    * not. Hence the special check here for DOMException.
    */
-  SET_FLAG_IF(IS_ERROR,
-    (
-      hasProperty(obj, "name")
-      && hasProperty(obj, "message")
-      && (
-        hasProperty(obj, "stack")
-        || constructorName === "DOMException"
-      )
-    ) && !(type_flags & (IS_CALLABLE | IS_BUFFER)));
+  SET_FLAG_IF(
+    IS_ERROR,
+    hasProperty(obj, "name") &&
+      hasProperty(obj, "message") &&
+      (hasProperty(obj, "stack") || constructorName === "DOMException") &&
+      !(type_flags & (IS_CALLABLE | IS_BUFFER))
+  );
 
-  if (is_py_json && (type_flags & (IS_ARRAY | IS_ARRAY_LIKE | IS_ITERATOR))) {
+  if (is_py_json && type_flags & (IS_ARRAY | IS_ARRAY_LIKE | IS_ITERATOR)) {
     // tagging IS_PY_JSON_SEQUENCE on IS_ITERATOR is a bit of a hack
     type_flags |= IS_PY_JSON_SEQUENCE;
   }
   if (is_py_json && INCLUDE_OBJMAP_METHODS(type_flags)) {
     type_flags |= IS_PY_JSON_DICT;
   }
-  // clang-format on
   return type_flags;
 });
+// clang-format on
 #undef SET_FLAG_IF
 
 ////////////////////////////////////////////////////////////
