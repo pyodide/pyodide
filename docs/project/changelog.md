@@ -39,6 +39,10 @@ myst:
   relevant `this`. See {issue}`5929`.
   {pr}`5937`
 
+- {{ Enhancement }} A JavaScript object is now treated as an array-like object
+  if it has a `length` property and is iterable. Every JsProxy of an array-like
+  object now implements subscripting. {pr}`5991`
+
 ### Packages
 
 - {{ Enhancement }} New packages added:
