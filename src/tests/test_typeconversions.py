@@ -1096,34 +1096,29 @@ def test_javascript_error_back_to_js(selenium):
     )(err)
 
 
-@run_in_pyodide
 def test_memoryview_conversion(selenium):
-    import array
-
-    from pyodide.code import run_js
-
-    a = array.array("Q", [1, 2, 3])
-    b = array.array("u", "123")
-
-    run_js(
+    selenium.run(
         """
-        (a) => {
-            a.destroy()
-            // Implicit assertion: this doesn't leave python error indicator set
-            // (automatically checked in conftest.py)
-        }
+        import array
+        a = array.array("Q", [1,2,3])
+        b = array.array("u", "123")
         """
-    )(a)
+    )
+    selenium.run_js(
+        """
+        pyodide.runPython("a").destroy()
+        // Implicit assertion: this doesn't leave python error indicator set
+        // (automatically checked in conftest.py)
+        """
+    )
 
-    run_js(
+    selenium.run_js(
         """
-        (b) => {
-            b.destroy()
-            // Implicit assertion: this doesn't leave python error indicator set
-            // (automatically checked in conftest.py)
-        }
+        pyodide.runPython("b").destroy()
+        // Implicit assertion: this doesn't leave python error indicator set
+        // (automatically checked in conftest.py)
         """
-    )(b)
+    )
 
 
 def test_python2js_with_depth(selenium):
@@ -1183,48 +1178,40 @@ def test_tojs2(selenium):
     assert sorted(json.loads(serialized)) == [["2", 3], ["4", 9], ["a", 1]]
 
 
-@run_in_pyodide
 def test_tojs4(selenium):
-    from pyodide.code import run_js
-
-    a = [1, [2, [3, [4, [5, [6, [7]]]]]]]
-    run_js(
+    selenium.run_js(
         """
-        (a) => {
-            for(let i=0; i < 7; i++){
-                let x = a.toJs({depth : i});
-                for(let j=0; j < i; j++){
-                    assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
-                    x = x[1];
-                }
-                assert(() => x instanceof pyodide.ffi.PyProxy, `i: ${i}, j: ${i}`);
-                x.destroy();
+        let a = pyodide.runPython("[1,[2,[3,[4,[5,[6,[7]]]]]]]")
+        for(let i=0; i < 7; i++){
+            let x = a.toJs({depth : i});
+            for(let j=0; j < i; j++){
+                assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
+                x = x[1];
             }
+            assert(() => x instanceof pyodide.ffi.PyProxy, `i: ${i}, j: ${i}`);
+            x.destroy();
         }
+        a.destroy()
         """
-    )(a)
+    )
 
 
-@run_in_pyodide
 def test_tojs5(selenium):
-    from pyodide.code import run_js
-
-    a = [1, (2, (3, [4, (5, (6, [7]))]))]
-    run_js(
+    selenium.run_js(
         """
-        (a) => {
-            for(let i=0; i < 7; i++){
-                let x = a.toJs({depth : i});
-                for(let j=0; j < i; j++){
-                    assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
-                    x = x[1];
-                }
-                assert(() => x instanceof pyodide.ffi.PyProxy, `i: ${i}, j: ${i}`);
-                x.destroy();
+        let a = pyodide.runPython("[1, (2, (3, [4, (5, (6, [7]))]))]")
+        for(let i=0; i < 7; i++){
+            let x = a.toJs({depth : i});
+            for(let j=0; j < i; j++){
+                assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
+                x = x[1];
             }
+            assert(() => x instanceof pyodide.ffi.PyProxy, `i: ${i}, j: ${i}`);
+            x.destroy();
         }
+        a.destroy()
         """
-    )(a)
+    )
 
 
 @run_in_pyodide
