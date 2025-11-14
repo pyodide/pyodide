@@ -733,7 +733,7 @@ def test_jsmod_import_star2(selenium):
 def test_nested_import(selenium):
     from pyodide.code import run_js
 
-    run_js("globalThis.a = { b : { c : { d : 2 } } }") 
+    run_js("globalThis.a = { b : { c : { d : 2 } } }")
 
     from js.a.b import c
 
