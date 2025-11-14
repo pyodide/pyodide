@@ -13,7 +13,8 @@ from pytest_pyodide.hypothesis import std_hypothesis_settings
 def test_jsproxy_dir(selenium):
     from pyodide.code import run_js
 
-    a, b = run_js("""() => ([{ x: 2, y: "9" }, function(){}]);""")()
+    a = run_js('{ x: 2, y: "9" }')
+    b = run_js("(function(){})")
 
     result = [dir(a), dir(b)]
     jsproxy_items = {
@@ -66,7 +67,7 @@ def test_jsproxy_dir(selenium):
 def test_jsproxy_getattr(selenium):
     from pyodide.code import run_js
 
-    a = run_js("""() => ({ x : 2, y : "9", typeof : 7 })""")()
+    a = run_js("""({ x : 2, y : "9", typeof : 7 })""")
 
     result = [a.x, a.y, a.typeof]
     assert result == [2, "9", "object"]
@@ -730,10 +731,9 @@ def test_jsmod_import_star2(selenium):
 @pytest.mark.skip_pyproxy_check
 @run_in_pyodide
 def test_nested_import(selenium):
-    import js
     from pyodide.code import run_js
 
-    js.a = run_js("() => ({ b : { c : { d : 2 } } })")()  # type: ignore[attr-defined]
+    run_js("globalThis.a = { b : { c : { d : 2 } } }") 
 
     from js.a.b import c
 
@@ -1541,7 +1541,7 @@ def test_array_extend(selenium_module_scope, l1, l2):
 def test_typed_array(selenium):
     from pyodide.code import run_js
 
-    a = run_js("() => new Uint8Array([1,2,3,4])")()
+    a = run_js("new Uint8Array([1,2,3,4])")
     assert a[0] == 1
     assert a[-1] == 4
     a[-2] = 7
