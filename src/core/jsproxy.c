@@ -1960,6 +1960,9 @@ finally:
 
 EM_JS_VAL(JsVal, JsArray_repeat_js, (JsVal o, Py_ssize_t count), {
   // clang-format off
+  if (!Array.isArray(o)) {
+    o = Array.from(o);
+  }
   return Array.from({ length : count }, () => o).flat();
   // clang-format on
 })
@@ -4167,6 +4170,8 @@ skip_container_slots:
       (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsArray_sq_item };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_sq_concat, .pfunc = (void*)JsArray_sq_concat };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_repeat, .pfunc = (void*)JsArray_sq_repeat };
     methods[cur_method++] = JsArray_reversed_MethodDef;
   }
   if (flags & IS_BUFFER) {
