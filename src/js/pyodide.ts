@@ -209,6 +209,23 @@ export interface PyodideConfig {
   toJsLiteralMap?: boolean;
 
   /**
+   * Force override the runtime environment detection.
+   * When set, Pyodide will assume it's running in the specified runtime,
+   * ignoring automatic detection. This is useful when automatic detection
+   * fails in certain environments (e.g., Next.js build process, custom bundlers).
+   *
+   * @example
+   * ```javascript
+   * // Force Node.js runtime
+   * const pyodide = await loadPyodide({ runtime: 'node' });
+   *
+   * // Force browser runtime
+   * const pyodide = await loadPyodide({ runtime: 'browser' });
+   * ```
+   */
+  runtime?: "browser" | "node" | "deno" | "bun" | "webworker";
+
+  /**
    * Determine the value of ``sys.executable``.
    * @ignore
    */
