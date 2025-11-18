@@ -965,7 +965,7 @@ class JsCallableDoubleProxy(
 class JsArray(JsIterable[T], Generic[T], MutableSequence[T], metaclass=_ABCMeta):
     """A JsProxy of an :js:class:`Array`, :js:class:`NodeList`, or :js:class:`TypedArray`"""
 
-    _js_type_flags = ["IS_ARRAY", "IS_NODE_LIST", "IS_TYPEDARRAY"]
+    _js_type_flags = ["IS_ARRAY", "IS_ARRAY_LIKE", "IS_TYPEDARRAY"]
 
     @overload
     def __getitem__(self, idx: int) -> T: ...

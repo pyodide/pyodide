@@ -222,7 +222,7 @@ EM_JS_NUM(errcode, JsvArray_Insert, (JsVal arr, int idx, JsVal value), {
   arr.splice(idx, 0, value);
 });
 
-EM_JS_NUM(JsVal, JsvArray_ShallowCopy, (JsVal arr), {
+EM_JS_VAL(JsVal, JsvArray_ShallowCopy, (JsVal arr), {
   return ("slice" in arr) ? arr.slice() : Array.from(arr);
 })
 

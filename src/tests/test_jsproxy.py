@@ -852,21 +852,25 @@ def test_mixins_feature_presence(selenium):
                     if actual_val != expected_val:
                         console.log(obj)
                         console.log(key)
+                        console.log(expected_val)
                         console.log(actual_val)
                         assert False
             test_object
         `);
 
-        for(let flags = 0; flags < (1 << fields.length); flags ++){
+        for (let flags = 0; flags < (1 << fields.length); flags ++) {
             let o = {};
             let keys_expected = {};
-            for(let [idx, [obj, ...keys]] of fields.entries()){
-                if(flags & (1<<idx)){
+            for (let [idx, [obj, ...keys]] of fields.entries()) {
+                if (flags & (1<<idx)) {
                     Object.assign(o, obj);
                 }
-                for(let key of keys){
+                for (let key of keys) {
                     keys_expected[key] = keys_expected[key] || !!(flags & (1<<idx));
                 }
+            }
+            if (keys_expected["__len__"] && keys_expected["__iter__"] && !keys_expected["__next__"]) {
+                keys_expected["__getitem__"] = true;
             }
             test_object(o, keys_expected);
         }
@@ -1324,11 +1328,9 @@ def test_very_large_length(selenium, n):
     with raises:
         len(o)
 
-    # 1. Set toStringTag to NodeList to force JsProxy to feature detect this object
-    # as an array
-    # 2. Return a very large length
-    # 3. JsProxy_subscript_array should successfully handle this and propagate the error.
-    a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
+    # Return a very large length. JsProxy_subscript_array should successfully
+    # handle this and propagate the error.
+    a = run_js(f"({{[Symbol.iterator](){{}}, length: {n}}})")
     with raises:
         a[-1]
 
@@ -1350,11 +1352,9 @@ def test_negative_length(selenium, n):
     with raises:
         len(o)
 
-    # 1. Set toStringTag to NodeList to force JsProxy to feature detect this object
-    # as an array
-    # 2. Return a negative length
-    # 3. JsProxy_subscript_array should successfully handle this and propagate the error.
-    a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
+    # Return a negative length. JsProxy_subscript_array should successfully
+    # handle this and propagate the error.
+    a = run_js(f"({{[Symbol.iterator](){{}}, length: {n}}})")
     with raises:
         a[-1]
 
@@ -1603,12 +1603,34 @@ def test_html_array(selenium):
         del x[0]
 
 
+@run_in_pyodide
+def test_array_like_sequence_iteration_fail(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    l = run_js("({[Symbol.iterator](){}, length: 5})")
+    match = "TypeError.*Symbol.iterator"
+    with pytest.raises(JsException, match=match):
+        l + [1, 2, 3]
+
+    with pytest.raises(JsException, match=match):
+        l * 2
+
+    with pytest.raises(JsException, match=match):
+        l += [1, 2, 3]
+
+    with pytest.raises(JsException, match=match):
+        l *= 2
+
+
 @pytest.mark.parametrize(
     "sequence_converter",
     [
         "(x) => x",
         "(x) => new Uint8Array(x)",
-        "(x) => Object.create({[Symbol.toStringTag] : 'NodeList'}, Object.getOwnPropertyDescriptors(x))",
+        "(x) => Object.create({[Symbol.iterator]: Array.prototype[Symbol.iterator]}, Object.getOwnPropertyDescriptors(x))",
     ],
 )
 @pytest.mark.requires_dynamic_linking
@@ -1620,7 +1642,8 @@ def test_array_sequence_methods(selenium, sequence_converter):
     from pyodide.code import run_js
     from pyodide.ffi import to_js
 
-    x = to_js([77, 65, 23])
+    pyl = [77, 65, 23]
+    x = to_js(pyl)
     l = run_js(sequence_converter)(x)
     from ctypes import c_bool, c_ssize_t, py_object, pythonapi
 
@@ -1636,7 +1659,7 @@ def test_array_sequence_methods(selenium, sequence_converter):
     assert pythonapi.PySequence_Length(l) == 3
     assert pythonapi.PySequence_GetItem(l, 0) == 77
 
-    node_list = "NodeList" in str(l)
+    node_list = "Object" in str(l)
     typed_array = ArrayBuffer.isView(l)
     is_mutable = not node_list
     supports_del = not (node_list or typed_array)
@@ -1644,8 +1667,11 @@ def test_array_sequence_methods(selenium, sequence_converter):
     if typed_array:
         with raises(TypeError, match=r"unsupported operand type\(s\) for \+"):
             l + [4, 5, 6]
+        with raises(TypeError, match=r"unsupported operand type\(s\) for \*"):
+            l * 2
     else:
-        assert (l + [4, 5, 6]).to_py() == [77, 65, 23, 4, 5, 6]
+        assert (l + [4, 5, 6]).to_py() == pyl + [4, 5, 6]
+        assert (l * 2).to_py() == pyl * 2
 
     if is_mutable:
         pythonapi.PySequence_SetItem(l, 1, 29)
