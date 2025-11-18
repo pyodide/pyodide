@@ -3,7 +3,7 @@ default_language_version:
   python: "3.13"
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: "v5.0.0"
+    rev: "v6.0.0"
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
@@ -18,21 +18,21 @@ repos:
       - id: requirements-txt-fixer
 
   - repo: https://github.com/biomejs/pre-commit
-    rev: "v0.6.1"
+    rev: "v2.2.5"
     hooks:
       - id: biome-format
         additional_dependencies: ["@biomejs/biome@2.1.1"]
         types_or: [javascript, ts]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.9.1"
+    rev: "v0.13.3"
     hooks:
       - id: ruff
         args: [--fix]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: "v19.1.6"
+    rev: "v21.1.2"
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]
@@ -47,13 +47,13 @@ repos:
       - id: rst-inline-touching-normal
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: "v0.10.0.1"
+    rev: "v0.11.0.1"
     hooks:
       - id: shellcheck
         exclude: ^src/templates/python$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: "v2.3.0"
+    rev: "v2.4.1"
     hooks:
       - id: codespell
         args:
@@ -64,7 +64,7 @@ repos:
         exclude: ^(benchmark/benchmarks/pystone_benchmarks/pystone\.py|src/js/package-lock\.json|packages/matplotlib/extras/fontlist\.json)$
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.14.1"
+    rev: "v1.18.2"
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src)

@@ -32,7 +32,7 @@
 
 #define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
   do {                                                                         \
-    int mod##_init(PyObject* mod);                                             \
+    int mod##_init(PyObject * mod);                                            \
     if (mod##_init(core_module)) {                                             \
       FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
     }                                                                          \
