@@ -181,7 +181,7 @@ wrong unwinding ABI.
 
 There is full support for `RPATH`. The dynamic loader will only load
 dependencies that are properly specified on the `RPATH`, just being in
-`/lib/python3.13/site-packages/wheel_name.libs` is not sufficient.
+`/lib/python3.14/site-packages/wheel_name.libs` is not sufficient.
 
 ## ABI-sensitive flags
 

@@ -14,6 +14,7 @@ _posixsubprocess _posixsubprocess.c
 _bz2 _bz2module.c -lbz2
 zlib zlibmodule.c
 
+_hmac hmacmodule.c -IModules/_hacl/include
 
 *disabled*
 pwd
