@@ -234,6 +234,7 @@ export type FSStreamOpsGen<T> = {
 interface PyodideFSType {
   filesystems: any;
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
+  mkdirTree(path: string, mode?: number): void;
 }
 
 /**

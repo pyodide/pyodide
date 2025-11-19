@@ -5,7 +5,7 @@ import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type PyodideModule, type FSType } from "./types";
 import { getSentinelImport } from "generated/sentinel";
-import { RUNTIME_ENV } from "./environments";
+import { RUNTIME_ENV, getRuntimeEnvWithOverride } from "./environments";
 
 /**
  * @private
@@ -44,7 +44,10 @@ export interface EmscriptenSettings {
 export function createSettings(
   config: PyodideConfigWithDefaults,
 ): EmscriptenSettings {
-  const API = { config, runtimeEnv: RUNTIME_ENV } as API;
+  // Apply runtime override if provided, otherwise use pre-computed RUNTIME_ENV
+  // This is only checked during initialization, so no performance impact during runtime
+  const runtimeEnv = getRuntimeEnvWithOverride(config.runtime);
+  const API = { config, runtimeEnv } as API;
   const settings: EmscriptenSettings = {
     noImageDecoding: true,
     noAudioDecoding: true,
@@ -217,11 +220,23 @@ function getInstantiateWasmFunc(
     (async function () {
       imports.sentinel = await sentinelImportPromise;
       try {
-        let res: WebAssembly.WebAssemblyInstantiatedSource;
+        let res: { instance: WebAssembly.Instance; module: WebAssembly.Module };
         if (response) {
-          res = await WebAssembly.instantiateStreaming(response, imports);
+          res = (await WebAssembly.instantiateStreaming(
+            response,
+            imports,
+          )) as unknown as {
+            instance: WebAssembly.Instance;
+            module: WebAssembly.Module;
+          };
         } else {
-          res = await WebAssembly.instantiate(await binary, imports);
+          res = (await WebAssembly.instantiate(
+            await binary,
+            imports,
+          )) as unknown as {
+            instance: WebAssembly.Instance;
+            module: WebAssembly.Module;
+          };
         }
         const { instance, module } = res;
         successCallback(instance, module);

@@ -17,6 +17,12 @@ function installPostMessageHandler() {
     return;
   }
 
+  // Check if addEventListener is actually available (runtime override may set
+  // IN_BROWSER_MAIN_THREAD but browser APIs may not be available)
+  if (typeof globalThis.addEventListener !== "function") {
+    return;
+  }
+
   const onGlobalMessage = (event: MessageEvent) => {
     if (
       typeof event.data === "string" &&

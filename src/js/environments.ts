@@ -17,6 +17,12 @@ interface BaseRuntimeEnv {
   IN_SHELL: boolean;
 }
 
+/**
+ * Runtime override option type.
+ * @private
+ */
+export type RuntimeOption = "browser" | "node" | "deno" | "bun" | "webworker";
+
 declare var read: any;
 declare var load: any;
 declare var Deno: any;
@@ -43,19 +49,61 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
     navigator.userAgent.indexOf("Chrome") === -1 &&
     navigator.userAgent.indexOf("Safari") > -1;
   const IN_SHELL = typeof read === "function" && typeof load === "function";
-  return calculateDerivedFlags({
-    IN_BUN,
-    IN_DENO,
-    IN_NODE,
-    IN_SAFARI,
-    IN_SHELL,
-  });
+  return calculateDerivedFlags(
+    {
+      IN_BUN,
+      IN_DENO,
+      IN_NODE,
+      IN_SAFARI,
+      IN_SHELL,
+    },
+    undefined, // No override, use automatic detection
+  );
 }
 
 /** @private Internal runtime environment state */
 export const RUNTIME_ENV: RuntimeEnv = getGlobalRuntimeEnv();
 
-function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
+/**
+ * Create a BaseRuntimeEnv from a runtime override option.
+ * @private
+ */
+function createBaseFromOverride(
+  runtimeOverride: RuntimeOption,
+): BaseRuntimeEnv {
+  return {
+    IN_NODE: runtimeOverride === "node",
+    IN_BUN: runtimeOverride === "bun",
+    IN_DENO: runtimeOverride === "deno",
+    IN_SAFARI: false, // Safari detection doesn't make sense with override
+    IN_SHELL: false, // Shell detection doesn't make sense with override
+  };
+}
+
+/**
+ * Get runtime environment with optional override.
+ * If override is provided, it takes precedence over automatic detection.
+ * @param runtimeOverride Optional runtime override
+ * @returns Runtime environment configuration
+ * @private
+ */
+export function getRuntimeEnvWithOverride(
+  runtimeOverride?: RuntimeOption,
+): RuntimeEnv {
+  if (!runtimeOverride) {
+    // No override, use the pre-computed RUNTIME_ENV for performance
+    return RUNTIME_ENV;
+  }
+
+  // Override is provided, calculate from override
+  const base = createBaseFromOverride(runtimeOverride);
+  return calculateDerivedFlags(base, runtimeOverride);
+}
+
+function calculateDerivedFlags(
+  base: BaseRuntimeEnv,
+  runtimeOverride?: RuntimeOption,
+): RuntimeEnv {
   const IN_NODE_COMMONJS =
     base.IN_NODE &&
     typeof module !== "undefined" &&
@@ -65,18 +113,34 @@ function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
 
   const IN_NODE_ESM = base.IN_NODE && !IN_NODE_COMMONJS;
   const IN_BROWSER = !base.IN_NODE && !base.IN_DENO && !base.IN_BUN;
-  const IN_BROWSER_MAIN_THREAD =
-    IN_BROWSER &&
-    typeof window !== "undefined" &&
-    typeof (window as any).document !== "undefined" &&
-    typeof (document as any).createElement === "function" &&
-    "sessionStorage" in (window as any) &&
-    typeof (globalThis as any).importScripts !== "function";
-  const IN_BROWSER_WEB_WORKER =
-    IN_BROWSER &&
-    typeof (globalThis as any).WorkerGlobalScope !== "undefined" &&
-    typeof (globalThis as any).self !== "undefined" &&
-    (globalThis as any).self instanceof (globalThis as any).WorkerGlobalScope;
+
+  // Handle webworker override explicitly
+  let IN_BROWSER_MAIN_THREAD: boolean;
+  let IN_BROWSER_WEB_WORKER: boolean;
+
+  if (runtimeOverride === "webworker") {
+    // Explicit webworker override
+    IN_BROWSER_WEB_WORKER = true;
+    IN_BROWSER_MAIN_THREAD = false;
+  } else if (runtimeOverride === "browser") {
+    // Explicit browser override (main thread)
+    IN_BROWSER_WEB_WORKER = false;
+    IN_BROWSER_MAIN_THREAD = true;
+  } else {
+    // Automatic detection (existing logic)
+    IN_BROWSER_MAIN_THREAD =
+      IN_BROWSER &&
+      typeof window !== "undefined" &&
+      typeof (window as any).document !== "undefined" &&
+      typeof (document as any).createElement === "function" &&
+      "sessionStorage" in (window as any) &&
+      typeof (globalThis as any).importScripts !== "function";
+    IN_BROWSER_WEB_WORKER =
+      IN_BROWSER &&
+      typeof (globalThis as any).WorkerGlobalScope !== "undefined" &&
+      typeof (globalThis as any).self !== "undefined" &&
+      (globalThis as any).self instanceof (globalThis as any).WorkerGlobalScope;
+  }
   return {
     ...base,
     IN_BROWSER,
