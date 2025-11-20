@@ -1,21 +1,20 @@
 From c371fb11a1c5b557557b2681a9b6be4cdaa78644 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Fri, 30 May 2025 15:54:17 +0900
-Subject: [PATCH 1/4] [dylink] Fix rpath calculation in nested dependencies
+Subject: [PATCH 2/3] [dylink] Fix rpath calculation in nested dependencies
 
 Upstream PR:
 * https://github.com/emscripten-core/emscripten/pull/24234
 
 ---
- src/lib/libdylink.js      | 17 ++++++++++++-----
- system/lib/libc/dynlink.c |  5 ++++-
- 2 files changed, 16 insertions(+), 6 deletions(-)
+ src/lib/libdylink.js | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
 
 diff --git a/src/lib/libdylink.js b/src/lib/libdylink.js
-index fdfe2e608..638353de1 100644
+index 50020af24..7d26a28b3 100644
 --- a/src/lib/libdylink.js
 +++ b/src/lib/libdylink.js
-@@ -908,13 +908,21 @@ var LibraryDylink = {
+@@ -972,14 +972,20 @@ var LibraryDylink = {
      // now load needed libraries and the module itself.
      if (flags.loadAsync) {
        return metadata.neededDynlibs
@@ -31,25 +30,14 @@ index fdfe2e608..638353de1 100644
          .then(loadModule);
      }
  
--    metadata.neededDynlibs.forEach((needed) => loadDynamicLibrary(needed, flags, localScope));
-+    metadata.neededDynlibs.forEach((needed) => {
+     for (var needed of metadata.neededDynlibs) {
+-      loadDynamicLibrary(needed, flags, localScope)
 +#if FILESYSTEM
 +      needed = findLibraryFS(needed, flags.rpath) ?? needed;
 +#endif      
 +      return loadDynamicLibrary(needed, flags, localScope);
-+    });
+     }
      return loadModule();
    },
- 
-@@ -1040,7 +1048,6 @@ var LibraryDylink = {
- #endif
-     // when loadDynamicLibrary did not have flags, libraries were loaded
-     // globally & permanently
--
-     var dso = LDSO.loadedLibsByName[libName];
-     if (dso) {
-       // the library is being loaded or has been loaded already.
-
 -- 
-2.29.2.windows.2
-
+2.43.0
