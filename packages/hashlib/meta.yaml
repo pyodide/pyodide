@@ -14,7 +14,7 @@ build:
     tar -xf Python-${PYVERSION}.tgz
     cd Python-${PYVERSION}
 
-    emcc $STDLIB_MODULE_CFLAGS -c Modules/_hashopenssl.c -o _hashlib.o \
+    emcc $SIDE_MODULE_CFLAGS -I Include/ -I. -IInclude/internal/ -c Modules/_hashopenssl.c -o _hashlib.o \
       $(pkg-config --cflags --dont-define-prefix libcrypto) -DOPENSSL_THREADS
 
     emcc _hashlib.o -o _hashlib.so $SIDE_MODULE_LDFLAGS \

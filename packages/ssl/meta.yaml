@@ -17,7 +17,7 @@ build:
     cd Python-${PYVERSION}
 
     # OPENSSL_THREADS declares that OPENSSL is threadsafe. We are single threaded so everything is threadsafe.
-    emcc $STDLIB_MODULE_CFLAGS -c Modules/_ssl.c -o _ssl.o \
+    emcc $SIDE_MODULE_CFLAGS -I Include/ -I. -IInclude/internal/ -c Modules/_ssl.c -o _ssl.o \
       $(pkg-config --cflags --dont-define-prefix openssl) \
       -DOPENSSL_THREADS
 
