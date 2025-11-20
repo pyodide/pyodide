@@ -125,14 +125,13 @@ dist/pyodide.asm.js: \
    # There are 4821 of these and they have VERY VERY long names.
    # To show some stats on the symbols you can use the following:
    # cat dist/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
+	$(SED) -i -E 's/__Z[a-zA-Z0-9_]*,//g' dist/pyodide.asm.js
 	$(SED) -i -E 's/var __Z[^;]*;//g' dist/pyodide.asm.js
+	$(SED) -i -E 's/__Z[^;]*wasmExports[^;]*;//g' dist/pyodide.asm.js
 	$(SED) -i '1i "use strict";' dist/pyodide.asm.js
-	# Remove last 7 lines of pyodide.asm.js, see issue #2282
 	# Remove compatibility issues with requirejs see issue #2282
 	# Hopefully we will remove this after emscripten fixes it, upstream issue
 	# emscripten-core/emscripten#16518
-	# Sed nonsense from https://stackoverflow.com/a/13383331
-	$(SED) -i -n -e :a -e '1,7!{P;N;D;};N;ba' dist/pyodide.asm.js
 	$(SED) -i 's/if(typeof exports==="object"&&typeof module==="object"){module\.exports=_createPyodideModule;module\.exports\.default=_createPyodideModule}else if(typeof define==="function"&&define\["amd"\])define(\[\],()=>_createPyodideModule);//g' dist/pyodide.asm.js
 	echo "globalThis._createPyodideModule = _createPyodideModule;" >> dist/pyodide.asm.js
 
