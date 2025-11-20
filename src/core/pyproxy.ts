@@ -649,6 +649,8 @@ export interface PyProxy {
   [x: string]: any;
 }
 
+const dispose = Symbol.dispose ?? Symbol("dispose");
+
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` is an object that allows idiomatic use of a Python object from
  * JavaScript. See :ref:`type-translations-pyproxy`.
@@ -731,6 +733,13 @@ export class PyProxy {
     options = Object.assign({ message: "", destroyRoundtrip: true }, options);
     const { message: m, destroyRoundtrip: d } = options;
     Module.pyproxy_destroy(this, m, d);
+  }
+  /**
+   * JavaScript resource management
+   * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Resource_management#the_using_and_await_using_declarations
+   */
+  [dispose]() {
+    this.destroy();
   }
   /**
    * Make a new :js:class:`~pyodide.ffi.PyProxy` pointing to the same Python object.
