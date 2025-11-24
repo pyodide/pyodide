@@ -2739,3 +2739,16 @@ def test_pyproxy_dict(selenium):
     assert 2 not in d
     delete(d, 3)
     assert "3" not in d
+
+
+@pytest.mark.xfail_browsers(safari="No support yet")
+def test_pyproxy_using(selenium):
+    selenium.run_js(
+        """
+        function f() {
+            using x = pyodide.runPython("{'a': 2}");
+            assert(() => x.a == 2);
+        }
+        f();
+        """
+    )
