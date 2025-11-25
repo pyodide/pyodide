@@ -902,6 +902,7 @@ def test_js2python_bool(selenium, jsval, is_truthy):
         ("Uint16Array", "H"),
         ("Int32Array", "i"),
         ("Uint32Array", "I"),
+        ("Float16Array", "e"),
         ("Float32Array", "f"),
         ("Float64Array", "d"),
     ),

@@ -2934,6 +2934,7 @@ let type_to_array_map: Map<string, any> = new Map([
   // undefined rather than raising a ReferenceError.
   ["i64", globalThis.BigInt64Array],
   ["u64", globalThis.BigUint64Array],
+  ["f16", globalThis.Float16Array],
   ["f32", Float32Array],
   ["f64", Float64Array],
   ["dataview", DataView],

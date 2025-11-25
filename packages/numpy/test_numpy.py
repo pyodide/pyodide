@@ -35,6 +35,7 @@ def test_typed_arrays(selenium):
         ("Uint16Array", "uint16"),
         ("Int32Array", "int32"),
         ("Uint32Array", "uint32"),
+        ("Float16Array", "float16"),
         ("Float32Array", "float32"),
         ("Float64Array", "float64"),
     ):

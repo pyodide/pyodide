@@ -387,7 +387,7 @@ EM_JS_VAL(JsVal, JsvPromise_Resolve, (JsVal obj), {
 
 // clang-format off
 EM_JS_NUM(errcode, jslib_init_buffers_js, (), {
-  const dtypes_str = Array.from("bBhHiIqQfd").join(
+  const dtypes_str = Array.from("bBhHiIqQefd").join(
     String.fromCharCode(0)
   );
   const dtypes_ptr = stringToNewUTF8(dtypes_str);
@@ -401,6 +401,7 @@ EM_JS_NUM(errcode, jslib_init_buffers_js, (), {
     ["Uint8ClampedArray", [dtypes_map["B"], 1, true]],
     ["Int16Array", [dtypes_map["h"], 2, true]],
     ["Uint16Array", [dtypes_map["H"], 2, true]],
+    ["Float16Array", [dtypes_map["e"], 2, true]],
     ["Int32Array", [dtypes_map["i"], 4, true]],
     ["Uint32Array", [dtypes_map["I"], 4, true]],
     ["Float32Array", [dtypes_map["f"], 4, true]],
@@ -424,7 +425,7 @@ EM_JS_NUM(errcode, jslib_init_buffers_js, (), {
    * get_buffer_datatype wrapper for use from C. Used in js2python and
    * in jsproxy.c for buffers.
    */
-  Module.get_buffer_datatype = function (jsobj) {
+  API.get_buffer_datatype = function (jsobj) {
     return buffer_datatype_map.get(jsobj.constructor.name) || [0, 0, false];
   };
 });

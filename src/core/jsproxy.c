@@ -3833,7 +3833,7 @@ JsBuffer_get_info, (JsVal jsobj,
                     Py_ssize_t* size_ptr,
                     bool* checked_ptr),
 {
-  const [format_utf8, size, checked] = Module.get_buffer_datatype(jsobj);
+  const [format_utf8, size, checked] = API.get_buffer_datatype(jsobj);
   DEREF_U32(byteLength_ptr, 0) = jsobj.byteLength;
   DEREF_U32(format_ptr, 0) = format_utf8;
   DEREF_U32(size_ptr, 0) = size;
