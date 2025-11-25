@@ -24,6 +24,8 @@ myst:
 - {{ Enhancement }} `PyProxy` now has a `[Symbol.dispose]` method.
   {pr}`6003`
 
+- {{ Enhancement }} Pyodide now supports `Float16Array`. It will translate half
+  float Python buffers into `Float16Array` and vice versa. {pr}`6005`
 
 
 ## Version 0.29.0
