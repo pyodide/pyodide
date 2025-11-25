@@ -24,7 +24,9 @@ myst:
 - {{ Enhancement }} `PyProxy` now has a `[Symbol.dispose]` method.
   {pr}`6003`
 
-
+- {{ Enhancement }} A `JsProxy` of an object with a `[Symbol.dispose]` method is
+  now a context manager.
+  {pr}`6007`
 
 ## Version 0.29.0
 
