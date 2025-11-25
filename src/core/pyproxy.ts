@@ -2976,10 +2976,11 @@ export class PyBufferMethods {
    * @param type The type of the :js:attr:`~pyodide.ffi.PyBufferView.data` field
    * in the output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``,
    * ``"i16"``, ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``,
-   * ``"i64"``, ``"u64"``, ``"f32"``, ``"f64"``, or ``"dataview"``. This argument
-   * is optional, if absent :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` will try
-   * to determine the appropriate output type based on the buffer format string
-   * (see :std:ref:`struct-format-strings`).
+   * ``"i64"``, ``"u64"``, ``"f16"``, ``"f32"``, ``"f64"``, or ``"dataview"``.
+   * This argument is optional, if absent
+   * :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` will try to determine the
+   * appropriate output type based on the buffer format string (see
+   * :std:ref:`struct-format-strings`).
    */
   getBuffer(type?: string): PyBufferView {
     let ArrayType: any = undefined;
