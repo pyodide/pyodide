@@ -15,6 +15,17 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Enhancement }} A JavaScript object is now treated as an array-like object
+  if it has a `length` property and is iterable. Every JsProxy of an array-like
+  object now implements subscripting. {pr}`5991`
+
+- {{ Enhancement }} `PyProxy` now has a `[Symbol.dispose]` method.
+  {pr}`6003`
+
+
+
 ## Version 0.29.0
 
 - {{ Feature }} Added `pyxhr`, a synchronous HTTP client using XMLHttpRequest
@@ -38,10 +49,6 @@ myst:
 - {{ Fix }} Fixed a bug where a weird object was used as `this` when there is no
   relevant `this`. See {issue}`5929`.
   {pr}`5937`
-
-- {{ Enhancement }} A JavaScript object is now treated as an array-like object
-  if it has a `length` property and is iterable. Every JsProxy of an array-like
-  object now implements subscripting. {pr}`5991`
 
 ### Packages
 
