@@ -145,7 +145,7 @@ def test_globals_get_multiple(selenium):
     """See #1151"""
     selenium.run_js(
         """
-        pyodide.runPython("v = 0.123")
+        pyodide.runPython("v = 0.123");
         pyodide.globals.get('v')
         pyodide.globals.get('v')
         """
