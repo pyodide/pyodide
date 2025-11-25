@@ -3289,4 +3289,8 @@ export class PyBufferView {
     // @ts-ignore
     this.data = Module.error;
   }
+
+  [dispose]() {
+    this.release();
+  }
 }
