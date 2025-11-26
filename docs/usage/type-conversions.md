@@ -147,6 +147,7 @@ returned. The following operations are currently supported on a {py:class}`~pyod
 | `anext(proxy)`                     | `x.next()`                        |
 | `await proxy`                      | `await x`                         |
 | `proxy.__exit__()`                 | `x[Symbol.dispose]()`             |
+| `proxy.__aexit__()`                | `x[Symbol.asyncDispose]()`        |
 
 Note that each of these operations is only supported if the proxied JavaScript
 object supports the corresponding operation. See {py:class}`the JsProxy API docs
@@ -203,6 +204,9 @@ with f() as x:
 
 print(x.disposed) # True
 ```
+
+Likewise, if a JavaScript object has a `[Symbol.asyncDispose]()` method, the
+`JsProxy` can be used as an async context manager.
 
 As a special case, JavaScript {js:class}`Array`, {js:class}`HTMLCollection`, and
 {js:class}`NodeList` are container types, but instead of using `array.get(7)` to

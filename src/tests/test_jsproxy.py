@@ -3001,3 +3001,71 @@ def test_jsproxy_context_manager(selenium):
     except Exception:
         pass
     assert o.closed
+
+
+@pytest.mark.xfail_browsers(safari="Symbol.dispose not supported in Safari")
+@run_in_pyodide
+async def test_jsproxy_async_context_manager(selenium):
+    from pyodide.code import run_js
+
+    f = run_js(
+        """
+        (function f() {
+            return {
+                x: 9,
+                closed: false,
+                async [Symbol.asyncDispose] () {
+                    await sleep(100);
+                    this.closed = true;
+                }
+            };
+        })
+        """
+    )
+    async with f() as o:
+        assert o.x == 9
+        assert not o.closed
+    assert o.closed
+
+    try:
+        async with f() as o:
+            assert o.x == 9
+            assert not o.closed
+            raise Exception("oops")
+    except Exception:
+        pass
+    assert o.closed
+
+
+@pytest.mark.xfail_browsers(safari="Symbol.dispose not supported in Safari")
+@run_in_pyodide
+async def test_jsproxy_async_context_manager2(selenium):
+    from pyodide.code import run_js
+
+    # Make sure it works even when asyncDispose returns synchronously.
+    f = run_js(
+        """
+        (function f() {
+            return {
+                x: 9,
+                closed: false,
+                [Symbol.asyncDispose] () {
+                    this.closed = true;
+                }
+            };
+        })
+        """
+    )
+    async with f() as o:
+        assert o.x == 9
+        assert not o.closed
+    assert o.closed
+
+    try:
+        async with f() as o:
+            assert o.x == 9
+            assert not o.closed
+            raise Exception("oops")
+    except Exception:
+        pass
+    assert o.closed
