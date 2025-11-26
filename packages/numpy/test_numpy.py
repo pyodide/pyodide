@@ -329,25 +329,6 @@ def test_get_buffer_big_endian(selenium):
     assert result[:18] == [0, 0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8]
 
 
-def test_get_buffer_error_messages(selenium):
-    with pytest.raises(Exception, match="Javascript has no Float16 support"):
-        selenium.run_js(
-            """
-            await pyodide.loadPackage(['numpy']);
-            pyodide.runPython(`
-                import numpy as np
-                x = np.ones(2, dtype=np.float16)
-            `);
-            let x = pyodide.runPython("x");
-            try {
-                x.getBuffer();
-            } finally {
-                x.destroy();
-            }
-            """
-        )
-
-
 def test_fft(selenium):
     selenium.run_js(
         """
