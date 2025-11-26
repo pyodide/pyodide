@@ -24,6 +24,10 @@ myst:
 - {{ Enhancement }} `PyProxy` now has a `[Symbol.dispose]` method.
   {pr}`6003`
 
+- {{ Enhancement }} `PyBufferView` (the return value of ) now has a
+  `[Symbol.dispose]` method.
+  {pr}`6003`
+
 
 
 ## Version 0.29.0
