@@ -1616,7 +1616,6 @@ def test_buffer_format_string(selenium):
         ["II", "Unrecognized alignment character I."],
         ["x", "Unrecognized format character 'x'."],
         ["x", "Unrecognized format character 'x'."],
-        ["e", "Javascript has no Float16 support."],
     ]
     for fmt, msg in errors:
         with pytest.raises(selenium.JavascriptException, match=msg):
