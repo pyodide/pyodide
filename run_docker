@@ -108,8 +108,6 @@ mkdir -p .docker_home
 
 # Start a detached container as root, add the host uname and uid to /etc/passwd,
 # then run forever
-# /usr/tmp is created to allow the rust toolchain to be installed in the container
-# (We are installing the system rustup in the /usr directory. See the Dockerfile)
 cat << EOF >.docker_home/entrypoint.sh
 groupadd --gid '$USER_GID' '$USER_NAME';
 useradd\
