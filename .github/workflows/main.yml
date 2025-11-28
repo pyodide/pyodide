@@ -283,6 +283,7 @@ jobs:
         with:
           # To test Windows cmdline runner we always use the Linux build artifact
           name: core-build-Linux
+          path: ./dist/
         
       - name: Run cmdline-runner tests
         shell: bash -l {0}
