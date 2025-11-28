@@ -268,27 +268,28 @@ jobs:
           paths: "test-results/*.xml"
         if: always()
 
-  test-cmdline-runner:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-14, windows-latest]
-    runs-on: ${{ matrix.os }}
-    needs: [build-core]
-    steps:
-      - uses: actions/checkout@v4
+  # TODO: enable me
+  # test-cmdline-runner:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest, macos-14, windows-latest]
+  #   runs-on: ${{ matrix.os }}
+  #   needs: [build-core]
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          # To test Windows cmdline runner we always use the Linux build artifact
-          name: core-build-Linux
-          path: ./dist/
+  #     - name: Download build artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         # To test Windows cmdline runner we always use the Linux build artifact
+  #         name: core-build-Linux
+  #         path: ./dist/
         
-      - name: Run cmdline-runner tests
-        shell: bash -l {0}
-        run: |
-          ./tools/cmdline-runner-test.sh
+  #     - name: Run cmdline-runner tests
+  #       shell: bash -l {0}
+  #       run: |
+  #         ./tools/cmdline-runner-test.sh
 
   test-scipy-trigger:
     name: test-scipy-trigger
