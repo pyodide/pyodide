@@ -40,7 +40,6 @@ Options:
                               If set to 'none', docker instance will not bind to any port.
   --non-interactive           Run docker without the --interactive flag.
                               Useful for running in headless mode on CI server.
-  --root                      Run as root user inside the container
 
 Prerequisites:
   Docker has to be set up on your system.
@@ -76,10 +75,6 @@ do
         DOCKER_INTERACTIVE="--interactive=false"
         shift
       ;;
-      --root)
-        USER_FLAG=()
-        shift
-      ;;
       -*)
         >&2 echo "Unknown option $1"
         error
@@ -113,6 +108,8 @@ mkdir -p .docker_home
 
 # Start a detached container as root, add the host uname and uid to /etc/passwd,
 # then run forever
+# /usr/tmp is created to allow the rust toolchain to be installed in the container
+# (We are installing the system rustup in the /usr directory. See the Dockerfile)
 cat << EOF >.docker_home/entrypoint.sh
 groupadd --gid '$USER_GID' '$USER_NAME';
 useradd\
@@ -121,11 +118,13 @@ useradd\
   --gid '$USER_GID'\
   --comment '$USER_COMMENT_FIELD'\
   --shell '$USER_INTERPRETER'\
-  --groups sudo\
   $USER_NAME\
 ;
+echo "$USER_NAME:pyodide" | chpasswd;
 echo 'export PATH=\$PATH:$USER_HOME/.local/bin' >> /etc/profile;
-echo '%sudo ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers ;
+echo 'export RUSTUP_HOME=$USER_HOME/.rustup' >> /etc/profile;
+echo 'export CARGO_HOME=$USER_HOME/.cargo' >> /etc/profile;
+echo '$USER_NAME ALL=(ALL:ALL) ALL' >> /etc/sudoers ;
 echo '$HEALTHCHECK_MESSAGE';
 tail -f /dev/null
 EOF
@@ -134,6 +133,7 @@ CONTAINER=$(\
   docker run \
     "${PORT_CONFIGURATION_LINE[@]}" \
     -d --rm \
+    --platform linux/amd64 \
     -v "$PWD":/src \
     --user root \
     --shm-size 2g \
