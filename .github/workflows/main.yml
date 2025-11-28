@@ -281,8 +281,8 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          # To test Windows cmdline runner we always use the ubuntu build artifact
-          name: core-build-ubuntu-latest  
+          # To test Windows cmdline runner we always use the Linux build artifact
+          name: core-build-Linux
         
       - name: Run cmdline-runner tests
         shell: bash -l {0}
