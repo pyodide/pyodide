@@ -28,6 +28,10 @@ myst:
   now a context manager.
   {pr}`6007`
 
+- {{ Enhancement }} `PyBufferView` (the return value of ) now has a
+  `[Symbol.dispose]` method.
+  {pr}`6003`
+
 ## Version 0.29.0
 
 - {{ Feature }} Added `pyxhr`, a synchronous HTTP client using XMLHttpRequest
