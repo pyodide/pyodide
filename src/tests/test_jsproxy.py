@@ -2968,3 +2968,36 @@ def test_jsproxy_no_error_this(selenium):
         """
     )
     assert test()()
+
+
+@pytest.mark.xfail_browsers(safari="Symbol.dispose not supported in Safari")
+@run_in_pyodide
+def test_jsproxy_context_manager(selenium):
+    from pyodide.code import run_js
+
+    f = run_js(
+        """
+        (function f() {
+            return {
+                x: 9,
+                closed: false,
+                [Symbol.dispose] () {
+                    this.closed = true;
+                }
+            };
+        })
+        """
+    )
+    with f() as o:
+        assert o.x == 9
+        assert not o.closed
+    assert o.closed
+
+    try:
+        with f() as o:
+            assert o.x == 9
+            assert not o.closed
+            raise Exception("oops")
+    except Exception:
+        pass
+    assert o.closed
