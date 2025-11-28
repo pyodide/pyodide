@@ -36,14 +36,15 @@ if ERRORLEVEL 1 (
 REM Determine Node Flags based on Version
 (
     REM JavaScript block to check version
-    echo const major_version = Number(process.version.split(".")[0].slice(1));
-    echo if(major_version ^< 18) {
-    echo     console.error("Need node version ^>= 18. Got node version", process.version);
-    echo     process.exit(1);
-    echo }
-    echo if (major_version ^>= 20) {
-    echo     process.stdout.write("--experimental-wasm-stack-switching");
-    echo }
+    echo "const major_version = Number(process.version.split('.')[0].slice(1));"
+    echo "if (major_version  < 18) {"
+    echo "    console.error('Need node version >= 18. Got node version', process.version);"
+    echo "   process.exit(1);"
+    echo "}"
+    echo.
+    echo "if (major_version  >= 20) {"
+    echo "   process.stdout.write('--experimental-wasm-stack-switching');"
+    echo "}"
 )> "%TEMP%\__node_check.js"
 
 REM Run Node.js and capture the output (the dynamic argument) into NODE_ARGS
