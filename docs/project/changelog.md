@@ -25,8 +25,9 @@ myst:
   {pr}`6003`
 
 - {{ Enhancement }} A `JsProxy` of an object with a `[Symbol.dispose]` method is
-  now a context manager.
-  {pr}`6007`
+  now a context manager. A `JsProxy` of an object with a `[Symbol.asyncDispose]`
+  method is now an async context manager.
+  {pr}`6007` {pr}`6014`
 
 - {{ Enhancement }} `PyBufferView` (the return value of ) now has a
   `[Symbol.dispose]` method.
