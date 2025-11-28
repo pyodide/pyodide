@@ -345,6 +345,39 @@ def test_pyproxy_get_buffer(selenium):
     )
 
 
+@pytest.mark.xfail_browsers(safari="No support for Symbol.dispose yet")
+def test_pyproxy_get_buffer_dispose(selenium):
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            from sys import getrefcount
+            z1 = memoryview(bytes(range(24))).cast("b", [8,3])
+            z2 = z1[-1::-1]
+        `);
+        for (let x of ["z1", "z2"]) {
+            pyodide.runPython(`assert getrefcount(${x}) == 2`);
+            {
+                using proxy = pyodide.globals.get(x);
+                pyodide.runPython(`assert getrefcount(${x}) == 3`);
+                using z = proxy.getBuffer();
+                pyodide.runPython(`assert getrefcount(${x}) == 4`);
+                for (let idx1 = 0; idx1 < 8; idx1++) {
+                    for (let idx2 = 0; idx2 < 3; idx2++) {
+                        let v1 = z.data[z.offset + z.strides[0] * idx1 + z.strides[1] * idx2];
+                        let v2 = pyodide.runPython(`repr(${x}[${idx1}, ${idx2}])`);
+                        if(v1.toString() !== v2){
+                            throw new Error(`Discrepancy ${x}[${idx1}, ${idx2}]: ${v1} != ${v2}`);
+                        }
+                    }
+                }
+            }
+            pyodide.runPython(`print("${x}", getrefcount(${x}))`);
+            pyodide.runPython(`assert getrefcount(${x}) == 2`);
+        }
+        """
+    )
+
+
 @run_in_pyodide
 def test_get_empty_buffer(selenium):
     """Previously empty buffers would raise alignment errors
@@ -2742,7 +2775,7 @@ def test_pyproxy_dict(selenium):
     assert "3" not in d
 
 
-@pytest.mark.xfail_browsers(safari="No support yet")
+@pytest.mark.xfail_browsers(safari="No support for Symbol.dispose yet")
 def test_pyproxy_using(selenium):
     selenium.run_js(
         """

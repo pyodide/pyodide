@@ -2973,6 +2973,11 @@ export class PyBufferMethods {
    * data, so you might want to pass ``'dataview'`` as the type argument in that
    * case.
    *
+   * When you are done with the buffer view, you have to call
+   * :js:func:`~PyBufferView.release`. Alternatively, if you declare the buffer
+   * with `using pybuf = proxy.getBuffer()`, JavaScript will automatically
+   * release the buffer at the end of the current scope.
+   *
    * @param type The type of the :js:attr:`~pyodide.ffi.PyBufferView.data` field
    * in the output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``,
    * ``"i16"``, ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``,
@@ -3116,10 +3121,13 @@ export interface PyDict
 
 /**
  * A class to allow access to Python data buffers from JavaScript. These are
- * produced by :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` and cannot be constructed directly.
- * When you are done, release it with the :js:func:`~PyBufferView.release` method.
- * See the Python :external:doc:`c-api/buffer` documentation for more
- * information.
+ * produced by :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` and cannot be
+ * constructed directly. When you are done, release it with the
+ * :js:func:`~PyBufferView.release` method. It has a `[Symbol.dispose]()` method
+ * which is identical to the `release` method, so if you create the buffer with
+ * `using pybuf = proxy.getBuffer();` and JavaScript will automatically release
+ * it at the end of the scope. See the Python :external:doc:`c-api/buffer`
+ * documentation for more information.
  *
  * To find the element ``x[a_1, ..., a_n]``, you could use the following code:
  *
@@ -3290,5 +3298,9 @@ export class PyBufferView {
     this._released = true;
     // @ts-ignore
     this.data = Module.error;
+  }
+
+  [dispose]() {
+    this.release();
   }
 }
