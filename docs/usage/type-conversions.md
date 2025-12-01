@@ -146,6 +146,7 @@ returned. The following operations are currently supported on a {py:class}`~pyod
 | `next(proxy)`                      | `x.next()`                        |
 | `anext(proxy)`                     | `x.next()`                        |
 | `await proxy`                      | `await x`                         |
+| `proxy.__exit__()`                 | `x[Symbol.dispose]()`             |
 
 Note that each of these operations is only supported if the proxied JavaScript
 object supports the corresponding operation. See {py:class}`the JsProxy API docs
@@ -176,6 +177,31 @@ function dir(x) {
   } while ((x = Object.getPrototypeOf(x)));
   return result;
 }
+```
+
+If a JavaScript object has a `[Symbol.dispose]()` method, the `JsProxy` can be
+used as a context manager:
+
+```python
+from pyodide.code import run_js
+
+f = run_js(
+    """
+    function f() {
+        return {
+            disposed: false,
+            [Symbol.dispose]() {
+                this.disposed = true;
+            }
+        };
+    })
+    """
+)
+
+with f() as x:
+    print(x.disposed) # False
+
+print(x.disposed) # True
 ```
 
 As a special case, JavaScript {js:class}`Array`, {js:class}`HTMLCollection`, and
