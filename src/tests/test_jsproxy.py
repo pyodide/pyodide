@@ -3003,7 +3003,7 @@ def test_jsproxy_context_manager(selenium):
     assert o.closed
 
 
-@pytest.mark.xfail_browsers(safari="Symbol.dispose not supported in Safari")
+@pytest.mark.xfail_browsers(safari="Symbol.asyncDispose not supported in Safari")
 @run_in_pyodide
 async def test_jsproxy_async_context_manager(selenium):
     from pyodide.code import run_js
@@ -3037,9 +3037,9 @@ async def test_jsproxy_async_context_manager(selenium):
     assert o.closed
 
 
-@pytest.mark.xfail_browsers(safari="Symbol.dispose not supported in Safari")
+@pytest.mark.xfail_browsers(safari="Symbol.asyncDispose not supported in Safari")
 @run_in_pyodide
-async def test_jsproxy_async_context_manager2(selenium):
+async def test_jsproxy_async_dispose_returns_synchronously(selenium):
     from pyodide.code import run_js
 
     # Make sure it works even when asyncDispose returns synchronously.

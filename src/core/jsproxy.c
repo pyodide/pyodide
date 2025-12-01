@@ -4518,7 +4518,7 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
   SET_FLAG_IF_HAS_METHOD(HAS_SET, "set");
   SET_FLAG_IF_HAS_METHOD(HAS_HAS, "has");
   SET_FLAG_IF_HAS_METHOD(HAS_INCLUDES, "includes");
-  if (Symbol.dispose) {
+  if (Symbol.asyncDispose) {
     SET_FLAG_IF_HAS_METHOD(HAS_DISPOSE, Symbol.dispose);
     SET_FLAG_IF_HAS_METHOD(HAS_ASYNC_DISPOSE, Symbol.asyncDispose);
   }
