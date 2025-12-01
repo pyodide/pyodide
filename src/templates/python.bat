@@ -14,7 +14,7 @@ if /i "%1"=="-m" if /i "%2"=="pip" (
     REM Shift arguments to remove "-m pip"
     shift
     shift
-    
+
     set "PIP_SCRIPT=%RESOLVED_DIR%pip"
 
     if not exist "%PIP_SCRIPT%" (
@@ -29,7 +29,7 @@ if /i "%1"=="-m" if /i "%2"=="pip" (
 REM Check for Node.js availability
 where node >nul 2>nul
 if ERRORLEVEL 1 (
-    echo No node executable found on the path >&2 
+    echo No node executable found on the path >&2
     exit /b 1
 )
 
@@ -54,7 +54,7 @@ FOR /F "delims=" %%i IN ('node "%TEMP%\__node_check.js"') DO (
 )
 
 del "%TEMP%\__node_check.js" 2>nul
-    
+
 if ERRORLEVEL 1 (
     echo Node.js version check failed or exited with error. >&2
     exit /b 1
