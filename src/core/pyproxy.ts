@@ -868,7 +868,7 @@ PyProxyFunction.prototype = PyProxyFunctionProto;
  */
 export class PyProxyWithLength extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyProxyWithLength {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_LENGTH);
   }
 }
@@ -904,7 +904,7 @@ export class PyLengthMethods {
  */
 export class PyProxyWithGet extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyProxyWithGet {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_GET);
   }
 }
@@ -989,7 +989,7 @@ export class PyGetItemMethods {
  */
 export class PyProxyWithSet extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyProxyWithSet {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_SET);
   }
 }
@@ -1045,7 +1045,7 @@ export class PySetItemMethods {
  */
 export class PyProxyWithHas extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyProxyWithHas {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_CONTAINS);
   }
 }
@@ -1141,7 +1141,7 @@ function* iter_helper(
  */
 export class PyIterable extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyIterable {
     return (
       API.isPyProxy(obj) && !!(_getFlags(obj) & (IS_ITERABLE | IS_ITERATOR))
     );
@@ -1248,7 +1248,7 @@ async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
  */
 export class PyAsyncIterable extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyAsyncIterable {
     return (
       API.isPyProxy(obj) &&
       !!(_getFlags(obj) & (IS_ASYNC_ITERABLE | IS_ASYNC_ITERATOR))
@@ -1292,7 +1292,7 @@ export class PyAsyncIterableMethods {
  */
 export class PyIterator extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyIterator {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ITERATOR);
   }
 }
@@ -1345,7 +1345,7 @@ export class PyIteratorMethods {
  */
 export class PyGenerator extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyGenerator {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_GENERATOR);
   }
 }
@@ -1421,7 +1421,7 @@ export class PyGeneratorMethods {
  */
 export class PyAsyncIterator extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyAsyncIterator {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ASYNC_ITERATOR);
   }
 }
@@ -1485,7 +1485,7 @@ export class PyAsyncIteratorMethods {
  */
 export class PyAsyncGenerator extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyAsyncGenerator {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ASYNC_GENERATOR);
   }
 }
@@ -1588,7 +1588,7 @@ export class PyAsyncGeneratorMethods {
  */
 export class PySequence extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PySequence {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_SEQUENCE);
   }
 }
@@ -1895,7 +1895,7 @@ export class PySequenceMethods {
  */
 export class PyMutableSequence extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyMutableSequence {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_SEQUENCE);
   }
 }
@@ -2534,7 +2534,7 @@ const PyProxyDictHandlers = {
  */
 export class PyAwaitable extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyAwaitable {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_AWAITABLE);
   }
 }
@@ -3104,7 +3104,7 @@ export class PyBufferMethods {
  */
 export class PyDict extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyDict {
     // TODO: allow MutableMappings?
     return API.isPyProxy(obj) && obj.type === "dict";
   }
