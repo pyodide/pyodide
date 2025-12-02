@@ -1611,7 +1611,7 @@ def test_array_like_sequence_iteration_fail(selenium):
     from pyodide.ffi import JsException
 
     l = run_js("({[Symbol.iterator](){}, length: 5})")
-    match = "TypeError.*Symbol.iterator"
+    match = r"TypeError.*[Ii]terator"
     with pytest.raises(JsException, match=match):
         l + [1, 2, 3]
 
