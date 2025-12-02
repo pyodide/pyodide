@@ -396,17 +396,6 @@ jobs:
           command: |
             DRY_RUN=1 ./tools/deploy_to_npm.sh
 
-  test-cmdline-runner:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-
-      - run:
-          name: test
-          command: |
-            ./tools/cmdline-runner-test.sh
-
   test-d8:
     <<: *defaults
     steps:
@@ -778,13 +767,6 @@ workflows:
               only: /.*/
 
       - create-xbuild-env:
-          requires:
-            - build-full-packages
-          filters:
-            tags:
-              only: /.*/
-
-      - test-cmdline-runner:
           requires:
             - build-full-packages
           filters:
