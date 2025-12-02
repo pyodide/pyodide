@@ -1,8 +1,10 @@
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
 
-REM RESOLVED_DIR = Directory of this script
+REM VENV_DIR = Directory of this script (symlink)
+REM RESOLVED_DIR = Directory of this script (resolved)
 REM THIS_PROGRAM = Full path to this script
+set "VENV_DIR=%~dp0"
 set "RESOLVED_DIR=%~dp0"
 set "THIS_PROGRAM=%~f0"
 
@@ -10,12 +12,12 @@ REM Set initial arguments placeholder for the Node flags
 set "NODE_ARGS="
 
 REM Redirect python -m pip to execute in host environment
-if /i "%1"=="-m" if /i "%2"=="pip" (
+if /i "%~1"=="-m" if /i "%~2"=="pip" (
     REM Shift arguments to remove "-m pip"
     shift
     shift
 
-    set "PIP_SCRIPT=%RESOLVED_DIR%pip"
+    set "PIP_SCRIPT=%VENV_DIR%pip"
 
     if not exist "%PIP_SCRIPT%" (
         >&2 echo Cannot find pyodide pip. Make a pyodide venv first?
@@ -26,6 +28,50 @@ if /i "%1"=="-m" if /i "%2"=="pip" (
     exit /b %ERRORLEVEL%
 )
 
+REM Sadly, windows doesn't seem to have realpath-equivalent built-in commands that can resolve symlinks.
+REM Use 'dir /l' to get the symlink information and pipe it to findstr.
+REM findstr filters the line containing the link, and FOR /F is used to parse it.
+REM Note: This relies heavily on the output format being consistent.
+
+set "TargetFullPath="
+for /f "tokens=*" %%a in ('dir /l "%THIS_PROGRAM%" ^| findstr /i /c:"SYMLINK" /c:"JUNCTION"') do (
+    REM %%a contains the full line, e.g., "... <SYMLINKD> MyLink [C:\Original\Target\Folder]"
+
+    REM --- Single-Block Parsing Logic ---
+    REM 1. Use an inner FOR loop to tokenize the line using '[' as the delimiter.
+    REM    The second token (%%b) will capture everything after the '[', which is "TargetFullPath]"
+    set "Line=%%a"
+    for /f "tokens=2 delims=[" %%b in ("!Line!") do (
+        set "TargetBracketed=%%b"
+    )
+
+    REM 2. Now TargetBracketed is "C:\Original\Target\Folder]".
+    REM    Strip the last character (the closing ']') using substring expansion.
+    if defined TargetBracketed (
+        REM The substring operation removes the last character (the ']').
+        set "TargetFullPath=!TargetBracketed:~0,-1!"
+    )
+
+    goto :ProcessResult
+)
+REM If we reach here, it means no symlink/junction was found, probably invoking the batch file
+goto :EndParse
+
+:ProcessResult
+if defined TargetFullPath (
+    echo Target Full Path: !TargetFullPath!
+
+    rem Now, use another FOR loop to extract the directory path from the full path.
+    rem This uses the built-in batch variable modifier '~dp' (Drive/Path)
+    for %%f in ("!TargetFullPath!") do (
+        set "RESOLVED_DIR=%%~dpf"
+    )
+
+) else (
+    echo ERROR: Could not parse target path from 'dir /l' output.
+)
+
+:EndParse
 REM Check for Node.js availability
 where node >nul 2>nul
 if ERRORLEVEL 1 (
