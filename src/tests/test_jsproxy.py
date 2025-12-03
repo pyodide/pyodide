@@ -1690,6 +1690,15 @@ def test_array_sequence_methods(selenium, sequence_converter):
             pythonapi.PySequence_DelItem(l, 1)
         assert list(l) == [77, 65, 23]
 
+    # Test slicing
+    if not typed_array:
+        pyl = [77, 65, 23, 1, 9, 2, 7, -1, 73, 5, 3, 4, 11]
+        x = to_js(pyl)
+        l = run_js(sequence_converter)(x)
+        assert list(l[:]) == pyl
+        assert list(l[3:7]) == pyl[3:7]
+        assert list(l[::2]) == pyl[::2]
+
 
 @run_in_pyodide
 def test_array_sequence_repeat(selenium):
