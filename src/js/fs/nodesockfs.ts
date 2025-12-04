@@ -1,189 +1,393 @@
+/**
+ * NodeSockFS - A Node.js native socket filesystem for Emscripten/Pyodide
+ *
+ * This replaces Emscripten's WebSocket-based SOCKFS with native Node.js sockets.
+ * Currently implements TCP client sockets only (SOCK_STREAM + connect).
+ */
 
-import { PyodideModule, FSStream } from "../types";
-import type { Socket } from 'net';
+import type { PyodideModule } from "../types";
+import type { Socket } from "node:net";
+import { RUNTIME_ENV } from "../environments"; 
+
+// Internal socket structure that mirrors Emscripten's sock structure
+interface NodeSock {
+  family: number;
+  type: number;
+  protocol: number;
+  server: any;
+  error: number | null;
+  nodeSocket: Socket | null;
+  recvBuffer: Buffer; // Buffer for incoming data
+  connected: boolean; // Connection state
+  connecting: boolean; // Whether connect is in progress
+  stream?: any; // The FS stream
+  daddr?: string; // Destination address
+  dport?: number; // Destination port
+  saddr?: string; // Source address (for bind)
+  sport?: number; // Source port (for bind)
+  sock_ops: any; // Socket operations
+}
 
 export async function initializeNodeSockFS(module: PyodideModule) {
-  const FS = module.FS;
-  const ERROR_CODES = module.ERRNO_CODES;
-
-  const dgram = await import("node:dgram");
-  const net = await import("node:net");
-
-  function tcpStreamOps(sock: Socket) {
-    const _sock = sock;
-
-    let recvBuffer = Buffer.alloc(0);
-    
-    _sock.on('data', (data: Buffer) => {
-      // append incoming chunk to temporary receive buffer
-      // @ts-ignore
-      let _recvBuffer = Buffer.concat([recvBuffer, data]);
-      // expose buffer on the socket for other ops to read
-      recvBuffer = _recvBuffer;
-    });
-
-
-    return {
-      // poll(sock: any) {
-      //   return 0;
-      // },
-      ioctl(sock: any, request: number, arg: any) {
-        return 0;
-      },
-      close(sock: any) {
-        // not in node:types for some reason I don't understand
-        // @ts-ignore
-        _sock.destroy();
-      },
-      bind(sock: any, addr: any, port: any) {
-        // TODO: Implement bind logic
-        throw new FS.ErrnoError(ERROR_CODES.EINVAL);
-      },
-      connect(sock: any, addr: any, port: any) {
-        _sock.connect(port, addr);
-      },
-      listen(sock: any, backlog: number) {
-        // TODO: Implement server listen logic
-        throw new FS.ErrnoError(ERROR_CODES.EINVAL);
-      },
-      accept(listensock: any) {
-        // TODO: Implement server accept logic
-        throw new FS.ErrnoError(ERROR_CODES.EINVAL);
-      },
-      sendmsg(sock: any, buffer: Uint8Array, offset: number, length: number, addr?: any, port?: any) {
-        // TODO: avoid copying
-        // @ts-ignore
-        _sock.write(buffer.subarray(offset, offset + length));
-        return length;
-      },
-      recvmsg(sock: any, length: number) {
-        if (recvBuffer.length === 0) {
-          return null;
-        }
-        const bytesRead = Math.min(length, recvBuffer.length);
-        const res = {
-          buffer: new Uint8Array(recvBuffer.buffer, recvBuffer.byteOffset, bytesRead),
-        };
-        // remove read data from the buffer
-        recvBuffer = recvBuffer.slice(bytesRead);
-        return res;
-      },
-    }
+  if (!RUNTIME_ENV.IN_NODE) {
+    return;
   }
 
-  const nodeSockFS = {
-    current: 0,
-    
-    DIR_MODE: 16384 | 0o777,
-    AF_INET: 2,
-    SOCK_CLOEXEC: 0o2000000,
-    SOCK_NONBLOCK: 0o4000,
-    SOCK_STREAM: 1,
-    SOCK_DGRAM: 2,
-    IPPROTO_TCP: 6,
-    S_IFSOCK: 0o140000,
-    O_RDWR: 0o2,
+  return [
+    async (module: PyodideModule) => {
+      module.addRunDependency("initializeNodeSockFSHook");
+      try {
+        await _initializeNodeSockFS(module);
+      } finally {
+        module.removeRunDependency("initializeNodeSockFSHook");
+      }
+    },
+  ];
+}
 
-    mount: function (mount: any) {
-      return FS.createNode(null, '/', nodeSockFS.DIR_MODE, 0);
+async function _initializeNodeSockFS(module: PyodideModule) {
+  const FS: any = module.FS;
+  const ERRNO_CODES: any = module.ERRNO_CODES;
+
+  // Import Node.js modules
+  const net = await import("node:net");
+
+  // Constants matching Emscripten/POSIX definitions
+  const AF_INET = 2;
+  const SOCK_STREAM = 1;
+  const SOCK_DGRAM = 2;
+  const SOCK_CLOEXEC = 0o2000000;
+  const SOCK_NONBLOCK = 0o4000;
+  const IPPROTO_TCP = 6;
+  const S_IFSOCK = 0o140000;
+  const O_RDWR = 0o2;
+  const DIR_MODE = 16384 | 0o777;
+
+  // Poll event flags
+  const POLLIN = 0x001;
+  const POLLOUT = 0x004;
+  const POLLHUP = 0x010;
+  const POLLRDNORM = 0x040;
+
+  // Socket operations - these are called via sock.sock_ops.method(sock, ...) inside the libsyscall
+  const tcp_sock_ops = {
+    /**
+     * Poll the socket for readability/writability
+     */
+    poll(sock: NodeSock): number {
+      let mask = 0;
+
+      // Check if there's data to read
+      if (sock.recvBuffer.length > 0) {
+        mask |= POLLRDNORM | POLLIN;
+      }
+
+      // Check if socket is writable (connected and not destroyed)
+      if (sock.connected && sock.nodeSocket && !sock.nodeSocket.destroyed) {
+        mask |= POLLOUT;
+      }
+
+      // Check if socket is closed/closing
+      if (sock.nodeSocket?.destroyed) {
+        mask |= POLLHUP;
+      }
+
+      return mask;
     },
 
-    createSocket: function(family: number, type: number, protocol: number) {
-      // Emscripten only supports AF_INET
-      if (family != nodeSockFS.AF_INET) {
-        throw new FS.ErrnoError(ERROR_CODES.EAFNOSUPPORT);
+    /**
+     * Handle ioctl calls
+     */
+    ioctl(sock: NodeSock, request: number, _arg: any): number {
+      // FIONREAD (0x541B) - return number of bytes available to read
+      const FIONREAD = 0x541b;
+      if (request === FIONREAD) {
+        // Would need to write to arg, but for now just return 0
+        return 0;
       }
-      type &= ~ (nodeSockFS.SOCK_CLOEXEC | nodeSockFS.SOCK_NONBLOCK); // Some applications may pass it; it makes no sense for a single process.
-      // Emscripten only supports SOCK_STREAM and SOCK_DGRAM
-      if (type != nodeSockFS.SOCK_STREAM && type != nodeSockFS.SOCK_DGRAM) {
-        throw new FS.ErrnoError(ERROR_CODES.EINVAL);
+      return 0;
+    },
+
+    /**
+     * Close the socket
+     */
+    close(sock: NodeSock): number {
+      if (sock.nodeSocket) {
+        sock.nodeSocket.destroy();
+        sock.nodeSocket = null;
       }
-      var streaming = type == nodeSockFS.SOCK_STREAM;
-      if (streaming && protocol && protocol != nodeSockFS.IPPROTO_TCP) {
-        throw new FS.ErrnoError(ERROR_CODES.EPROTONOSUPPORT); // if SOCK_STREAM, must be tcp or 0.
+      sock.connected = false;
+      sock.connecting = false;
+      return 0;
+    },
+
+    /**
+     * Bind socket to address/port (not implemented for client-only PoC)
+     */
+    bind(_sock: NodeSock, _addr: string, _port: number): void {
+      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
+    },
+
+    /**
+     * Connect to a remote address
+     */
+    connect(sock: NodeSock, addr: string, port: number): void {
+      if (sock.nodeSocket) {
+        throw new FS.ErrnoError(ERRNO_CODES.EISCONN);
       }
 
-      // create our internal socket structure
-      var sock = {
+      // Create new TCP socket
+      const socket = new net.Socket();
+      sock.nodeSocket = socket;
+      sock.connecting = true;
+      sock.daddr = addr;
+      sock.dport = port;
+
+      // Handle incoming data
+      socket.on("data", (data: Buffer) => {
+        // Append to receive buffer
+        sock.recvBuffer = Buffer.concat([sock.recvBuffer, data]);
+      });
+
+      // Handle connection established
+      socket.on("connect", () => {
+        sock.connected = true;
+        sock.connecting = false;
+      });
+
+      // Handle errors
+      socket.on("error", (_err: NodeJS.ErrnoException) => {
+        sock.error = ERRNO_CODES.ECONNREFUSED;
+        sock.connecting = false;
+      });
+
+      // Handle close
+      socket.on("close", () => {
+        sock.connected = false;
+        sock.connecting = false;
+      });
+
+      // Initiate connection (non-blocking in Node.js)
+      socket.connect(port, addr);
+    },
+
+    /**
+     * Listen for connections (not implemented for client-only PoC)
+     */
+    listen(_sock: NodeSock, _backlog: number): void {
+      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
+    },
+
+    /**
+     * Accept a connection (not implemented for client-only PoC)
+     */
+    accept(_sock: NodeSock): never {
+      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
+    },
+
+    /**
+     * Send data through the socket
+     */
+    sendmsg(
+      sock: NodeSock,
+      buffer: Uint8Array,
+      offset: number,
+      length: number,
+      _addr?: string,
+      _port?: number,
+    ): number {
+      if (!sock.nodeSocket) {
+        throw new FS.ErrnoError(ERRNO_CODES.ENOTCONN);
+      }
+
+      // For TCP, we ignore addr/port as the socket is already connected
+      const data = buffer.subarray(offset, offset + length);
+
+      // Write to the socket
+      // Note: Node.js write is async, but we return immediately like the original SOCKFS
+      sock.nodeSocket.write(data);
+
+      return length;
+    },
+
+    /**
+     * Receive data from the socket
+     */
+    recvmsg(sock: NodeSock, length: number): { buffer: Uint8Array } | null {
+      // If no data available
+      if (sock.recvBuffer.length === 0) {
+        // If socket is closed, return null to signal EOF
+        if (!sock.nodeSocket || sock.nodeSocket.destroyed) {
+          return null;
+        }
+        // Otherwise, would block (EAGAIN) - but stream_ops.read handles this
+        // by returning 0 when recvmsg returns null
+        return null;
+      }
+
+      // Read requested amount (or less if not enough data)
+      const bytesRead = Math.min(length, sock.recvBuffer.length);
+      const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
+
+      // Remove read data from buffer
+      sock.recvBuffer = sock.recvBuffer.subarray(bytesRead);
+
+      return { buffer: data };
+    },
+
+    /**
+     * Get socket name info (for getsockname/getpeername)
+     */
+    getname(sock: NodeSock, peer: boolean): { addr: string; port: number } {
+      if (peer) {
+        if (!sock.daddr || !sock.dport) {
+          throw new FS.ErrnoError(ERRNO_CODES.ENOTCONN);
+        }
+        return { addr: sock.daddr, port: sock.dport };
+      } else {
+        return { addr: sock.saddr || "0.0.0.0", port: sock.sport || 0 };
+      }
+    },
+  };
+
+  // Stream operations - these are called via stream.stream_ops.method(stream, ...)
+  const stream_ops = {
+    poll(stream: any): number {
+      const sock = stream.node.sock as NodeSock;
+      return tcp_sock_ops.poll(sock);
+    },
+
+    ioctl(stream: any, request: number, varargs: any): number {
+      const sock = stream.node.sock as NodeSock;
+      return tcp_sock_ops.ioctl(sock, request, varargs);
+    },
+
+    read(
+      stream: any,
+      buffer: Uint8Array,
+      offset: number,
+      length: number,
+      _position: any,
+    ): number {
+      const sock = stream.node.sock as NodeSock;
+      const msg = tcp_sock_ops.recvmsg(sock, length);
+      if (!msg) {
+        // No data available or socket closed
+        return 0;
+      }
+      buffer.set(msg.buffer, offset);
+      return msg.buffer.length;
+    },
+
+    write(
+      stream: any,
+      buffer: Uint8Array,
+      offset: number,
+      length: number,
+      _position: any,
+    ): number {
+      const sock = stream.node.sock as NodeSock;
+      return tcp_sock_ops.sendmsg(sock, buffer, offset, length);
+    },
+
+    close(stream: any): void {
+      const sock = stream.node.sock as NodeSock;
+      tcp_sock_ops.close(sock);
+    },
+  };
+
+  // Counter for unique socket names
+  let socketCounter = 0;
+
+  // The main NodeSockFS object that will be mounted
+  const NodeSockFS: any = {
+    // Root node, set after mount
+    root: null as any,
+
+    /**
+     * Mount the filesystem
+     */
+    mount(_mount: any): any {
+      return FS.createNode(null, "/", DIR_MODE, 0);
+    },
+
+    /**
+     * Create a new socket
+     */
+    createSocket(family: number, type: number, protocol: number): NodeSock {
+      // Validate family - only AF_INET supported
+      if (family !== AF_INET) {
+        throw new FS.ErrnoError(ERRNO_CODES.EAFNOSUPPORT);
+      }
+
+      // Strip CLOEXEC and NONBLOCK flags
+      type &= ~(SOCK_CLOEXEC | SOCK_NONBLOCK);
+
+      // Validate type - only SOCK_STREAM supported in this PoC
+      if (type !== SOCK_STREAM) {
+        if (type === SOCK_DGRAM) {
+          throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP); // UDP not implemented
+        }
+        throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
+      }
+
+      // Validate protocol for TCP
+      if (protocol && protocol !== IPPROTO_TCP) {
+        throw new FS.ErrnoError(ERRNO_CODES.EPROTONOSUPPORT);
+      }
+
+      // Create internal socket structure
+      const sock: NodeSock = {
         family,
         type,
         protocol,
         server: null,
-        error: null, // Used in getsockopt for SOL_SOCKET/SO_ERROR test
-        peers: {},
-        pending: [],
-        recv_queue: [],
-        sock_ops: nodeSockFS.sock_ops
+        error: null,
+        nodeSocket: null,
+        recvBuffer: Buffer.alloc(0),
+        connected: false,
+        connecting: false,
+        sock_ops: tcp_sock_ops,
       };
 
-      // create the filesystem node to store the socket structure
-      var name = nodeSockFS.nextname();
-      var node = FS.createNode(nodeSockFS.root, name, nodeSockFS.S_IFSOCK, 0);
+      // Create filesystem node
+      const name = `socket[${socketCounter++}]`;
+      const node = FS.createNode(NodeSockFS.root, name, S_IFSOCK, 0);
       node.sock = sock;
 
-      // and the wrapping stream that enables library functions such
-      // as read and write to indirectly interact with the socket
-      // @ts-ignore
-      var stream = FS.createStream({
+      // Create stream for the socket
+      const stream = FS.createStream({
         path: name,
         node,
-        flags: nodeSockFS.O_RDWR,
+        flags: O_RDWR,
         seekable: false,
-        stream_ops: nodeSockFS.stream_ops
+        stream_ops,
       });
 
-      // map the new stream to the socket structure (sockets have a 1:1
-      // relationship with a stream)
+      // Link socket to stream
       sock.stream = stream;
 
       return sock;
     },
 
-    getSocket: function(fd: number) {
-      var stream = FS.getStream(fd);
+    /**
+     * Get a socket by file descriptor
+     */
+    getSocket(fd: number): NodeSock | null {
+      const stream = FS.getStream(fd);
       if (!stream || !FS.isSocket(stream.node.mode)) {
         return null;
       }
-      return stream.node.sock;
+      return stream.node.sock as NodeSock;
     },
-
-    // node and stream ops are backend agnostic
-    stream_ops: {
-      // poll(stream: FSStream) {
-      //   var sock = stream.node.sock;
-      //   return sock.sock_ops.poll(sock);
-      // },
-      ioctl(stream: FSStream, request: number, varargs: any) {
-        var sock = stream.node.sock;
-        return sock.sock_ops.ioctl(sock, request, varargs);
-      },
-      read(stream: FSStream, buffer: Uint8Array, offset: number, length: number, position: any /* ignored */) {
-        var sock = stream.node.sock;
-        var msg = sock.sock_ops.recvmsg(sock, length);
-        if (!msg) {
-          // socket is closed
-          return 0;
-        }
-        buffer.set(msg.buffer, offset);
-        return msg.buffer.length;
-      },
-      write(stream: FSStream, buffer: Uint8Array, offset: number, length: number, position: any /* ignored */) {
-        var sock = stream.node.sock;
-        return sock.sock_ops.sendmsg(sock, buffer, offset, length);
-      },
-      close(stream: FSStream) {
-        var sock = stream.node.sock;
-        sock.sock_ops.close(sock);
-      }
-    },
-    nextname: function(): string {
-      if (!nodeSockFS.nextname.current) {
-        nodeSockFS.nextname.current = 0;
-      }
-      return `socket[${nodeSockFS.nextname.current++}]`;
-    },
-    
-    // backend-specific stream ops
-    sock_ops: tcpStreamOps(),
   };
-};
+
+  // Mount the filesystem and store root
+  NodeSockFS.root = FS.mount(NodeSockFS, {}, null);
+
+  // Replace the global SOCKFS with our implementation
+  // This makes the syscall layer use our implementation
+  (module as any).SOCKFS = NodeSockFS;
+
+  return NodeSockFS;
+}

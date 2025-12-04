@@ -2,6 +2,7 @@
 
 import { PyodideConfigWithDefaults } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
+import { initializeNodeSockFS } from "./fs/nodesockfs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type PyodideModule, type FSType } from "./types";
 import { getSentinelImport } from "generated/sentinel";
@@ -187,6 +188,7 @@ function getFileSystemInitializationFuncs(
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
     initializeNativeFS,
+    initializeNodeSockFS,
     ...callFsInitHook(config.fsInit),
   ];
 }
