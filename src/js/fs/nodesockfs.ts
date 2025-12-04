@@ -49,7 +49,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
   const FS: any = module.FS;
   const ERRNO_CODES: any = module.ERRNO_CODES;
 
-  // Import Node.js modules
+  // @ts-ignore
   const net = await import("node:net");
 
   // Constants matching Emscripten/POSIX definitions
