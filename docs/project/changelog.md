@@ -21,12 +21,17 @@ myst:
   if it has a `length` property and is iterable. Every JsProxy of an array-like
   object now implements subscripting. {pr}`5991`
 
+- {{ Enhancement }} It is now possible to slice-subscript a JsProxy of an
+  array-like object.
+  {pr}`6019`
+
 - {{ Enhancement }} `PyProxy` now has a `[Symbol.dispose]` method.
   {pr}`6003`
 
 - {{ Enhancement }} A `JsProxy` of an object with a `[Symbol.dispose]` method is
-  now a context manager.
-  {pr}`6007`
+  now a context manager. A `JsProxy` of an object with a `[Symbol.asyncDispose]`
+  method is now an async context manager.
+  {pr}`6007` {pr}`6014`
 
 - {{ Enhancement }} `PyBufferView` (the return value of ) now has a
   `[Symbol.dispose]` method.

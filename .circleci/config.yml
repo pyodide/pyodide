@@ -362,7 +362,6 @@ jobs:
             npm ci
             npm link ../../dist
             npm run test-types
-            npm test
 
       - run:
           name: test-unit
