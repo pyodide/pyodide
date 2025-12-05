@@ -16,6 +16,13 @@ function nodeFsync(fd: number): void {
     if (e?.code === "ENOTSUP" && (fd === 1 || fd === 2)) {
       return;
     }
+
+    // On windows, the stdin and stdout may be closed already when we try to fsync them.
+    // In that case, we get EBADF, so we just ignore that error.
+    if (e?.code === "EBADF" && (fd === 1 || fd === 2)) {
+      return;
+    }
+
     throw e;
   }
 }
