@@ -39,15 +39,11 @@ function dirsToMount() {
  * @example
  * windowsPathToUnix("C:\\Users\\siha\\file.txt") // returns "/Users/siha/file.txt"
  * windowsPathToUnix("D:\\projects\\myapp") // returns "/projects/myapp"
- * windowsPathToUnix('"C:\\Users\\siha\\file.txt"') // returns "/Users/siha/file.txt"
  */
 function windowsPathToUnix(path) {
   if (process.platform === "win32") {
-    // Remove surrounding double quotes if present
-    let unixPath = path.replace(/^"|"$/g, "");
-
     // Remove drive letter (e.g., "C:" or "D:")
-    unixPath = unixPath.replace(/^[A-Za-z]:/, "");
+    let unixPath = path.replace(/^[A-Za-z]:/, "");
 
     // Replace all backslashes with forward slashes
     unixPath = unixPath.replace(/\\/g, "/");
