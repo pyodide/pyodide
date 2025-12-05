@@ -13,7 +13,7 @@
     "noUnusedLocals": false,
     "types": ["node", "emscripten"],
     "experimentalDecorators": true,
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2022", "DOM", "ESNext.Float16"],
     "resolveJsonModule": true,
     "baseUrl": "..",
     "paths": {

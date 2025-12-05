@@ -35,6 +35,7 @@ def test_typed_arrays(selenium):
         ("Uint16Array", "uint16"),
         ("Int32Array", "int32"),
         ("Uint32Array", "uint32"),
+        ("Float16Array", "float16"),
         ("Float32Array", "float32"),
         ("Float64Array", "float64"),
     ):
@@ -326,25 +327,6 @@ def test_get_buffer_big_endian(selenium):
     )
     assert len(result) == 48
     assert result[:18] == [0, 0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8]
-
-
-def test_get_buffer_error_messages(selenium):
-    with pytest.raises(Exception, match="Javascript has no Float16 support"):
-        selenium.run_js(
-            """
-            await pyodide.loadPackage(['numpy']);
-            pyodide.runPython(`
-                import numpy as np
-                x = np.ones(2, dtype=np.float16)
-            `);
-            let x = pyodide.runPython("x");
-            try {
-                x.getBuffer();
-            } finally {
-                x.destroy();
-            }
-            """
-        )
 
 
 def test_fft(selenium):

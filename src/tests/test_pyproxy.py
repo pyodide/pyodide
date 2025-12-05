@@ -412,6 +412,7 @@ def test_get_empty_buffer(selenium):
         ["u32", "Uint32Array", "I"],
         ["i64", "BigInt64Array", "q"],
         ["u64", "BigUint64Array", "Q"],
+        ["f16", "Float16Array", "e"],
         ["f32", "Float32Array", "f"],
         ["f64", "Float64Array", "d"],
     ],
@@ -443,7 +444,7 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
     result = result.to_py()
     if fmt.lower() == "q":
         assert result == [hex(x).replace("0x", "") for x in list(mv.cast(fmt))]
-    elif fmt in {"d", "f"}:
+    elif fmt in {"e", "d", "f"}:
         from math import isclose, isnan
 
         for x, y in zip(result, list(mv.cast(fmt)), strict=False):
