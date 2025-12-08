@@ -188,7 +188,7 @@ function getFileSystemInitializationFuncs(
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
     initializeNativeFS,
-    initializeNodeSockFS,
+    ...initializeNodeSockFS(),
     ...callFsInitHook(config.fsInit),
   ];
 }

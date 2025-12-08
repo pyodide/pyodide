@@ -1,10 +1,13 @@
-import pytest
-from pytest_pyodide import run_in_pyodide
 import socket
 import threading
 import time
 
+from pytest_pyodide import run_in_pyodide
 
+from conftest import only_node
+
+
+@only_node
 def test_socket_connect(selenium):
     """Test that Python socket can connect to a server and exchange data."""
     PORT = 12345
@@ -24,7 +27,7 @@ def test_socket_connect(selenium):
             server_socket.listen(1)
             server_socket.settimeout(5.0)  # 5 second timeout
 
-            conn, _addr = server_socket.accept()
+            conn, _ = server_socket.accept()
             try:
                 # Receive data from client
                 data = conn.recv(1024)
@@ -48,7 +51,8 @@ def test_socket_connect(selenium):
     time.sleep(0.5)
 
     @run_in_pyodide
-    def socket_client_test(selenium, port, message):
+    async def socket_client_test(selenium, port, message):
+        import asyncio
         import socket
 
         # Create socket and connect
@@ -57,6 +61,10 @@ def test_socket_connect(selenium):
 
         # Send data
         s.sendall(message)
+
+        await asyncio.sleep(
+            1
+        )  # Yield control to event loop so that data can be processed
 
         # Receive response
         response = s.recv(1024)
@@ -72,11 +80,17 @@ def test_socket_connect(selenium):
     server_thread.join(timeout=5.0)
 
     # Verify no server errors
-    assert not server_error, f"Server error: {server_error[0] if server_error else 'unknown'}"
+    assert not server_error, (
+        f"Server error: {server_error[0] if server_error else 'unknown'}"
+    )
 
     # Verify data was received by server
     assert len(server_received) == 1, "Server should have received data"
-    assert server_received[0] == TEST_MESSAGE, f"Server received {server_received[0]!r}, expected {TEST_MESSAGE!r}"
+    assert server_received[0] == TEST_MESSAGE, (
+        f"Server received {server_received[0]!r}, expected {TEST_MESSAGE!r}"
+    )
 
     # Verify client received response
-    assert result == RESPONSE_MESSAGE, f"Client received {result!r}, expected {RESPONSE_MESSAGE!r}"
+    assert result == RESPONSE_MESSAGE, (
+        f"Client received {result!r}, expected {RESPONSE_MESSAGE!r}"
+    )

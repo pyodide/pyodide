@@ -5,9 +5,9 @@
  * Currently implements TCP client sockets only (SOCK_STREAM + connect).
  */
 
-import type { PyodideModule } from "../types";
+import type { PyodideModule, PreRunFunc } from "../types";
 import type { Socket } from "node:net";
-import { RUNTIME_ENV } from "../environments"; 
+import { RUNTIME_ENV } from "../environments";
 
 // Internal socket structure that mirrors Emscripten's sock structure
 interface NodeSock {
@@ -28,9 +28,9 @@ interface NodeSock {
   sock_ops: any; // Socket operations
 }
 
-export async function initializeNodeSockFS(module: PyodideModule) {
+export function initializeNodeSockFS(): PreRunFunc[] {
   if (!RUNTIME_ENV.IN_NODE) {
-    return;
+    return [];
   }
 
   return [
@@ -136,6 +136,8 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         throw new FS.ErrnoError(ERRNO_CODES.EISCONN);
       }
 
+      console.log(`NodeSockFS: Connecting to ${addr}:${port}`);
+
       // Create new TCP socket
       const socket = new net.Socket();
       sock.nodeSocket = socket;
@@ -147,24 +149,32 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       socket.on("data", (data: Buffer) => {
         // Append to receive buffer
         sock.recvBuffer = Buffer.concat([sock.recvBuffer, data]);
+
+        console.log(`NodeSockFS: Received data of length ${data.length}`);
       });
 
       // Handle connection established
       socket.on("connect", () => {
         sock.connected = true;
         sock.connecting = false;
+
+        console.log(`NodeSockFS: Connected to ${addr}:${port}`);
       });
 
       // Handle errors
       socket.on("error", (_err: NodeJS.ErrnoException) => {
         sock.error = ERRNO_CODES.ECONNREFUSED;
         sock.connecting = false;
+
+        console.error(`NodeSockFS: Connection error to ${addr}:${port}`);
       });
 
       // Handle close
       socket.on("close", () => {
         sock.connected = false;
         sock.connecting = false;
+
+        console.log(`NodeSockFS: Connection closed to ${addr}:${port}`);
       });
 
       // Initiate connection (non-blocking in Node.js)
@@ -200,6 +210,8 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         throw new FS.ErrnoError(ERRNO_CODES.ENOTCONN);
       }
 
+      console.log(`NodeSockFS: Sending data of length ${length}`);
+
       // For TCP, we ignore addr/port as the socket is already connected
       const data = buffer.subarray(offset, offset + length);
 
@@ -218,12 +230,18 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       if (sock.recvBuffer.length === 0) {
         // If socket is closed, return null to signal EOF
         if (!sock.nodeSocket || sock.nodeSocket.destroyed) {
+          console.log(`NodeSockFS: Socket closed, returning EOF`);
           return null;
         }
+        console.log(
+          `NodeSockFS: No data available, would block or socket closed`,
+        );
         // Otherwise, would block (EAGAIN) - but stream_ops.read handles this
         // by returning 0 when recvmsg returns null
         return null;
       }
+
+      console.log(`NodeSockFS: Receiving data of length ${length}`);
 
       // Read requested amount (or less if not enough data)
       const bytesRead = Math.min(length, sock.recvBuffer.length);
@@ -385,9 +403,12 @@ async function _initializeNodeSockFS(module: PyodideModule) {
   // Mount the filesystem and store root
   NodeSockFS.root = FS.mount(NodeSockFS, {}, null);
 
-  // Replace the global SOCKFS with our implementation
+  // Replace the SOCKFS APIs with NodeSockFS
   // This makes the syscall layer use our implementation
-  (module as any).SOCKFS = NodeSockFS;
+  // FIXME: This depends on internal Emscripten structures, which may change anytime.
+  //        We should consider contributing upstream or finding a more stable integration method.
+  (module as any).SOCKFS.createSocket = NodeSockFS.createSocket;
+  (module as any).SOCKFS.getSocket = NodeSockFS.getSocket;
 
   return NodeSockFS;
 }
