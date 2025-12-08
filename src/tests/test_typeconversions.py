@@ -902,6 +902,7 @@ def test_js2python_bool(selenium, jsval, is_truthy):
         ("Uint16Array", "H"),
         ("Int32Array", "i"),
         ("Uint32Array", "I"),
+        ("Float16Array", "e"),
         ("Float32Array", "f"),
         ("Float64Array", "d"),
     ),
@@ -1615,7 +1616,6 @@ def test_buffer_format_string(selenium):
         ["II", "Unrecognized alignment character I."],
         ["x", "Unrecognized format character 'x'."],
         ["x", "Unrecognized format character 'x'."],
-        ["e", "Javascript has no Float16 support."],
     ]
     for fmt, msg in errors:
         with pytest.raises(selenium.JavascriptException, match=msg):

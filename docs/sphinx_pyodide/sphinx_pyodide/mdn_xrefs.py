@@ -40,6 +40,7 @@ DATA = {
         "Uint32Array": "$global/",
         "Int32Array": "$global/",
         "Uint8ClampedArray": "$global/",
+        "Float16Array": "$global/",
         "Float32Array": "$global/",
         "Float64Array": "$global/",
         "Map": "$global/",
