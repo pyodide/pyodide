@@ -236,7 +236,7 @@ def test_nan_conversions(selenium):
 
 @given(n=st.integers())
 @std_hypothesis_settings
-def test_bigint_conversions(selenium_module_scope, n):
+def test_bigint_conversions1(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
         h = hex(n)
         selenium.run_js(f"self.h = {h!r};")
@@ -254,11 +254,15 @@ def test_bigint_conversions(selenium_module_scope, n):
             }
             pyodide.runPython(`
                 from js import n, h
+                from pyodide.ffi import JsBigInt
+
+                assert isinstance(n, JsBigInt)
                 n2 = int(h, 16)
                 assert n == n2
             `);
             let n2 = pyodide.globals.get("n2");
             let n3 = Number(n2);
+            let n4 = pyodide.globals.get("n");
             if(Number.isSafeInteger(n3)){
                 assert(() => typeof n2 === "number");
                 assert(() => n2 === Number(n));
@@ -266,6 +270,8 @@ def test_bigint_conversions(selenium_module_scope, n):
                 assert(() => typeof n2 === "bigint");
                 assert(() => n2 === n);
             }
+            assert(() => typeof n4 === "bigint");
+            assert(() => n4 === n);
             """
         )
 
@@ -277,7 +283,7 @@ def test_bigint_conversions(selenium_module_scope, n):
     )
 )
 @std_hypothesis_settings
-def test_big_int_conversions2(selenium_module_scope, n):
+def test_bigint_conversions2(selenium_module_scope, n):
     @run_in_pyodide
     def main(selenium, s):
         import json
@@ -309,12 +315,13 @@ def test_big_int_conversions2(selenium_module_scope, n):
     exp=st.integers(min_value=1, max_value=10),
 )
 @std_hypothesis_settings
-def test_big_int_conversions3(selenium_module_scope, n, exp):
+def test_bigint_conversions3(selenium_module_scope, n, exp):
     @run_in_pyodide
     def main(selenium, s):
         import json
 
         from pyodide.code import run_js
+        from pyodide.ffi import JsBigInt
 
         x_py = json.loads(s)
         x_js = run_js(
@@ -328,6 +335,13 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
             """
         )(x_py)
         assert x1 == x2
+
+        x_py_rt = run_js("(x) => x")(x_py)
+        assert x_py_rt == x_py
+        if x_py > 2**53:
+            assert isinstance(x_py_rt, JsBigInt)
+        else:
+            assert isinstance(x_py_rt, int)
 
         check = run_js(
             """
@@ -2203,3 +2217,95 @@ def test_js_callable_not_function(selenium):
         """
     )
     assert list(o.nonFuncCallable(1, 2, 3)) == [o, 1, 2, 3]
+
+
+@run_in_pyodide
+def test_js_bigint(selenium):
+    from pyodide.ffi import JsBigInt
+
+    m1 = JsBigInt(-1)
+    p1 = JsBigInt(1)
+    p13 = JsBigInt(13)
+    p21 = JsBigInt(21)
+
+    assert isinstance(abs(m1), JsBigInt)
+    assert isinstance(abs(p1), JsBigInt)
+    assert m1 == -1
+    assert abs(m1) == 1
+    assert abs(p1) == 1
+
+    assert isinstance(m1 + p1, JsBigInt)
+    assert isinstance((-1) + p1, int)
+    assert isinstance(m1 + 1, int)
+    assert m1 + p1 == 0
+    assert m1 < p1
+    assert not (m1 > p1)
+
+    assert isinstance(p13 & p21, JsBigInt)
+    assert isinstance(p13 & 21, int)
+    assert isinstance(13 & p21, int)
+    assert p13 & p21 == 5
+    assert p13 & 21 == 5
+    assert 13 & p21 == 5
+
+    assert isinstance(p21 // p13, JsBigInt)
+    assert isinstance(21 // p13, int)
+    assert isinstance(p21 // 13, JsBigInt)
+    assert p21 // p13 == 1
+    assert 21 // p13 == 1
+    assert p21 // 13 == 1
+
+    assert isinstance(p21 << p13, JsBigInt)
+    assert isinstance(p21 << 13, JsBigInt)
+    assert isinstance(21 << p13, int)
+    assert p21 << p13 == 21 << 13
+    assert p21 << 13 == 21 << 13
+    assert 21 << p13 == 21 << 13
+
+    assert isinstance(p21 % p13, JsBigInt)
+    assert isinstance(21 % p13, int)
+    assert isinstance(p21 % 13, JsBigInt)
+    assert p21 % p13 == 8
+    assert 21 % p13 == 8
+    assert p21 % 13 == 8
+
+    assert isinstance(-m1, JsBigInt)
+    assert -m1 == p1
+    assert -m1 == 1
+
+    assert isinstance(p21 | p13, JsBigInt)
+    assert isinstance(p21 | 13, int)
+    assert isinstance(21 | p13, int)
+    assert p21 | p13 == 29
+    assert p21 | 13 == 29
+    assert 21 | p13 == 29
+
+    assert isinstance(p21**p13, JsBigInt)
+    assert isinstance(p21**13, JsBigInt)
+    assert isinstance(21**p13, int)
+    assert p21**p13 == 21**13
+    assert p21**13 == 21**13
+    assert 21**p13 == 21**13
+
+    assert isinstance(+m1, JsBigInt)
+    assert +m1 == m1
+    assert +m1 == -1
+
+    assert isinstance(p21 >> p13, JsBigInt)
+    assert isinstance(p21 >> 13, JsBigInt)
+    assert isinstance(21 >> p13, int)
+    assert p21 >> p13 == 21 >> 13
+    assert p21 >> 13 == 21 >> 13
+    assert 21 >> p13 == 21 >> 13
+
+    assert isinstance(m1 - p1, JsBigInt)
+    assert isinstance((-1) - p1, int)
+    assert isinstance(m1 - 1, int)
+    assert m1 - p1 == -2
+
+    assert isinstance(p21 ^ p13, JsBigInt)
+    assert isinstance(p21 ^ 13, int)
+    assert isinstance(21 ^ p13, int)
+    assert p21 ^ p13 == 24
+    assert p21 ^ 13 == 24
+    assert 21 ^ p13 == 24

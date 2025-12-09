@@ -1735,6 +1735,82 @@ from json import encoder
 encoder._JSNULL = jsnull  # type:ignore[attr-defined]
 
 
+class JsBigInt(int):
+    """The Python representation of a bigint.
+
+    This is a subclass of ``int`` that behaves in all ways like a normal int
+    except that it is converted to a bigint instead of a number when converted
+    to JavaScript.
+
+    All standard binary and unary operations are supported. When used with
+    ``+``, ``-``, ``*``, ``&``, ``|``, or ``^`` a normal ``int`` is returned if
+    either operand is an int. If both operands are a ``JsBigInt`` then a
+    ``JsBigInt`` will be returned.
+
+    When used with ``//``, ``<<``, ``>>``, ``**``, or ``%``, the type of the
+    return value depends only on the left operand, so if the left operand is a
+    ``JsBigInt``, a ``JsBigInt`` is returned whereas if the left operand is an
+    ``int`` an ``int`` is returned.
+    """
+
+    def __abs__(self) -> "JsBigInt":
+        return JsBigInt(int.__abs__(self))
+
+    def __add__(self, other: int) -> int:
+        res = int.__add__(self, other)
+        if isinstance(other, JsBigInt):
+            return JsBigInt(res)
+        return res
+
+    def __and__(self, other: int) -> int:
+        res = int.__and__(self, other)
+        if isinstance(other, JsBigInt):
+            return JsBigInt(res)
+        return res
+
+    def __floordiv__(self, other: int) -> "JsBigInt":
+        return JsBigInt(int.__floordiv__(self, other))
+
+    def __invert__(self) -> "JsBigInt":
+        return JsBigInt(int.__invert__(self))
+
+    def __lshift__(self, other: int) -> "JsBigInt":
+        return JsBigInt(int.__lshift__(self, other))
+
+    def __mod__(self, other: int) -> "JsBigInt":
+        return JsBigInt(int.__mod__(self, other))
+
+    def __neg__(self) -> "JsBigInt":
+        return JsBigInt(int.__neg__(self))
+
+    def __or__(self, other: int) -> int:
+        res = int.__or__(self, other)
+        if isinstance(other, JsBigInt):
+            return JsBigInt(res)
+        return res
+
+    def __pow__(self, other: int) -> "JsBigInt":  # type: ignore[override]
+        return JsBigInt(int.__pow__(self, other))
+
+    def __pos__(self) -> "JsBigInt":
+        return JsBigInt(int.__pos__(self))
+
+    def __rshift__(self, other: int) -> "JsBigInt":
+        return JsBigInt(int.__rshift__(self, other))
+
+    def __sub__(self, other: int) -> int:
+        res = int.__sub__(self, other)
+        if isinstance(other, JsBigInt):
+            return JsBigInt(res)
+        return res
+
+    def __xor__(self, other: int) -> int:
+        res = int.__xor__(self, other)
+        if isinstance(other, JsBigInt):
+            return JsBigInt(res)
+        return res
+
+
 __all__ = [
     "ConversionError",
     "InternalError",
@@ -1768,6 +1844,7 @@ __all__ = [
     "to_js",
     "JsNull",
     "jsnull",
+    "JsBigInt",
 ]
 
 __name__ = _save_name
