@@ -2309,3 +2309,13 @@ def test_js_bigint(selenium):
     assert p21 ^ p13 == 24
     assert p21 ^ 13 == 24
     assert 21 ^ p13 == 24
+
+
+@run_in_pyodide
+def test_js_bigint_construct_typed_array(selenium):
+    from js import BigInt64Array
+    from pyodide.ffi import JsBigInt
+
+    # Without JsBigInt we can't construct a BigInt64Array
+    a = BigInt64Array.new([JsBigInt(x) for x in range(1, 10, 2)])
+    assert list(a) == list(range(1, 10, 2))
