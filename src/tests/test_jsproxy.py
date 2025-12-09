@@ -920,12 +920,7 @@ def test_mixins_feature_presence(selenium):
 
     def test_object(obj, keys_expected):
         for [key, expected_val] in keys_expected.object_entries():
-            actual_val = hasattr(obj, key)
-            if actual_val != expected_val:
-                console.log(obj)
-                console.log(key)
-                console.log(actual_val)
-                raise AssertionError(f"Expected {key}={expected_val}, got {actual_val}")
+            assert hasattr(obj, key) == expected_val
 
     run_js(
         """
