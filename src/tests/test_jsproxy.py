@@ -613,63 +613,42 @@ def test_nested_attribute_access(selenium):
     assert self.Float64Array.BYTES_PER_ELEMENT == 8
 
 
-@run_in_pyodide
 def test_destroy_attribute(selenium):
-    import sys
-
-    from pyodide.code import run_js
-
-    class Test:
-        a = {}
-
-    test = Test()  # noqa: F841
-
-    assert sys.getrefcount(test) == 3
-    assert sys.getrefcount(test.a) == 2
-
-    run_js(
+    selenium.run_js(
         """
-        (test) => {
-            test.a;
-        }
+        let test = pyodide.runPython(`
+            class Test:
+                a = {}
+            test = Test()
+            test
+        `);
+        pyodide.runPython(`
+            import sys
+            assert sys.getrefcount(test) == 3
+            assert sys.getrefcount(test.a) == 2
+        `);
+        test.a;
+        pyodide.runPython(`
+            assert sys.getrefcount(test) == 3
+            assert sys.getrefcount(test.a) == 3
+        `);
+        test.a.destroy();
+        pyodide.runPython(`
+            assert sys.getrefcount(test) == 3
+            assert sys.getrefcount(test.a) == 2
+        `);
+        test.a;
+        pyodide.runPython(`
+            assert sys.getrefcount(test) == 3
+            assert sys.getrefcount(test.a) == 3
+        `);
+        test.destroy();
+        pyodide.runPython(`
+            assert sys.getrefcount(test) == 2
+            assert sys.getrefcount(test.a) == 2
+        `);
         """
-    )(test)
-
-    assert sys.getrefcount(test) == 3
-    assert sys.getrefcount(test.a) == 3
-
-    run_js(
-        """
-        (test) => {
-            test.a.destroy();
-        }
-        """
-    )(test)
-
-    assert sys.getrefcount(test) == 3
-    assert sys.getrefcount(test.a) == 2
-
-    run_js(
-        """
-        (test) => {
-            test.a;
-        }
-        """
-    )(test)
-
-    assert sys.getrefcount(test) == 3
-    assert sys.getrefcount(test.a) == 3
-
-    run_js(
-        """
-        (test) => {
-            test.destroy();
-        }
-        """
-    )(test)
-
-    assert sys.getrefcount(test) == 2
-    assert sys.getrefcount(test.a) == 2
+    )
 
 
 @run_in_pyodide
@@ -915,7 +894,6 @@ def test_object_entries_keys_values(selenium):
 
 @run_in_pyodide
 def test_mixins_feature_presence(selenium):
-    from js import console  # type: ignore[attr-defined]
     from pyodide.code import run_js
 
     def test_object(obj, keys_expected):
