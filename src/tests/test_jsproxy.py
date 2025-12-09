@@ -714,9 +714,9 @@ def test_mount_object(selenium_standalone):
     del sys.modules["b"]
 
 
-@run_in_pyodide
+@run_in_pyodide(packages=["pytest"])
 def test_unregister_jsmodule(selenium):
-    from unittest import TestCase
+    import pytest
 
     from pyodide.code import run_js
 
@@ -730,8 +730,7 @@ def test_unregister_jsmodule(selenium):
         """
     )
 
-    raises = TestCase().assertRaises
-    with raises(ImportError):
+    with pytest.raises(ImportError):
         import a  # noqa: F401
 
 
