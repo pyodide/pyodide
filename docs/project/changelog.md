@@ -21,6 +21,10 @@ myst:
   if it has a `length` property and is iterable. Every JsProxy of an array-like
   object now implements subscripting. {pr}`5991`
 
+- {{ Enhancement }} It is now possible to slice-subscript a JsProxy of an
+  array-like object.
+  {pr}`6019`
+
 - {{ Enhancement }} `PyProxy` now has a `[Symbol.dispose]` method.
   {pr}`6003`
 

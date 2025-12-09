@@ -209,9 +209,10 @@ print(x.disposed) # True
 Likewise, if a JavaScript object has a `[Symbol.asyncDispose]()` method, the
 `JsProxy` can be used as an async context manager.
 
-As a special case, JavaScript {js:class}`Array`, {js:class}`HTMLCollection`, and
-{js:class}`NodeList` are container types, but instead of using `array.get(7)` to
-get the 7th element, JavaScript uses `array[7]`. For these cases, we translate:
+As a special case, JavaScript {js:class}`Array` and array-like objects such as
+{js:class}`HTMLCollection`, and {js:class}`NodeList` are container types, but
+instead of using `array.get(7)` to get the 7th element, JavaScript uses
+`array[7]`. For these cases, we translate:
 
 | Python             | JavaScript          |
 | ------------------ | ------------------- |
@@ -219,6 +220,10 @@ get the 7th element, JavaScript uses `array[7]`. For these cases, we translate:
 | `proxy[idx] = val` | `array[idx] = val`  |
 | `idx in proxy`     | `idx in array`      |
 | `del proxy[idx]`   | `array.splice(idx)` |
+
+An object is treated as array-like if it is iterable and has a `length` field.
+An object is treated as an array if ``Array.isArray()`` returns true. Array-like
+objects that are not arrays or typed arrays are assumed to be immutable.
 
 If you need to access the fields in a JavaScript object, you must use
 `obj.field_name` or if the name of the field is not a valid Python identifier,

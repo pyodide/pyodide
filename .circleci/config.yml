@@ -110,7 +110,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip dist/python dist/python_cli_entry.mjs
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip dist/python dist/python.bat dist/python_cli_entry.mjs
             tar cjf pyodide-static-libs.tar.gz -C cpython/installs  .
 
       - store_artifacts:
@@ -176,7 +176,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip dist/python dist/python_cli_entry.mjs
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip dist/python dist/python.bat dist/python_cli_entry.mjs
             tar cjf build-logs.tar.gz  packages/build-logs
 
       - run:
@@ -395,17 +395,6 @@ jobs:
           command: |
             DRY_RUN=1 ./tools/deploy_to_npm.sh
 
-  test-cmdline-runner:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-
-      - run:
-          name: test
-          command: |
-            ./tools/cmdline-runner-test.sh
-
   test-d8:
     <<: *defaults
     steps:
@@ -479,7 +468,7 @@ jobs:
             cp -r cpython/installs /tmp/ghr/static-libraries
             cd /tmp/ghr
             tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
-            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip pyodide/python pyodide/python_cli_entry.mjs
+            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip pyodide/python pyodide/python.bat pyodide/python_cli_entry.mjs
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
             tar cjf dist/static-libraries-${CIRCLE_TAG}.tar.bz2  static-libraries/
 
@@ -572,7 +561,7 @@ jobs:
             cp -r xbuildenv /tmp/ghr/xbuildenv
             cp -r cpython/installs /tmp/ghr/static-libraries
             cd /tmp/ghr
-            tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip pyodide/python pyodide/python_cli_entry.mjs
+            tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip pyodide/python pyodide/python.bat pyodide/python_cli_entry.mjs
             tar cjf dist/xbuildenv.tar.bz2  xbuildenv/
             tar cjf dist/static-libraries.tar.bz2  static-libraries/
 
@@ -777,13 +766,6 @@ workflows:
               only: /.*/
 
       - create-xbuild-env:
-          requires:
-            - build-full-packages
-          filters:
-            tags:
-              only: /.*/
-
-      - test-cmdline-runner:
           requires:
             - build-full-packages
           filters:

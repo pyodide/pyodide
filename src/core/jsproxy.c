@@ -1701,22 +1701,6 @@ JsTypedArray_subscript(PyObject* o, PyObject* item)
 }
 
 /**
- * __getitem__ for proxies of array-like objects like HTMLCollection or
- * NodeList, controlled by IS_ARRAY_LIKE
- */
-static PyObject*
-JsArrayLike_subscript(PyObject* o, PyObject* item)
-{
-  if (PySlice_Check(item)) {
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "Slice subscripting is only implemented for arrays, not "
-                    "for array-like objects");
-    return NULL;
-  }
-  return JsArray_subscript(o, item);
-}
-
-/**
  * __setitem__ and __delitem__ for proxies of Js Arrays, controlled by IS_ARRAY
  */
 static int
@@ -4271,7 +4255,7 @@ skip_container_slots:
   }
   if (flags & IS_ARRAY_LIKE) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
-                                       .pfunc = (void*)JsArrayLike_subscript };
+                                       .pfunc = (void*)JsArray_subscript };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_sq_length, .pfunc = (void*)JsProxy_length };
     slots[cur_slot++] =

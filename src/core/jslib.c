@@ -232,7 +232,7 @@ JsvArray_slice,
 (JsVal obj, int length, int start, int stop, int step),
 {
   let result;
-  if (step === 1) {
+  if (step === 1 && obj.slice) {
     result = obj.slice(start, stop);
   } else {
     result = Array.from({ length }, (_, i) => obj[start + i * step]);
