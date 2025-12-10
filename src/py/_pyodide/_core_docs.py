@@ -1735,6 +1735,12 @@ from json import encoder
 encoder._JSNULL = jsnull  # type:ignore[attr-defined]
 
 
+def _int_to_bigint(x):
+    if isinstance(x, int):
+        return JsBigInt(x)
+    return x
+
+
 class JsBigInt(int):
     """The Python representation of a bigint.
 
@@ -1757,58 +1763,43 @@ class JsBigInt(int):
         return JsBigInt(int.__abs__(self))
 
     def __add__(self, other: int) -> int:
-        res = int.__add__(self, other)
-        if isinstance(other, JsBigInt):
-            return JsBigInt(res)
-        return res
+        return _int_to_bigint(int.__add__(self, other))
 
     def __and__(self, other: int) -> int:
-        res = int.__and__(self, other)
-        if isinstance(other, JsBigInt):
-            return JsBigInt(res)
-        return res
+        return _int_to_bigint(int.__and__(self, other))
 
     def __floordiv__(self, other: int) -> "JsBigInt":
-        return JsBigInt(int.__floordiv__(self, other))
+        return _int_to_bigint(int.__floordiv__(self, other))
 
     def __invert__(self) -> "JsBigInt":
         return JsBigInt(int.__invert__(self))
 
     def __lshift__(self, other: int) -> "JsBigInt":
-        return JsBigInt(int.__lshift__(self, other))
+        return _int_to_bigint(int.__lshift__(self, other))
 
     def __mod__(self, other: int) -> "JsBigInt":
-        return JsBigInt(int.__mod__(self, other))
+        return _int_to_bigint(int.__mod__(self, other))
 
     def __neg__(self) -> "JsBigInt":
         return JsBigInt(int.__neg__(self))
 
     def __or__(self, other: int) -> int:
-        res = int.__or__(self, other)
-        if isinstance(other, JsBigInt):
-            return JsBigInt(res)
-        return res
+        return _int_to_bigint(int.__or__(self, other))
 
-    def __pow__(self, other: int) -> "JsBigInt":  # type: ignore[override]
-        return JsBigInt(int.__pow__(self, other))
+    def __pow__(self, other: int, modulus: int | None = None) -> "JsBigInt":  # type: ignore[override]
+        return _int_to_bigint(int.__pow__(self, other, modulus))
 
     def __pos__(self) -> "JsBigInt":
         return JsBigInt(int.__pos__(self))
 
     def __rshift__(self, other: int) -> "JsBigInt":
-        return JsBigInt(int.__rshift__(self, other))
+        return _int_to_bigint(int.__rshift__(self, other))
 
     def __sub__(self, other: int) -> int:
-        res = int.__sub__(self, other)
-        if isinstance(other, JsBigInt):
-            return JsBigInt(res)
-        return res
+        return _int_to_bigint(int.__sub__(self, other))
 
     def __xor__(self, other: int) -> int:
-        res = int.__xor__(self, other)
-        if isinstance(other, JsBigInt):
-            return JsBigInt(res)
-        return res
+        return _int_to_bigint(int.__xor__(self, other))
 
 
 __all__ = [
