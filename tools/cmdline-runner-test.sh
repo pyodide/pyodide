@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+set -e
 export PYODIDE_ROOT
 PYODIDE_ROOT=$(pwd)
 echo "$PYODIDE_ROOT"
@@ -21,6 +21,4 @@ source .venv-pyodide/bin/activate
 git clone https://github.com/python-attrs/attrs --depth 1 --branch 25.3.0
 cd attrs || exit
 pip install ".[tests]"
-# mypy_plugins uses pty and stuff that isn't supported on Emscripten.
-.venv-pyodide/bin/pip uninstall pytest_mypy_plugins
 python -m pytest -k 'not mypy'
