@@ -367,13 +367,10 @@ def test_call_pyproxy_destroy_args(selenium):
 
     run_js(
         r"""
-        () => {
-            let y;
-            pyodide.setDebug(true);
-            self.f = function(x){ y = x; }
-        }
+        pyodide.setDebug(true);
+        self.f = function(x){ self.y = x; }
         """
-    )()
+    )
 
     from js import f  # type: ignore[attr-defined]
 
@@ -382,22 +379,19 @@ def test_call_pyproxy_destroy_args(selenium):
 
     run_js(
         r"""
-        (y) => assertThrows(() => y.length, "Error",
+        assertThrows(() => self.y.length, "Error",
             "This borrowed proxy was automatically destroyed at the end of a function call.*\n" +
             'The object was of type "list" and had repr "\\[\\]"'
         )
         """
-    )(run_js("globalThis.y"))
+    )
 
     run_js(
         r"""
-        () => {
-            let y;
-            pyodide.setDebug(false);
-            self.f = function(x){ y = x; }
-        }
+        pyodide.setDebug(true);
+        self.f = function(x){ self.y = x; }
         """
-    )()
+    )
 
     from js import f  # type: ignore[attr-defined]
 
@@ -406,25 +400,23 @@ def test_call_pyproxy_destroy_args(selenium):
 
     run_js(
         r"""
-        (y) => assertThrows(() => y.length, "Error",
+        assertThrows(() => self.y.length, "Error",
             "This borrowed proxy was automatically destroyed at the end of a function call.*\n" +
-            'For more information about the cause of this error, use `pyodide.setDebug.true.`'
+            'The object was of type "list" and had repr "\\[\\]"'
         )
         """
-    )(run_js("globalThis.y"))
+    )
 
     import asyncio
 
     run_js(
         """
-        () => {
-            self.f = async function(x){
-                await sleep(5);
-                globalThis.y = x;
-            }
+        self.f = async function(x){
+            await sleep(5);
+            self.y = x;
         }
         """
-    )()
+    )
 
     from js import f  # type: ignore[attr-defined]
 
@@ -436,9 +428,9 @@ def test_call_pyproxy_destroy_args(selenium):
 
     run_js(
         """
-        (y) => assertThrows(() => y.length, "Error", "This borrowed proxy was automatically destroyed")
+        assertThrows(() => self.y.length, "Error", "This borrowed proxy was automatically destroyed")
         """
-    )(run_js("globalThis.y"))
+    )
 
 
 @run_in_pyodide
