@@ -53,12 +53,7 @@ Translating an object from JavaScript to Python and then back to JavaScript
 gives an object that is `===` to the original object. Furthermore, if the object
 is proxied into Python, then translation back unwraps the proxy, and the result
 of the round trip conversion is the original object (in the sense that they live
-at the same memory address). There are a few exceptions:
-
-1. `NaN` is converted to `NaN` after a round trip but `NaN !== NaN`,
-2. a {js:data}`BigInt` will be converted to a {js:data}`Number` after a round
-   trip unless its absolute value is greater than
-   {js:data}`Number.MAX_SAFE_INTEGER` (i.e., 2^53).
+at the same memory address).
 
 ## Implicit conversions
 
@@ -76,20 +71,24 @@ and {py:class}`bytes` objects.
 The following immutable types are implicitly converted from Python to
 JavaScript:
 
-| Python                        | JavaScript                               |
-| ----------------------------- | ---------------------------------------- |
-| {py:class}`int`               | {js:data}`Number` or {js:data}`BigInt`\* |
-| {py:class}`float`             | {js:data}`Number`                        |
-| {py:class}`str`               | {js:data}`String`                        |
-| {py:class}`bool`              | {js:data}`Boolean`                       |
-| {py:data}`None`               | {js:data}`undefined`                     |
-| {py:data}`pyodide.ffi.jsnull` | {js:data}`null`                          |
+| Python                          | JavaScript                               |
+| ------------------------------- | ---------------------------------------- |
+| {py:class}`int`                 | {js:data}`Number` or {js:data}`BigInt`\* |
+| {py:class}`float`               | {js:data}`Number`                        |
+| {py:class}`str`                 | {js:data}`String`                        |
+| {py:class}`bool`                | {js:data}`Boolean`                       |
+| {py:data}`None`                 | {js:data}`undefined`                     |
+| {py:data}`pyodide.ffi.jsnull`   | {js:data}`null`                          |
+| {py:data}`pyodide.ffi.JsBigInt` | {js:data}`BigInt`                        |
 
 \* An {py:class}`int` is converted to a {js:data}`Number` if the absolute value
 is less than or equal to {js:data}`Number.MAX_SAFE_INTEGER` otherwise it is
 converted to a {js:data}`BigInt`. (If the browser does not support
 {js:data}`BigInt` then a {js:data}`Number` will be used instead. In this case,
 conversion of large integers from Python to JavaScript is lossy.)
+
+`pyodide.ffi.JsBigInt` is a subtype of `int` that will be converted to a
+`BigInt`. All standard arithmetic operations are supported on `JsBigInt`.
 
 (type-translations_js2py-table)=
 
@@ -101,7 +100,7 @@ Python:
 | JavaScript           | Python                                                |
 | -------------------- | ----------------------------------------------------- |
 | {js:data}`Number`    | {py:class}`int` or {py:class}`float` as appropriate\* |
-| {js:data}`BigInt`    | {py:class}`int`                                       |
+| {js:data}`BigInt`    | {py:data}`pyodide.ffi.JsBigInt`                       |
 | {js:data}`String`    | {py:class}`str`                                       |
 | {js:data}`Boolean`   | {py:class}`bool`                                      |
 | {js:data}`undefined` | {py:data}`None`                                       |
