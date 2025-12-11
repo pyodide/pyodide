@@ -188,12 +188,12 @@ jobs:
           name: core-build-${{ runner.os }}
           path: ./dist/
           retention-days: 60
-      
+
       - name: Store sysconfig
         uses: actions/upload-artifact@v4
         with:
           name: core-sysconfig-${{ runner.os }}
-          path: ./cpython/install
+          path: ./cpython/installs/
           retention-days: 60
 
   test-core:
@@ -299,12 +299,13 @@ jobs:
           # To test Windows cmdline runner we always use the Linux build artifact
           name: core-build-Linux
           path: ./dist/
-      
+
       - name: Download sysconfig artifact
         uses: actions/download-artifact@v4
         with:
           # To test Windows cmdline runner we always use the Linux artifact
           name: core-sysconfig-Linux
+          path: ./cpython/installs/
 
       - name: Run cmdline-runner tests
         shell: bash -l {0}
