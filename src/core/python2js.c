@@ -88,7 +88,7 @@ _python2js_float(PyObject* x)
 #endif
 
 static JsVal
-_python2js_long(PyObject* x)
+_python2js_bigint(PyObject* x)
 {
   int overflow;
   long x_long = PyLong_AsLongAndOverflow(x, &overflow);
@@ -97,7 +97,7 @@ _python2js_long(PyObject* x)
       FAIL_IF_ERR_OCCURRED();
     } else {
       // We want to group into u32 chunks for convenience of
-      // JsvNum_fromDigits. If the number of bits is evenly divisible by
+      // JsvBigInt_fromDigits. If the number of bits is evenly divisible by
       // 32, we overestimate the number of needed u32s by one.
       size_t nbits = _PyLong_NumBits(x);
       size_t ndigits = (nbits >> 5) + 1;
@@ -108,10 +108,20 @@ _python2js_long(PyObject* x)
                                             true /* little endian */,
                                             true /* signed */,
                                             true /* with_exceptions */));
-      return JsvNum_fromDigits(digits, ndigits);
+      return JsvBigInt_fromDigits(digits, ndigits);
     }
   }
-  return JsvNum_fromInt(x_long);
+  return JsvBigInt_fromInt(x_long);
+finally:
+  return JS_ERROR;
+}
+
+static JsVal
+_python2js_long(PyObject* x)
+{
+  JsVal res = _python2js_bigint(x);
+  FAIL_IF_JS_ERROR(res);
+  return Jsv_BigIntToNum(res);
 finally:
   return JS_ERROR;
 }
@@ -368,6 +378,8 @@ _python2js_immutable(PyObject* x)
     return Jsv_false;
   } else if (x == py_jsnull) {
     return Jsv_null;
+  } else if (PyObject_IsInstance(x, py_JsBigInt)) {
+    return _python2js_bigint(x);
   } else if (PyLong_Check(x)) {
     return _python2js_long(x);
   } else if (PyFloat_Check(x)) {
@@ -1007,6 +1019,7 @@ static PyMethodDef methods[] = {
 };
 
 PyObject* py_jsnull = NULL;
+PyObject* py_JsBigInt = NULL;
 
 int
 python2js_init(PyObject* core)
@@ -1018,6 +1031,8 @@ python2js_init(PyObject* core)
     add_methods_and_set_docstrings(core, methods, docstring_source));
   py_jsnull = PyObject_GetAttrString(docstring_source, "jsnull");
   FAIL_IF_NULL(py_jsnull);
+  py_JsBigInt = PyObject_GetAttrString(docstring_source, "JsBigInt");
+  FAIL_IF_NULL(py_JsBigInt);
 
   success = true;
 finally:

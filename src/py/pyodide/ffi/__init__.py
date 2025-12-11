@@ -65,4 +65,5 @@ __all__ = [
     "unregister_js_module",
     "JsNull",
     "jsnull",
+    "JsBigInt",
 ]
