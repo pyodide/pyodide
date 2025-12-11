@@ -98,16 +98,21 @@ JsRef_new(JsVal v)
 // ==================== Primitive Conversions ====================
 
 // clang-format off
+EM_JS(JsVal, JsvBigInt_fromInt, (int x), {
+  return BigInt(x);
+})
+
 EM_JS(JsVal, JsvNum_fromInt, (int x), {
   return x;
 })
+
 
 EM_JS(JsVal, JsvNum_fromDouble, (double val), {
   return val;
 });
 
 EM_JS_UNCHECKED(JsVal,
-JsvNum_fromDigits,
+JsvBigInt_fromDigits,
 (const unsigned int* digits, size_t ndigits),
 {
   let result = BigInt(0);
@@ -116,11 +121,16 @@ JsvNum_fromDigits,
   }
   result += BigInt(DEREF_U32(digits, ndigits - 1) & 0x80000000)
             << BigInt(1 + 32 * (ndigits - 1));
-  if (-Number.MAX_SAFE_INTEGER < result &&
-      result < Number.MAX_SAFE_INTEGER) {
-    result = Number(result);
-  }
   return result;
+});
+
+EM_JS(JsVal,
+Jsv_BigIntToNum, (JsVal x), {
+  if (-Number.MAX_SAFE_INTEGER < x &&
+      x < Number.MAX_SAFE_INTEGER) {
+    return Number(x);
+  }
+  return x;
 });
 
 EM_JS(bool, Jsv_to_bool, (JsVal x), {
