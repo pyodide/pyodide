@@ -17,7 +17,7 @@ if /i "%~1"=="-m" if /i "%~2"=="pip" (
     shift
     shift
 
-    set "PIP_SCRIPT=%VENV_DIR%pip"
+    set "PIP_SCRIPT=%VENV_DIR%pip.bat"
 
     if not exist "%PIP_SCRIPT%" (
         >&2 echo Cannot find pyodide pip. Make a pyodide venv first?
@@ -59,7 +59,7 @@ goto :EndParse
 
 :ProcessResult
 if defined TargetFullPath (
-    echo Target Full Path: !TargetFullPath!
+    @REM echo Target Full Path: !TargetFullPath!
 
     rem Now, use another FOR loop to extract the directory path from the full path.
     rem This uses the built-in batch variable modifier '~dp' (Drive/Path)

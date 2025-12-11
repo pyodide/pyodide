@@ -82,7 +82,7 @@ async function main() {
           // In Windows, passing _sysExecutable doesn't seem to set sys.executable to python.bat
           // since the python.bat batch file is not a real executable that Python interpreter can inspect.
           // Therefore, we force set PYTHONEXECUTABLE here to ensure sys.executable is correct.
-          PYTHONEXECUTABLE: _sysExecutable,
+          PYTHONEXECUTABLE: windowsPathToUnix(_sysExecutable),
         },
         process.env,
         { HOME: windowsPathToUnix(process.cwd()) },
