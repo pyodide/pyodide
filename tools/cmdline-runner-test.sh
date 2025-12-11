@@ -12,7 +12,7 @@ python -m venv .venv-host
 # shellcheck source=/dev/null
 source .venv-host/bin/activate
 
-chmod +x $(pyodide config get interpreter)
+chmod +x "$(pyodide config get interpreter)"
 pyodide venv .venv-pyodide
 # shellcheck source=/dev/null
 source .venv-pyodide/bin/activate
