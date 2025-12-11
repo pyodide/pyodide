@@ -3,8 +3,6 @@ set -ex
 export PYODIDE_ROOT
 PYODIDE_ROOT=$(pwd)
 echo "$PYODIDE_ROOT"
-# shellcheck source=pyodide_env.sh
-source pyodide_env.sh
 make pyodide_build
 rm -rf test-cmdline-runner
 mkdir test-cmdline-runner
