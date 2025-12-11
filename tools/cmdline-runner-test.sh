@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 export PYODIDE_ROOT
 PYODIDE_ROOT=$(pwd)
 echo "$PYODIDE_ROOT"
