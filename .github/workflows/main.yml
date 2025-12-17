@@ -310,7 +310,7 @@ jobs:
       - name: Run cmdline-runner tests
         shell: bash -l {0}
         run: |
-          ./tools/cmdline-runner-test.sh
+          ./tools/cmdline_runner_test/run
 
   test-scipy-trigger:
     name: test-scipy-trigger
