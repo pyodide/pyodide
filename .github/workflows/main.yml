@@ -310,7 +310,11 @@ jobs:
       - name: Run cmdline-runner tests
         shell: bash -l {0}
         run: |
-          ./tools/cmdline_runner_test/run
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            ./tools/cmdline_runner_test/run.bat
+          else
+            ./tools/cmdline_runner_test/run
+          fi
 
   test-scipy-trigger:
     name: test-scipy-trigger
