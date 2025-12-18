@@ -82,9 +82,6 @@ export PYZIP_EXCLUDE_FILES=\
 	turtle.py \
 	turtledemo/ \
 	test/ \
-	sqlite3/ \
-	ssl.py \
-	lzma.py \
 	_pydecimal.py \
 	pydoc_data/
 
@@ -163,6 +160,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
+	-s USE_SQLITE3 \
 	-s FORCE_FILESYSTEM=1 \
 	-s INITIAL_MEMORY=20971520 \
 	-s ALLOW_MEMORY_GROWTH=1 \
@@ -180,6 +178,9 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 	-lffi \
+	-llzma \
+	-lssl \
+	-lcrypto \
 	-lstdc++ \
 	-lidbfs.js \
 	-lnodefs.js \
@@ -282,6 +283,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-s LZ4=1 \
 		-s USE_ZLIB \
 		-s USE_BZIP2 \
+		-s USE_SQLITE3 \
 		-s FORCE_FILESYSTEM=1 \
 		-s INITIAL_MEMORY=20971520 \
 		-s ALLOW_MEMORY_GROWTH=1 \
@@ -295,6 +297,9 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 		-lffi \
 		-lhiwire \
+		-llzma \
+		-lssl \
+		-lcrypto \
 		-lidbfs.js \
 		-lnodefs.js \
     -lproxyfs.js

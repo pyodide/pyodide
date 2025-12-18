@@ -14,11 +14,11 @@ _posixsubprocess _posixsubprocess.c
 _bz2 _bz2module.c -lbz2
 zlib zlibmodule.c
 
+_sqlite3 _sqlite/blob.c _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c -lsqlite3
+_lzma _lzmamodule.c -I../lzma/dist/include -L../lzma/dist/lib -llzma
+_hashlib _hashopenssl.c -DOPENSSL_THREADS -I../openssl/include -L../openssl -lssl -lcrypto
+_ssl _ssl.c -DOPENSSL_THREADS -I../openssl/include -L../openssl -lssl -lcrypto
 
 *disabled*
 pwd
-_sqlite3
-_ssl
-_lzma
-_hashlib
 _uuid
