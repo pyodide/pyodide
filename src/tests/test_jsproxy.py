@@ -433,11 +433,8 @@ def test_call_pyproxy_destroy_args(selenium):
     )
 
 
-@run_in_pyodide
 def test_call_pyproxy_set_global(selenium):
-    from pyodide.code import run_js
-
-    run_js(
+    selenium.run_js(
         """
         self.setGlobal = function(x){
             if(self.myGlobal instanceof pyodide.ffi.PyProxy){
@@ -448,19 +445,17 @@ def test_call_pyproxy_set_global(selenium):
             }
             self.myGlobal = x;
         }
+        pyodide.runPython(`
+            from js import setGlobal
+            setGlobal(2)
+            setGlobal({})
+            setGlobal([])
+            setGlobal(3)
+        `);
         """
     )
 
-    from js import setGlobal  # type: ignore[attr-defined]
-
-    setGlobal(2)
-    setGlobal({})
-    setGlobal([])
-    setGlobal(3)
-
-    import asyncio
-
-    run_js(
+    selenium.run_js(
         """
         self.setGlobal = async function(x){
             await sleep(5);
@@ -472,18 +467,15 @@ def test_call_pyproxy_set_global(selenium):
             }
             self.myGlobal = x;
         }
+        await pyodide.runPythonAsync(`
+            from js import setGlobal
+            await setGlobal(2)
+            await setGlobal({})
+            await setGlobal([])
+            await setGlobal(3)
+        `);
         """
     )
-
-    from js import setGlobal  # type: ignore[attr-defined]
-
-    async def test_async():
-        await setGlobal(2)
-        await setGlobal({})
-        await setGlobal([])
-        await setGlobal(3)
-
-    asyncio.run(test_async())
 
 
 @run_in_pyodide
