@@ -478,13 +478,8 @@ def test_call_pyproxy_set_global(selenium):
     )
 
 
-@run_in_pyodide
 def test_call_pyproxy_destroy_result(selenium):
-    import sys
-
-    from pyodide.code import run_js
-
-    run_js(
+    selenium.run_js(
         """
         self.f = function(){
             let dict = pyodide.globals.get("dict");
@@ -492,17 +487,16 @@ def test_call_pyproxy_destroy_result(selenium):
             dict.destroy();
             return result;
         }
+        pyodide.runPython(`
+            from js import f
+            import sys
+            d = f()
+            assert sys.getrefcount(d) == 2
+        `);
         """
     )
 
-    from js import f  # type: ignore[attr-defined]
-
-    d = f()
-    assert sys.getrefcount(d) == 2
-
-    import asyncio
-
-    run_js(
+    selenium.run_js(
         """
         self.f = async function(){
             await sleep(5);
@@ -511,16 +505,16 @@ def test_call_pyproxy_destroy_result(selenium):
             dict.destroy();
             return result;
         }
+        await pyodide.runPythonAsync(`
+            from js import f
+            import sys
+            d = await f()
+        `);
+        pyodide.runPython(`
+            assert sys.getrefcount(d) == 2
+        `);
         """
     )
-
-    from js import f  # type: ignore[attr-defined]
-
-    async def test_async():
-        return await f()
-
-    d = asyncio.run(test_async())
-    assert sys.getrefcount(d) == 2
 
 
 @pytest.mark.skip_refcount_check
