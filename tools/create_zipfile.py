@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 import re
-import zipfile
-from pathlib import Path
 import shutil
+import zipfile
 from collections.abc import Callable
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -143,6 +142,7 @@ def create_zipfile(
             compression_level=compression_level,
         )
 
+
 def make_zip_archive(
     archive_path: Path,
     input_dir: Path,
@@ -210,7 +210,9 @@ if __name__ == "__main__":
     excludes = [
         item.strip() for item in re.split(r",|\s", args.exclude) if item.strip() != ""
     ]
-    stubs = [item.strip() for item in re.split(r",|\s", args.stub) if item.strip() != ""]
+    stubs = [
+        item.strip() for item in re.split(r",|\s", args.stub) if item.strip() != ""
+    ]
 
     create_zipfile(
         [Path(libdir) for libdir in args.libdirs],

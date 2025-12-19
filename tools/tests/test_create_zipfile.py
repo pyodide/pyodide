@@ -24,6 +24,7 @@ def temp_python_lib(tmp_path_factory):
 
     yield libdir
 
+
 @pytest.fixture(scope="module")
 def temp_python_lib2(tmp_path_factory):
     libdir = tmp_path_factory.mktemp("python")
@@ -36,6 +37,7 @@ def temp_python_lib2(tmp_path_factory):
     (path / "bye_pyodide.py").write_text("def bye(): return 'bye'")
 
     yield libdir
+
 
 def test_defaultfilterfunc(temp_python_lib):
     ignored = ["test", "turtle.py"]
