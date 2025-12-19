@@ -382,13 +382,13 @@ def test_call_pyproxy_destroy_args(selenium):
         assertThrows(() => self.y.length, "Error",
             "This borrowed proxy was automatically destroyed at the end of a function call.*\n" +
             'The object was of type "list" and had repr "\\[\\]"'
-        )
+        );
         """
     )
 
     run_js(
         r"""
-        pyodide.setDebug(true);
+        pyodide.setDebug(false);
         self.f = function(x){ self.y = x; }
         """
     )
@@ -402,8 +402,8 @@ def test_call_pyproxy_destroy_args(selenium):
         r"""
         assertThrows(() => self.y.length, "Error",
             "This borrowed proxy was automatically destroyed at the end of a function call.*\n" +
-            'The object was of type "list" and had repr "\\[\\]"'
-        )
+            'For more information about the cause of this error, use `pyodide.setDebug.true.`'
+        );
         """
     )
 
@@ -428,7 +428,7 @@ def test_call_pyproxy_destroy_args(selenium):
 
     run_js(
         """
-        assertThrows(() => self.y.length, "Error", "This borrowed proxy was automatically destroyed")
+        assertThrows(() => self.y.length, "Error", "This borrowed proxy was automatically destroyed");
         """
     )
 
