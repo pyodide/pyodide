@@ -518,48 +518,40 @@ def test_call_pyproxy_destroy_result(selenium):
 
 
 @pytest.mark.skip_refcount_check
-@run_in_pyodide
 def test_call_pyproxy_return_arg(selenium):
-    import sys
-
-    from pyodide.code import run_js
-
-    run_js(
+    selenium.run_js(
         """
         self.f = function f(x){
             return x;
         }
+        pyodide.runPython(`
+            from js import f
+            l = [1,2,3]
+            x = f(l)
+            assert x is l
+            import sys
+            assert sys.getrefcount(x) == 3
+        `);
         """
     )
-
-    from js import f  # type: ignore[attr-defined]
-
-    l = [1, 2, 3]
-    x = f(l)
-    assert x is l
-    assert sys.getrefcount(x) == 3
-
-    import asyncio
-
-    run_js(
+    selenium.run_js(
         """
         self.f = async function f(x){
             await sleep(5);
             return x;
         }
+        await pyodide.runPythonAsync(`
+            from js import f
+            l = [1,2,3]
+            x = await f(l)
+            assert x is l
+        `);
+        pyodide.runPython(`
+            import sys
+            assert sys.getrefcount(x) == 3
+        `);
         """
     )
-
-    from js import f  # type: ignore[attr-defined]
-
-    l = [1, 2, 3]
-
-    async def test_async():
-        return await f(l)
-
-    x = asyncio.run(test_async())
-    assert x is l
-    assert sys.getrefcount(x) == 3
 
 
 @run_in_pyodide
