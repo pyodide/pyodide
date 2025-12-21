@@ -270,9 +270,6 @@ export interface EmscriptenModule {
   canvas?: HTMLCanvasElement;
   addRunDependency(id: string): void;
   removeRunDependency(id: string): void;
-  getDylinkMetadata(binary: Uint8Array | WebAssembly.Module): {
-    neededDynlibs: string[];
-  };
 
   ERRNO_CODES: { [k: string]: number };
   stringToNewUTF8(x: string): number;
@@ -514,12 +511,6 @@ export interface API {
     path: string,
     file_sub_resource_hash?: string | undefined,
   ) => Promise<Uint8Array>;
-  loadDynlib: (
-    lib: string,
-    global: boolean,
-    searchDirs?: string[] | undefined,
-    readFileFunc?: (path: string) => Uint8Array,
-  ) => Promise<void>;
   install: (
     buffer: Uint8Array,
     filename: string,

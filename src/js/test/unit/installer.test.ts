@@ -6,8 +6,7 @@ import { genMockAPI, genMockModule } from "./test-helper.ts";
 describe("Installer", () => {
   it("should initialize with API and Module", () => {
     const mockApi = genMockAPI();
-    const mockMod = genMockModule();
-    const _ = new Installer(mockApi, mockMod);
+    const _ = new Installer(mockApi);
   });
 
   it("should call package_loader.unpack_buffer.callKwargs", async (t) => {
@@ -16,7 +15,7 @@ describe("Installer", () => {
 
     const mockApi = genMockAPI();
     const mockMod = genMockModule();
-    const installer = new Installer(mockApi, mockMod);
+    const installer = new Installer(mockApi);
 
     const unpackBufferSpy = t.mock.method(
       mockApi.package_loader.unpack_buffer,
@@ -39,7 +38,6 @@ describe("Installer", () => {
       filename: "filename",
       extract_dir: "installDir",
       metadata,
-      calculate_dynlibs: true,
     });
   });
 });
