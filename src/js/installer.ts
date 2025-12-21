@@ -1,4 +1,3 @@
-
 import { PackageManagerAPI } from "./types";
 
 /**
@@ -22,14 +21,12 @@ export class Installer {
     installDir: string,
     metadata?: ReadonlyMap<string, string>,
   ) {
-    this.#api.package_loader.unpack_buffer.callKwargs(
-      {
-        buffer,
-        filename,
-        extract_dir: installDir,
-        metadata,
-      },
-    );
+    this.#api.package_loader.unpack_buffer.callKwargs({
+      buffer,
+      filename,
+      extract_dir: installDir,
+      metadata,
+    });
   }
 }
 

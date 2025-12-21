@@ -1,12 +1,10 @@
 import re
 import shutil
 import sys
-from collections.abc import Iterable
-from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
-from typing import IO, Any, Literal
+from typing import Any, Literal
 from zipfile import ZipFile
 
 try:
@@ -15,7 +13,7 @@ except ImportError:
     loadedPackages = None
 
 from .common import install_files
-from .ffi import IN_PYODIDE, JsArray, JsBuffer, to_js
+from .ffi import IN_PYODIDE, JsBuffer
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 if sys.base_prefix == sys.prefix:
@@ -230,8 +228,6 @@ def unpack_buffer(
                 set_wheel_metadata(filename, z, extract_path, metadata)
 
             install_datafiles(filename, z, extract_path)
-
-    return None
 
 
 def set_wheel_metadata(
