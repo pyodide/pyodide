@@ -905,7 +905,7 @@ def test_create_proxy_roundtrip(selenium):
     assert o.f.unwrap() is f
     o.f.destroy()
     o.f = create_proxy(f, roundtrip=False)
-    assert o.f is f  # type: ignore[comparison-overlap]
+    assert o.f is f
     run_js("(o) => { o.f.destroy(); }")(o)
 
 
