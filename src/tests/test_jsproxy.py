@@ -361,74 +361,54 @@ def test_jsproxy_call_meth_js_kwargs(selenium):
     assert r0 == a and r1 == 2 and r2 == 10
 
 
-@run_in_pyodide
 def test_call_pyproxy_destroy_args(selenium):
-    from pyodide.code import run_js
-
-    run_js(
+    selenium.run_js(
         r"""
+        let y;
         pyodide.setDebug(true);
-        self.f = function(x){ self.y = x; }
-        """
-    )
-
-    from js import f  # type: ignore[attr-defined]
-
-    f({})
-    f([])
-
-    run_js(
-        r"""
-        assertThrows(() => self.y.length, "Error",
+        self.f = function(x){ y = x; }
+        pyodide.runPython(`
+            from js import f
+            f({})
+            f([])
+        `);
+        assertThrows(() => y.length, "Error",
             "This borrowed proxy was automatically destroyed at the end of a function call.*\n" +
             'The object was of type "list" and had repr "\\[\\]"'
         );
         """
     )
 
-    run_js(
+    selenium.run_js(
         r"""
+        let y;
         pyodide.setDebug(false);
-        self.f = function(x){ self.y = x; }
-        """
-    )
-
-    from js import f  # type: ignore[attr-defined]
-
-    f({})
-    f([])
-
-    run_js(
-        r"""
-        assertThrows(() => self.y.length, "Error",
+        self.f = function(x){ y = x; }
+        pyodide.runPython(`
+            from js import f
+            f({})
+            f([])
+        `);
+        assertThrows(() => y.length, "Error",
             "This borrowed proxy was automatically destroyed at the end of a function call.*\n" +
             'For more information about the cause of this error, use `pyodide.setDebug.true.`'
         );
         """
     )
 
-    import asyncio
-
-    run_js(
+    selenium.run_js(
         """
+        let y;
         self.f = async function(x){
             await sleep(5);
-            self.y = x;
+            y = x;
         }
-        """
-    )
-
-    from js import f  # type: ignore[attr-defined]
-
-    async def test_async():
-        await f({})
-        await f([])
-
-    asyncio.run(test_async())
-
-    run_js(
-        """
-        assertThrows(() => self.y.length, "Error", "This borrowed proxy was automatically destroyed");
+        await pyodide.runPythonAsync(`
+            from js import f
+            await f({})
+            await f([])
+        `);
+        assertThrows(() => y.length, "Error", "This borrowed proxy was automatically destroyed");
         """
     )
 
