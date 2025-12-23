@@ -47,11 +47,11 @@ class _Stream(TextIOBase):
         self._errors = errors
 
     @property
-    def encoding(self):
+    def encoding(self):  # type: ignore[override]
         return self._encoding
 
     @property
-    def errors(self):
+    def errors(self):  # type: ignore[override]
         return self._errors
 
     @property
