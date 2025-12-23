@@ -12,8 +12,8 @@ function nodeFsync(fd: number): void {
     if (e?.code === "EINVAL") {
       return;
     }
-    // On mac, calling fsync on stdout/stderr when not isatty returns ENOTSUP
-    if (e?.code === "ENOTSUP" && (fd === 1 || fd === 2)) {
+    // On mac, calling fsync on when not isatty returns ENOTSUP
+    if (e?.code === "ENOTSUP" && (fd === 0 || fd === 1 || fd === 2)) {
       return;
     }
 
