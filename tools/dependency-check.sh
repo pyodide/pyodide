@@ -47,6 +47,15 @@ check_shasum() {
 
 check_cmake() {
   check_binary_present "cmake"
+
+  CMAKE_FULL_VERSION=$(cmake --version | head -n1 | cut -d " " -f 3)
+  CMAKE_MAJOR_VERSION=$(echo "${CMAKE_FULL_VERSION}" | cut -d "." -f 1)
+
+  if (( "${CMAKE_MAJOR_VERSION}" != "3" )); then
+    echo >&2 "Pyodide requires cmake 3."
+    echo >&2 "If you are on macOS brew would install higher version. You can install it with 'pip install cmake==3.31'"
+    exit 1
+  fi
 }
 
 check_sed() {
