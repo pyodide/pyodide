@@ -349,8 +349,8 @@ def test_relaxed_wrap():
     assert f5(1, 2, 3, 4, b=7, c=9) == [1, (2, 3, 4), 7, {"c": 9}]
 
 
-def test_unpack_archive(selenium_standalone):
-    selenium = selenium_standalone
+def test_unpack_archive(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     js_error = selenium.run_js(
         """
         var error = "";
@@ -1004,8 +1004,8 @@ def test_restore_state(selenium):
 
 @pytest.mark.xfail_browsers(safari="TODO: traceback is not the same on Safari")
 @pytest.mark.skip_refcount_check
-def test_fatal_error(selenium_standalone):
-    assert selenium_standalone.run_js(
+def test_fatal_error(selenium_standalone_refresh):
+    assert selenium_standalone_refresh.run_js(
         """
         try {
             pyodide.runPython(`
@@ -1041,7 +1041,7 @@ def test_fatal_error(selenium_standalone):
         x = x.replace("\n\n", "\n")
         return x
 
-    err_msg = strip_stack_trace(selenium_standalone.logs)
+    err_msg = strip_stack_trace(selenium_standalone_refresh.logs)
     err_msg = "".join(strip_assertions_stderr(err_msg.splitlines(keepends=True)))
     assert (
         err_msg
@@ -1061,7 +1061,7 @@ def test_fatal_error(selenium_standalone):
             )
         ).strip()
     )
-    selenium_standalone.run_js(
+    selenium_standalone_refresh.run_js(
         """
         assertThrows(() => pyodide.runPython, "Error", "Pyodide already fatally failed and can no longer be used.")
         assertThrows(() => pyodide.globals, "Error", "Pyodide already fatally failed and can no longer be used.")
@@ -1070,8 +1070,8 @@ def test_fatal_error(selenium_standalone):
 
 
 @pytest.mark.skip_refcount_check
-def test_exit_error(selenium_standalone):
-    x = selenium_standalone.run_js(
+def test_exit_error(selenium_standalone_refresh):
+    x = selenium_standalone_refresh.run_js(
         """
         try {
             pyodide.runPython(`
@@ -1193,8 +1193,8 @@ def test_js_stackframes(selenium):
     assert normalize_tb(res[: len(frames)]) == frames
 
 
-def test_reentrant_fatal(selenium_standalone):
-    selenium = selenium_standalone
+def test_reentrant_fatal(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     assert selenium.run_js(
         """
         function f(){
@@ -1258,13 +1258,13 @@ def test_weird_throws(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.parametrize("to_throw", ["Object.create(null);", "'Some message'", "null"])
-def test_weird_fatals(selenium_standalone, to_throw):
+def test_weird_fatals(selenium_standalone_refresh, to_throw):
     expected_message = {
         "Object.create(null);": "Error: A value of type object with tag [object Object] was thrown as an error!",
         "'Some message'": "Error: Some message",
         "null": "Error: A value of type object with tag [object Null] was thrown as an error!",
     }[to_throw]
-    msg = selenium_standalone.run_js(
+    msg = selenium_standalone_refresh.run_js(
         f"""
         self.f = function(){{ throw {to_throw} }};
         """
