@@ -321,7 +321,7 @@ def test_jsproxy_call_meth_py(selenium):
         return self
 
     a.f = f
-    assert a.f() == a  # type: ignore[call-arg]
+    assert a.f() == a
 
 
 @run_in_pyodide
