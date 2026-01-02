@@ -160,7 +160,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
-	-s USE_SQLITE3 \
 	-s FORCE_FILESYSTEM=1 \
 	-s INITIAL_MEMORY=20971520 \
 	-s ALLOW_MEMORY_GROWTH=1 \
@@ -181,6 +180,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-llzma \
 	-lssl \
 	-lcrypto \
+	-lsqlite3 \
 	-lstdc++ \
 	-lidbfs.js \
 	-lnodefs.js \
@@ -283,7 +283,6 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-s LZ4=1 \
 		-s USE_ZLIB \
 		-s USE_BZIP2 \
-		-s USE_SQLITE3 \
 		-s FORCE_FILESYSTEM=1 \
 		-s INITIAL_MEMORY=20971520 \
 		-s ALLOW_MEMORY_GROWTH=1 \
@@ -300,6 +299,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-llzma \
 		-lssl \
 		-lcrypto \
+		-lsqlite3 \
 		-lidbfs.js \
 		-lnodefs.js \
     -lproxyfs.js
