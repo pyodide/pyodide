@@ -149,7 +149,7 @@ $(PYINSTALL)/lib/liblzma.a :
 		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
 		&& . $(PYODIDE_ROOT)/pyodide_env.sh \
 		&& emconfigure ./configure \
-			CFLAGS="-fPIC" \
+			CFLAGS="-fPIC -Os" \
 			--disable-xz \
 			--disable-xzdec \
 			--disable-lzmadec \
