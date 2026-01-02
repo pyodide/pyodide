@@ -279,9 +279,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # TODO: Enable on windows and macos
-        # os: [ubuntu-latest, macos-latest, windows-latest]
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     needs: [build-core, get_python_version]
     steps:
@@ -310,7 +308,11 @@ jobs:
       - name: Run cmdline-runner tests
         shell: bash -l {0}
         run: |
-          ./tools/cmdline-runner-test.sh
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            ./tools/cmdline_runner_test/run.bat
+          else
+            ./tools/cmdline_runner_test/run
+          fi
 
   test-scipy-trigger:
     name: test-scipy-trigger
