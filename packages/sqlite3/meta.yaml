@@ -27,7 +27,39 @@ build:
       "Modules/_sqlite/util.c"
     )
 
-    embuilder build sqlite3 --pic
+    export SQLITE_WASM_VERSION=3450300
+    export SQLITE_WASM_YEAR=2024
+    wget -O sqlite.zip https://www.sqlite.org/${SQLITE_WASM_YEAR}/sqlite-src-${SQLITE_WASM_VERSION}.zip
+    unzip -q -o sqlite.zip -d sqlite
+    (cd sqlite/sqlite-src-${SQLITE_WASM_VERSION}/ && ./configure --enable-all && make sqlite3.c)
+    export SQLITE_FLAGS="\
+      -DSTDC_HEADERS=1 \
+      -DHAVE_SYS_TYPES_H=1 \
+      -DHAVE_SYS_STAT_H=1 \
+      -DHAVE_STDLIB_H=1 \
+      -DHAVE_STRING_H=1 \
+      -DHAVE_MEMORY_H=1 \
+      -DHAVE_STRINGS_H=1 \
+      -DHAVE_INTTYPES_H=1 \
+      -DHAVE_STDINT_H=1 \
+      -DHAVE_UNISTD_H=1 \
+      -DHAVE_FDATASYNC=1 \
+      -DHAVE_USLEEP=1 \
+      -DHAVE_LOCALTIME_R=1 \
+      -DHAVE_GMTIME_R=1 \
+      -DHAVE_DECL_STRERROR_R=1 \
+      -DHAVE_STRERROR_R=1 \
+      -DHAVE_POSIX_FALLOCATE=1 \
+      -DSQLITE_ENABLE_MATH_FUNCTIONS=1 \
+      -DSQLITE_ENABLE_FTS4=1 \
+      -DSQLITE_ENABLE_FTS5=1 \
+      -DSQLITE_ENABLE_RTREE=1 \
+      -DSQLITE_ENABLE_GEOPOLY=1 \
+      -DSQLITE_OMIT_POPEN=1 \
+      -DSQLITE_THREADSAFE=0 \
+      -DSQLITE_CORE"
+
+    emcc -c sqlite/sqlite-src-${SQLITE_WASM_VERSION}/sqlite3.c -o sqlite3.c.o -g3 -fPIC
 
     for file in "${FILES[@]}"; do
       emcc $SIDE_MODULE_CFLAGS -I Include/ -I. -IInclude/internal/ -c "${file}" -o "${file/.c/.o}"  \
@@ -35,8 +67,8 @@ build:
     done
 
     OBJECT_FILES=$(find Modules/_sqlite/ -name "*.o")
-    emcc $OBJECT_FILES -o ${PKG_BUILD_DIR}/_sqlite3.so $SIDE_MODULE_LDFLAGS \
-       -sUSE_SQLITE3 -lsqlite3
+    emcc $OBJECT_FILES sqlite3.c.o -o ${PKG_BUILD_DIR}/_sqlite3.so $SIDE_MODULE_LDFLAGS \
+       -sUSE_SQLITE3
 
     cd Lib && tar --exclude=test -cf - sqlite3 | tar -C ${PKG_BUILD_DIR} -xf -
 about:
