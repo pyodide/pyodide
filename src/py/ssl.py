@@ -1,3 +1,4 @@
+# type: ignore
 # Stub implementation for Pyodide - imports from _ssl stub module
 
 # Import from stub _ssl module
@@ -5,14 +6,14 @@ import _ssl
 import os
 import sys
 
-# Import constants and classes from _ssl
+from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
+from _ssl import _SSLContext, MemoryBIO, SSLSession
 from _ssl import (
-    _DEFAULT_CIPHERS,
-    HAS_ALPN,
-    MemoryBIO,
-    SSLCertVerificationError,
-    SSLError,
-)
+    SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
+    SSLSyscallError, SSLEOFError, SSLCertVerificationError
+    )
+from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
+from _ssl import RAND_status, RAND_add, RAND_bytes
 from collections import namedtuple
 from enum import Enum as _Enum
 from enum import IntEnum as _IntEnum
