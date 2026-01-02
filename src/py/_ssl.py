@@ -7,8 +7,6 @@ does not fail. Actual SSL operations are not supported in Pyodide's browser
 environment.
 """
 
-from enum import IntEnum as _IntEnum, IntFlag as _IntFlag
-
 # Version information
 OPENSSL_VERSION_NUMBER = 0
 OPENSSL_VERSION_INFO = (0, 0, 0, 0, 0)
@@ -50,7 +48,7 @@ SSL_ERROR_EOF = 8
 SSL_ERROR_INVALID_ERROR_CODE = 10
 
 # Options (commonly used ones)
-OP_ALL = -0x7fffffac
+OP_ALL = -0x7FFFFFAC
 OP_NO_SSLv2 = 0x01000000
 OP_NO_SSLv3 = 0x02000000
 OP_NO_TLSv1 = 0x04000000
@@ -108,6 +106,7 @@ ENCODING_DER = 1
 # Default cipher string
 _DEFAULT_CIPHERS = "DEFAULT"
 
+
 # Exception classes
 class SSLError(OSError):
     """Base class for SSL errors."""
@@ -119,61 +118,71 @@ class SSLError(OSError):
 
 class SSLZeroReturnError(SSLError):
     """SSL/TLS session has been terminated."""
+
     pass
 
 
 class SSLWantReadError(SSLError):
     """Non-blocking SSL socket needs to read more data."""
+
     pass
 
 
 class SSLWantWriteError(SSLError):
     """Non-blocking SSL socket needs to write more data."""
+
     pass
 
 
 class SSLSyscallError(SSLError):
     """System error in SSL operation."""
+
     pass
 
 
 class SSLEOFError(SSLError):
     """EOF occurred in SSL operation."""
+
     pass
 
 
 class SSLCertVerificationError(SSLError):
     """Certificate verification failed."""
+
     pass
 
 
 # Stub classes
 class _SSLContext:
     """Stub SSL context class."""
+
     def __init__(self, protocol):
         raise NotImplementedError("SSL is not supported in Pyodide")
 
+
 class SSLSession:
     """Stub SSL session class."""
+
     def __init__(self):
         raise NotImplementedError("SSL is not supported in Pyodide")
 
 
 class MemoryBIO:
     """Stub memory BIO class for buffering SSL data."""
+
     def __init__(self):
         self._buffer = bytearray()
         self._eof = False
-    
+
     def write(self, data):
         """Write data to the BIO buffer.
-        
+
         Args:
             data: bytes-like object to write
-            
+
         Returns:
             Number of bytes written
-            
+
         Raises:
             TypeError: if data is not bytes-like
             BufferError: if memoryview is not contiguous
@@ -183,23 +192,25 @@ class MemoryBIO:
         if data is None:
             raise TypeError("a bytes-like object is required, not 'NoneType'")
         if isinstance(data, bool) or isinstance(data, int):
-            raise TypeError(f"a bytes-like object is required, not '{type(data).__name__}'")
-        
+            raise TypeError(
+                f"a bytes-like object is required, not '{type(data).__name__}'"
+            )
+
         if isinstance(data, memoryview):
             # Check if contiguous
             if not data.c_contiguous:
                 raise BufferError("memoryview must be contiguous")
             data = data.tobytes()
-        
+
         self._buffer.extend(data)
         return len(data)
-    
+
     def read(self, n=-1):
         """Read data from the BIO buffer.
-        
+
         Args:
             n: number of bytes to read, -1 or omitted means read all
-            
+
         Returns:
             bytes object with the data read
         """
@@ -210,16 +221,16 @@ class MemoryBIO:
             data = bytes(self._buffer[:n])
             del self._buffer[:n]
         return data
-    
+
     @property
     def eof(self):
         """Return True if EOF has been written and buffer is empty."""
         return self._eof and len(self._buffer) == 0
-    
+
     def write_eof(self):
         """Mark the BIO as having reached EOF."""
         self._eof = True
-    
+
     @property
     def pending(self):
         """Return the number of bytes available to read."""
@@ -250,12 +261,13 @@ def RAND_add(string, entropy):
 def RAND_bytes(n):
     """Generate random bytes (stub - uses Python's random)."""
     import random
+
     return bytes([random.randint(0, 255) for _ in range(n)])
 
 
 def get_default_verify_paths():
     """Get default certificate verification paths (stub)."""
-    return ('SSL_CERT_FILE', None, 'SSL_CERT_DIR', None)
+    return ("SSL_CERT_FILE", None, "SSL_CERT_DIR", None)
 
 
 def enum_certificates(store_name):

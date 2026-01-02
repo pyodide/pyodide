@@ -1,61 +1,56 @@
 # Stub implementation for Pyodide - imports from _ssl stub module
 
-import sys
-import os
-from collections import namedtuple
-from enum import Enum as _Enum, IntEnum as _IntEnum, IntFlag as _IntFlag
-from enum import _simple_enum
-
 # Import from stub _ssl module
 import _ssl
+import os
+import sys
 
 # Import constants and classes from _ssl
-from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
-from _ssl import _SSLContext, MemoryBIO, SSLSession
 from _ssl import (
-    SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
-    SSLSyscallError, SSLEOFError, SSLCertVerificationError
+    _DEFAULT_CIPHERS,
+    HAS_ALPN,
+    MemoryBIO,
+    SSLCertVerificationError,
+    SSLError,
 )
-from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
-from _ssl import RAND_status, RAND_add, RAND_bytes
-from _ssl import (
-    HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1,
-    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK
-)
-from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
+from collections import namedtuple
+from enum import Enum as _Enum
+from enum import IntEnum as _IntEnum
+from enum import IntFlag as _IntFlag
+from enum import _simple_enum
 
 CertificateError = SSLCertVerificationError
 
 # Stub protocol definitions
 _IntEnum._convert_(
-    '_SSLMethod', __name__,
-    lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
-    source=_ssl)
+    "_SSLMethod",
+    __name__,
+    lambda name: name.startswith("PROTOCOL_") and name != "PROTOCOL_SSLv23",
+    source=_ssl,
+)
 
 _IntFlag._convert_(
-    'Options', __name__,
-    lambda name: name.startswith('OP_'),
-    source=_ssl)
+    "Options", __name__, lambda name: name.startswith("OP_"), source=_ssl
+)
 
 _IntEnum._convert_(
-    'AlertDescription', __name__,
-    lambda name: name.startswith('ALERT_DESCRIPTION_'),
-    source=_ssl)
+    "AlertDescription",
+    __name__,
+    lambda name: name.startswith("ALERT_DESCRIPTION_"),
+    source=_ssl,
+)
 
 _IntEnum._convert_(
-    'SSLErrorNumber', __name__,
-    lambda name: name.startswith('SSL_ERROR_'),
-    source=_ssl)
+    "SSLErrorNumber", __name__, lambda name: name.startswith("SSL_ERROR_"), source=_ssl
+)
 
 _IntFlag._convert_(
-    'VerifyFlags', __name__,
-    lambda name: name.startswith('VERIFY_'),
-    source=_ssl)
+    "VerifyFlags", __name__, lambda name: name.startswith("VERIFY_"), source=_ssl
+)
 
 _IntEnum._convert_(
-    'VerifyMode', __name__,
-    lambda name: name.startswith('CERT_'),
-    source=_ssl)
+    "VerifyMode", __name__, lambda name: name.startswith("CERT_"), source=_ssl
+)
 
 PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
 _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
@@ -79,6 +74,7 @@ class _TLSContentType:
 
     See RFC 8446, section B.1
     """
+
     CHANGE_CIPHER_SPEC = 20
     ALERT = 21
     HANDSHAKE = 22
@@ -94,6 +90,7 @@ class _TLSAlertType:
 
     See RFC 8466, section B.2
     """
+
     CLOSE_NOTIFY = 0
     UNEXPECTED_MESSAGE = 10
     BAD_RECORD_MAC = 20
@@ -136,6 +133,7 @@ class _TLSMessageType:
 
     See RFC 8446, section B.3
     """
+
     HELLO_REQUEST = 0
     CLIENT_HELLO = 1
     SERVER_HELLO = 2
@@ -161,25 +159,25 @@ class _TLSMessageType:
 
 
 # Import Windows certificate enumeration functions from _ssl
-from _ssl import enum_certificates, enum_crls
 
-from socket import socket, SOCK_STREAM, create_connection
-from socket import SOL_SOCKET, SO_TYPE, _GLOBAL_DEFAULT_TIMEOUT
-import socket as _socket
-import base64        # for DER-to-PEM translation
+import base64  # for DER-to-PEM translation
 import errno
+import socket as _socket
 import warnings
-
+from socket import _GLOBAL_DEFAULT_TIMEOUT, create_connection, socket
 
 socket_error = OSError  # keep that public name in module namespace
 
-CHANNEL_BINDING_TYPES = ['tls-unique']
+CHANNEL_BINDING_TYPES = ["tls-unique"]
 
 HAS_NEVER_CHECK_COMMON_NAME = False
 
 # Import additional constants from _ssl
-from _ssl import HOSTFLAG_NEVER_CHECK_SUBJECT, ENCODING_DER
-from _ssl import VERIFY_X509_PARTIAL_CHAIN, VERIFY_X509_STRICT
+from _ssl import (
+    HOSTFLAG_NEVER_CHECK_SUBJECT,
+    VERIFY_X509_PARTIAL_CHAIN,
+    VERIFY_X509_STRICT,
+)
 
 _RESTRICTED_SERVER_CIPHERS = _DEFAULT_CIPHERS
 
@@ -197,36 +195,35 @@ def _dnsname_match(dn, hostname):
     if not dn:
         return False
 
-    wildcards = dn.count('*')
+    wildcards = dn.count("*")
     # speed up common case w/o wildcards
     if not wildcards:
         return dn.lower() == hostname.lower()
 
     if wildcards > 1:
-        raise CertificateError(
-            "too many wildcards in certificate DNS name: {!r}.".format(dn))
+        raise CertificateError(f"too many wildcards in certificate DNS name: {dn!r}.")
 
-    dn_leftmost, sep, dn_remainder = dn.partition('.')
+    dn_leftmost, sep, dn_remainder = dn.partition(".")
 
-    if '*' in dn_remainder:
+    if "*" in dn_remainder:
         # Only match wildcard in leftmost segment.
         raise CertificateError(
-            "wildcard can only be present in the leftmost label: "
-            "{!r}.".format(dn))
+            f"wildcard can only be present in the leftmost label: {dn!r}."
+        )
 
     if not sep:
         # no right side
         raise CertificateError(
-            "sole wildcard without additional labels are not support: "
-            "{!r}.".format(dn))
+            f"sole wildcard without additional labels are not support: {dn!r}."
+        )
 
-    if dn_leftmost != '*':
+    if dn_leftmost != "*":
         # no partial wildcard matching
         raise CertificateError(
-            "partial wildcards in leftmost label are not supported: "
-            "{!r}.".format(dn))
+            f"partial wildcards in leftmost label are not supported: {dn!r}."
+        )
 
-    hostname_leftmost, sep, hostname_remainder = hostname.partition('.')
+    hostname_leftmost, sep, hostname_remainder = hostname.partition(".")
     if not hostname_leftmost or not sep:
         # wildcard must match at least one char
         return False
@@ -252,20 +249,17 @@ def _inet_paton(ipname):
             return addr
         else:
             # refuse for short IPv4 notation and additional trailing data
-            raise ValueError(
-                "{!r} is not a quad-dotted IPv4 address.".format(ipname)
-            )
+            raise ValueError(f"{ipname!r} is not a quad-dotted IPv4 address.")
 
     try:
         return _socket.inet_pton(_socket.AF_INET6, ipname)
     except OSError:
-        raise ValueError("{!r} is neither an IPv4 nor an IP6 "
-                         "address.".format(ipname))
+        raise ValueError(f"{ipname!r} is neither an IPv4 nor an IP6 address.")
     except AttributeError:
         # AF_INET6 not available
         pass
 
-    raise ValueError("{!r} is not an IPv4 address.".format(ipname))
+    raise ValueError(f"{ipname!r} is not an IPv4 address.")
 
 
 def _ipaddress_match(cert_ipaddress, host_ip):
@@ -280,56 +274,58 @@ def _ipaddress_match(cert_ipaddress, host_ip):
     return ip == host_ip
 
 
-DefaultVerifyPaths = namedtuple("DefaultVerifyPaths",
-    "cafile capath openssl_cafile_env openssl_cafile openssl_capath_env "
-    "openssl_capath")
+DefaultVerifyPaths = namedtuple(
+    "DefaultVerifyPaths",
+    "cafile capath openssl_cafile_env openssl_cafile openssl_capath_env openssl_capath",
+)
+
 
 def get_default_verify_paths():
-    """Return paths to default cafile and capath.
-    """
+    """Return paths to default cafile and capath."""
     parts = _ssl.get_default_verify_paths()
 
     # environment vars shadow paths
     cafile = os.environ.get(parts[0], parts[1])
     capath = os.environ.get(parts[2], parts[3])
 
-    return DefaultVerifyPaths(cafile if cafile and os.path.isfile(cafile) else None,
-                              capath if capath and os.path.isdir(capath) else None,
-                              *parts)
+    return DefaultVerifyPaths(
+        cafile if cafile and os.path.isfile(cafile) else None,
+        capath if capath and os.path.isdir(capath) else None,
+        *parts,
+    )
 
 
 class _ASN1Object(namedtuple("_ASN1Object", "nid shortname longname oid")):
-    """ASN.1 object identifier lookup
-    """
+    """ASN.1 object identifier lookup"""
+
     __slots__ = ()
 
     def __new__(cls, oid):
         # Stub implementation
-        return super().__new__(cls, 0, 'stub', 'stub', oid)
+        return super().__new__(cls, 0, "stub", "stub", oid)
 
     @classmethod
     def fromnid(cls, nid):
-        """Create _ASN1Object from OpenSSL numeric ID
-        """
-        return super().__new__(cls, nid, 'stub', 'stub', '0.0.0.0')
+        """Create _ASN1Object from OpenSSL numeric ID"""
+        return super().__new__(cls, nid, "stub", "stub", "0.0.0.0")
 
     @classmethod
     def fromname(cls, name):
-        """Create _ASN1Object from short name, long name or OID
-        """
-        return super().__new__(cls, 0, name, name, '0.0.0.0')
+        """Create _ASN1Object from short name, long name or OID"""
+        return super().__new__(cls, 0, name, name, "0.0.0.0")
 
 
 class Purpose(_ASN1Object, _Enum):
-    """SSLContext purpose flags with X509v3 Extended Key Usage objects
-    """
-    SERVER_AUTH = '1.3.6.1.5.5.7.3.1'
-    CLIENT_AUTH = '1.3.6.1.5.5.7.3.2'
+    """SSLContext purpose flags with X509v3 Extended Key Usage objects"""
+
+    SERVER_AUTH = "1.3.6.1.5.5.7.3.1"
+    CLIENT_AUTH = "1.3.6.1.5.5.7.3.2"
 
 
 class SSLContext:
     """An SSLContext holds various SSL-related configuration options and
     data, such as certificates and possibly a private key."""
+
     _windows_cert_stores = ("CA", "ROOT")
 
     sslsocket_class = None  # SSLSocket is assigned later.
@@ -340,27 +336,34 @@ class SSLContext:
             warnings.warn(
                 "ssl.SSLContext() without protocol argument is deprecated.",
                 category=DeprecationWarning,
-                stacklevel=2
+                stacklevel=2,
             )
             protocol = PROTOCOL_TLS
-        
+
         # Validate protocol
         if not isinstance(protocol, int):
             raise TypeError("protocol must be an integer")
-        
+
         # Check for invalid protocol values
         valid_protocols = {
-            PROTOCOL_TLS, PROTOCOL_TLS_CLIENT, PROTOCOL_TLS_SERVER,
-            PROTOCOL_TLS.value
+            PROTOCOL_TLS,
+            PROTOCOL_TLS_CLIENT,
+            PROTOCOL_TLS_SERVER,
+            PROTOCOL_TLS.value,
         }
         # Add deprecated protocols if they exist
-        for proto_name in ['PROTOCOL_SSLv3', 'PROTOCOL_TLSv1', 'PROTOCOL_TLSv1_1', 'PROTOCOL_TLSv1_2']:
+        for proto_name in [
+            "PROTOCOL_SSLv3",
+            "PROTOCOL_TLSv1",
+            "PROTOCOL_TLSv1_1",
+            "PROTOCOL_TLSv1_2",
+        ]:
             if hasattr(_ssl, proto_name):
                 valid_protocols.add(getattr(_ssl, proto_name))
-        
+
         if protocol not in valid_protocols:
             raise ValueError(f"invalid protocol version {protocol}")
-        
+
         self.protocol = protocol
         if protocol == PROTOCOL_TLS_CLIENT:
             self._check_hostname = True
@@ -375,56 +378,68 @@ class SSLContext:
         self._maximum_version = TLSVersion.TLSv1_3  # sensible default
         self._options = Options.OP_ALL | Options.OP_NO_SSLv2 | Options.OP_NO_SSLv3
         # SSLContext also enables these by default
-        self._options |= (Options.OP_NO_COMPRESSION | Options.OP_CIPHER_SERVER_PREFERENCE |
-                    Options.OP_SINGLE_DH_USE | Options.OP_SINGLE_ECDH_USE |
-                    Options.OP_ENABLE_MIDDLEBOX_COMPAT)
+        self._options |= (
+            Options.OP_NO_COMPRESSION
+            | Options.OP_CIPHER_SERVER_PREFERENCE
+            | Options.OP_SINGLE_DH_USE
+            | Options.OP_SINGLE_ECDH_USE
+            | Options.OP_ENABLE_MIDDLEBOX_COMPAT
+        )
         self._verify_flags = VerifyFlags.VERIFY_DEFAULT
         self._host_flags = 0
         self.sni_callback = None
         self._msg_callback_inner = None
         self.keylog_filename = None
         self._num_tickets = 2
-        self._cert_store = {'crl': 0, 'x509_ca': 0, 'x509': 0}
+        self._cert_store = {"crl": 0, "x509_ca": 0, "x509": 0}
 
     def _encode_hostname(self, hostname):
         if hostname is None:
             return None
         elif isinstance(hostname, str):
-            return hostname.encode('idna').decode('ascii')
+            return hostname.encode("idna").decode("ascii")
         else:
-            return hostname.decode('ascii')
+            return hostname.decode("ascii")
 
-    def wrap_socket(self, sock, server_side=False,
-                    do_handshake_on_connect=True,
-                    suppress_ragged_eofs=True,
-                    server_hostname=None, session=None):
+    def wrap_socket(
+        self,
+        sock,
+        server_side=False,
+        do_handshake_on_connect=True,
+        suppress_ragged_eofs=True,
+        server_hostname=None,
+        session=None,
+    ):
         raise NotImplementedError("SSL is not supported in Pyodide")
 
-    def wrap_bio(self, incoming, outgoing, server_side=False,
-                 server_hostname=None, session=None):
+    def wrap_bio(
+        self, incoming, outgoing, server_side=False, server_hostname=None, session=None
+    ):
         # Validate BIO arguments
         if not isinstance(incoming, MemoryBIO):
             raise TypeError("incoming must be a MemoryBIO instance")
         if not isinstance(outgoing, MemoryBIO):
             raise TypeError("outgoing must be a MemoryBIO instance")
-        
+
         # Validate server_hostname
         if server_side and server_hostname is not None:
             raise ValueError("server_hostname can only be specified in client mode")
-        
+
         if not server_side:
             if self.check_hostname and not server_hostname:
                 raise ValueError("check_hostname requires server_hostname")
             if server_hostname is not None:
                 if not isinstance(server_hostname, str):
                     if isinstance(server_hostname, bytes):
-                        server_hostname = server_hostname.decode('ascii')
+                        server_hostname = server_hostname.decode("ascii")
                     else:
                         raise TypeError("server_hostname must be a string or bytes")
                 # Validate hostname format
-                if not server_hostname or server_hostname.startswith('.'):
-                    raise ValueError("server_hostname cannot be empty or start with a dot")
-        
+                if not server_hostname or server_hostname.startswith("."):
+                    raise ValueError(
+                        "server_hostname cannot be empty or start with a dot"
+                    )
+
         # Create and return a stub SSLObject
         return SSLObject._create(
             incoming=incoming,
@@ -432,14 +447,12 @@ class SSLContext:
             server_side=server_side,
             server_hostname=server_hostname,
             session=session,
-            context=self
+            context=self,
         )
 
     def set_npn_protocols(self, npn_protocols):
         warnings.warn(
-            "ssl NPN is deprecated, use ALPN instead",
-            DeprecationWarning,
-            stacklevel=2
+            "ssl NPN is deprecated, use ALPN instead", DeprecationWarning, stacklevel=2
         )
         raise NotImplementedError("SSL is not supported in Pyodide")
 
@@ -463,11 +476,11 @@ class SSLContext:
             raise TypeError(purpose)
         # Stub - no-op for Pyodide
         pass
-    
+
     def load_verify_locations(self, cafile=None, capath=None, cadata=None):
         if cafile is None and capath is None and cadata is None:
             raise TypeError("cafile, capath and cadata cannot be all omitted")
-        
+
         # Check if file exists when cafile is provided
         if cafile is not None:
             if isinstance(cafile, str):
@@ -475,63 +488,76 @@ class SSLContext:
                     raise OSError(errno.ENOENT, "No such file or directory", cafile)
                 # Validate it's a valid PEM file
                 try:
-                    with open(cafile, 'r') as f:
+                    with open(cafile) as f:
                         content = f.read()
-                        if not ('-----BEGIN CERTIFICATE-----' in content and '-----END CERTIFICATE-----' in content):
+                        if not (
+                            "-----BEGIN CERTIFICATE-----" in content
+                            and "-----END CERTIFICATE-----" in content
+                        ):
                             raise _ssl.SSLError("PEM lib")
                 except (UnicodeDecodeError, OSError) as e:
                     if isinstance(e, FileNotFoundError):
                         raise
                     raise _ssl.SSLError("PEM routines") from e
-                
+
                 # Check if this is a CA certificate by looking for CA:TRUE in the content
                 # This is a simple heuristic for the stub
-                if 'CA:TRUE' in content or 'Root CA' in content or 'CA Cert' in content:
-                    self._cert_store['x509_ca'] += 1
+                if "CA:TRUE" in content or "Root CA" in content or "CA Cert" in content:
+                    self._cert_store["x509_ca"] += 1
                 else:
-                    self._cert_store['x509'] += 1
+                    self._cert_store["x509"] += 1
             elif isinstance(cafile, bytes):
                 if not os.path.exists(cafile.decode()):
                     raise OSError(errno.ENOENT, "No such file or directory", cafile)
                 # For bytes, just increment x509
-                self._cert_store['x509'] += 1
-        
+                self._cert_store["x509"] += 1
+
         if cadata is not None:
             if isinstance(cadata, (str, bytes)):
                 if isinstance(cadata, bytes):
-                    cadata_str = cadata.decode('ascii', errors='ignore')
+                    cadata_str = cadata.decode("ascii", errors="ignore")
                 else:
                     cadata_str = cadata
-                
+
                 # Initialize the set for tracking loaded certs if needed
-                if not hasattr(self, '_loaded_certs'):
+                if not hasattr(self, "_loaded_certs"):
                     self._loaded_certs = set()
-                
+
                 # Split and hash each cert to detect duplicates
                 import hashlib
-                certs = cadata_str.split('-----BEGIN CERTIFICATE-----')
+
+                certs = cadata_str.split("-----BEGIN CERTIFICATE-----")
                 new_certs = 0
                 for cert in certs[1:]:  # Skip first empty split
-                    if '-----END CERTIFICATE-----' in cert:
-                        cert_data = '-----BEGIN CERTIFICATE-----' + cert.split('-----END CERTIFICATE-----')[0] + '-----END CERTIFICATE-----'
+                    if "-----END CERTIFICATE-----" in cert:
+                        cert_data = (
+                            "-----BEGIN CERTIFICATE-----"
+                            + cert.split("-----END CERTIFICATE-----")[0]
+                            + "-----END CERTIFICATE-----"
+                        )
                         cert_hash = hashlib.sha256(cert_data.encode()).hexdigest()
                         if cert_hash not in self._loaded_certs:
                             self._loaded_certs.add(cert_hash)
                             new_certs += 1
-                
-                self._cert_store['x509_ca'] += new_certs
-    
+
+                self._cert_store["x509_ca"] += new_certs
+
     def load_cert_chain(self, certfile, keyfile=None, password=None):
         if certfile is not None:
             if isinstance(certfile, str):
                 if not os.path.exists(certfile):
-                    raise FileNotFoundError(errno.ENOENT, "No such file or directory", certfile)
+                    raise FileNotFoundError(
+                        errno.ENOENT, "No such file or directory", certfile
+                    )
                 # Validate it's a valid PEM file
                 try:
-                    with open(certfile, 'r') as f:
+                    with open(certfile) as f:
                         content = f.read()
                         # Empty file or file without proper PEM markers
-                        if not content.strip() or '-----BEGIN CERTIFICATE-----' not in content:
+                        if (
+                            not content.strip()
+                            or "-----BEGIN CERTIFICATE-----" not in content
+                        ):
                             raise _ssl.SSLError("PEM lib")
                 except (UnicodeDecodeError, OSError) as e:
                     if isinstance(e, FileNotFoundError):
@@ -539,9 +565,11 @@ class SSLContext:
                     raise _ssl.SSLError("PEM lib") from e
             elif isinstance(certfile, bytes):
                 if not os.path.exists(certfile.decode()):
-                    raise FileNotFoundError(errno.ENOENT, "No such file or directory", certfile)
+                    raise FileNotFoundError(
+                        errno.ENOENT, "No such file or directory", certfile
+                    )
         # Note: load_cert_chain does NOT add to cert_store, only load_verify_locations does
-    
+
     def set_default_verify_paths(self):
         # Stub - no-op for Pyodide
         pass
@@ -569,26 +597,26 @@ class SSLContext:
     @options.setter
     def options(self, value):
         """Set SSL options.
-        
+
         Args:
             value: Integer value with option flags
-            
+
         Raises:
             TypeError: if value is not an integer
             OverflowError: if value is negative or too large
         """
         if not isinstance(value, int) or isinstance(value, bool):
             raise TypeError("'options' must be an integer")
-        
+
         # Check for negative values
         if value < 0:
             raise OverflowError("options must be a non-negative integer")
-        
+
         # Check for values that are too large (greater than unsigned long long max)
         # Using a reasonable upper bound
         if value >= 2**64:
             raise OverflowError("options value is too large")
-        
+
         self._options = value
 
     @property
@@ -612,11 +640,11 @@ class SSLContext:
     def check_hostname(self):
         """Whether to match the peer cert's hostname in :meth:`SSLSocket.do_handshake`."""
         return self._check_hostname
-    
+
     @check_hostname.setter
     def check_hostname(self, value):
         """Set whether to match the peer cert's hostname.
-        
+
         Automatically sets verify_mode to CERT_REQUIRED when check_hostname is True.
         """
         self._check_hostname = bool(value)
@@ -660,7 +688,7 @@ class SSLContext:
 
     @_msg_callback.setter
     def _msg_callback(self, callback):
-        if callback is not None and not hasattr(callback, '__call__'):
+        if callback is not None and not hasattr(callback, "__call__"):
             raise TypeError(f"{callback} is not callable.")
 
         self._msg_callback_inner = callback
@@ -668,7 +696,7 @@ class SSLContext:
     @property
     def verify_mode(self):
         """Get the certificate verification mode.
-        
+
         Returns one of CERT_NONE, CERT_OPTIONAL, or CERT_REQUIRED.
         """
         return self._verify_mode
@@ -676,7 +704,7 @@ class SSLContext:
     @verify_mode.setter
     def verify_mode(self, value):
         """Set the certificate verification mode.
-        
+
         Must be one of CERT_NONE, CERT_OPTIONAL, or CERT_REQUIRED.
         """
         if value is None:
@@ -685,11 +713,17 @@ class SSLContext:
         # Validate the value
         if value not in (CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED):
             raise ValueError("invalid value for verify_mode")
-        
+
         # Check if check_hostname is True and trying to set verify_mode to CERT_NONE
-        if hasattr(self, '_check_hostname') and self._check_hostname and value == CERT_NONE:
-            raise ValueError("Cannot set verify_mode to CERT_NONE when check_hostname is enabled.")
-        
+        if (
+            hasattr(self, "_check_hostname")
+            and self._check_hostname
+            and value == CERT_NONE
+        ):
+            raise ValueError(
+                "Cannot set verify_mode to CERT_NONE when check_hostname is enabled."
+            )
+
         # In the real implementation, this would set SSL_CTX_set_verify with:
         # - CERT_NONE -> SSL_VERIFY_NONE
         # - CERT_OPTIONAL -> SSL_VERIFY_PEER
@@ -700,7 +734,7 @@ class SSLContext:
     @property
     def verify_flags(self):
         """Get the certificate verification flags.
-        
+
         Returns a VerifyFlags value.
         """
         return self._verify_flags
@@ -708,12 +742,12 @@ class SSLContext:
     @verify_flags.setter
     def verify_flags(self, value):
         """Set the certificate verification flags.
-        
+
         Must be a valid VerifyFlags value, not None.
         """
         if value is None:
             raise TypeError("verify_flags must be specified")
-        
+
         # In the real implementation, this would call SSL_CTX_set_verify with
         # the appropriate OpenSSL verification flags.
         # For our stub, we just store the value
@@ -729,28 +763,33 @@ class SSLContext:
     def set_ciphers(self, ciphers):
         if not isinstance(ciphers, str):
             raise TypeError("ciphers must be a string")
-        
+
         if not ciphers or ciphers.isspace():
             raise _ssl.SSLError("No cipher can be selected.")
 
     def get_ciphers(self):
         # Stub
         return []
-    
+
     def load_dh_params(self, dhfile):
         if dhfile is None:
             raise TypeError("path is None")
-        
+
         # Check if file exists
         if isinstance(dhfile, str):
             if not os.path.exists(dhfile):
-                raise FileNotFoundError(errno.ENOENT, "No such file or directory", dhfile)
+                raise FileNotFoundError(
+                    errno.ENOENT, "No such file or directory", dhfile
+                )
             # Validate it's actually a DH params file
             try:
-                with open(dhfile, 'r') as f:
+                with open(dhfile) as f:
                     content = f.read()
                     # DH params files should have DH PARAMETERS marker
-                    if 'BEGIN DH PARAMETERS' not in content and 'BEGIN PARAMETERS' not in content:
+                    if (
+                        "BEGIN DH PARAMETERS" not in content
+                        and "BEGIN PARAMETERS" not in content
+                    ):
                         raise _ssl.SSLError("PEM lib")
             except (UnicodeDecodeError, OSError) as e:
                 if isinstance(e, FileNotFoundError):
@@ -758,16 +797,26 @@ class SSLContext:
                 raise _ssl.SSLError("PEM lib") from e
         elif isinstance(dhfile, bytes):
             if not os.path.exists(dhfile.decode()):
-                raise FileNotFoundError(errno.ENOENT, "No such file or directory", dhfile)
+                raise FileNotFoundError(
+                    errno.ENOENT, "No such file or directory", dhfile
+                )
         # Stub - no actual DH params loading
 
     def session_stats(self):
         # Stub
-        return {'number': 0, 'connect': 0, 'connect_good': 0,
-                'connect_renegotiate': 0, 'accept': 0,
-                'accept_good': 0, 'accept_renegotiate': 0,
-                'hits': 0, 'misses': 0, 'timeouts': 0,
-                'cache_full': 0}
+        return {
+            "number": 0,
+            "connect": 0,
+            "connect_good": 0,
+            "connect_renegotiate": 0,
+            "accept": 0,
+            "accept_good": 0,
+            "accept_renegotiate": 0,
+            "hits": 0,
+            "misses": 0,
+            "timeouts": 0,
+            "cache_full": 0,
+        }
 
     @property
     def num_tickets(self):
@@ -777,34 +826,33 @@ class SSLContext:
     @num_tickets.setter
     def num_tickets(self, value):
         """Set the number of TLS 1.3 session tickets.
-        
+
         Args:
             value: Number of tickets (non-negative integer)
-            
+
         Raises:
             TypeError: if value is None
             ValueError: if value is negative or if setting on CLIENT context
         """
         if value is None:
             raise TypeError("num_tickets must be an integer, not None")
-        
+
         if not isinstance(value, int) or isinstance(value, bool):
             raise TypeError("num_tickets must be an integer")
-        
+
         if value < 0:
             raise ValueError("num_tickets must be a non-negative integer")
-        
+
         # TLS_CLIENT contexts can only have the default value
         if self.protocol == PROTOCOL_TLS_CLIENT and value != 2:
             raise ValueError("can't set num_tickets for client contexts")
-        
+
         self._num_tickets = value
 
-    
 
-
-def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
-                           capath=None, cadata=None):
+def create_default_context(
+    purpose=Purpose.SERVER_AUTH, *, cafile=None, capath=None, cadata=None
+):
     """Create a SSLContext object with default settings.
 
     NOTE: The protocol and settings may change anytime without prior
@@ -834,7 +882,7 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
     # `VERIFY_X509_STRICT` makes OpenSSL more conservative about the
     # certificates it accepts, including "disabling workarounds for
     # some broken certificates."
-    context.verify_flags |= (VERIFY_X509_PARTIAL_CHAIN | VERIFY_X509_STRICT)
+    context.verify_flags |= VERIFY_X509_PARTIAL_CHAIN | VERIFY_X509_STRICT
 
     if cafile or capath or cadata:
         context.load_verify_locations(cafile, capath, cadata)
@@ -844,16 +892,25 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
         # root CA certificates for the given purpose. This may fail silently.
         context.load_default_certs(purpose)
     # OpenSSL 1.1.1 keylog file
-    if hasattr(context, 'keylog_filename'):
-        keylogfile = os.environ.get('SSLKEYLOGFILE')
+    if hasattr(context, "keylog_filename"):
+        keylogfile = os.environ.get("SSLKEYLOGFILE")
         if keylogfile and not sys.flags.ignore_environment:
             context.keylog_filename = keylogfile
     return context
 
-def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
-                           check_hostname=False, purpose=Purpose.SERVER_AUTH,
-                           certfile=None, keyfile=None,
-                           cafile=None, capath=None, cadata=None):
+
+def _create_unverified_context(
+    protocol=None,
+    *,
+    cert_reqs=CERT_NONE,
+    check_hostname=False,
+    purpose=Purpose.SERVER_AUTH,
+    certfile=None,
+    keyfile=None,
+    cafile=None,
+    capath=None,
+    cadata=None,
+):
     """Create a SSLContext object for Python stdlib modules
 
     All Python stdlib modules shall use this function to create SSLContext
@@ -898,10 +955,11 @@ def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
         # root CA certificates for the given purpose. This may fail silently.
         context.load_default_certs(purpose)
     # OpenSSL 1.1.1 keylog file (stub for Pyodide)
-    keylogfile = os.environ.get('SSLKEYLOGFILE')
+    keylogfile = os.environ.get("SSLKEYLOGFILE")
     if keylogfile and not sys.flags.ignore_environment:
         context.keylog_filename = keylogfile
     return context
+
 
 # Used by http.client if no context is explicitly passed.
 _create_default_https_context = create_default_context
@@ -926,6 +984,7 @@ class SSLObject:
      * Any form of network IO, including methods such as ``recv`` and ``send``.
      * The ``do_handshake_on_connect`` and ``suppress_ragged_eofs`` machinery.
     """
+
     def __init__(self, *args, **kwargs):
         raise TypeError(
             f"{self.__class__.__name__} does not have a public "
@@ -933,10 +992,17 @@ class SSLObject:
         )
 
     @classmethod
-    def _create(cls, incoming, outgoing, server_side=False,
-                 server_hostname=None, session=None, context=None):
+    def _create(
+        cls,
+        incoming,
+        outgoing,
+        server_side=False,
+        server_hostname=None,
+        session=None,
+        context=None,
+    ):
         """Create a stub SSL object instance.
-        
+
         This factory method creates a minimal SSL object that tracks state
         but does not perform actual SSL operations.
         """
@@ -1025,9 +1091,7 @@ class SSLObject:
         if a next protocol was not negotiated or if NPN is not supported by one
         of the peers."""
         warnings.warn(
-            "ssl NPN is deprecated, use ALPN instead",
-            DeprecationWarning,
-            stacklevel=2
+            "ssl NPN is deprecated, use ALPN instead", DeprecationWarning, stacklevel=2
         )
 
     def selected_alpn_protocol(self):
@@ -1072,7 +1136,7 @@ class SSLObject:
 
     def version(self):
         """Return a string identifying the protocol version used by the
-        current SSL channel. """
+        current SSL channel."""
         return self._sslobj.version()
 
     def verify_client_post_handshake(self):
@@ -1088,7 +1152,7 @@ def _sslcopydoc(func):
 class SSLSocket(socket):
     """This class implements a subtype of socket.socket that wraps
     the underlying OS socket in an SSL context when necessary, and
-    provides read and write methods over that channel. """
+    provides read and write methods over that channel."""
 
     def __init__(self, *args, **kwargs):
         raise TypeError(
@@ -1098,9 +1162,16 @@ class SSLSocket(socket):
         )
 
     @classmethod
-    def _create(cls, sock, server_side=False, do_handshake_on_connect=True,
-                suppress_ragged_eofs=True, server_hostname=None,
-                context=None, session=None):
+    def _create(
+        cls,
+        sock,
+        server_side=False,
+        do_handshake_on_connect=True,
+        suppress_ragged_eofs=True,
+        server_hostname=None,
+        context=None,
+        session=None,
+    ):
         raise NotImplementedError("SSL is not supported in Pyodide")
 
     @property
@@ -1132,8 +1203,7 @@ class SSLSocket(socket):
             return self._sslobj.session_reused
 
     def dup(self):
-        raise NotImplementedError("Can't dup() %s instances" %
-                                  self.__class__.__name__)
+        raise NotImplementedError("Can't dup() %s instances" % self.__class__.__name__)
 
     def _checkClosed(self, msg=None):
         # raise an exception here if you wish to check for spurious closes
@@ -1164,7 +1234,7 @@ class SSLSocket(socket):
                 if buffer is not None:
                     return 0
                 else:
-                    return b''
+                    return b""
             else:
                 raise
 
@@ -1195,11 +1265,8 @@ class SSLSocket(socket):
     def selected_npn_protocol(self):
         self._checkClosed()
         warnings.warn(
-            "ssl NPN is deprecated, use ALPN instead",
-            DeprecationWarning,
-            stacklevel=2
+            "ssl NPN is deprecated, use ALPN instead", DeprecationWarning, stacklevel=2
         )
-        return None
 
     @_sslcopydoc
     def selected_alpn_protocol(self):
@@ -1238,8 +1305,9 @@ class SSLSocket(socket):
         if self._sslobj is not None:
             if flags != 0:
                 raise ValueError(
-                    "non-zero flags not allowed in calls to send() on %s" %
-                    self.__class__)
+                    "non-zero flags not allowed in calls to send() on %s"
+                    % self.__class__
+                )
             return self._sslobj.write(data)
         else:
             return super().send(data, flags)
@@ -1247,8 +1315,7 @@ class SSLSocket(socket):
     def sendto(self, data, flags_or_addr, addr=None):
         self._checkClosed()
         if self._sslobj is not None:
-            raise ValueError("sendto not allowed on instances of %s" %
-                             self.__class__)
+            raise ValueError("sendto not allowed on instances of %s" % self.__class__)
         elif addr is None:
             return super().sendto(data, flags_or_addr)
         else:
@@ -1257,16 +1324,18 @@ class SSLSocket(socket):
     def sendmsg(self, *args, **kwargs):
         # Ensure programs don't send data unencrypted if they try to
         # use this method.
-        raise NotImplementedError("sendmsg not allowed on instances of %s" %
-                                  self.__class__)
+        raise NotImplementedError(
+            "sendmsg not allowed on instances of %s" % self.__class__
+        )
 
     def sendall(self, data, flags=0):
         self._checkClosed()
         if self._sslobj is not None:
             if flags != 0:
                 raise ValueError(
-                    "non-zero flags not allowed in calls to sendall() on %s" %
-                    self.__class__)
+                    "non-zero flags not allowed in calls to sendall() on %s"
+                    % self.__class__
+                )
             count = 0
             with memoryview(data) as view, view.cast("B") as byte_view:
                 amount = len(byte_view)
@@ -1291,8 +1360,9 @@ class SSLSocket(socket):
         if self._sslobj is not None:
             if flags != 0:
                 raise ValueError(
-                    "non-zero flags not allowed in calls to recv() on %s" %
-                    self.__class__)
+                    "non-zero flags not allowed in calls to recv() on %s"
+                    % self.__class__
+                )
             return self.read(buflen)
         else:
             return super().recv(buflen, flags)
@@ -1310,8 +1380,9 @@ class SSLSocket(socket):
         if self._sslobj is not None:
             if flags != 0:
                 raise ValueError(
-                  "non-zero flags not allowed in calls to recv_into() on %s" %
-                  self.__class__)
+                    "non-zero flags not allowed in calls to recv_into() on %s"
+                    % self.__class__
+                )
             return self.read(nbytes, buffer)
         else:
             return super().recv_into(buffer, nbytes, flags)
@@ -1319,26 +1390,28 @@ class SSLSocket(socket):
     def recvfrom(self, buflen=1024, flags=0):
         self._checkClosed()
         if self._sslobj is not None:
-            raise ValueError("recvfrom not allowed on instances of %s" %
-                             self.__class__)
+            raise ValueError("recvfrom not allowed on instances of %s" % self.__class__)
         else:
             return super().recvfrom(buflen, flags)
 
     def recvfrom_into(self, buffer, nbytes=None, flags=0):
         self._checkClosed()
         if self._sslobj is not None:
-            raise ValueError("recvfrom_into not allowed on instances of %s" %
-                             self.__class__)
+            raise ValueError(
+                "recvfrom_into not allowed on instances of %s" % self.__class__
+            )
         else:
             return super().recvfrom_into(buffer, nbytes, flags)
 
     def recvmsg(self, *args, **kwargs):
-        raise NotImplementedError("recvmsg not allowed on instances of %s" %
-                                  self.__class__)
+        raise NotImplementedError(
+            "recvmsg not allowed on instances of %s" % self.__class__
+        )
 
     def recvmsg_into(self, *args, **kwargs):
-        raise NotImplementedError("recvmsg_into not allowed on instances of "
-                                  "%s" % self.__class__)
+        raise NotImplementedError(
+            "recvmsg_into not allowed on instances of %s" % self.__class__
+        )
 
     @_sslcopydoc
     def pending(self):
@@ -1392,8 +1465,7 @@ class SSLSocket(socket):
         if self._connected or self._sslobj is not None:
             raise ValueError("attempt to connect already-connected SSLSocket!")
         self._sslobj = self.context._wrap_socket(
-            self, False, self.server_hostname,
-            owner=self, session=self._session
+            self, False, self.server_hostname, owner=self, session=self._session
         )
         try:
             if connect_ex:
@@ -1426,10 +1498,12 @@ class SSLSocket(socket):
         SSL channel, and the address of the remote client."""
 
         newsock, addr = super().accept()
-        newsock = self.context.wrap_socket(newsock,
-                    do_handshake_on_connect=self.do_handshake_on_connect,
-                    suppress_ragged_eofs=self.suppress_ragged_eofs,
-                    server_side=True)
+        newsock = self.context.wrap_socket(
+            newsock,
+            do_handshake_on_connect=self.do_handshake_on_connect,
+            suppress_ragged_eofs=self.suppress_ragged_eofs,
+            server_side=True,
+        )
         return newsock, addr
 
     @_sslcopydoc
@@ -1438,9 +1512,7 @@ class SSLSocket(socket):
             return self._sslobj.get_channel_binding(cb_type)
         else:
             if cb_type not in CHANNEL_BINDING_TYPES:
-                raise ValueError(
-                    "{0} channel binding type not implemented".format(cb_type)
-                )
+                raise ValueError(f"{cb_type} channel binding type not implemented")
             return None
 
     @_sslcopydoc
@@ -1458,6 +1530,7 @@ SSLContext.sslobject_class = SSLObject
 
 # some utility functions
 
+
 def cert_time_to_seconds(cert_time):
     """Return the time in seconds since the Epoch, given the timestring
     representing the "notBefore" or "notAfter" date from a certificate
@@ -1468,19 +1541,30 @@ def cert_time_to_seconds(cert_time):
     Month is one of: Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
     UTC should be specified as GMT (see ASN1_TIME_print())
     """
-    from time import strptime
     from calendar import timegm
+    from time import strptime
 
     months = (
-        "Jan","Feb","Mar","Apr","May","Jun",
-        "Jul","Aug","Sep","Oct","Nov","Dec"
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
     )
-    time_format = ' %d %H:%M:%S %Y GMT' # NOTE: no month, fixed GMT
+    time_format = " %d %H:%M:%S %Y GMT"  # NOTE: no month, fixed GMT
     try:
         month_number = months.index(cert_time[:3].title()) + 1
     except ValueError:
-        raise ValueError('time data %r does not match '
-                         'format "%%b%s"' % (cert_time, time_format))
+        raise ValueError(
+            'time data %r does not match format "%%b%s"' % (cert_time, time_format)
+        )
     else:
         # found valid month
         tt = strptime(cert_time[3:], time_format)
@@ -1488,34 +1572,40 @@ def cert_time_to_seconds(cert_time):
         # returned a float (fractional seconds are always zero here).
         return timegm((tt[0], month_number) + tt[2:6])
 
+
 PEM_HEADER = "-----BEGIN CERTIFICATE-----"
 PEM_FOOTER = "-----END CERTIFICATE-----"
+
 
 def DER_cert_to_PEM_cert(der_cert_bytes):
     """Takes a certificate in binary DER format and returns the
     PEM version of it as a string."""
 
-    f = str(base64.standard_b64encode(der_cert_bytes), 'ASCII', 'strict')
+    f = str(base64.standard_b64encode(der_cert_bytes), "ASCII", "strict")
     ss = [PEM_HEADER]
-    ss += [f[i:i+64] for i in range(0, len(f), 64)]
-    ss.append(PEM_FOOTER + '\n')
-    return '\n'.join(ss)
+    ss += [f[i : i + 64] for i in range(0, len(f), 64)]
+    ss.append(PEM_FOOTER + "\n")
+    return "\n".join(ss)
+
 
 def PEM_cert_to_DER_cert(pem_cert_string):
     """Takes a certificate in ASCII PEM format and returns the
     DER-encoded version of it as a byte sequence"""
 
     if not pem_cert_string.startswith(PEM_HEADER):
-        raise ValueError("Invalid PEM encoding; must start with %s"
-                         % PEM_HEADER)
+        raise ValueError("Invalid PEM encoding; must start with %s" % PEM_HEADER)
     if not pem_cert_string.strip().endswith(PEM_FOOTER):
-        raise ValueError("Invalid PEM encoding; must end with %s"
-                         % PEM_FOOTER)
-    d = pem_cert_string.strip()[len(PEM_HEADER):-len(PEM_FOOTER)]
-    return base64.decodebytes(d.encode('ASCII', 'strict'))
+        raise ValueError("Invalid PEM encoding; must end with %s" % PEM_FOOTER)
+    d = pem_cert_string.strip()[len(PEM_HEADER) : -len(PEM_FOOTER)]
+    return base64.decodebytes(d.encode("ASCII", "strict"))
 
-def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT,
-                           ca_certs=None, timeout=_GLOBAL_DEFAULT_TIMEOUT):
+
+def get_server_certificate(
+    addr,
+    ssl_version=PROTOCOL_TLS_CLIENT,
+    ca_certs=None,
+    timeout=_GLOBAL_DEFAULT_TIMEOUT,
+):
     """Retrieve the certificate from the server at the specified address,
     and return it as a PEM-encoded string.
     If 'ca_certs' is specified, validate the server cert against it.
@@ -1528,13 +1618,12 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT,
         cert_reqs = CERT_REQUIRED
     else:
         cert_reqs = CERT_NONE
-    context = _create_stdlib_context(ssl_version,
-                                     cert_reqs=cert_reqs,
-                                     cafile=ca_certs)
+    context = _create_stdlib_context(ssl_version, cert_reqs=cert_reqs, cafile=ca_certs)
     with create_connection(addr, timeout=timeout) as sock:
         with context.wrap_socket(sock, server_hostname=host) as sslsock:
             dercert = sslsock.getpeercert(True)
     return DER_cert_to_PEM_cert(dercert)
 
+
 def get_protocol_name(protocol_code):
-    return _PROTOCOL_NAMES.get(protocol_code, '<unknown>')
+    return _PROTOCOL_NAMES.get(protocol_code, "<unknown>")
