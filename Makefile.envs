@@ -83,14 +83,14 @@ export PYZIP_EXCLUDE_FILES=\
 	turtledemo/ \
 	test/ \
 	sqlite3/ \
-	ssl.py \
 	lzma.py \
 	_pydecimal.py \
 	pydoc_data/
 
 # List of modules that we replace with a stub in the zipped standard library
 export PYZIP_JS_STUBS=\
-	webbrowser.py
+	webbrowser.py \
+	ssl.py
 
 export PYCOMPILE_EXCLUDE_FILES=\
 	RobotRaconteur- \
