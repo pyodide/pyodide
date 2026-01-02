@@ -169,9 +169,16 @@ $(PYINSTALL)/lib/liblzma.a :
 	mkdir -p $(PYINSTALL)/include/lzma
 	cp -r $(LZMABUILD)/dist/include/* $(PYINSTALL)/include/lzma
 
+# We are disabling a lot of features to minimize the size of the resulting
+# OpenSSL libraries.
+# Useful link:
+# - https://github.com/openssl/openssl/discussions/23542
+# - https://wiki.openssl.org/index.php/Compilation_and_Installation
+# - https://github.com/openwrt/openwrt/blob/master/package/libs/openssl/Makefile
+# - https://stackoverflow.com/questions/23772816/when-do-i-need-zlib-in-openssl
 $(PYINSTALL)/lib/libssl.a :
 	rm -rf $(OPENSSLBUILD)
-	mkdir $(OPENSSLBUILD)
+	mkdir -p $(OPENSSLBUILD)
 	(\
 		cd $(OPENSSLBUILD) \
 		&& git init \
@@ -181,12 +188,59 @@ $(PYINSTALL)/lib/libssl.a :
 		&& . $(PYODIDE_ROOT)/pyodide_env.sh \
 		&& emconfigure ./Configure \
 			gcc \
-			-no-ui-console \
-			-no-tests \
+			no-ui-console \
+			no-tests \
+			no-err \
+			no-ssl2 \
+			no-ssl3 \
+			no-comp \
+			no-hw \
+			no-engine \
+			no-dso \
+			no-srp \
+			no-psk \
+			no-weak-ssl-ciphers \
+			no-sse2 \
+			no-threads \
+			no-zlib \
+			no-md2 \
+			no-md4 \
+			no-rc2 \
+			no-rc4 \
+			no-rc5 \
+			no-mdc2 \
+			no-whirlpool \
+			no-ripemd \
+			no-idea \
+			no-bf \
+			no-cast \
+			no-seed \
+			no-camellia \
+			no-aria \
+			no-sm2 \
+			no-sm3 \
+			no-sm4 \
+			no-dsa \
+			no-cms \
+			no-ts \
+			no-ct \
+			no-dtls \
+			no-dtls1 \
+			no-dtls1-method \
+			no-tls1 \
+			no-tls1-method \
+			no-ssl3-method \
+			no-ocsp \
+			no-sctp \
+			no-srtp \
+			no-nextprotoneg \
+			no-gost \
+			no-heartbeats \
 			-DHAVE_FORK=0 \
 			-DOPENSSL_NO_SECURE_MEMORY \
 			-fPIC \
 			-DNO_SYSLOG \
+			-Os \
 		&& sed -i 's!^CROSS_COMPILE=.*!!g' Makefile \
 		&& make build_generated \
 		&& make libcrypto.a \
