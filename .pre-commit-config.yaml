@@ -1,4 +1,4 @@
-exclude: (^.*patches|.*\.cgi$|^packages/micropip/src/micropip/externals|^benchmark/benchmarks$)
+exclude: (^.*patches|.*\.cgi$|^packages/micropip/src/micropip/externals|^benchmark/benchmarks$|^src/py/ssl.py)
 default_language_version:
   python: "3.13"
 repos:
