@@ -61,6 +61,8 @@ OP_NO_COMPRESSION = 0x00020000
 OP_CIPHER_SERVER_PREFERENCE = 0x00400000
 OP_SINGLE_DH_USE = 0x00100000
 OP_SINGLE_ECDH_USE = 0x00080000
+OP_ENABLE_MIDDLEBOX_COMPAT = 0x00000400
+OP_LEGACY_SERVER_CONNECT = 0x00000004
 
 # Verify flags
 VERIFY_DEFAULT = 0
@@ -109,7 +111,10 @@ _DEFAULT_CIPHERS = "DEFAULT"
 # Exception classes
 class SSLError(OSError):
     """Base class for SSL errors."""
-    pass
+
+    # The str() of a SSLError doesn't include the errno
+    def __str__(self) -> str:
+        return str(self.args[1]) if len(self.args) > 1 else ""
 
 
 class SSLZeroReturnError(SSLError):
@@ -148,7 +153,6 @@ class _SSLContext:
     def __init__(self, protocol):
         raise NotImplementedError("SSL is not supported in Pyodide")
 
-
 class SSLSession:
     """Stub SSL session class."""
     def __init__(self):
@@ -156,9 +160,70 @@ class SSLSession:
 
 
 class MemoryBIO:
-    """Stub memory BIO class."""
+    """Stub memory BIO class for buffering SSL data."""
     def __init__(self):
-        raise NotImplementedError("SSL is not supported in Pyodide")
+        self._buffer = bytearray()
+        self._eof = False
+    
+    def write(self, data):
+        """Write data to the BIO buffer.
+        
+        Args:
+            data: bytes-like object to write
+            
+        Returns:
+            Number of bytes written
+            
+        Raises:
+            TypeError: if data is not bytes-like
+            BufferError: if memoryview is not contiguous
+        """
+        if isinstance(data, str):
+            raise TypeError("a bytes-like object is required, not 'str'")
+        if data is None:
+            raise TypeError("a bytes-like object is required, not 'NoneType'")
+        if isinstance(data, bool) or isinstance(data, int):
+            raise TypeError(f"a bytes-like object is required, not '{type(data).__name__}'")
+        
+        if isinstance(data, memoryview):
+            # Check if contiguous
+            if not data.c_contiguous:
+                raise BufferError("memoryview must be contiguous")
+            data = data.tobytes()
+        
+        self._buffer.extend(data)
+        return len(data)
+    
+    def read(self, n=-1):
+        """Read data from the BIO buffer.
+        
+        Args:
+            n: number of bytes to read, -1 or omitted means read all
+            
+        Returns:
+            bytes object with the data read
+        """
+        if n == -1 or n >= len(self._buffer):
+            data = bytes(self._buffer)
+            self._buffer.clear()
+        else:
+            data = bytes(self._buffer[:n])
+            del self._buffer[:n]
+        return data
+    
+    @property
+    def eof(self):
+        """Return True if EOF has been written and buffer is empty."""
+        return self._eof and len(self._buffer) == 0
+    
+    def write_eof(self):
+        """Mark the BIO as having reached EOF."""
+        self._eof = True
+    
+    @property
+    def pending(self):
+        """Return the number of bytes available to read."""
+        return len(self._buffer)
 
 
 # Stub functions

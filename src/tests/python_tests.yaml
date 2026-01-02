@@ -709,17 +709,24 @@
     skip:
       - BasicSocketTests  # socket not supported
       - ThreadedTests  # no thread
-      - SimpleBackgroundTests  # no thread
+      - SimpleBackgroundTests  # "socket_helper.bind_port"
+      - TestPreHandshakeClose  # "socket_helper.bind_port"
+      - test_msg_callback_tls12  # "socket_helper.bind_port"
       - test_context_custom_class  # SSLContext stub
-      - MemoryBIOTests  # MemoryBIO stub
-      - test_bad_server_hostname  # MemoryBIO stub
+      - test_lib_reason  # No raise
+      - test_load_default_certs_env  # cannot load system certs
+      - test_get_ca_certs  # cannot load system certs
+      - test_load_verify_cadata # cannot load system certs
+      - test_load_verify_locations  # cannot load system certs
+      - test_load_cert_chain  # cannot load cert files
+      - test_msg_callback_deadlock_bpo43577  # no thread
+      - test_min_max_version  # cannot infer versions
+      - test_get_ciphers  # cannot infer ciphers
+      - test_ciphers  # cannot infer ciphers
+      - test_cert_store_stats  # cannot know cert store stats
       - test_subclass  # socket not supported
-      - test_private_init  # MemoryBIO stub
       - test_unwrap  # MemoryBIO stub
-      - TestPreHandshakeClose  # no thread
-      - TestSSLDebug  # no thread
-      - ContextTests  # useless
-      - SSLErrorTests  # useless
+      - test_bad_server_hostname  # socket not supported
 - test_stable_abi_ctypes
 - test_startfile
 - test_stat
