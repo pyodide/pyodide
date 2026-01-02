@@ -90,7 +90,8 @@ export PYZIP_EXCLUDE_FILES=\
 # List of modules that we replace with a stub in the zipped standard library
 export PYZIP_JS_STUBS=\
 	webbrowser.py \
-	ssl.py
+	ssl.py \
+	_ssl.py
 
 export PYCOMPILE_EXCLUDE_FILES=\
 	RobotRaconteur- \

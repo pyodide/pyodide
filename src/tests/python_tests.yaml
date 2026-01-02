@@ -705,7 +705,21 @@
 - test_sqlite3.test_transactions
 - test_sqlite3.test_types
 - test_sqlite3.test_userfunctions
-- test_ssl
+- test_ssl:
+    skip:
+      - BasicSocketTests  # socket not supported
+      - ThreadedTests  # no thread
+      - SimpleBackgroundTests  # no thread
+      - test_context_custom_class  # SSLContext stub
+      - MemoryBIOTests  # MemoryBIO stub
+      - test_bad_server_hostname  # MemoryBIO stub
+      - test_subclass  # socket not supported
+      - test_private_init  # MemoryBIO stub
+      - test_unwrap  # MemoryBIO stub
+      - TestPreHandshakeClose  # no thread
+      - TestSSLDebug  # no thread
+      - ContextTests  # useless
+      - SSLErrorTests  # useless
 - test_stable_abi_ctypes
 - test_startfile
 - test_stat

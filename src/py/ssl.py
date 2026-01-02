@@ -1,4 +1,4 @@
-# Stub implementation for Pyodide - no actual _ssl module available
+# Stub implementation for Pyodide - imports from _ssl stub module
 
 import sys
 import os
@@ -6,180 +6,71 @@ from collections import namedtuple
 from enum import Enum as _Enum, IntEnum as _IntEnum, IntFlag as _IntFlag
 from enum import _simple_enum
 
-# Stub constants
-OPENSSL_VERSION_NUMBER = 0
-OPENSSL_VERSION_INFO = (0, 0, 0, 0, 0)
-OPENSSL_VERSION = "OpenSSL (stub)"
+# Import from stub _ssl module
+import _ssl
 
-# Stub exception classes
-class SSLError(OSError):
-    pass
-
-class SSLZeroReturnError(SSLError):
-    pass
-
-class SSLWantReadError(SSLError):
-    pass
-
-class SSLWantWriteError(SSLError):
-    pass
-
-class SSLSyscallError(SSLError):
-    pass
-
-class SSLEOFError(SSLError):
-    pass
-
-class SSLCertVerificationError(SSLError):
-    pass
+# Import constants and classes from _ssl
+from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
+from _ssl import _SSLContext, MemoryBIO, SSLSession
+from _ssl import (
+    SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
+    SSLSyscallError, SSLEOFError, SSLCertVerificationError
+)
+from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
+from _ssl import RAND_status, RAND_add, RAND_bytes
+from _ssl import (
+    HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1,
+    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK
+)
+from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
 CertificateError = SSLCertVerificationError
 
-# Stub classes
-class MemoryBIO:
-    def __init__(self):
-        raise NotImplementedError("SSL is not supported in Pyodide")
-
-class SSLSession:
-    def __init__(self):
-        raise NotImplementedError("SSL is not supported in Pyodide")
-
-class _SSLContext:
-    def __init__(self, protocol):
-        raise NotImplementedError("SSL is not supported in Pyodide")
-
-# Stub functions
-def _txt2obj(txt, name=False):
-    raise NotImplementedError("SSL is not supported in Pyodide")
-
-def _nid2obj(nid):
-    raise NotImplementedError("SSL is not supported in Pyodide")
-
-def RAND_status():
-    return 1
-
-def RAND_add(string, entropy):
-    pass
-
-def RAND_bytes(n):
-    import random
-    return bytes([random.randint(0, 255) for _ in range(n)])
-
-# Feature flags
-HAS_SNI = False
-HAS_ECDH = False
-HAS_NPN = False
-HAS_ALPN = False
-HAS_SSLv2 = False
-HAS_SSLv3 = False
-HAS_TLSv1 = False
-HAS_TLSv1_1 = False
-HAS_TLSv1_2 = False
-HAS_TLSv1_3 = False
-HAS_PSK = False
-
-_DEFAULT_CIPHERS = "DEFAULT"
-_OPENSSL_API_VERSION = (0, 0, 0, 0, 0)
-
 # Stub protocol definitions
-class _SSLMethod(_IntEnum):
-    PROTOCOL_TLS = 2
-    PROTOCOL_TLS_CLIENT = 16
-    PROTOCOL_TLS_SERVER = 17
-    PROTOCOL_TLSv1 = 3
-    PROTOCOL_TLSv1_1 = 4
-    PROTOCOL_TLSv1_2 = 5
-    PROTOCOL_SSLv23 = 2
+_IntEnum._convert_(
+    '_SSLMethod', __name__,
+    lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
+    source=_ssl)
 
-# Options flags
-class Options(_IntFlag):
-    OP_NO_SSLv2 = 0x01000000
-    OP_NO_SSLv3 = 0x02000000
-    OP_NO_TLSv1 = 0x04000000
-    OP_NO_TLSv1_1 = 0x10000000
-    OP_NO_TLSv1_2 = 0x08000000
-    OP_NO_TLSv1_3 = 0x20000000
-    OP_NO_COMPRESSION = 0x00020000
-    OP_CIPHER_SERVER_PREFERENCE = 0x00400000
-    OP_SINGLE_DH_USE = 0x00100000
-    OP_SINGLE_ECDH_USE = 0x00080000
+_IntFlag._convert_(
+    'Options', __name__,
+    lambda name: name.startswith('OP_'),
+    source=_ssl)
 
-# Alert descriptions
-class AlertDescription(_IntEnum):
-    ALERT_DESCRIPTION_CLOSE_NOTIFY = 0
-    ALERT_DESCRIPTION_UNEXPECTED_MESSAGE = 10
-    ALERT_DESCRIPTION_BAD_RECORD_MAC = 20
-    ALERT_DESCRIPTION_HANDSHAKE_FAILURE = 40
-    ALERT_DESCRIPTION_BAD_CERTIFICATE = 42
-    ALERT_DESCRIPTION_CERTIFICATE_EXPIRED = 45
-    ALERT_DESCRIPTION_CERTIFICATE_UNKNOWN = 46
-    ALERT_DESCRIPTION_ILLEGAL_PARAMETER = 47
-    ALERT_DESCRIPTION_UNKNOWN_CA = 48
-    ALERT_DESCRIPTION_ACCESS_DENIED = 49
-    ALERT_DESCRIPTION_INTERNAL_ERROR = 80
+_IntEnum._convert_(
+    'AlertDescription', __name__,
+    lambda name: name.startswith('ALERT_DESCRIPTION_'),
+    source=_ssl)
 
-# SSL error numbers
-class SSLErrorNumber(_IntEnum):
-    SSL_ERROR_ZERO_RETURN = 6
-    SSL_ERROR_WANT_READ = 2
-    SSL_ERROR_WANT_WRITE = 3
-    SSL_ERROR_WANT_X509_LOOKUP = 4
-    SSL_ERROR_SYSCALL = 5
-    SSL_ERROR_SSL = 1
-    SSL_ERROR_WANT_CONNECT = 7
-    SSL_ERROR_EOF = 8
-    SSL_ERROR_INVALID_ERROR_CODE = 10
+_IntEnum._convert_(
+    'SSLErrorNumber', __name__,
+    lambda name: name.startswith('SSL_ERROR_'),
+    source=_ssl)
 
-# Verify flags
-class VerifyFlags(_IntFlag):
-    VERIFY_DEFAULT = 0
-    VERIFY_CRL_CHECK_LEAF = 0x4
-    VERIFY_CRL_CHECK_CHAIN = 0x4 | 0x8
-    VERIFY_X509_STRICT = 0x20
-    VERIFY_X509_PARTIAL_CHAIN = 0x80000
+_IntFlag._convert_(
+    'VerifyFlags', __name__,
+    lambda name: name.startswith('VERIFY_'),
+    source=_ssl)
 
-# Verify modes
-class VerifyMode(_IntEnum):
-    CERT_NONE = 0
-    CERT_OPTIONAL = 1
-    CERT_REQUIRED = 2
+_IntEnum._convert_(
+    'VerifyMode', __name__,
+    lambda name: name.startswith('CERT_'),
+    source=_ssl)
 
-PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
-PROTOCOL_TLS = _SSLMethod.PROTOCOL_TLS
-PROTOCOL_TLS_CLIENT = _SSLMethod.PROTOCOL_TLS_CLIENT
-PROTOCOL_TLS_SERVER = _SSLMethod.PROTOCOL_TLS_SERVER
-PROTOCOL_TLSv1 = _SSLMethod.PROTOCOL_TLSv1
-PROTOCOL_TLSv1_1 = _SSLMethod.PROTOCOL_TLSv1_1
-PROTOCOL_TLSv1_2 = _SSLMethod.PROTOCOL_TLSv1_2
-
-CERT_NONE = VerifyMode.CERT_NONE
-CERT_OPTIONAL = VerifyMode.CERT_OPTIONAL
-CERT_REQUIRED = VerifyMode.CERT_REQUIRED
-
-SSL_ERROR_ZERO_RETURN = SSLErrorNumber.SSL_ERROR_ZERO_RETURN
-SSL_ERROR_WANT_READ = SSLErrorNumber.SSL_ERROR_WANT_READ
-SSL_ERROR_WANT_WRITE = SSLErrorNumber.SSL_ERROR_WANT_WRITE
-SSL_ERROR_WANT_X509_LOOKUP = SSLErrorNumber.SSL_ERROR_WANT_X509_LOOKUP
-SSL_ERROR_SYSCALL = SSLErrorNumber.SSL_ERROR_SYSCALL
-SSL_ERROR_SSL = SSLErrorNumber.SSL_ERROR_SSL
-SSL_ERROR_WANT_CONNECT = SSLErrorNumber.SSL_ERROR_WANT_CONNECT
-SSL_ERROR_EOF = SSLErrorNumber.SSL_ERROR_EOF
-SSL_ERROR_INVALID_ERROR_CODE = SSLErrorNumber.SSL_ERROR_INVALID_ERROR_CODE
-
+PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
 _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
-
 _SSLv2_IF_EXISTS = None
 
 
 @_simple_enum(_IntEnum)
 class TLSVersion:
-    MINIMUM_SUPPORTED = -2
-    SSLv3 = 768
-    TLSv1 = 769
-    TLSv1_1 = 770
-    TLSv1_2 = 771
-    TLSv1_3 = 772
-    MAXIMUM_SUPPORTED = -1
+    MINIMUM_SUPPORTED = _ssl.PROTO_MINIMUM_SUPPORTED
+    SSLv3 = _ssl.PROTO_SSLv3
+    TLSv1 = _ssl.PROTO_TLSv1
+    TLSv1_1 = _ssl.PROTO_TLSv1_1
+    TLSv1_2 = _ssl.PROTO_TLSv1_2
+    TLSv1_3 = _ssl.PROTO_TLSv1_3
+    MAXIMUM_SUPPORTED = _ssl.PROTO_MAXIMUM_SUPPORTED
 
 
 @_simple_enum(_IntEnum)
@@ -269,12 +160,8 @@ class _TLSMessageType:
     CHANGE_CIPHER_SPEC = 0x0101
 
 
-# Stub for Windows certificate enumeration
-def enum_certificates(store_name):
-    return []
-
-def enum_crls(store_name):
-    return []
+# Import Windows certificate enumeration functions from _ssl
+from _ssl import enum_certificates, enum_crls
 
 from socket import socket, SOCK_STREAM, create_connection
 from socket import SOL_SOCKET, SO_TYPE, _GLOBAL_DEFAULT_TIMEOUT
@@ -289,12 +176,10 @@ socket_error = OSError  # keep that public name in module namespace
 CHANNEL_BINDING_TYPES = ['tls-unique']
 
 HAS_NEVER_CHECK_COMMON_NAME = False
-HOSTFLAG_NEVER_CHECK_SUBJECT = 0x4
 
-VERIFY_X509_PARTIAL_CHAIN = 0x80000
-VERIFY_X509_STRICT = 0x20
-
-ENCODING_DER = 1
+# Import additional constants from _ssl
+from _ssl import HOSTFLAG_NEVER_CHECK_SUBJECT, ENCODING_DER
+from _ssl import VERIFY_X509_PARTIAL_CHAIN, VERIFY_X509_STRICT
 
 _RESTRICTED_SERVER_CIPHERS = _DEFAULT_CIPHERS
 
@@ -402,8 +287,7 @@ DefaultVerifyPaths = namedtuple("DefaultVerifyPaths",
 def get_default_verify_paths():
     """Return paths to default cafile and capath.
     """
-    # Stub implementation for Pyodide
-    parts = ('SSL_CERT_FILE', None, 'SSL_CERT_DIR', None)
+    parts = _ssl.get_default_verify_paths()
 
     # environment vars shadow paths
     cafile = os.environ.get(parts[0], parts[1])
@@ -612,6 +496,40 @@ class SSLContext:
     @verify_flags.setter
     def verify_flags(self, value):
         self._verify_flags = value
+
+    def get_ca_certs(self, binary_form=False):
+        # stub
+        return []
+
+    def cert_store_stats(self):
+        # stub
+        return {'crl': 0, 'x509_ca': 0, 'x509': 0}
+
+    def set_ciphers(self, ciphers):
+        # Stub
+        pass
+
+    def get_ciphers(self):
+        # Stub
+        return []
+    
+    def load_dh_params(self, dhfile):
+        # Stub
+        pass
+
+    def num_tickets(self):
+        # Stub
+        return 0
+
+    def session_stats(self):
+        # Stub
+        return {'number': 0, 'connect': 0, 'connect_good': 0,
+                'connect_renegotiate': 0, 'accept': 0,
+                'accept_good': 0, 'accept_renegotiate': 0,
+                'hits': 0, 'misses': 0, 'timeouts': 0,
+                'cache_full': 0}
+
+    
 
 
 def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
