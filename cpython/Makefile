@@ -236,6 +236,13 @@ $(PYINSTALL)/lib/libssl.a :
 			no-nextprotoneg \
 			no-gost \
 			no-heartbeats \
+			no-fuzz-afl \
+			no-fuzz-libfuzzer \
+			no-unit-test \
+			no-crypto-mdebug \
+			no-crypto-mdebug-backtrace \
+			no-dynamic-engine \
+			no-autoerrinit \
 			-DHAVE_FORK=0 \
 			-DOPENSSL_NO_SECURE_MEMORY \
 			-fPIC \
