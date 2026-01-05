@@ -330,7 +330,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 $(PYBUILD)/Modules/Setup.local: Setup.local
 	cp Setup.local $(PYBUILD)/Modules/
 
-$(PYBUILD)/$(PYLIB): $(PYBUILD)/Makefile $(PYBUILD)/pyconfig.h $(PYBUILD)/Modules/Setup.local $(PYINSTALL)/lib/libffi.a $(PYINSTALL)/lib/liblzma.a $(PYINSTALL)/lib/libssl.a $(PYINSTALL)/lib/libsqlite3.a
+$(PYBUILD)/$(PYLIB): $(PYBUILD)/Makefile $(PYBUILD)/pyconfig.h $(PYBUILD)/Modules/Setup.local $(PYINSTALL)/lib/libffi.a $(PYINSTALL)/lib/liblzma.a $(PYINSTALL)/lib/libsqlite3.a
 	cp Setup.local $(PYBUILD)/Modules/
 	( \
 		cd $(PYBUILD); \

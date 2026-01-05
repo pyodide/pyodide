@@ -178,8 +178,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 	-lffi \
 	-llzma \
-	-lssl \
-	-lcrypto \
 	-lsqlite3 \
 	-lstdc++ \
 	-lidbfs.js \
@@ -297,8 +295,6 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lffi \
 		-lhiwire \
 		-llzma \
-		-lssl \
-		-lcrypto \
 		-lsqlite3 \
 		-lidbfs.js \
 		-lnodefs.js \
