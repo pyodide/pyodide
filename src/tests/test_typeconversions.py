@@ -1214,47 +1214,56 @@ def test_tojs5(selenium):
     )
 
 
+@run_in_pyodide
 def test_tojs6(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    a = [1, 2, 3, 4, 5]
+    b = [a, a, a, a, a]
+    respy = [b, b, b, b, b]
+
+    run_js(
         """
-        let respy = pyodide.runPython(`
-            a = [1, 2, 3, 4, 5]
-            b = [a, a, a, a, a]
-            [b, b, b, b, b]
-        `);
-        let total_refs = pyodide._module._hiwire_num_refs();
-        let res = respy.toJs();
-        let new_total_refs = pyodide._module._hiwire_num_refs();
-        respy.destroy();
-        assert(() => total_refs === new_total_refs);
-        assert(() => res[0] === res[1]);
-        assert(() => res[0][0] === res[1][1]);
-        assert(() => res[4][0] === res[1][4]);
+        (respy) => {
+            let total_refs = pyodide._module._hiwire_num_refs();
+            let res = respy.toJs();
+            let new_total_refs = pyodide._module._hiwire_num_refs();
+            assert(() => total_refs === new_total_refs);
+            assert(() => res[0] === res[1]);
+            assert(() => res[0][0] === res[1][1]);
+            assert(() => res[4][0] === res[1][4]);
+        }
         """
-    )
+    )(respy)
 
 
+@run_in_pyodide
 def test_tojs7(selenium):
-    selenium.run_js(
+    from typing import Any
+
+    from pyodide.code import run_js
+
+    # Create complex recursive structure with mixed types
+    a: list[Any] = [["b"]]
+    b: list[Any] = [1, 2, 3, a[0]]
+    a[0].append(b)
+    a.append(b)
+    respy = a
+
+    run_js(
         """
-        let respy = pyodide.runPython(`
-            a = [["b"]]
-            b = [1,2,3, a[0]]
-            a[0].append(b)
-            a.append(b)
-            a
-        `);
-        let total_refs = pyodide._module._hiwire_num_refs();
-        let res = respy.toJs();
-        let new_total_refs = pyodide._module._hiwire_num_refs();
-        respy.destroy();
-        assert(() => total_refs === new_total_refs);
-        assert(() => res[0][0] === "b");
-        assert(() => res[1][2] === 3);
-        assert(() => res[1][3] === res[0]);
-        assert(() => res[0][1] === res[1]);
+        (respy) => {
+            let total_refs = pyodide._module._hiwire_num_refs();
+            let res = respy.toJs();
+            let new_total_refs = pyodide._module._hiwire_num_refs();
+            assert(() => total_refs === new_total_refs);
+            assert(() => res[0][0] === "b");
+            assert(() => res[1][2] === 3);
+            assert(() => res[1][3] === res[0]);
+            assert(() => res[0][1] === res[1]);
+        }
         """
-    )
+    )(respy)
 
 
 @pytest.mark.skip_pyproxy_check
