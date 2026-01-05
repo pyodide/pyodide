@@ -1477,7 +1477,7 @@ def test_module_not_found_note(selenium_standalone):
     from _pyodide._importhook import add_note_to_module_not_found_error
     from pyodide.code import run_js
 
-    unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
+    unvendored_stdlibs = ["test", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
     lockfile_packages = [
         "micropip",

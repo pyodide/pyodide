@@ -393,6 +393,7 @@ class SSLContext:
         self.keylog_filename = None
         self._num_tickets = 2
         self._cert_store = {"crl": 0, "x509_ca": 0, "x509": 0}
+        self.post_handshake_auth = None
 
     def _encode_hostname(self, hostname):
         if hostname is None:
@@ -455,7 +456,6 @@ class SSLContext:
         warnings.warn(
             "ssl NPN is deprecated, use ALPN instead", DeprecationWarning, stacklevel=2
         )
-        raise NotImplementedError("SSL is not supported in Pyodide")
 
     def set_servername_callback(self, server_name_callback):
         if server_name_callback is None:
@@ -466,7 +466,7 @@ class SSLContext:
             self.sni_callback = server_name_callback
 
     def set_alpn_protocols(self, alpn_protocols):
-        raise NotImplementedError("SSL is not supported in Pyodide")
+        pass
 
     def _load_windows_store_certs(self, storename, purpose):
         # Stub - no-op for Pyodide
@@ -1079,13 +1079,13 @@ class SSLObject:
         If certificate verification was disabled method acts the same as
         ``SSLSocket.get_unverified_chain``.
         """
-        raise NotImplementedError("SSL is not supported in Pyodide")
+        return []
 
     def get_unverified_chain(self):
         """Returns raw certificate chain provided by the other
         end of the SSL channel as a list of DER-encoded bytes.
         """
-        raise NotImplementedError("SSL is not supported in Pyodide")
+        return []
 
     def selected_npn_protocol(self):
         """Return the currently selected NPN protocol as a string, or ``None``
@@ -1094,6 +1094,7 @@ class SSLObject:
         warnings.warn(
             "ssl NPN is deprecated, use ALPN instead", DeprecationWarning, stacklevel=2
         )
+        return None
 
     def selected_alpn_protocol(self):
         """Return the currently selected ALPN protocol as a string, or ``None``
@@ -1256,11 +1257,11 @@ class SSLSocket(socket):
 
     @_sslcopydoc
     def get_verified_chain(self):
-        raise NotImplementedError("SSL is not supported in Pyodide")
+        return []
 
     @_sslcopydoc
     def get_unverified_chain(self):
-        raise NotImplementedError("SSL is not supported in Pyodide")
+        return []
 
     @_sslcopydoc
     def selected_npn_protocol(self):

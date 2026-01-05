@@ -7,11 +7,16 @@ does not fail. Actual SSL operations are not supported in Pyodide's browser
 environment.
 """
 
-# Version information
-OPENSSL_VERSION_NUMBER = 0
-OPENSSL_VERSION_INFO = (0, 0, 0, 0, 0)
+# Version information (stub values)
+# Use 1.1.1w as a reference
+# Some packages may check for specific versions of OpenSSL, so we need to provide
+# consistent version info.
+# TODO: This might be an issue if openssl version linked to the side modules are different
+# from this version. But I don't see a good way to sync them right now.
+OPENSSL_VERSION_NUMBER = 269488511
+OPENSSL_VERSION_INFO = (1, 1, 1, 23, 15)
 OPENSSL_VERSION = "OpenSSL (stub)"
-_OPENSSL_API_VERSION = (0, 0, 0, 0, 0)
+_OPENSSL_API_VERSION = (1, 1, 1, 23, 15)
 
 # Protocol constants
 PROTO_MINIMUM_SUPPORTED = -2
