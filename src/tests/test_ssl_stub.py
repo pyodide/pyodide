@@ -1,17 +1,14 @@
-# type: ignore
-
 from pytest_pyodide import run_in_pyodide
+
 
 @run_in_pyodide
 def test_ssl_import(selenium):
     import sys
-    import ssl
 
     # See src/py/{ssl.py, _ssl.py} for details.
 
     # Test all public attributes of the ssl module can be accessed
     # https://docs.python.org/3.13/library/ssl.html
-
 
     # If you are not sure, you can generate this list by running:
     """
@@ -19,11 +16,11 @@ import ssl
 public_attrs = [attr for attr in dir(ssl) if not attr.startswith('_')]
 print("from ssl import (\n{})".format(",\n    ".join(public_attrs)))
     """
-    
+
     # Guardrail to ensure we don't forget to update this test when Python version changes
     assert sys.version_info.minor == 13
 
-    from ssl import (
+    from ssl import (  # type: ignore[attr-defined]  # noqa: F401
         ALERT_DESCRIPTION_ACCESS_DENIED,
         ALERT_DESCRIPTION_BAD_CERTIFICATE,
         ALERT_DESCRIPTION_BAD_CERTIFICATE_HASH_VALUE,
@@ -51,14 +48,10 @@ print("from ssl import (\n{})".format(",\n    ".join(public_attrs)))
         ALERT_DESCRIPTION_UNSUPPORTED_CERTIFICATE,
         ALERT_DESCRIPTION_UNSUPPORTED_EXTENSION,
         ALERT_DESCRIPTION_USER_CANCELLED,
-        AlertDescription,
         CERT_NONE,
         CERT_OPTIONAL,
         CERT_REQUIRED,
         CHANNEL_BINDING_TYPES,
-        CertificateError,
-        DER_cert_to_PEM_cert,
-        DefaultVerifyPaths,
         HAS_ALPN,
         HAS_ECDH,
         HAS_NEVER_CHECK_COMMON_NAME,
@@ -66,16 +59,6 @@ print("from ssl import (\n{})".format(",\n    ".join(public_attrs)))
         HAS_PHA,
         HAS_PSK,
         HAS_SNI,
-        HAS_SSLv2,
-        HAS_SSLv3,
-        HAS_TLSv1,
-        HAS_TLSv1_1,
-        HAS_TLSv1_2,
-        HAS_TLSv1_3,
-        MemoryBIO,
-        OPENSSL_VERSION,
-        OPENSSL_VERSION_INFO,
-        OPENSSL_VERSION_NUMBER,
         OP_ALL,
         OP_CIPHER_SERVER_PREFERENCE,
         OP_ENABLE_KTLS,
@@ -84,23 +67,53 @@ print("from ssl import (\n{})".format(",\n    ".join(public_attrs)))
         OP_LEGACY_SERVER_CONNECT,
         OP_NO_COMPRESSION,
         OP_NO_RENEGOTIATION,
+        OP_NO_TICKET,
+        OP_SINGLE_DH_USE,
+        OP_SINGLE_ECDH_USE,
+        OPENSSL_VERSION,
+        OPENSSL_VERSION_INFO,
+        OPENSSL_VERSION_NUMBER,
+        PEM_FOOTER,
+        PEM_HEADER,
+        PROTOCOL_TLS,
+        PROTOCOL_TLS_CLIENT,
+        PROTOCOL_TLS_SERVER,
+        SSL_ERROR_EOF,
+        SSL_ERROR_INVALID_ERROR_CODE,
+        SSL_ERROR_SSL,
+        SSL_ERROR_SYSCALL,
+        SSL_ERROR_WANT_CONNECT,
+        SSL_ERROR_WANT_READ,
+        SSL_ERROR_WANT_WRITE,
+        SSL_ERROR_WANT_X509_LOOKUP,
+        SSL_ERROR_ZERO_RETURN,
+        VERIFY_ALLOW_PROXY_CERTS,
+        VERIFY_CRL_CHECK_CHAIN,
+        VERIFY_CRL_CHECK_LEAF,
+        VERIFY_DEFAULT,
+        VERIFY_X509_PARTIAL_CHAIN,
+        VERIFY_X509_STRICT,
+        VERIFY_X509_TRUSTED_FIRST,
+        AlertDescription,
+        CertificateError,
+        DefaultVerifyPaths,
+        DER_cert_to_PEM_cert,
+        HAS_SSLv2,
+        HAS_SSLv3,
+        HAS_TLSv1,
+        HAS_TLSv1_1,
+        HAS_TLSv1_2,
+        HAS_TLSv1_3,
+        MemoryBIO,
         OP_NO_SSLv2,
         OP_NO_SSLv3,
-        OP_NO_TICKET,
         OP_NO_TLSv1,
         OP_NO_TLSv1_1,
         OP_NO_TLSv1_2,
         OP_NO_TLSv1_3,
-        OP_SINGLE_DH_USE,
-        OP_SINGLE_ECDH_USE,
         Options,
-        PEM_FOOTER,
-        PEM_HEADER,
         PEM_cert_to_DER_cert,
         PROTOCOL_SSLv23,
-        PROTOCOL_TLS,
-        PROTOCOL_TLS_CLIENT,
-        PROTOCOL_TLS_SERVER,
         PROTOCOL_TLSv1,
         PROTOCOL_TLSv1_1,
         PROTOCOL_TLSv1_2,
@@ -124,23 +137,7 @@ print("from ssl import (\n{})".format(",\n    ".join(public_attrs)))
         SSLWantReadError,
         SSLWantWriteError,
         SSLZeroReturnError,
-        SSL_ERROR_EOF,
-        SSL_ERROR_INVALID_ERROR_CODE,
-        SSL_ERROR_SSL,
-        SSL_ERROR_SYSCALL,
-        SSL_ERROR_WANT_CONNECT,
-        SSL_ERROR_WANT_READ,
-        SSL_ERROR_WANT_WRITE,
-        SSL_ERROR_WANT_X509_LOOKUP,
-        SSL_ERROR_ZERO_RETURN,
         TLSVersion,
-        VERIFY_ALLOW_PROXY_CERTS,
-        VERIFY_CRL_CHECK_CHAIN,
-        VERIFY_CRL_CHECK_LEAF,
-        VERIFY_DEFAULT,
-        VERIFY_X509_PARTIAL_CHAIN,
-        VERIFY_X509_STRICT,
-        VERIFY_X509_TRUSTED_FIRST,
         VerifyFlags,
         VerifyMode,
         cert_time_to_seconds,
