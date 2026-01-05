@@ -11,7 +11,8 @@ from _ssl import _SSLContext, MemoryBIO, SSLSession
 from _ssl import (
     SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
     SSLSyscallError, SSLEOFError, SSLCertVerificationError
-    )
+)
+from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1, HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK, HAS_PHA
 from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
 from _ssl import RAND_status, RAND_add, RAND_bytes
 from collections import namedtuple
