@@ -19,7 +19,12 @@ myst:
 
 - {{ Enhancement }} A JavaScript object is now treated as an array-like object
   if it has a `length` property and is iterable. Every JsProxy of an array-like
-  object now implements subscripting. {pr}`5991`
+  object now implements subscripting.
+  {pr}`5991`
+
+- {{ Enhancement }} It is now possible to slice-subscript a JsProxy of an
+  array-like object.
+  {pr}`6019`
 
 - {{ Enhancement }} `PyProxy` now has a `[Symbol.dispose]` method.
   {pr}`6003`
@@ -29,9 +34,22 @@ myst:
   method is now an async context manager.
   {pr}`6007` {pr}`6014`
 
-- {{ Enhancement }} `PyBufferView` (the return value of ) now has a
-  `[Symbol.dispose]` method.
+- {{ Enhancement }} `PyBufferView` (the return value of `PyProxy.getBuffer()`)
+  now has a `[Symbol.dispose]` method.
   {pr}`6003`
+
+- {{ Enhancement }} Added `pyodide.ffi.JsBigInt` which is a subtype of `int`.
+  Now bigint will be translated to Python as a `JsBigInt` and `JsBigInt` will be
+  translated to bigint. In particular, this makes bigint round trip. Now Python
+  integers greater than 2**53 will round trip to a `JsBigInt`. Since `JsBigInt`
+  supports all operations supported by `int`, this change should cause very
+  limited backwards incompatibility.
+  {pr}`6022`
+
+## Version 0.29.1
+
+- {{ Enhancement }} Improved support for Windows/MacOS platform in the `python` CLI entrypoint.
+  {pr}`6018` {pr}`6012` {pr}`6026` {pr}`6034` {pr}`6025`
 
 ## Version 0.29.0
 
