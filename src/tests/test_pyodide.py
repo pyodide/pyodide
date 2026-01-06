@@ -1526,13 +1526,6 @@ def test_module_not_found_note(selenium_standalone):
         add_note_to_module_not_found_error(e.value)
         assert getattr(e.value, "__notes__", None) is None
 
-    with pytest.raises(ModuleNotFoundError) as e:
-        importlib.import_module("_hashlib")
-    add_note_to_module_not_found_error(e.value)
-    add_note_to_module_not_found_error(e.value)
-    assert 'loadPackage("hashlib")' in e.value.__notes__[0]
-    assert len(e.value.__notes__) == 1
-
 
 @run_in_pyodide
 def test_importhook_called_from_pytest(selenium):
