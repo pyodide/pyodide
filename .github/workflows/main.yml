@@ -17,7 +17,7 @@ jobs:
     outputs:
       PYVERSION: ${{ steps.get_python_version.outputs.PYVERSION }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Read the Python version from Makefile.envs
         id: get_python_version
         run: |
@@ -27,10 +27,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: get_python_version
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
       - name: Install Python requirements
@@ -54,10 +54,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: get_python_version
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
       - name: Install requirements
@@ -101,11 +101,11 @@ jobs:
       CCACHE_DIR: /tmp/ccache
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Cache ccache output
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             /tmp/ccache
@@ -183,10 +183,17 @@ jobs:
           ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
       - name: Store artifacts build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
+          retention-days: 60
+
+      - name: Store sysconfig
+        uses: actions/upload-artifact@v6
+        with:
+          name: core-sysconfig-${{ runner.os }}
+          path: ./cpython/installs/
           retention-days: 60
 
   test-core:
@@ -203,12 +210,12 @@ jobs:
         browser: [safari]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
 
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
@@ -272,25 +279,40 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # TODO: Enable on windows
-        # os: [ubuntu-latest, macos-14, windows-latest]
-        os: [ubuntu-latest, macos-14]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    needs: [build-core]
+    needs: [build-core, get_python_version]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
 
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           # To test Windows cmdline runner we always use the Linux build artifact
           name: core-build-Linux
           path: ./dist/
 
+      - name: Download sysconfig artifact
+        uses: actions/download-artifact@v7
+        with:
+          # To test Windows cmdline runner we always use the Linux artifact
+          name: core-sysconfig-Linux
+          path: ./cpython/installs/
+
       - name: Run cmdline-runner tests
         shell: bash -l {0}
         run: |
-          ./tools/cmdline-runner-test.sh
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            ./tools/cmdline_runner_test/run.bat
+          else
+            ./tools/cmdline_runner_test/run
+          fi
 
   test-scipy-trigger:
     name: test-scipy-trigger
@@ -299,7 +321,7 @@ jobs:
       test-scipy: ${{ steps.check-build-trigger.outputs.trigger }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -328,10 +350,10 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
@@ -361,10 +383,10 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
@@ -391,10 +413,10 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
