@@ -1,4 +1,4 @@
-@echo off
+@echo on
 setlocal enabledelayedexpansion
 
 REM Get the current directory as PYODIDE_ROOT
@@ -23,9 +23,6 @@ REM Activate host virtual environment
 call .venv-host\Scripts\activate.bat
 if errorlevel 1 exit /b 1
 
-REM Get pyodide interpreter path and set executable permissions (Windows doesn't need chmod)
-for /f "delims=" %%i in ('pyodide config get interpreter') do set PYODIDE_INTERPRETER=%%i
-
 REM Create pyodide virtual environment
 pyodide venv .venv-pyodide
 if errorlevel 1 exit /b 1
@@ -46,7 +43,7 @@ pip install ".[tests]"
 if errorlevel 1 exit /b 1
 
 REM Uninstall pytest-mypy-plugins
-..\.venv-pyodide\Scripts\pip uninstall pytest-mypy-plugins -y
+pip uninstall pytest-mypy-plugins -y
 if errorlevel 1 exit /b 1
 
 REM Run pytest
