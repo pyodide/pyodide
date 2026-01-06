@@ -62,10 +62,6 @@ def test_socket_connect(selenium):
         # Send data
         s.sendall(message)
 
-        await asyncio.sleep(
-            1
-        )  # Yield control to event loop so that data can be processed
-
         # Receive response
         response = s.recv(1024)
 

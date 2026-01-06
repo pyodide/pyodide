@@ -81,6 +81,31 @@ EM_JS(void, restoreState, (JsVal state), {
   validSuspender.value = true;
 });
 
+/**
+ * Save only the WebAssembly stack state (not Python thread state).
+ * This is for use in low-level contexts like syscalls where the GIL
+ * may not be held.
+ */
+EM_JS(JsVal, saveStateSimple, (void), {
+  if (!validSuspender.value) {
+    return Module.error;
+  }
+  const stackState = new StackState();
+  return {
+    stackState,
+    suspender : suspenderGlobal.value,
+  };
+});
+
+/**
+ * Restore only the WebAssembly stack state (not Python thread state).
+ */
+EM_JS(void, restoreStateSimple, (JsVal state), {
+  state.stackState.restore();
+  suspenderGlobal.value = state.suspender;
+  validSuspender.value = true;
+});
+
 JsVal
 JsvPromise_Syncify(JsVal promise)
 {
@@ -96,3 +121,27 @@ JsvPromise_Syncify(JsVal promise)
   }
   return result;
 }
+
+/**
+ * A lightweight version of JsvPromise_Syncify that only saves/restores
+ * WebAssembly stack state, without touching Python thread state.
+ *
+ * This is designed for use in low-level contexts like syscall implementations
+ * where the GIL may not be held and Python thread state may be inconsistent.
+ */
+JsVal
+JsvPromise_SyncifySimple(JsVal promise)
+{
+  JsVal state = saveStateSimple();
+  if (JsvError_Check(state)) {
+    return JS_ERROR;
+  }
+  JsVal suspender = get_suspender();
+  JsVal result = syncifyHandler(suspender, promise);
+  restoreStateSimple(state);
+  if (JsvError_Check(result)) {
+    JsvPromise_Syncify_handleError();
+  }
+  return result;
+}
+

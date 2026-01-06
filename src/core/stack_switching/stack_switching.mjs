@@ -11,6 +11,8 @@ export {
   createPromising,
   validSuspender,
   suspenderGlobal,
+  syncify,
+  syncifySimple,
 } from "./suspenders.mjs";
 export { StackState } from "./stack_state.mjs";
 

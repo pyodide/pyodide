@@ -3,11 +3,19 @@
  *
  * This replaces Emscripten's WebSocket-based SOCKFS with native Node.js sockets.
  * Currently implements TCP client sockets only (SOCK_STREAM + connect).
+ *
+ * JSPI Integration:
+ * This module uses the syncifySimple function from stack_switching to suspend
+ * WebAssembly execution while waiting for async socket operations.
  */
 
 import type { PyodideModule, PreRunFunc } from "../types";
 import type { Socket } from "node:net";
 import { RUNTIME_ENV } from "../environments";
+
+// JSPI functions - will be set during initialization from the Module
+let syncifySimple: ((promise: Promise<any>) => any) | null = null;
+let validSuspender: { value: boolean } | null = null;
 
 // Internal socket structure that mirrors Emscripten's sock structure
 interface NodeSock {
@@ -30,6 +38,7 @@ interface NodeSock {
 
 export function initializeNodeSockFS(): PreRunFunc[] {
   if (!RUNTIME_ENV.IN_NODE) {
+    console.log("[NodeSockFS] Not in Node.js environment, skipping NodeSockFS initialization");
     return [];
   }
 
@@ -51,6 +60,19 @@ async function _initializeNodeSockFS(module: PyodideModule) {
 
   // @ts-ignore
   const net = await import("node:net");
+
+  console.log(`[NodeSockFS] Initializing...`);
+  console.log(`[NodeSockFS] Module.jspiSupported: ${(module as any).jspiSupported}`);
+
+  // Set up JSPI syncifySimple function if available
+  validSuspender = (module as any).validSuspender || null;
+  syncifySimple = (module as any).syncifySimple || null;
+  
+  if (syncifySimple && (module as any).jspiSupported) {
+    console.log(`[NodeSockFS] JSPI syncifySimple available`);
+  } else {
+    console.log(`[NodeSockFS] JSPI not available, socket operations will be non-blocking`);
+  }
 
   // Constants matching Emscripten/POSIX definitions
   const AF_INET = 2;
@@ -130,13 +152,21 @@ async function _initializeNodeSockFS(module: PyodideModule) {
 
     /**
      * Connect to a remote address
+     *
+     * If JSPI is available and we're in a valid suspender context, this will
+     * block until the connection is established using WebAssembly.Suspending.
+     * Otherwise, it initiates the connection and returns immediately.
      */
     connect(sock: NodeSock, addr: string, port: number): void {
+      console.log(`[NodeSockFS:connect] START - addr=${addr}, port=${port}`);
+      console.log(`[NodeSockFS:connect] JSPI: syncifySimple=${!!syncifySimple}, validSuspender=${validSuspender?.value}`);
+
       if (sock.nodeSocket) {
+        console.log(`[NodeSockFS:connect] ERROR: Already connected (EISCONN)`);
         throw new FS.ErrnoError(ERRNO_CODES.EISCONN);
       }
 
-      console.log(`NodeSockFS: Connecting to ${addr}:${port}`);
+      console.log(`[NodeSockFS:connect] Creating new TCP socket...`);
 
       // Create new TCP socket
       const socket = new net.Socket();
@@ -147,38 +177,150 @@ async function _initializeNodeSockFS(module: PyodideModule) {
 
       // Handle incoming data
       socket.on("data", (data: Buffer) => {
-        // Append to receive buffer
         sock.recvBuffer = Buffer.concat([sock.recvBuffer, data]);
-
-        console.log(`NodeSockFS: Received data of length ${data.length}`);
+        console.log(`[NodeSockFS:connect:on-data] Received ${data.length} bytes, total buffer size: ${sock.recvBuffer.length}`);
       });
 
       // Handle connection established
       socket.on("connect", () => {
         sock.connected = true;
         sock.connecting = false;
-
-        console.log(`NodeSockFS: Connected to ${addr}:${port}`);
+        console.log(`[NodeSockFS:connect:on-connect] Connection established to ${addr}:${port}`);
       });
 
       // Handle errors
-      socket.on("error", (_err: NodeJS.ErrnoException) => {
+      socket.on("error", (err: NodeJS.ErrnoException) => {
         sock.error = ERRNO_CODES.ECONNREFUSED;
         sock.connecting = false;
-
-        console.error(`NodeSockFS: Connection error to ${addr}:${port}`);
+        console.error(`[NodeSockFS:connect:on-error] Connection error to ${addr}:${port}: ${err.message}`);
       });
 
       // Handle close
-      socket.on("close", () => {
+      socket.on("close", (hadError: boolean) => {
         sock.connected = false;
         sock.connecting = false;
-
-        console.log(`NodeSockFS: Connection closed to ${addr}:${port}`);
+        console.log(`[NodeSockFS:connect:on-close] Connection closed to ${addr}:${port}, hadError=${hadError}`);
       });
 
       // Initiate connection (non-blocking in Node.js)
+      console.log(`[NodeSockFS:connect] Calling socket.connect(${port}, ${addr})...`);
       socket.connect(port, addr);
+      console.log(`[NodeSockFS:connect] socket.connect() returned (async operation started)`);
+
+      // If JSPI is available and we're in a valid suspender context, block until connected
+      if (syncifySimple && validSuspender?.value) {
+        console.log(`[NodeSockFS:connect] JSPI available, blocking until connected...`);
+
+        const connectPromise = new Promise<void>((resolve, reject) => {
+          const onConnect = () => {
+            cleanup();
+            console.log(`[NodeSockFS:connect:promise] Connected!`);
+            resolve();
+          };
+          const onError = (err: Error) => {
+            cleanup();
+            console.error(`[NodeSockFS:connect:promise] Error: ${err.message}`);
+            reject(err);
+          };
+          const cleanup = () => {
+            socket.off("connect", onConnect);
+            socket.off("error", onError);
+          };
+
+          // If already connected, resolve immediately
+          if (sock.connected) {
+            resolve();
+            return;
+          }
+          if (sock.error) {
+            reject(new Error("Connection failed"));
+            return;
+          }
+
+          socket.once("connect", onConnect);
+          socket.once("error", onError);
+        });
+
+        try {
+          console.log(`[NodeSockFS:connect] Calling syncifySimple...`);
+          syncifySimple(connectPromise);
+          console.log(`[NodeSockFS:connect] syncifySimple returned, connected!`);
+        } catch (e) {
+          console.error(`[NodeSockFS:connect] syncifySimple threw: ${e}`);
+          throw new FS.ErrnoError(sock.error || ERRNO_CODES.ECONNREFUSED);
+        }
+
+        if (sock.error) {
+          throw new FS.ErrnoError(sock.error);
+        }
+      }
+
+      console.log(`[NodeSockFS:connect] END`);
+    },
+
+    /**
+     * Async version of connect - returns a Promise that resolves when connected.
+     * This is called by the C syscall override when JSPI is available.
+     */
+    connectAsync(sock: NodeSock, addr: string, port: number): Promise<number> {
+      console.log(`[NodeSockFS:connectAsync] START - addr=${addr}, port=${port}`);
+
+      // First do the synchronous setup
+      if (sock.nodeSocket) {
+        console.log(`[NodeSockFS:connectAsync] ERROR: Already connected (EISCONN)`);
+        return Promise.resolve(-ERRNO_CODES.EISCONN);
+      }
+
+      // Create new TCP socket
+      const socket = new net.Socket();
+      sock.nodeSocket = socket;
+      sock.connecting = true;
+      sock.daddr = addr;
+      sock.dport = port;
+
+      // Handle incoming data
+      socket.on("data", (data: Buffer) => {
+        sock.recvBuffer = Buffer.concat([sock.recvBuffer, data]);
+        console.log(`[NodeSockFS:connectAsync:on-data] Received ${data.length} bytes`);
+      });
+
+      // Handle close
+      socket.on("close", (hadError: boolean) => {
+        sock.connected = false;
+        sock.connecting = false;
+        console.log(`[NodeSockFS:connectAsync:on-close] Connection closed, hadError=${hadError}`);
+      });
+
+      // Return a promise that resolves when connected or rejects on error
+      return new Promise<number>((resolve) => {
+        const onConnect = () => {
+          sock.connected = true;
+          sock.connecting = false;
+          cleanup();
+          console.log(`[NodeSockFS:connectAsync] Connection established!`);
+          resolve(0); // Success
+        };
+
+        const onError = (err: NodeJS.ErrnoException) => {
+          sock.error = ERRNO_CODES.ECONNREFUSED;
+          sock.connecting = false;
+          cleanup();
+          console.error(`[NodeSockFS:connectAsync] Connection error: ${err.message}`);
+          resolve(-ERRNO_CODES.ECONNREFUSED); // Return negative errno
+        };
+
+        const cleanup = () => {
+          socket.off("connect", onConnect);
+          socket.off("error", onError);
+        };
+
+        socket.once("connect", onConnect);
+        socket.once("error", onError);
+
+        // Initiate connection
+        console.log(`[NodeSockFS:connectAsync] Initiating connection...`);
+        socket.connect(port, addr);
+      });
     },
 
     /**
@@ -224,33 +366,168 @@ async function _initializeNodeSockFS(module: PyodideModule) {
 
     /**
      * Receive data from the socket
+     *
+     * If JSPI is available and we're in a valid suspender context, this will
+     * block until data is available using WebAssembly.Suspending.
+     * Otherwise, returns data if available, or null if no data (would block).
      */
     recvmsg(sock: NodeSock, length: number): { buffer: Uint8Array } | null {
-      // If no data available
-      if (sock.recvBuffer.length === 0) {
-        // If socket is closed, return null to signal EOF
-        if (!sock.nodeSocket || sock.nodeSocket.destroyed) {
-          console.log(`NodeSockFS: Socket closed, returning EOF`);
-          return null;
-        }
-        console.log(
-          `NodeSockFS: No data available, would block or socket closed`,
-        );
-        // Otherwise, would block (EAGAIN) - but stream_ops.read handles this
-        // by returning 0 when recvmsg returns null
+      console.log(`[NodeSockFS:recvmsg] START - requested length=${length}`);
+      console.log(`[NodeSockFS:recvmsg] Current buffer size: ${sock.recvBuffer.length}`);
+      console.log(`[NodeSockFS:recvmsg] JSPI: syncifySimple=${!!syncifySimple}, validSuspender=${validSuspender?.value}`);
+
+      // If data is available, return it immediately
+      if (sock.recvBuffer.length > 0) {
+        const bytesRead = Math.min(length, sock.recvBuffer.length);
+        console.log(`[NodeSockFS:recvmsg] Reading ${bytesRead} bytes from buffer`);
+        const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
+        sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
+        return { buffer: data };
+      }
+
+      // If socket is closed, return null to signal EOF
+      if (!sock.nodeSocket || sock.nodeSocket.destroyed) {
+        console.log(`[NodeSockFS:recvmsg] Socket closed/destroyed, returning EOF (null)`);
         return null;
       }
 
-      console.log(`NodeSockFS: Receiving data of length ${length}`);
+      // If JSPI is available and we're in a valid suspender context, block until data arrives
+      if (syncifySimple && validSuspender?.value) {
+        console.log(`[NodeSockFS:recvmsg] JSPI available, blocking until data arrives...`);
 
-      // Read requested amount (or less if not enough data)
-      const bytesRead = Math.min(length, sock.recvBuffer.length);
-      const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
+        const recvPromise = new Promise<{ buffer: Uint8Array } | null>((resolve) => {
+          const socket = sock.nodeSocket!;
 
-      // Remove read data from buffer
-      sock.recvBuffer = sock.recvBuffer.subarray(bytesRead);
+          const onData = () => {
+            cleanup();
+            // Now read the data
+            if (sock.recvBuffer.length > 0) {
+              const bytesRead = Math.min(length, sock.recvBuffer.length);
+              const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
+              sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
+              console.log(`[NodeSockFS:recvmsg:promise] Data arrived, returning ${bytesRead} bytes`);
+              resolve({ buffer: data });
+            } else {
+              resolve(null);
+            }
+          };
 
-      return { buffer: data };
+          const onClose = () => {
+            cleanup();
+            // Check if any data arrived before close
+            if (sock.recvBuffer.length > 0) {
+              const bytesRead = Math.min(length, sock.recvBuffer.length);
+              const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
+              sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
+              console.log(`[NodeSockFS:recvmsg:promise] Socket closed with data, returning ${bytesRead} bytes`);
+              resolve({ buffer: data });
+            } else {
+              console.log(`[NodeSockFS:recvmsg:promise] Socket closed, returning EOF`);
+              resolve(null);
+            }
+          };
+
+          const onError = () => {
+            cleanup();
+            console.log(`[NodeSockFS:recvmsg:promise] Socket error, returning EOF`);
+            resolve(null);
+          };
+
+          const cleanup = () => {
+            socket.off("data", onData);
+            socket.off("close", onClose);
+            socket.off("error", onError);
+          };
+
+          socket.once("data", onData);
+          socket.once("close", onClose);
+          socket.once("error", onError);
+        });
+
+        console.log(`[NodeSockFS:recvmsg] Calling syncifySimple...`);
+        const result = syncifySimple(recvPromise);
+        console.log(`[NodeSockFS:recvmsg] syncifySimple returned`);
+        return result;
+      }
+
+      // No JSPI or not in suspender context - return null (would block)
+      console.log(`[NodeSockFS:recvmsg] No data available, returning null (would block)`);
+      return null;
+    },
+
+    /**
+     * Async version of recvmsg - returns a Promise that resolves with data.
+     * This is called by the C syscall override when JSPI is available.
+     * Returns: { bytesRead: number, buffer: Uint8Array } or null for EOF
+     */
+    recvmsgAsync(
+      sock: NodeSock,
+      length: number,
+    ): Promise<{ bytesRead: number; buffer: Uint8Array } | null> {
+      console.log(`[NodeSockFS:recvmsgAsync] START - requested length=${length}`);
+      console.log(`[NodeSockFS:recvmsgAsync] Current buffer size: ${sock.recvBuffer.length}`);
+
+      // If data is already available, return immediately
+      if (sock.recvBuffer.length > 0) {
+        const bytesRead = Math.min(length, sock.recvBuffer.length);
+        const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
+        sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
+        console.log(`[NodeSockFS:recvmsgAsync] Data available, returning ${bytesRead} bytes`);
+        return Promise.resolve({ bytesRead, buffer: data });
+      }
+
+      // If socket is closed, return null (EOF)
+      if (!sock.nodeSocket || sock.nodeSocket.destroyed) {
+        console.log(`[NodeSockFS:recvmsgAsync] Socket closed, returning EOF`);
+        return Promise.resolve(null);
+      }
+
+      // Wait for data to arrive
+      return new Promise((resolve) => {
+        const socket = sock.nodeSocket!;
+
+        const onData = () => {
+          cleanup();
+          // Now read the data
+          const bytesRead = Math.min(length, sock.recvBuffer.length);
+          const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
+          sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
+          console.log(`[NodeSockFS:recvmsgAsync] Data arrived, returning ${bytesRead} bytes`);
+          resolve({ bytesRead, buffer: data });
+        };
+
+        const onClose = () => {
+          cleanup();
+          // Check if any data arrived before close
+          if (sock.recvBuffer.length > 0) {
+            const bytesRead = Math.min(length, sock.recvBuffer.length);
+            const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
+            sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
+            console.log(`[NodeSockFS:recvmsgAsync] Socket closed with data, returning ${bytesRead} bytes`);
+            resolve({ bytesRead, buffer: data });
+          } else {
+            console.log(`[NodeSockFS:recvmsgAsync] Socket closed, returning EOF`);
+            resolve(null);
+          }
+        };
+
+        const onError = () => {
+          cleanup();
+          console.log(`[NodeSockFS:recvmsgAsync] Socket error, returning EOF`);
+          resolve(null);
+        };
+
+        const cleanup = () => {
+          socket.off("data", onData);
+          socket.off("close", onClose);
+          socket.off("error", onError);
+        };
+
+        socket.once("data", onData);
+        socket.once("close", onClose);
+        socket.once("error", onError);
+        console.log(`[NodeSockFS:recvmsgAsync] Waiting for data...`);
+      });
     },
 
     /**
