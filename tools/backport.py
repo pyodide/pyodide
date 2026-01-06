@@ -510,11 +510,17 @@ def diff_old_new_branch(branch_name):
 
 def last_tag_tuple() -> tuple[str, str, str]:
     result = run(["git", "tag"], capture_output=True)
-    return max(
-        tuple(int(p) for p in x.split("."))
-        for x in result.stdout.splitlines()
-        if x.startswith("0") and "a" not in x
-    )
+    tags = []
+    for line in result.stdout.splitlines():
+        if not line.startswith("0") or "a" in line:
+            continue
+        try:
+            tags.append(tuple(int(p) for p in line.split(".")))
+        except ValueError:
+            # skip invalid tags
+            pass
+    
+    return max(tags)
 
 
 def get_last_tag() -> str:
