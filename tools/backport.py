@@ -519,7 +519,7 @@ def last_tag_tuple() -> tuple[str, str, str]:
         except ValueError:
             # skip invalid tags
             pass
-    
+
     return max(tags)
 
 
