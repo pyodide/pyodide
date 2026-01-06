@@ -39,11 +39,11 @@ cd attrs
 if errorlevel 1 exit /b 1
 
 REM Install attrs with tests dependencies
-pip install ".[tests]"
+call pip install ".[tests]"
 if errorlevel 1 exit /b 1
 
 REM Uninstall pytest-mypy-plugins
-pip uninstall pytest-mypy-plugins -y
+call pip uninstall pytest-mypy-plugins -y
 if errorlevel 1 exit /b 1
 
 REM Run pytest
