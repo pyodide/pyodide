@@ -17,6 +17,15 @@ myst:
 
 ## Unreleased
 
+- {{ Breaking }} The `ssl` module is now a stub implementation bundled with
+  Pyodide instead of being dynamically loaded with OpenSSL. This means the `ssl`
+  module is available immediately without loading additional packages, but
+  OpenSSL-dependent features (actual SSL/TLS connections, certificate validation,
+  etc.) are not available. Code that only imports `ssl` for constants, types, or
+  `SSLContext` configuration will continue to work. Code that attempts actual
+  SSL operations will raise `NotImplementedError`.
+  {pr}`6044`
+
 - {{ Enhancement }} A JavaScript object is now treated as an array-like object
   if it has a `length` property and is iterable. Every JsProxy of an array-like
   object now implements subscripting.
