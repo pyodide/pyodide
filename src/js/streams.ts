@@ -12,18 +12,13 @@ function nodeFsync(fd: number): void {
     if (e?.code === "EINVAL") {
       return;
     }
-    // On mac, calling fsync on when not isatty returns ENOTSUP
-    if (e?.code === "ENOTSUP" && (fd === 0 || fd === 1 || fd === 2)) {
-      return;
-    }
-
-    // On windows, the stdin and stdout may be closed already when we try to fsync them.
-    // In that case, we get EBADF or EPERM, so we just ignore that error.
-    if (e?.code === "EBADF" && (fd === 1 || fd === 2)) {
-      return;
-    }
-
-    if (e?.code === "EPERM" && (fd === 1 || fd === 2)) {
+    // On Mac, calling fsync when not isatty returns ENOTSUP
+    // On Windows, stdin/stdout/stderr may be closed, returning EBADF or EPERM
+    const isStdStream = fd === 0 || fd === 1 || fd === 2;
+    if (
+      isStdStream &&
+      (e?.code === "ENOTSUP" || e?.code === "EBADF" || e?.code === "EPERM")
+    ) {
       return;
     }
 
