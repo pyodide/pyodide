@@ -18,8 +18,12 @@ function nodeFsync(fd: number): void {
     }
 
     // On windows, the stdin and stdout may be closed already when we try to fsync them.
-    // In that case, we get EBADF, so we just ignore that error.
+    // In that case, we get EBADF or EPERM, so we just ignore that error.
     if (e?.code === "EBADF" && (fd === 1 || fd === 2)) {
+      return;
+    }
+
+    if (e?.code === "EPERM" && (fd === 1 || fd === 2)) {
       return;
     }
 
