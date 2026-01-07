@@ -193,6 +193,110 @@ function getFileSystemInitializationFuncs(
   ];
 }
 
+/**
+ * Global reference to Module for use by wrapped syscalls.
+ * This is set after the module is instantiated.
+ */
+let _jspiModule: any = null;
+
+/**
+ * Set the module reference for JSPI syscalls.
+ * Called from nodesockfs.ts after initialization.
+ */
+export function setJSPIModule(module: any) {
+  _jspiModule = module;
+}
+
+/**
+ * Wrap socket syscalls with JSPI support.
+ * This replaces the syscall imports with versions that can suspend WebAssembly
+ * execution while waiting for async socket operations.
+ */
+function wrapSocketSyscallsWithJSPI(imports: { [key: string]: { [key: string]: any } }) {
+  if (!RUNTIME_ENV.IN_NODE) {
+    return;
+  }
+
+  const WasmSuspending = (WebAssembly as any).Suspending;
+  if (!WasmSuspending) {
+    console.log("[JSPI] WebAssembly.Suspending not available, skipping syscall wrapping");
+    return;
+  }
+
+  const env = imports.env;
+  if (!env) {
+    return;
+  }
+
+  // Store original syscalls
+  const origConnect = env.__syscall_connect;
+  const origRecvfrom = env.__syscall_recvfrom;
+
+  if (origConnect) {
+    // Create an async version that will be wrapped with WebAssembly.Suspending
+    const connectAsync = async (fd: number, addr: number, addrlen: number, d1: number, d2: number, d3: number): Promise<number> => {
+      // Check if we have async socket support
+      if (_jspiModule) {
+        try {
+          const SOCKFS = (_jspiModule as any).SOCKFS;
+          const getSocketAddress = (_jspiModule as any).getSocketAddress;
+          if (SOCKFS && getSocketAddress) {
+            const sock = SOCKFS.getSocket(fd);
+            if (sock?.sock_ops?.connectAsync) {
+              const info = getSocketAddress(addr, addrlen);
+              console.log(`[JSPI:__syscall_connect] Using async connect to ${info.addr}:${info.port}`);
+              return await sock.sock_ops.connectAsync(sock, info.addr, info.port);
+            }
+          }
+        } catch (e) {
+          console.error("[JSPI:__syscall_connect] Error:", e);
+        }
+      }
+      // Fall back to original
+      return origConnect(fd, addr, addrlen, d1, d2, d3);
+    };
+
+    // Wrap with WebAssembly.Suspending so it can suspend the WebAssembly stack
+    env.__syscall_connect = new WasmSuspending(connectAsync);
+    console.log("[JSPI] Wrapped __syscall_connect with WebAssembly.Suspending");
+  }
+
+  if (origRecvfrom) {
+    const recvfromAsync = async (fd: number, buf: number, len: number, flags: number, addr: number, addrlen: number): Promise<number> => {
+      // Check if we have async socket support
+      if (_jspiModule) {
+        try {
+          const SOCKFS = (_jspiModule as any).SOCKFS;
+          const HEAPU8 = (_jspiModule as any).HEAPU8;
+          if (SOCKFS && HEAPU8) {
+            const sock = SOCKFS.getSocket(fd);
+            if (sock?.sock_ops?.recvmsgAsync) {
+              console.log(`[JSPI:__syscall_recvfrom] Using async recvmsg, len=${len}`);
+              const result = await sock.sock_ops.recvmsgAsync(sock, len);
+              if (result === null) {
+                return 0; // EOF
+              }
+              HEAPU8.set(result.buffer, buf);
+              return result.bytesRead;
+            }
+          }
+        } catch (e: any) {
+          console.error("[JSPI:__syscall_recvfrom] Error:", e);
+          if (e.name === "ErrnoError") {
+            return -e.errno;
+          }
+          return -5; // EIO
+        }
+      }
+      // Fall back to original
+      return origRecvfrom(fd, buf, len, flags, addr, addrlen);
+    };
+
+    env.__syscall_recvfrom = new WasmSuspending(recvfromAsync);
+    console.log("[JSPI] Wrapped __syscall_recvfrom with WebAssembly.Suspending");
+  }
+}
+
 function getInstantiateWasmFunc(
   indexURL: string,
 ): EmscriptenSettings["instantiateWasm"] {
@@ -218,6 +322,10 @@ function getInstantiateWasmFunc(
   ) {
     (async function () {
       imports.sentinel = await sentinelImportPromise;
+
+      // Wrap socket syscalls with JSPI support before instantiation
+      wrapSocketSyscallsWithJSPI(imports);
+
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {

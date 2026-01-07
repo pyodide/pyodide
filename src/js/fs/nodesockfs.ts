@@ -5,17 +5,16 @@
  * Currently implements TCP client sockets only (SOCK_STREAM + connect).
  *
  * JSPI Integration:
- * This module uses the syncifySimple function from stack_switching to suspend
- * WebAssembly execution while waiting for async socket operations.
+ * This module provides async methods (connectAsync, recvmsgAsync) that are called
+ * by the wrapped syscalls in emscripten-settings.ts when JSPI is available.
+ * The syscalls are wrapped with WebAssembly.Suspending before instantiation,
+ * allowing them to suspend the WebAssembly stack while waiting for async operations.
  */
 
 import type { PyodideModule, PreRunFunc } from "../types";
 import type { Socket } from "node:net";
 import { RUNTIME_ENV } from "../environments";
-
-// JSPI functions - will be set during initialization from the Module
-let syncifySimple: ((promise: Promise<any>) => any) | null = null;
-let validSuspender: { value: boolean } | null = null;
+import { setJSPIModule } from "../emscripten-settings";
 
 // Internal socket structure that mirrors Emscripten's sock structure
 interface NodeSock {
@@ -64,15 +63,8 @@ async function _initializeNodeSockFS(module: PyodideModule) {
   console.log(`[NodeSockFS] Initializing...`);
   console.log(`[NodeSockFS] Module.jspiSupported: ${(module as any).jspiSupported}`);
 
-  // Set up JSPI syncifySimple function if available
-  validSuspender = (module as any).validSuspender || null;
-  syncifySimple = (module as any).syncifySimple || null;
-  
-  if (syncifySimple && (module as any).jspiSupported) {
-    console.log(`[NodeSockFS] JSPI syncifySimple available`);
-  } else {
-    console.log(`[NodeSockFS] JSPI not available, socket operations will be non-blocking`);
-  }
+  // Set the module reference for JSPI syscalls
+  setJSPIModule(module);
 
   // Constants matching Emscripten/POSIX definitions
   const AF_INET = 2;
@@ -151,15 +143,14 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     },
 
     /**
-     * Connect to a remote address
+     * Connect to a remote address (non-blocking)
      *
-     * If JSPI is available and we're in a valid suspender context, this will
-     * block until the connection is established using WebAssembly.Suspending.
-     * Otherwise, it initiates the connection and returns immediately.
+     * This initiates the connection and returns immediately.
+     * For blocking behavior with JSPI, the C syscall override in socket_syscalls.c
+     * will call connectAsync instead.
      */
     connect(sock: NodeSock, addr: string, port: number): void {
       console.log(`[NodeSockFS:connect] START - addr=${addr}, port=${port}`);
-      console.log(`[NodeSockFS:connect] JSPI: syncifySimple=${!!syncifySimple}, validSuspender=${validSuspender?.value}`);
 
       if (sock.nodeSocket) {
         console.log(`[NodeSockFS:connect] ERROR: Already connected (EISCONN)`);
@@ -206,55 +197,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       console.log(`[NodeSockFS:connect] Calling socket.connect(${port}, ${addr})...`);
       socket.connect(port, addr);
       console.log(`[NodeSockFS:connect] socket.connect() returned (async operation started)`);
-
-      // If JSPI is available and we're in a valid suspender context, block until connected
-      if (syncifySimple && validSuspender?.value) {
-        console.log(`[NodeSockFS:connect] JSPI available, blocking until connected...`);
-
-        const connectPromise = new Promise<void>((resolve, reject) => {
-          const onConnect = () => {
-            cleanup();
-            console.log(`[NodeSockFS:connect:promise] Connected!`);
-            resolve();
-          };
-          const onError = (err: Error) => {
-            cleanup();
-            console.error(`[NodeSockFS:connect:promise] Error: ${err.message}`);
-            reject(err);
-          };
-          const cleanup = () => {
-            socket.off("connect", onConnect);
-            socket.off("error", onError);
-          };
-
-          // If already connected, resolve immediately
-          if (sock.connected) {
-            resolve();
-            return;
-          }
-          if (sock.error) {
-            reject(new Error("Connection failed"));
-            return;
-          }
-
-          socket.once("connect", onConnect);
-          socket.once("error", onError);
-        });
-
-        try {
-          console.log(`[NodeSockFS:connect] Calling syncifySimple...`);
-          syncifySimple(connectPromise);
-          console.log(`[NodeSockFS:connect] syncifySimple returned, connected!`);
-        } catch (e) {
-          console.error(`[NodeSockFS:connect] syncifySimple threw: ${e}`);
-          throw new FS.ErrnoError(sock.error || ERRNO_CODES.ECONNREFUSED);
-        }
-
-        if (sock.error) {
-          throw new FS.ErrnoError(sock.error);
-        }
-      }
-
       console.log(`[NodeSockFS:connect] END`);
     },
 
@@ -365,16 +307,15 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     },
 
     /**
-     * Receive data from the socket
+     * Receive data from the socket (non-blocking)
      *
-     * If JSPI is available and we're in a valid suspender context, this will
-     * block until data is available using WebAssembly.Suspending.
-     * Otherwise, returns data if available, or null if no data (would block).
+     * Returns data if available, or null if no data (would block).
+     * For blocking behavior with JSPI, the C syscall override in socket_syscalls.c
+     * will call recvmsgAsync instead.
      */
     recvmsg(sock: NodeSock, length: number): { buffer: Uint8Array } | null {
       console.log(`[NodeSockFS:recvmsg] START - requested length=${length}`);
       console.log(`[NodeSockFS:recvmsg] Current buffer size: ${sock.recvBuffer.length}`);
-      console.log(`[NodeSockFS:recvmsg] JSPI: syncifySimple=${!!syncifySimple}, validSuspender=${validSuspender?.value}`);
 
       // If data is available, return it immediately
       if (sock.recvBuffer.length > 0) {
@@ -391,66 +332,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         return null;
       }
 
-      // If JSPI is available and we're in a valid suspender context, block until data arrives
-      if (syncifySimple && validSuspender?.value) {
-        console.log(`[NodeSockFS:recvmsg] JSPI available, blocking until data arrives...`);
-
-        const recvPromise = new Promise<{ buffer: Uint8Array } | null>((resolve) => {
-          const socket = sock.nodeSocket!;
-
-          const onData = () => {
-            cleanup();
-            // Now read the data
-            if (sock.recvBuffer.length > 0) {
-              const bytesRead = Math.min(length, sock.recvBuffer.length);
-              const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
-              sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
-              console.log(`[NodeSockFS:recvmsg:promise] Data arrived, returning ${bytesRead} bytes`);
-              resolve({ buffer: data });
-            } else {
-              resolve(null);
-            }
-          };
-
-          const onClose = () => {
-            cleanup();
-            // Check if any data arrived before close
-            if (sock.recvBuffer.length > 0) {
-              const bytesRead = Math.min(length, sock.recvBuffer.length);
-              const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
-              sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
-              console.log(`[NodeSockFS:recvmsg:promise] Socket closed with data, returning ${bytesRead} bytes`);
-              resolve({ buffer: data });
-            } else {
-              console.log(`[NodeSockFS:recvmsg:promise] Socket closed, returning EOF`);
-              resolve(null);
-            }
-          };
-
-          const onError = () => {
-            cleanup();
-            console.log(`[NodeSockFS:recvmsg:promise] Socket error, returning EOF`);
-            resolve(null);
-          };
-
-          const cleanup = () => {
-            socket.off("data", onData);
-            socket.off("close", onClose);
-            socket.off("error", onError);
-          };
-
-          socket.once("data", onData);
-          socket.once("close", onClose);
-          socket.once("error", onError);
-        });
-
-        console.log(`[NodeSockFS:recvmsg] Calling syncifySimple...`);
-        const result = syncifySimple(recvPromise);
-        console.log(`[NodeSockFS:recvmsg] syncifySimple returned`);
-        return result;
-      }
-
-      // No JSPI or not in suspender context - return null (would block)
+      // No data available - return null (would block)
       console.log(`[NodeSockFS:recvmsg] No data available, returning null (would block)`);
       return null;
     },
