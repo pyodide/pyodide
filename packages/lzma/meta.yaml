@@ -15,7 +15,7 @@ build:
     tar -xf Python-${PYVERSION}.tgz
     cd Python-${PYVERSION}
 
-    emcc $STDLIB_MODULE_CFLAGS -c Modules/_lzmamodule.c -o _lzmamodule.o \
+    emcc $SIDE_MODULE_CFLAGS -I Include/ -I. -IInclude/internal/ -c Modules/_lzmamodule.c -o _lzmamodule.o \
       $(pkg-config --cflags --dont-define-prefix liblzma)
 
     emcc _lzmamodule.o -o _lzma.so $SIDE_MODULE_LDFLAGS \

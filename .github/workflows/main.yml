@@ -189,6 +189,13 @@ jobs:
           path: ./dist/
           retention-days: 60
 
+      - name: Store sysconfig
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-sysconfig-${{ runner.os }}
+          path: ./cpython/installs/
+          retention-days: 60
+
   test-core:
     runs-on: ${{ matrix.os }}
     env:
@@ -267,6 +274,45 @@ jobs:
         with:
           paths: "test-results/*.xml"
         if: always()
+
+  test-cmdline-runner:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    needs: [build-core, get_python_version]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          # To test Windows cmdline runner we always use the Linux build artifact
+          name: core-build-Linux
+          path: ./dist/
+
+      - name: Download sysconfig artifact
+        uses: actions/download-artifact@v4
+        with:
+          # To test Windows cmdline runner we always use the Linux artifact
+          name: core-sysconfig-Linux
+          path: ./cpython/installs/
+
+      - name: Run cmdline-runner tests
+        shell: bash -l {0}
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            ./tools/cmdline_runner_test/run.bat
+          else
+            ./tools/cmdline_runner_test/run
+          fi
 
   test-scipy-trigger:
     name: test-scipy-trigger

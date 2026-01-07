@@ -12,10 +12,16 @@ function nodeFsync(fd: number): void {
     if (e?.code === "EINVAL") {
       return;
     }
-    // On mac, calling fsync on stdout/stderr when not isatty returns ENOTSUP
-    if (e?.code === "ENOTSUP" && (fd === 1 || fd === 2)) {
+    // On Mac, calling fsync when not isatty returns ENOTSUP
+    // On Windows, stdin/stdout/stderr may be closed, returning EBADF or EPERM
+    const isStdStream = fd === 0 || fd === 1 || fd === 2;
+    if (
+      isStdStream &&
+      (e?.code === "ENOTSUP" || e?.code === "EBADF" || e?.code === "EPERM")
+    ) {
       return;
     }
+
     throw e;
   }
 }

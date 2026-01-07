@@ -24,6 +24,7 @@ all-but-packages: \
 	 \
 	dist/package.json \
 	dist/python \
+	dist/python.bat \
 	dist/python_cli_entry.mjs \
 	dist/python_stdlib.zip \
 	dist/test.html \
@@ -224,8 +225,11 @@ pyodide_build .pyodide_build_installed:
 # Recursive wildcard
 rwildcard=$(wildcard $1) $(foreach d,$1,$(call rwildcard,$(addsuffix /$(notdir $d),$(wildcard $(dir $d)*))))
 
-dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB) .pyodide_build_installed
-	pyodide create-zipfile $(CPYTHONLIB) src/py --exclude "$(PYZIP_EXCLUDE_FILES)" --stub "$(PYZIP_JS_STUBS)" --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
+dist:
+	[ -d dist ] || mkdir dist
+
+dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB)
+	./tools/create_zipfile.py $(CPYTHONLIB) src/py --exclude "$(PYZIP_EXCLUDE_FILES)" --stub "$(PYZIP_JS_STUBS)" --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
 dist/test.html: src/templates/test.html
 	cp $< $@
@@ -243,9 +247,11 @@ dist/module_test.html: src/templates/module_test.html
 dist/python: src/templates/python
 	cp $< $@
 
-dist/python_cli_entry.mjs: src/templates/python_cli_entry.mjs
+dist/python.bat: src/templates/python.bat
 	cp $< $@
 
+dist/python_cli_entry.mjs: src/templates/python_cli_entry.mjs dist
+	cp $< $@
 
 .PHONY: dist/console.html
 dist/console.html: src/templates/console.html
