@@ -513,6 +513,8 @@ def test_console_v2_html(selenium_standalone):
     selenium.run_js(
         """
         await window.console_ready;
+        // Give Safari extra time to populate the terminal buffer
+        await new Promise(resolve => setTimeout(resolve, 500));
         """
     )
 
@@ -542,13 +544,16 @@ def test_console_v2_html(selenium_standalone):
             """
             if (!term) throw new Error("Terminal not found");
 
+            // Wait for any pending renders to complete
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             // Get the terminal buffer content
             let content = "";
             const buffer = term.buffer.active;
             for (let i = 0; i < buffer.length; i++) {
-                const line = buffer.getLine(i).translateToString(true);
+                const line = buffer.getLine(i);
                 if (line) {
-                    content += line + "\\n";
+                    content += line.translateToString(true) + "\\n";
                 }
             }
             return content.trim();
