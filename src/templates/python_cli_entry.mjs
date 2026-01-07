@@ -85,7 +85,7 @@ async function main() {
           PYTHONEXECUTABLE: windowsPathToUnix(_sysExecutable),
         },
         process.env,
-        { HOME: process.cwd() },
+        { HOME: windowsPathToUnix(process.cwd()) },
       ),
       fullStdLib: false,
       fsInit,
