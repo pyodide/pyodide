@@ -109,7 +109,7 @@ HAS_SSLv3 = False
 HAS_TLSv1 = True
 HAS_TLSv1_1 = True
 HAS_TLSv1_2 = True
-HAS_TLSv1_3 = True
+HAS_TLSv1_3 = False
 HAS_PSK = True
 HAS_PHA = False
 

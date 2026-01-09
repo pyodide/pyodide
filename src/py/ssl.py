@@ -514,6 +514,8 @@ class SSLContext:
             raise ValueError("can't set num_tickets for client contexts")
         self._num_tickets = value
 
+    def set_ecdh_curve(self, curve_name):
+        pass
 
 def create_default_context(
     purpose=Purpose.SERVER_AUTH, *, cafile=None, capath=None, cadata=None
