@@ -14,7 +14,6 @@
 import type { PyodideModule, PreRunFunc } from "../types";
 import type { Socket } from "node:net";
 import { RUNTIME_ENV } from "../environments";
-import { setJSPIModule } from "../emscripten-settings";
 
 // Internal socket structure that mirrors Emscripten's sock structure
 interface NodeSock {
