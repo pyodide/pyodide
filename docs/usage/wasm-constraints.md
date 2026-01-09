@@ -19,8 +19,6 @@ Instead, it is better to load individual modules as needed using
 {js:func}`pyodide.loadPackage` or {py:func}`micropip.install`.
 
 - ssl
-- lzma
-- sqlite3
 - test: it is an exception to the above, since it is not loaded even if `fullStdLib` is set to true.
 
 #### Modules with limited functionality
@@ -32,15 +30,9 @@ Instead, it is better to load individual modules as needed using
   **before** importing hashlib.
 
 - decimal: The decimal module has C (\_decimal) and Python (\_pydecimal) implementations
-  with the same functionality. The Python implementation is not available by default.
-  If you need a Python implementation of decimal, you need to call
-  `pyodide.loadPackage('pydecimal')` or `micropip.install('pydecimal')`,
-  then explicitly import `_pydecimal`.
+  with the same functionality. The Python implementation is not available.
 
-- pydoc: Help messages for Python builtins are not available by default
-  in order to reduce the initial download size. You need to call
-  `pyodide.loadPackage('pydoc_data')` or `micropip.install('pydoc_data')`
-  to enable them.
+- pydoc: Help messages for Python builtins are not available.
 
 - webbrowser: The original webbrowser module is not available. Instead,
   Pyodide includes some method stubs based on browser APIs:
