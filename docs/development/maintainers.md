@@ -385,6 +385,12 @@ If doing a major version update, save time by {ref}`updating-packages` first.
 
 10. Fix failing package tests.
 
+11. Update standard library stubs in `src/templates`. We currently have `webbrowser.py` and `ssl.py`
+    that we implement ourselves. If you are updating the Python version, you may need to update
+    these stubs. Take a look at the Python docs for the standard library modules you are updating
+    and see if the APIs have changed. You can search for the string "in version 3.XX" to find
+    the relevant changes.
+
 ### Old major Python upgrades
 
 | version | pr         |

@@ -23,7 +23,14 @@ myst:
   OpenSSL-dependent features (actual SSL/TLS connections, certificate validation,
   etc.) are not available. Code that only imports `ssl` for constants, types, or
   `SSLContext` configuration will continue to work. Code that attempts actual
-  SSL operations will raise `NotImplementedError`.
+  SSL operations will raise `NotImplementedError`. Note that socket operations
+  using `ssl` never worked in Pyodide even before this change.
+  This change saves us more than 3MB (uncompressed) of space when using `ssl` module.
+  {pr}`6044`
+
+- {{ Breaking }} We do not provide hash functions in hashlib that are provided by OpenSSL.
+  Previously, this was available by running `pyodide.loadPackage('hashlib')` before importing
+  hashlib. Now, we do not provide hash functions coming from OpenSSL.
   {pr}`6044`
 
 - {{ Enhancement }} A JavaScript object is now treated as an array-like object

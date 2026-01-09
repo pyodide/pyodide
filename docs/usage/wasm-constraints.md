@@ -18,18 +18,11 @@ However this has a significant impact on the download size.
 Instead, it is better to load individual modules as needed using
 {js:func}`pyodide.loadPackage` or {py:func}`micropip.install`.
 
-- ssl
 - lzma
 - sqlite3
 - test: it is an exception to the above, since it is not loaded even if `fullStdLib` is set to true.
 
 #### Modules with limited functionality
-
-- hashlib: Hash algorithms that are depending on OpenSSL are not available by default.
-  See Python [hashlib documentation](https://docs.python.org/3/library/hashlib.html)
-  for list of algorithms that are dependent on OpenSSL. If you need those algorithms,
-  you need to call `pyodide.loadPackage('hashlib')` or `micropip.install('hashlib')`
-  **before** importing hashlib.
 
 - decimal: The decimal module has C (\_decimal) and Python (\_pydecimal) implementations
   with the same functionality. The Python implementation is not available by default.
