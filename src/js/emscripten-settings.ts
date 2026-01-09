@@ -219,7 +219,9 @@ function wrapSocketSyscallsWithJSPI(imports: {
   [key: string]: { [key: string]: any };
 }) {
   if (!RUNTIME_ENV.IN_NODE) {
-    console.log("[wrapSocketSyscallsWithJSPI] Not in Node.js environment, skipping syscall wrapping");
+    console.log(
+      "[wrapSocketSyscallsWithJSPI] Not in Node.js environment, skipping syscall wrapping",
+    );
     return;
   }
 
@@ -261,28 +263,26 @@ function wrapSocketSyscallsWithJSPI(imports: {
       const SOCKFS = _pyodideModuleforJSPI.SOCKFS;
       const getSocketAddress = _pyodideModuleforJSPI.getSocketAddress;
       if (!SOCKFS || !getSocketAddress) {
-        
-          console.debug(
-            "[JSPI:__syscall_connect] SOCKFS or getSocketAddress not found, falling back to original",
-          );
+        console.debug(
+          "[JSPI:__syscall_connect] SOCKFS or getSocketAddress not found, falling back to original",
+        );
         return origConnect(fd, addr, addrlen, d1, d2, d3);
       }
 
       const sock = SOCKFS.getSocket(fd);
       if (!sock || !sock.sock_ops || !sock.sock_ops.connectAsync) {
-        
-          console.debug(
-            "[JSPI:__syscall_connect] Socket not found, falling back to original",
-          );
+        console.debug(
+          "[JSPI:__syscall_connect] Socket not found, falling back to original",
+        );
         return origConnect(fd, addr, addrlen, d1, d2, d3);
       }
 
       try {
         const info = getSocketAddress(addr, addrlen);
-        
-          console.debug(
-            `[JSPI:__syscall_connect] Using async connect to ${info.addr}:${info.port}`,
-          );
+
+        console.debug(
+          `[JSPI:__syscall_connect] Using async connect to ${info.addr}:${info.port}`,
+        );
         return await sock.sock_ops.connectAsync(sock, info.addr, info.port);
       } catch (e) {
         console.debug("[JSPI:__syscall_connect] Error:", e);
@@ -292,10 +292,10 @@ function wrapSocketSyscallsWithJSPI(imports: {
 
     // Wrap with WebAssembly.Suspending so it can suspend the WebAssembly stack
     env.__syscall_connect = new WasmSuspending(connectAsync);
-    
-      console.debug(
-        "[JSPI] Wrapped __syscall_connect with WebAssembly.Suspending",
-      );
+
+    console.debug(
+      "[JSPI] Wrapped __syscall_connect with WebAssembly.Suspending",
+    );
   }
 
   if (origRecvfrom) {
@@ -319,16 +319,16 @@ function wrapSocketSyscallsWithJSPI(imports: {
 
       if (!SOCKFS || !HEAPU8) {
         console.debug(
-            "[JSPI:__syscall_recvfrom] SOCKFS or HEAPU8 not found, falling back to original",
-          );
+          "[JSPI:__syscall_recvfrom] SOCKFS or HEAPU8 not found, falling back to original",
+        );
         return origRecvfrom(fd, buf, len, flags, addr, addrlen);
       }
 
       const sock = SOCKFS.getSocket(fd);
       if (!sock || !sock.sock_ops || !sock.sock_ops.recvmsgAsync) {
         console.debug(
-            "[JSPI:__syscall_recvfrom] Socket not found, falling back to original",
-          );
+          "[JSPI:__syscall_recvfrom] Socket not found, falling back to original",
+        );
         return origRecvfrom(fd, buf, len, flags, addr, addrlen);
       }
 
