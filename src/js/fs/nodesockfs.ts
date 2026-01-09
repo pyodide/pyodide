@@ -37,7 +37,9 @@ interface NodeSock {
 
 export function initializeNodeSockFS(): PreRunFunc[] {
   if (!RUNTIME_ENV.IN_NODE) {
-    console.log("[NodeSockFS] Not in Node.js environment, skipping NodeSockFS initialization");
+    console.log(
+      "[NodeSockFS] Not in Node.js environment, skipping NodeSockFS initialization",
+    );
     return [];
   }
 
@@ -61,10 +63,9 @@ async function _initializeNodeSockFS(module: PyodideModule) {
   const net = await import("node:net");
 
   console.log(`[NodeSockFS] Initializing...`);
-  console.log(`[NodeSockFS] Module.jspiSupported: ${(module as any).jspiSupported}`);
-
-  // Set the module reference for JSPI syscalls
-  setJSPIModule(module);
+  console.log(
+    `[NodeSockFS] Module.jspiSupported: ${(module as any).jspiSupported}`,
+  );
 
   // Constants matching Emscripten/POSIX definitions
   const AF_INET = 2;
@@ -169,34 +170,46 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       // Handle incoming data
       socket.on("data", (data: Buffer) => {
         sock.recvBuffer = Buffer.concat([sock.recvBuffer, data]);
-        console.log(`[NodeSockFS:connect:on-data] Received ${data.length} bytes, total buffer size: ${sock.recvBuffer.length}`);
+        console.log(
+          `[NodeSockFS:connect:on-data] Received ${data.length} bytes, total buffer size: ${sock.recvBuffer.length}`,
+        );
       });
 
       // Handle connection established
       socket.on("connect", () => {
         sock.connected = true;
         sock.connecting = false;
-        console.log(`[NodeSockFS:connect:on-connect] Connection established to ${addr}:${port}`);
+        console.log(
+          `[NodeSockFS:connect:on-connect] Connection established to ${addr}:${port}`,
+        );
       });
 
       // Handle errors
       socket.on("error", (err: NodeJS.ErrnoException) => {
         sock.error = ERRNO_CODES.ECONNREFUSED;
         sock.connecting = false;
-        console.error(`[NodeSockFS:connect:on-error] Connection error to ${addr}:${port}: ${err.message}`);
+        console.error(
+          `[NodeSockFS:connect:on-error] Connection error to ${addr}:${port}: ${err.message}`,
+        );
       });
 
       // Handle close
       socket.on("close", (hadError: boolean) => {
         sock.connected = false;
         sock.connecting = false;
-        console.log(`[NodeSockFS:connect:on-close] Connection closed to ${addr}:${port}, hadError=${hadError}`);
+        console.log(
+          `[NodeSockFS:connect:on-close] Connection closed to ${addr}:${port}, hadError=${hadError}`,
+        );
       });
 
       // Initiate connection (non-blocking in Node.js)
-      console.log(`[NodeSockFS:connect] Calling socket.connect(${port}, ${addr})...`);
+      console.log(
+        `[NodeSockFS:connect] Calling socket.connect(${port}, ${addr})...`,
+      );
       socket.connect(port, addr);
-      console.log(`[NodeSockFS:connect] socket.connect() returned (async operation started)`);
+      console.log(
+        `[NodeSockFS:connect] socket.connect() returned (async operation started)`,
+      );
       console.log(`[NodeSockFS:connect] END`);
     },
 
@@ -205,11 +218,15 @@ async function _initializeNodeSockFS(module: PyodideModule) {
      * This is called by the C syscall override when JSPI is available.
      */
     connectAsync(sock: NodeSock, addr: string, port: number): Promise<number> {
-      console.log(`[NodeSockFS:connectAsync] START - addr=${addr}, port=${port}`);
+      console.log(
+        `[NodeSockFS:connectAsync] START - addr=${addr}, port=${port}`,
+      );
 
       // First do the synchronous setup
       if (sock.nodeSocket) {
-        console.log(`[NodeSockFS:connectAsync] ERROR: Already connected (EISCONN)`);
+        console.log(
+          `[NodeSockFS:connectAsync] ERROR: Already connected (EISCONN)`,
+        );
         return Promise.resolve(-ERRNO_CODES.EISCONN);
       }
 
@@ -223,14 +240,18 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       // Handle incoming data
       socket.on("data", (data: Buffer) => {
         sock.recvBuffer = Buffer.concat([sock.recvBuffer, data]);
-        console.log(`[NodeSockFS:connectAsync:on-data] Received ${data.length} bytes`);
+        console.log(
+          `[NodeSockFS:connectAsync:on-data] Received ${data.length} bytes`,
+        );
       });
 
       // Handle close
       socket.on("close", (hadError: boolean) => {
         sock.connected = false;
         sock.connecting = false;
-        console.log(`[NodeSockFS:connectAsync:on-close] Connection closed, hadError=${hadError}`);
+        console.log(
+          `[NodeSockFS:connectAsync:on-close] Connection closed, hadError=${hadError}`,
+        );
       });
 
       // Return a promise that resolves when connected or rejects on error
@@ -247,7 +268,9 @@ async function _initializeNodeSockFS(module: PyodideModule) {
           sock.error = ERRNO_CODES.ECONNREFUSED;
           sock.connecting = false;
           cleanup();
-          console.error(`[NodeSockFS:connectAsync] Connection error: ${err.message}`);
+          console.error(
+            `[NodeSockFS:connectAsync] Connection error: ${err.message}`,
+          );
           resolve(-ERRNO_CODES.ECONNREFUSED); // Return negative errno
         };
 
@@ -315,12 +338,16 @@ async function _initializeNodeSockFS(module: PyodideModule) {
      */
     recvmsg(sock: NodeSock, length: number): { buffer: Uint8Array } | null {
       console.log(`[NodeSockFS:recvmsg] START - requested length=${length}`);
-      console.log(`[NodeSockFS:recvmsg] Current buffer size: ${sock.recvBuffer.length}`);
+      console.log(
+        `[NodeSockFS:recvmsg] Current buffer size: ${sock.recvBuffer.length}`,
+      );
 
       // If data is available, return it immediately
       if (sock.recvBuffer.length > 0) {
         const bytesRead = Math.min(length, sock.recvBuffer.length);
-        console.log(`[NodeSockFS:recvmsg] Reading ${bytesRead} bytes from buffer`);
+        console.log(
+          `[NodeSockFS:recvmsg] Reading ${bytesRead} bytes from buffer`,
+        );
         const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
         sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
         return { buffer: data };
@@ -328,12 +355,16 @@ async function _initializeNodeSockFS(module: PyodideModule) {
 
       // If socket is closed, return null to signal EOF
       if (!sock.nodeSocket || sock.nodeSocket.destroyed) {
-        console.log(`[NodeSockFS:recvmsg] Socket closed/destroyed, returning EOF (null)`);
+        console.log(
+          `[NodeSockFS:recvmsg] Socket closed/destroyed, returning EOF (null)`,
+        );
         return null;
       }
 
       // No data available - return null (would block)
-      console.log(`[NodeSockFS:recvmsg] No data available, returning null (would block)`);
+      console.log(
+        `[NodeSockFS:recvmsg] No data available, returning null (would block)`,
+      );
       return null;
     },
 
@@ -346,15 +377,21 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       sock: NodeSock,
       length: number,
     ): Promise<{ bytesRead: number; buffer: Uint8Array } | null> {
-      console.log(`[NodeSockFS:recvmsgAsync] START - requested length=${length}`);
-      console.log(`[NodeSockFS:recvmsgAsync] Current buffer size: ${sock.recvBuffer.length}`);
+      console.log(
+        `[NodeSockFS:recvmsgAsync] START - requested length=${length}`,
+      );
+      console.log(
+        `[NodeSockFS:recvmsgAsync] Current buffer size: ${sock.recvBuffer.length}`,
+      );
 
       // If data is already available, return immediately
       if (sock.recvBuffer.length > 0) {
         const bytesRead = Math.min(length, sock.recvBuffer.length);
         const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
         sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
-        console.log(`[NodeSockFS:recvmsgAsync] Data available, returning ${bytesRead} bytes`);
+        console.log(
+          `[NodeSockFS:recvmsgAsync] Data available, returning ${bytesRead} bytes`,
+        );
         return Promise.resolve({ bytesRead, buffer: data });
       }
 
@@ -374,7 +411,9 @@ async function _initializeNodeSockFS(module: PyodideModule) {
           const bytesRead = Math.min(length, sock.recvBuffer.length);
           const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
           sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
-          console.log(`[NodeSockFS:recvmsgAsync] Data arrived, returning ${bytesRead} bytes`);
+          console.log(
+            `[NodeSockFS:recvmsgAsync] Data arrived, returning ${bytesRead} bytes`,
+          );
           resolve({ bytesRead, buffer: data });
         };
 
@@ -385,10 +424,14 @@ async function _initializeNodeSockFS(module: PyodideModule) {
             const bytesRead = Math.min(length, sock.recvBuffer.length);
             const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
             sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
-            console.log(`[NodeSockFS:recvmsgAsync] Socket closed with data, returning ${bytesRead} bytes`);
+            console.log(
+              `[NodeSockFS:recvmsgAsync] Socket closed with data, returning ${bytesRead} bytes`,
+            );
             resolve({ bytesRead, buffer: data });
           } else {
-            console.log(`[NodeSockFS:recvmsgAsync] Socket closed, returning EOF`);
+            console.log(
+              `[NodeSockFS:recvmsgAsync] Socket closed, returning EOF`,
+            );
             resolve(null);
           }
         };

@@ -52,7 +52,6 @@ def test_socket_connect(selenium):
 
     @run_in_pyodide
     async def socket_client_test(selenium, port, message):
-        import asyncio
         import socket
 
         # Create socket and connect
