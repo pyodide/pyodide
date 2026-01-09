@@ -14,6 +14,7 @@
 import type { PyodideModule, PreRunFunc } from "../types";
 import type { Socket } from "node:net";
 import { RUNTIME_ENV } from "../environments";
+import { setPyodideModuleforJSPI } from "../emscripten-settings";
 
 // Internal socket structure that mirrors Emscripten's sock structure
 interface NodeSock {
@@ -57,6 +58,8 @@ export function initializeNodeSockFS(): PreRunFunc[] {
 async function _initializeNodeSockFS(module: PyodideModule) {
   const FS: any = module.FS;
   const ERRNO_CODES: any = module.ERRNO_CODES;
+
+  setPyodideModuleforJSPI(module);
 
   // @ts-ignore
   const net = await import("node:net");

@@ -278,7 +278,10 @@ export interface EmscriptenModule {
   stringToNewUTF8(x: string): number;
   stringToUTF8OnStack: (str: string) => number;
   HEAP8: Uint8Array;
+  HEAPU8: Uint8Array;
   HEAPU32: Uint32Array;
+  SOCKFS: any;
+  getSocketAddress: (addr: number, addrlen: number) => any;
   getExceptionMessage(e: number): [string, string];
   exitCode: number | undefined;
   ExitStatus: { new (exitCode: number): Error };

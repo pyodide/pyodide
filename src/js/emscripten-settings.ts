@@ -7,6 +7,7 @@ import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type PyodideModule, type FSType } from "./types";
 import { getSentinelImport } from "generated/sentinel";
 import { RUNTIME_ENV } from "./environments";
+import type { EmscriptenModule } from "./types";
 
 /**
  * @private
@@ -188,9 +189,18 @@ function getFileSystemInitializationFuncs(
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
     initializeNativeFS,
-    // ...initializeNodeSockFS(),
+    ...initializeNodeSockFS(),
     ...callFsInitHook(config.fsInit),
   ];
+}
+
+let _pyodideModuleforJSPI: EmscriptenModule | null = null;
+
+/**
+ * @private
+ */
+export function setPyodideModuleforJSPI(module: EmscriptenModule) {
+  _pyodideModuleforJSPI = module;
 }
 
 /**
@@ -237,7 +247,7 @@ function wrapSocketSyscallsWithJSPI(imports: {
       d2: number,
       d3: number,
     ): Promise<number> => {
-      if (!Module) {
+      if (!_pyodideModuleforJSPI) {
         
           console.debug(
             "[JSPI:__syscall_connect] Module not found, falling back to original",
@@ -245,8 +255,8 @@ function wrapSocketSyscallsWithJSPI(imports: {
         return origConnect(fd, addr, addrlen, d1, d2, d3);
       }
 
-      const SOCKFS = (Module as any).SOCKFS;
-      const getSocketAddress = (Module as any).getSocketAddress;
+      const SOCKFS = _pyodideModuleforJSPI.SOCKFS;
+      const getSocketAddress = _pyodideModuleforJSPI.getSocketAddress;
       if (!SOCKFS || !getSocketAddress) {
         
           console.debug(
@@ -294,7 +304,7 @@ function wrapSocketSyscallsWithJSPI(imports: {
       addr: number,
       addrlen: number,
     ): Promise<number> => {
-      if (!Module) {
+      if (!_pyodideModuleforJSPI) {
         
           console.debug(
             "[JSPI:__syscall_recvfrom] Module not found, falling back to original",
@@ -302,8 +312,8 @@ function wrapSocketSyscallsWithJSPI(imports: {
         return origRecvfrom(fd, buf, len, flags, addr, addrlen);
       }
 
-      const SOCKFS = (Module as any).SOCKFS;
-      const HEAPU8 = (Module as any).HEAPU8;
+      const SOCKFS = _pyodideModuleforJSPI.SOCKFS;
+      const HEAPU8 = _pyodideModuleforJSPI.HEAPU8;
 
       if (!SOCKFS || !HEAPU8) {
         console.debug(
@@ -370,7 +380,7 @@ function getInstantiateWasmFunc(
       imports.sentinel = await sentinelImportPromise;
 
       // Wrap socket syscalls with JSPI support before instantiation
-      // wrapSocketSyscallsWithJSPI(imports);
+      wrapSocketSyscallsWithJSPI(imports);
 
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
