@@ -194,6 +194,10 @@ function getFileSystemInitializationFuncs(
   ];
 }
 
+// Global pyodide module used in wrapSocketSyscallsWithJSPI
+// Unlike other functions, functioned wrapped with WebAssembly.suspending in wrapSocketSyscallsWithJSPI
+// cannot reference the global `Module` object (don't fully understand why)
+// so we need to keep the explicit reference to the module here.
 let _pyodideModuleforJSPI: EmscriptenModule | null = null;
 
 /**
@@ -248,10 +252,9 @@ function wrapSocketSyscallsWithJSPI(imports: {
       d3: number,
     ): Promise<number> => {
       if (!_pyodideModuleforJSPI) {
-        
-          console.debug(
-            "[JSPI:__syscall_connect] Module not found, falling back to original",
-          );
+        console.debug(
+          "[JSPI:__syscall_connect] Module not found, falling back to original",
+        );
         return origConnect(fd, addr, addrlen, d1, d2, d3);
       }
 
@@ -305,10 +308,9 @@ function wrapSocketSyscallsWithJSPI(imports: {
       addrlen: number,
     ): Promise<number> => {
       if (!_pyodideModuleforJSPI) {
-        
-          console.debug(
-            "[JSPI:__syscall_recvfrom] Module not found, falling back to original",
-          );
+        console.debug(
+          "[JSPI:__syscall_recvfrom] Module not found, falling back to original",
+        );
         return origRecvfrom(fd, buf, len, flags, addr, addrlen);
       }
 

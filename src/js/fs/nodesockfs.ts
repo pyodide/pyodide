@@ -82,9 +82,13 @@ async function _initializeNodeSockFS(module: PyodideModule) {
 
   // Poll event flags
   const POLLIN = 0x001;
+  const POLLPRI = 0x002;
   const POLLOUT = 0x004;
+  const POLLERR = 0x008;
   const POLLHUP = 0x010;
+  const POLLNVAL = 0x020;
   const POLLRDNORM = 0x040;
+  const POLLWRNORM = 0x100;
 
   // Socket operations - these are called via sock.sock_ops.method(sock, ...) inside the libsyscall
   const tcp_sock_ops = {
@@ -143,76 +147,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
      */
     bind(_sock: NodeSock, _addr: string, _port: number): void {
       throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
-    },
-
-    /**
-     * Connect to a remote address (non-blocking)
-     *
-     * This initiates the connection and returns immediately.
-     * For blocking behavior with JSPI, the C syscall override in socket_syscalls.c
-     * will call connectAsync instead.
-     */
-    connect(sock: NodeSock, addr: string, port: number): void {
-      console.log(`[NodeSockFS:connect] START - addr=${addr}, port=${port}`);
-
-      if (sock.nodeSocket) {
-        console.log(`[NodeSockFS:connect] ERROR: Already connected (EISCONN)`);
-        throw new FS.ErrnoError(ERRNO_CODES.EISCONN);
-      }
-
-      console.log(`[NodeSockFS:connect] Creating new TCP socket...`);
-
-      // Create new TCP socket
-      const socket = new net.Socket();
-      sock.nodeSocket = socket;
-      sock.connecting = true;
-      sock.daddr = addr;
-      sock.dport = port;
-
-      // Handle incoming data
-      socket.on("data", (data: Buffer) => {
-        sock.recvBuffer = Buffer.concat([sock.recvBuffer, data]);
-        console.log(
-          `[NodeSockFS:connect:on-data] Received ${data.length} bytes, total buffer size: ${sock.recvBuffer.length}`,
-        );
-      });
-
-      // Handle connection established
-      socket.on("connect", () => {
-        sock.connected = true;
-        sock.connecting = false;
-        console.log(
-          `[NodeSockFS:connect:on-connect] Connection established to ${addr}:${port}`,
-        );
-      });
-
-      // Handle errors
-      socket.on("error", (err: NodeJS.ErrnoException) => {
-        sock.error = ERRNO_CODES.ECONNREFUSED;
-        sock.connecting = false;
-        console.error(
-          `[NodeSockFS:connect:on-error] Connection error to ${addr}:${port}: ${err.message}`,
-        );
-      });
-
-      // Handle close
-      socket.on("close", (hadError: boolean) => {
-        sock.connected = false;
-        sock.connecting = false;
-        console.log(
-          `[NodeSockFS:connect:on-close] Connection closed to ${addr}:${port}, hadError=${hadError}`,
-        );
-      });
-
-      // Initiate connection (non-blocking in Node.js)
-      console.log(
-        `[NodeSockFS:connect] Calling socket.connect(${port}, ${addr})...`,
-      );
-      socket.connect(port, addr);
-      console.log(
-        `[NodeSockFS:connect] socket.connect() returned (async operation started)`,
-      );
-      console.log(`[NodeSockFS:connect] END`);
     },
 
     /**
@@ -332,45 +266,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     },
 
     /**
-     * Receive data from the socket (non-blocking)
-     *
-     * Returns data if available, or null if no data (would block).
-     * For blocking behavior with JSPI, the C syscall override in socket_syscalls.c
-     * will call recvmsgAsync instead.
-     */
-    recvmsg(sock: NodeSock, length: number): { buffer: Uint8Array } | null {
-      console.log(`[NodeSockFS:recvmsg] START - requested length=${length}`);
-      console.log(
-        `[NodeSockFS:recvmsg] Current buffer size: ${sock.recvBuffer.length}`,
-      );
-
-      // If data is available, return it immediately
-      if (sock.recvBuffer.length > 0) {
-        const bytesRead = Math.min(length, sock.recvBuffer.length);
-        console.log(
-          `[NodeSockFS:recvmsg] Reading ${bytesRead} bytes from buffer`,
-        );
-        const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
-        sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
-        return { buffer: data };
-      }
-
-      // If socket is closed, return null to signal EOF
-      if (!sock.nodeSocket || sock.nodeSocket.destroyed) {
-        console.log(
-          `[NodeSockFS:recvmsg] Socket closed/destroyed, returning EOF (null)`,
-        );
-        return null;
-      }
-
-      // No data available - return null (would block)
-      console.log(
-        `[NodeSockFS:recvmsg] No data available, returning null (would block)`,
-      );
-      return null;
-    },
-
-    /**
      * Async version of recvmsg - returns a Promise that resolves with data.
      * This is called by the C syscall override when JSPI is available.
      * Returns: { bytesRead: number, buffer: Uint8Array } or null for EOF
@@ -482,23 +377,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     ioctl(stream: any, request: number, varargs: any): number {
       const sock = stream.node.sock as NodeSock;
       return tcp_sock_ops.ioctl(sock, request, varargs);
-    },
-
-    read(
-      stream: any,
-      buffer: Uint8Array,
-      offset: number,
-      length: number,
-      _position: any,
-    ): number {
-      const sock = stream.node.sock as NodeSock;
-      const msg = tcp_sock_ops.recvmsg(sock, length);
-      if (!msg) {
-        // No data available or socket closed
-        return 0;
-      }
-      buffer.set(msg.buffer, offset);
-      return msg.buffer.length;
     },
 
     write(
