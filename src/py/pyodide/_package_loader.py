@@ -1,12 +1,10 @@
 import re
 import shutil
 import sys
-from collections.abc import Iterable
-from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
-from typing import IO, Any, Literal
+from typing import Any, Literal
 from zipfile import ZipFile
 
 try:
@@ -15,7 +13,7 @@ except ImportError:
     loadedPackages = None
 
 from .common import install_files
-from .ffi import IN_PYODIDE, JsArray, JsBuffer, to_js
+from .ffi import IN_PYODIDE, JsBuffer
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 if sys.base_prefix == sys.prefix:
@@ -30,27 +28,6 @@ else:
     # and   DSO_DIR       = .venv/lib/
     DSO_DIR = SITE_PACKAGES.parents[1]
 TARGETS = {"site": SITE_PACKAGES, "dynlib": DSO_DIR}
-
-ZIP_TYPES = {".whl", ".zip"}
-TAR_TYPES = {
-    ".bz",
-    ".bz2",
-    ".tbz2",
-    ".gz",
-    ".tgz",
-    ".tar",
-}
-EXTENSION_TAGS = [suffix.removesuffix(".so") for suffix in EXTENSION_SUFFIXES]
-# See PEP 3149. I think the situation has since been updated since PEP 3149 does
-# not talk about platform triples. But I could not find any newer pep discussing
-# shared library names.
-#
-# There are other interpreters but it's better to have false negatives than
-# false positives.
-PLATFORM_TAG_REGEX = re.compile(
-    r"\.(cpython|pypy|jython)-[0-9]{2,}[a-z]*(-[a-z0-9_-]*)?"
-)
-SHAREDLIB_REGEX = re.compile(r"\.so(.\d+)*$")
 
 DIST_INFO_DIR_SUFFIX = ".dist-info"
 DATA_FILES_DIR_SUFFIX = ".data"
@@ -193,9 +170,8 @@ def unpack_buffer(
     filename: str = "",
     format: str | None = None,
     extract_dir: str | None = None,
-    calculate_dynlibs: bool = False,
     metadata: dict[str, str] | None = None,
-) -> JsArray[str] | None:
+) -> None:
     """Used to install a package either into sitepackages or into the standard
     library.
 
@@ -226,21 +202,10 @@ def unpack_buffer(
         Controls which directory the file is unpacked into. Default is the
         working directory.
 
-    calculate_dynlibs
-        If true, will return a Javascript Array of paths to dynamic libraries
-        ('.so' files) that were in the archive. We need to precompile these Wasm
-        binaries in `load-pyodide.js`. These paths point to the unpacked
-        locations of the .so files.
-
     metadata
         A dictionary of metadata to be stored in the package's dist-info directory.
         The keys are the names of the metadata files and the values are the contents
         of the files.
-
-    Returns
-    -------
-        If calculate_dynlibs is True, a Javascript Array of dynamic libraries.
-        Otherwise, return None.
 
     """
     if format:
@@ -263,33 +228,6 @@ def unpack_buffer(
                 set_wheel_metadata(filename, z, extract_path, metadata)
 
             install_datafiles(filename, z, extract_path)
-
-        if calculate_dynlibs:
-            return to_js(get_dynlibs(f, suffix, extract_path))
-
-    return None
-
-
-def should_load_dynlib(path: str | Path) -> bool:
-    path = Path(path)
-
-    if not SHAREDLIB_REGEX.search(path.name):
-        return False
-
-    suffixes = path.suffixes
-
-    try:
-        tag = suffixes[suffixes.index(".so") - 1]
-    except ValueError:  # This should not happen, but just in case
-        return False
-
-    if tag in EXTENSION_TAGS:
-        return True
-    # Okay probably it's not compatible now. But it might be an unrelated .so
-    # file with a name with an extra dot: `some.name.so` vs
-    # `some.cpython-39-x86_64-linux-gnu.so` Let's make a best effort here to
-    # check.
-    return not PLATFORM_TAG_REGEX.match(tag)
 
 
 def set_wheel_metadata(
@@ -352,41 +290,6 @@ def install_datafiles(
     if not data_file_dir.exists():
         return
     install_files(data_file_dir, sys.prefix)
-
-
-def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
-    """List out the paths to .so files in a zip or tar archive.
-
-    Parameters
-    ----------
-    archive
-        A binary representation of either a zip or a tar archive. We use the `.name`
-        field to determine which file type.
-
-    target_dir
-        The directory the archive is unpacked into. Paths will be adjusted to point
-        inside this directory.
-
-    Returns
-    -------
-        The list of paths to dynamic libraries ('.so' files) that were in the archive,
-        but adjusted to point to their unpacked locations.
-    """
-    import tarfile
-
-    dynlib_paths_iter: Iterable[str]
-    if suffix in ZIP_TYPES:
-        dynlib_paths_iter = ZipFile(archive).namelist()
-    elif suffix in TAR_TYPES:
-        dynlib_paths_iter = (tinfo.name for tinfo in tarfile.open(archive.name))
-    else:
-        raise ValueError(f"Unexpected suffix {suffix}")
-
-    return [
-        str((target_dir / path).resolve())
-        for path in dynlib_paths_iter
-        if should_load_dynlib(path)
-    ]
 
 
 def get_dist_source(dist_path: Path) -> tuple[str, str]:
