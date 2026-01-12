@@ -242,6 +242,7 @@ function wrapSocketSyscallsWithJSPI(imports: {
   // Store original syscalls
   const origConnect = env.__syscall_connect;
   const origRecvfrom = env.__syscall_recvfrom;
+  const origGetSockOpt = env.__syscall_getsockopt;
 
   if (origConnect) {
     // Create an async version that will be wrapped with WebAssembly.Suspending
@@ -352,6 +353,25 @@ function wrapSocketSyscallsWithJSPI(imports: {
     console.debug(
       "[JSPI] Wrapped __syscall_recvfrom with WebAssembly.Suspending",
     );
+  }
+
+  if (origGetSockOpt) {
+    const getsockopt = (
+      fd: number,
+      level: number,
+      optname: number,
+      optval: number,
+      optlen: number,
+      d1: number,
+    ): number => {
+      console.debug(
+        `[JSPI:__syscall_getsockopt] fd=${fd}, level=${level}, optname=${optname}`,
+      );
+      return origGetSockOpt(fd, level, optname, optval, optlen, d1);
+    };
+
+    env.__syscall_getsockopt = getsockopt;
+    console.debug("[JSPI] Wrapped __syscall_getsockopt");
   }
 }
 

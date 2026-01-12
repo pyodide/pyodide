@@ -314,6 +314,67 @@ jobs:
             ./tools/cmdline_runner_test/run
           fi
 
+  test-mysql-integration:
+    runs-on: ubuntu-latest
+    needs: [build-core, get_python_version]
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: rootpw
+          MYSQL_ROOT_HOST: "%"
+        options: >-
+          --health-cmd="mysqladmin ping -prootpw --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: core-build-Linux
+          path: ./dist/
+
+      - name: Install test requirements
+        shell: bash -l {0}
+        run: |
+          set -e -x
+          mkdir -p test-results
+          python -m pip install -r requirements.txt
+          python -m pip install pymysql
+          make npm-link
+
+      - name: Run MySQL integration test (node)
+        shell: bash -l {0}
+        env:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: "3306"
+          MYSQL_ROOT_USER: root
+          MYSQL_ROOT_PASSWORD: root
+        run: |
+          source pyodide_env.sh
+          tools/pytest_wrapper.py \
+            --junitxml=test-results/mysql_integration.xml \
+            --verbose \
+            --runtime=node-no-host \
+            -m mysql \
+            src/tests/test_mysql_pymysql.py
+
   test-scipy-trigger:
     name: test-scipy-trigger
     runs-on: ubuntu-latest

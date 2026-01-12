@@ -157,6 +157,7 @@ asyncio_mode = "strict"
 markers = [
     "requires_dynamic_linking",
     "long_running: marks tests as long running (deselect with '-m \"not long_running\"')",
+    "mysql: marks tests that require a MySQL database to be running",
 ]
 
 [tool._pyodide]

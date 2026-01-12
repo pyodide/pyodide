@@ -249,11 +249,12 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       _addr?: string,
       _port?: number,
     ): number {
+      console.log(`NodeSockFS: Sending data of length ${length}`);
+
       if (!sock.nodeSocket) {
+        console.log(`[NodeSockFS:sendmsg] ERROR: Socket not connected`);
         throw new FS.ErrnoError(ERRNO_CODES.ENOTCONN);
       }
-
-      console.log(`NodeSockFS: Sending data of length ${length}`);
 
       // For TCP, we ignore addr/port as the socket is already connected
       const data = buffer.subarray(offset, offset + length);
@@ -356,6 +357,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
      * Get socket name info (for getsockname/getpeername)
      */
     getname(sock: NodeSock, peer: boolean): { addr: string; port: number } {
+      console.log(`NodeSockFS:getname - peer=${peer}`);
       if (peer) {
         if (!sock.daddr || !sock.dport) {
           throw new FS.ErrnoError(ERRNO_CODES.ENOTCONN);
@@ -417,6 +419,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     createSocket(family: number, type: number, protocol: number): NodeSock {
       // Validate family - only AF_INET supported
       if (family !== AF_INET) {
+        console.log(`[NodeSockFS] Unsupported family: ${family}`);
         throw new FS.ErrnoError(ERRNO_CODES.EAFNOSUPPORT);
       }
 
@@ -426,13 +429,16 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       // Validate type - only SOCK_STREAM supported in this PoC
       if (type !== SOCK_STREAM) {
         if (type === SOCK_DGRAM) {
+          console.log("[NodeSockFS] UDP sockets not implemented");
           throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP); // UDP not implemented
         }
+        console.log(`[NodeSockFS] Unsupported socket type: ${type}`);
         throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
       }
 
       // Validate protocol for TCP
       if (protocol && protocol !== IPPROTO_TCP) {
+        console.log(`[NodeSockFS] Unsupported protocol: ${protocol}`);
         throw new FS.ErrnoError(ERRNO_CODES.EPROTONOSUPPORT);
       }
 
