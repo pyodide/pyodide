@@ -46,6 +46,10 @@ myst:
   limited backwards incompatibility.
   {pr}`6022`
 
+- {{ Fix }} Added missing `timeout=None` parameter to
+  `pyodide.webloop.WebLoop.shutdown_default_executor()`.
+  {pr}`6050`
+
 ## Version 0.29.1
 
 - {{ Enhancement }} Improved support for Windows/MacOS platform in the `python` CLI entrypoint.

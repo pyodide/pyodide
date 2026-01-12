@@ -7,6 +7,7 @@ import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type PyodideModule, type FSType } from "./types";
 import { getSentinelImport } from "generated/sentinel";
 import { RUNTIME_ENV } from "./environments";
+import type { EmscriptenModule } from "./types";
 
 /**
  * @private
@@ -193,6 +194,167 @@ function getFileSystemInitializationFuncs(
   ];
 }
 
+// Global pyodide module used in wrapSocketSyscallsWithJSPI
+// Unlike other functions, functioned wrapped with WebAssembly.suspending in wrapSocketSyscallsWithJSPI
+// cannot reference the global `Module` object (don't fully understand why)
+// so we need to keep the explicit reference to the module here.
+let _pyodideModuleforJSPI: EmscriptenModule | null = null;
+
+/**
+ * @private
+ */
+export function setPyodideModuleforJSPI(module: EmscriptenModule) {
+  _pyodideModuleforJSPI = module;
+}
+
+/**
+ * Wrap socket syscalls with JSPI support.
+ * This replaces the syscall imports with versions that can suspend WebAssembly
+ * execution while waiting for async socket operations.
+ *
+ * Note: this function is called before the pyodide WASM module is loaded, so accessing
+ *       the global Module object should be done with care.
+ */
+function wrapSocketSyscallsWithJSPI(imports: {
+  [key: string]: { [key: string]: any };
+}) {
+  if (!RUNTIME_ENV.IN_NODE) {
+    console.log(
+      "[wrapSocketSyscallsWithJSPI] Not in Node.js environment, skipping syscall wrapping",
+    );
+    return;
+  }
+
+  const WasmSuspending = (WebAssembly as any).Suspending;
+  if (!WasmSuspending) {
+    console.warn(
+      "WebAssembly.Suspending not available, skipping syscall wrapping",
+    );
+    return;
+  }
+
+  const env = imports.env;
+  if (!env) {
+    console.warn("No env found, skipping syscall wrapping");
+    return;
+  }
+
+  // Store original syscalls
+  const origConnect = env.__syscall_connect;
+  const origRecvfrom = env.__syscall_recvfrom;
+
+  if (origConnect) {
+    // Create an async version that will be wrapped with WebAssembly.Suspending
+    const connectAsync = async (
+      fd: number,
+      addr: number,
+      addrlen: number,
+      d1: number,
+      d2: number,
+      d3: number,
+    ): Promise<number> => {
+      if (!_pyodideModuleforJSPI) {
+        console.debug(
+          "[JSPI:__syscall_connect] Module not found, falling back to original",
+        );
+        return origConnect(fd, addr, addrlen, d1, d2, d3);
+      }
+
+      const SOCKFS = _pyodideModuleforJSPI.SOCKFS;
+      const getSocketAddress = _pyodideModuleforJSPI.getSocketAddress;
+      if (!SOCKFS || !getSocketAddress) {
+        console.debug(
+          "[JSPI:__syscall_connect] SOCKFS or getSocketAddress not found, falling back to original",
+        );
+        return origConnect(fd, addr, addrlen, d1, d2, d3);
+      }
+
+      const sock = SOCKFS.getSocket(fd);
+      if (!sock || !sock.sock_ops || !sock.sock_ops.connectAsync) {
+        console.debug(
+          "[JSPI:__syscall_connect] Socket not found, falling back to original",
+        );
+        return origConnect(fd, addr, addrlen, d1, d2, d3);
+      }
+
+      try {
+        const info = getSocketAddress(addr, addrlen);
+
+        console.debug(
+          `[JSPI:__syscall_connect] Using async connect to ${info.addr}:${info.port}`,
+        );
+        return await sock.sock_ops.connectAsync(sock, info.addr, info.port);
+      } catch (e) {
+        console.debug("[JSPI:__syscall_connect] Error:", e);
+        return origConnect(fd, addr, addrlen, d1, d2, d3);
+      }
+    };
+
+    // Wrap with WebAssembly.Suspending so it can suspend the WebAssembly stack
+    env.__syscall_connect = new WasmSuspending(connectAsync);
+
+    console.debug(
+      "[JSPI] Wrapped __syscall_connect with WebAssembly.Suspending",
+    );
+  }
+
+  if (origRecvfrom) {
+    const recvfromAsync = async (
+      fd: number,
+      buf: number,
+      len: number,
+      flags: number,
+      addr: number,
+      addrlen: number,
+    ): Promise<number> => {
+      if (!_pyodideModuleforJSPI) {
+        console.debug(
+          "[JSPI:__syscall_recvfrom] Module not found, falling back to original",
+        );
+        return origRecvfrom(fd, buf, len, flags, addr, addrlen);
+      }
+
+      const SOCKFS = _pyodideModuleforJSPI.SOCKFS;
+      const HEAPU8 = _pyodideModuleforJSPI.HEAPU8;
+
+      if (!SOCKFS || !HEAPU8) {
+        console.debug(
+          "[JSPI:__syscall_recvfrom] SOCKFS or HEAPU8 not found, falling back to original",
+        );
+        return origRecvfrom(fd, buf, len, flags, addr, addrlen);
+      }
+
+      const sock = SOCKFS.getSocket(fd);
+      if (!sock || !sock.sock_ops || !sock.sock_ops.recvmsgAsync) {
+        console.debug(
+          "[JSPI:__syscall_recvfrom] Socket not found, falling back to original",
+        );
+        return origRecvfrom(fd, buf, len, flags, addr, addrlen);
+      }
+
+      try {
+        const result = await sock.sock_ops.recvmsgAsync(sock, len);
+        if (result === null) {
+          return 0; // EOF
+        }
+        HEAPU8.set(result.buffer, buf);
+        return result.bytesRead;
+      } catch (e: any) {
+        console.error("[JSPI:__syscall_recvfrom] Error:", e);
+        if (e.name === "ErrnoError") {
+          return -e.errno;
+        }
+        return -5; // EIO
+      }
+    };
+
+    env.__syscall_recvfrom = new WasmSuspending(recvfromAsync);
+    console.debug(
+      "[JSPI] Wrapped __syscall_recvfrom with WebAssembly.Suspending",
+    );
+  }
+}
+
 function getInstantiateWasmFunc(
   indexURL: string,
 ): EmscriptenSettings["instantiateWasm"] {
@@ -218,6 +380,10 @@ function getInstantiateWasmFunc(
   ) {
     (async function () {
       imports.sentinel = await sentinelImportPromise;
+
+      // Wrap socket syscalls with JSPI support before instantiation
+      wrapSocketSyscallsWithJSPI(imports);
+
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {
