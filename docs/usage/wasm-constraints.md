@@ -18,8 +18,6 @@ However this has a significant impact on the download size.
 Instead, it is better to load individual modules as needed using
 {js:func}`pyodide.loadPackage` or {py:func}`micropip.install`.
 
-- lzma
-- sqlite3
 - test: it is an exception to the above, since it is not loaded even if `fullStdLib` is set to true.
 
 #### Modules with limited functionality

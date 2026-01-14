@@ -20,3 +20,5 @@ _lzma _lzmamodule.c -I../lzma/dist/include -L../lzma/dist/lib -llzma
 *disabled*
 pwd
 _uuid
+_ssl
+_hashlib
