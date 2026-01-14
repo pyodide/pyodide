@@ -82,7 +82,6 @@ export PYZIP_EXCLUDE_FILES=\
 	turtle.py \
 	turtledemo/ \
 	test/ \
-	ssl.py \
 	_pydecimal.py \
 	pydoc_data/
 
