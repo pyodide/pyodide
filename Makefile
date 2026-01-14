@@ -24,6 +24,7 @@ all-but-packages: \
 	dist/package.json \
 	dist/python \
 	dist/python.bat \
+	dist/python.exe \
 	dist/python_cli_entry.mjs \
 	dist/python_stdlib.zip \
 	dist/test.html \
@@ -247,6 +248,9 @@ dist/python: src/templates/python dist
 	cp $< $@
 
 dist/python.bat: src/templates/python.bat dist
+	cp $< $@
+
+dist/python.exe: src/templates/python.exe dist
 	cp $< $@
 
 dist/python_cli_entry.mjs: src/templates/python_cli_entry.mjs dist
