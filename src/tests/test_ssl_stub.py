@@ -150,3 +150,5 @@ print("from ssl import (\n{})".format(",\n    ".join(public_attrs)))
         get_server_certificate,
         socket_error,
     )
+
+    create_default_context()  # just a sanity check

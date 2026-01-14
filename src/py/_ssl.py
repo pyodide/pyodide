@@ -101,7 +101,7 @@ ALERT_DESCRIPTION_PROTOCOL_VERSION = 70
 ALERT_DESCRIPTION_INTERNAL_ERROR = 80
 
 HAS_SNI = True
-HAS_ECDH = True
+HAS_ECDH = False
 HAS_NPN = False
 HAS_ALPN = True
 HAS_SSLv2 = False
@@ -217,9 +217,9 @@ def RAND_add(string, entropy):
 
 
 def RAND_bytes(n):
-    import random
+    import secrets
 
-    return bytes([random.randint(0, 255) for _ in range(n)])
+    return secrets.token_bytes(n)
 
 
 def get_default_verify_paths():

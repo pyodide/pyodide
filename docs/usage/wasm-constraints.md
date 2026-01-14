@@ -42,6 +42,12 @@ Instead, it is better to load individual modules as needed using
 - zoneinfo: The zoneinfo package will only work if you install the timezone data using
   the tzdata package (i.e. by calling `pyodide.loadPackage("tzdata")`)
 
+- hashlib: Hash algorithms that are depending on OpenSSL are not available.
+
+- ssl: SSL module is replaced with a stub implementation that does not use OpenSSL.
+  All the methods that depend on OpenSSL will not work as expected or will raise
+  `NotImplementedError`.
+
 ### Synchronous HTTP requests support
 
 Packages for `urllib3` and `requests` are included in pyodide. In browser, these
