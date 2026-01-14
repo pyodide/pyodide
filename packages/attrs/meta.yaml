@@ -1,0 +1,17 @@
+package:
+  name: attrs
+  version: 25.2.0
+  top-level:
+    - attr
+    - attrs
+source:
+  sha256: 611344ff0a5fed735d86d7784610c84f8126b95e549bcad9ff61b4242f2d386b
+  url: https://files.pythonhosted.org/packages/03/33/7a7388b9ef94aab40539939d94461ec682afbd895458945ed25be07f03f6/attrs-25.2.0-py3-none-any.whl
+requirements:
+  run:
+    - six
+about:
+  home: https://www.attrs.org/
+  PyPI: https://pypi.org/project/attrs
+  summary: Classes Without Boilerplate
+  license: MIT

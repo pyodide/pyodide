@@ -1,0 +1,18 @@
+package:
+  name: yarl
+  version: 1.18.3
+  top-level:
+    - yarl
+source:
+  url: https://files.pythonhosted.org/packages/b7/9d/4b94a8e6d2b51b599516a5cb88e5bc99b4d8d4583e468057eaa29d5f0918/yarl-1.18.3.tar.gz
+  sha256: ac1801c45cbf77b6c99242eeff4fffb5e4e73a800b5c4ad4fc0be5def634d2e1
+requirements:
+  run:
+    - multidict
+    - idna
+    - propcache
+about:
+  home: https://github.com/aio-libs/yarl/
+  PyPI: https://pypi.org/project/yarl
+  summary: Yet another URL library
+  license: Apache-2.0
