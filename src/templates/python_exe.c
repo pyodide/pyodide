@@ -1,6 +1,15 @@
 #include <windows.h>
 #include <stdio.h>
 
+/*
+This program acts as a launcher for a Python batch file (python.bat).
+It retrieves its own executable path, constructs the path to python.bat,
+and forwards all command line arguments to it.
+
+uv expects python.exe to exist to create a virtual environment, while we have most of the logics
+in python.bat. This launcher is a thin wrapper around python.bat to satisfy uv's requirement.
+*/
+
 int main() {
     char exePath[MAX_PATH];
     char batPath[MAX_PATH];
