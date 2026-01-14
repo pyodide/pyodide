@@ -91,13 +91,13 @@ Assume for concreteness that we are releasing version 0.27.2.
    You can do this manually in the web interface on the GitHub PR or you can use
 
    ```sh
-   ./tools/backports.py add-pr <pr-number>
+   ./tools/backport.py add-pr <pr-number>
    ```
 
 2. List out the `needs backport` PRs that are missing changelog entries with
 
    ```sh
-   ./tools/backports.py missing-changelogs
+   ./tools/backport.py missing-changelogs
    ```
 
    and double check that every PR that should have a changelog does have one.
@@ -109,19 +109,19 @@ Assume for concreteness that we are releasing version 0.27.2.
 4. Make the backport branch (on top of stable):
 
    ```
-   ./tools/backports.py backport-branch
+   ./tools/backport.py backport-branch
    ```
 
 5. Make the update-changelog branch (on top of main) with:
 
    ```
-   ./tools/backports.py changelog-branch
+   ./tools/backport.py changelog-branch
    ```
 
 6. Open PRs for these two branches with:
 
    ```
-   ./tools/backports.py open-release-prs
+   ./tools/backport.py open-release-prs
    ```
 
 7. Use the backport branch PR as the release tracker.
@@ -129,7 +129,7 @@ Assume for concreteness that we are releasing version 0.27.2.
 8. Make sure that the CI passes on the backports branch and it is approved. When
    it does pass, set the date for the release in the changelog with:
    ```
-   ./tools/backports.py set-date
+   ./tools/backport.py set-date
    git switch backports-for-0.27.2
    git push -f
    git switch changelog-for-0.27.2
@@ -384,6 +384,12 @@ If doing a major version update, save time by {ref}`updating-packages` first.
    separate PRs for tricky package upgrades.
 
 10. Fix failing package tests.
+
+11. Update standard library stubs in `src/templates`. We currently have `webbrowser.py` and `ssl.py`
+    that we implement ourselves. If you are updating the Python version, you may need to update
+    these stubs. Take a look at the Python docs for the standard library modules you are updating
+    and see if the APIs have changed. You can search for the string "in version 3.XX" to find
+    the relevant changes.
 
 ### Old major Python upgrades
 

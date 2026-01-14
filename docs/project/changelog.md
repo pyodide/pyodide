@@ -17,6 +17,22 @@ myst:
 
 ## Unreleased
 
+- {{ Breaking }} The `ssl` module is now a stub implementation bundled with
+  Pyodide instead of being dynamically loaded with OpenSSL. This means the `ssl`
+  module is available immediately without loading additional packages, but
+  OpenSSL-dependent features (actual SSL/TLS connections, certificate validation,
+  etc.) are not available. Code that only imports `ssl` for constants, types, or
+  `SSLContext` configuration will continue to work. Code that attempts actual
+  SSL operations will raise `NotImplementedError`. Note that socket operations
+  using `ssl` never worked in Pyodide even before this change.
+  This change saves us more than 3MB (uncompressed) of space when using `ssl` module.
+  {pr}`6044`
+
+- {{ Breaking }} We do not provide hash functions in hashlib that are provided by OpenSSL.
+  Previously, this was available by running `pyodide.loadPackage('hashlib')` before importing
+  hashlib. Now, we do not provide hash functions coming from OpenSSL.
+  {pr}`6044`
+
 - {{ Enhancement }} A JavaScript object is now treated as an array-like object
   if it has a `length` property and is iterable. Every JsProxy of an array-like
   object now implements subscripting.
@@ -45,6 +61,15 @@ myst:
   supports all operations supported by `int`, this change should cause very
   limited backwards incompatibility.
   {pr}`6022`
+
+- {{ Fix }} Added missing `timeout=None` parameter to
+  `pyodide.webloop.WebLoop.shutdown_default_executor()`.
+  {pr}`6050`
+
+## Version 0.29.1
+
+- {{ Enhancement }} Improved support for Windows/MacOS platform in the `python` CLI entrypoint.
+  {pr}`6018` {pr}`6012` {pr}`6026` {pr}`6034` {pr}`6025`
 
 ## Version 0.29.0
 
