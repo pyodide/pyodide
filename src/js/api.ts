@@ -818,6 +818,8 @@ API.finalizeBootstrap = function (
     importhook.register_js_module("pyodide_js", pyodide);
   }
 
+  importhook.register_windows_finder();
+
   // import pyodide_py. We want to ensure that as much stuff as possible is
   // already set up before importing pyodide_py to simplify development of
   // pyodide_py code (Otherwise it's very hard to keep track of which things
