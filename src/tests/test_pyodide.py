@@ -1617,6 +1617,10 @@ def test_windows_to_linux_path_finder_edge_cases(selenium):
     spec = WindowsToLinuxPathFinder.find_spec("test_module", None)
     assert spec is None
 
+    # zipimport path
+    spec = WindowsToLinuxPathFinder.find_spec("test_module", ["my_whl.whl"])
+    assert spec is None
+
 
 @run_in_pyodide
 def test_windows_to_linux_path_import(selenium_standalone):

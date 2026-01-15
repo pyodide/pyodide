@@ -120,7 +120,7 @@ class JsLoader(Loader):
 WINDOWS_DRIVE_REGEX = re.compile(r"^[a-zA-Z]:")
 
 
-class WindowsToLinuxPathFinder(PathFinder):
+class WindowsToLinuxPathFinder:
     """
     A MetaPathFinder that converts Windows-style paths in sys.path to
     Linux-style paths for module searching.
@@ -152,7 +152,7 @@ class WindowsToLinuxPathFinder(PathFinder):
         if not converted_paths:
             return None
 
-        return super().find_spec(fullname, converted_paths, target)
+        return PathFinder.find_spec(fullname, converted_paths, target)
 
 
 jsfinder: JsFinder = JsFinder()
@@ -183,9 +183,12 @@ def register_windows_finder() -> None:
 
     This is called in `loadPyodide` in `pyodide.js` to allow Windows-style paths
     in sys.path to be converted to Linux-style paths for module searching.
+
+    Using class instead of instance to alleviate the need for instantiation
+    (https://docs.python.org/3/library/importlib.html#importlib.machinery.PathFinder)
     """
     for importer in sys.meta_path:
-        if isinstance(importer, WindowsToLinuxPathFinder):
+        if importer is WindowsToLinuxPathFinder:
             raise RuntimeError("WindowsToLinuxPathFinder already registered")
     sys.meta_path.append(WindowsToLinuxPathFinder)
 
