@@ -19,7 +19,7 @@ def _sql_string_literal(value: str) -> str:
 @pytest.fixture(scope="session")
 def mysql_admin_config():
     host = os.environ.get("MYSQL_HOST", "127.0.0.1")
-    port = int(os.environ.get("MYSQL_PORT", 3306))
+    port = int(os.environ.get("MYSQL_PORT", 3306))  # noqa: PLW1508
     user = os.environ.get("MYSQL_ROOT_USER", "root")
     password = os.environ.get("MYSQL_ROOT_PASSWORD", "")
 
@@ -120,11 +120,11 @@ def test_mysql_pymysql_features(selenium, mysql_test_db):
         import datetime
         import decimal
 
-        import micropip  # type: ignore[import-not-found]
+        import micropip
 
         await micropip.install("pymysql==1.1.0")
 
-        import pymysql  # type: ignore[import-not-found]
+        import pymysql  # type: ignore[import-untyped]
 
         def connect(**kwargs):
             return pymysql.connect(
@@ -235,7 +235,7 @@ def test_mysql_pymysql_features(selenium, mysql_test_db):
                     )
                     """
                 )
-                txt = "na\u0000efve caf\u0000e9"
+                txt = "na\u0000efve calf\u0000e9"
                 blob = b"\\x00\\x01\\xffblob"
                 dec = decimal.Decimal("12.3400")
                 dt = datetime.datetime(2020, 1, 2, 3, 4, 5)
@@ -270,7 +270,7 @@ def test_mysql_pymysql_features(selenium, mysql_test_db):
     ]
 
     row = results["types"]
-    assert row[0] == "na\u0000efve caf\u0000e9"
+    assert row[0] == "na\u0000efve calf\u0000e9"
     assert row[1] == b"\\x00\\x01\\xffblob"
     assert str(row[2]) == "12.3400"
     assert (

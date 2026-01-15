@@ -242,7 +242,6 @@ function wrapSocketSyscallsWithJSPI(imports: {
   // Store original syscalls
   const origConnect = env.__syscall_connect;
   const origRecvfrom = env.__syscall_recvfrom;
-  const origGetSockOpt = env.__syscall_getsockopt;
 
   if (origConnect) {
     // Create an async version that will be wrapped with WebAssembly.Suspending
@@ -294,9 +293,10 @@ function wrapSocketSyscallsWithJSPI(imports: {
     // Wrap with WebAssembly.Suspending so it can suspend the WebAssembly stack
     env.__syscall_connect = new WasmSuspending(connectAsync);
 
-    console.debug(
-      "[JSPI] Wrapped __syscall_connect with WebAssembly.Suspending",
-    );
+    DEBUG &&
+      console.debug(
+        "[JSPI] Wrapped __syscall_connect with WebAssembly.Suspending",
+      );
   }
 
   if (origRecvfrom) {
@@ -350,28 +350,10 @@ function wrapSocketSyscallsWithJSPI(imports: {
     };
 
     env.__syscall_recvfrom = new WasmSuspending(recvfromAsync);
-    console.debug(
-      "[JSPI] Wrapped __syscall_recvfrom with WebAssembly.Suspending",
-    );
-  }
-
-  if (origGetSockOpt) {
-    const getsockopt = (
-      fd: number,
-      level: number,
-      optname: number,
-      optval: number,
-      optlen: number,
-      d1: number,
-    ): number => {
+    DEBUG &&
       console.debug(
-        `[JSPI:__syscall_getsockopt] fd=${fd}, level=${level}, optname=${optname}`,
+        "[JSPI] Wrapped __syscall_recvfrom with WebAssembly.Suspending",
       );
-      return origGetSockOpt(fd, level, optname, optval, optlen, d1);
-    };
-
-    env.__syscall_getsockopt = getsockopt;
-    console.debug("[JSPI] Wrapped __syscall_getsockopt");
   }
 }
 
