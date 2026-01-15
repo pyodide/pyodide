@@ -365,7 +365,7 @@ jobs:
           MYSQL_HOST: 127.0.0.1
           MYSQL_PORT: "3306"
           MYSQL_ROOT_USER: root
-          MYSQL_ROOT_PASSWORD: root
+          MYSQL_ROOT_PASSWORD: rootpw
         run: |
           source pyodide_env.sh
           tools/pytest_wrapper.py \
