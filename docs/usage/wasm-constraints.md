@@ -25,7 +25,10 @@ Instead, it is better to load individual modules as needed using
 - decimal: The decimal module has C (\_decimal) and Python (\_pydecimal) implementations
   with the same functionality. The Python implementation is not available.
 
-- pydoc: Help messages for Python builtins are not available.
+- pydoc: Help messages for Python builtins are not available by default
+  in order to reduce the initial download size. You need to call
+  `pyodide.loadPackage('pydoc_data')` or `micropip.install('pydoc_data')`
+  to enable them.
 
 - webbrowser: The original webbrowser module is not available. Instead,
   Pyodide includes some method stubs based on browser APIs:

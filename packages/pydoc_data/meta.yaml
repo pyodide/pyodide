@@ -1,0 +1,19 @@
+package:
+  name: pydoc_data
+  version: 1.0.0 # Nonsense
+  tag:
+    - always
+  top-level:
+    - pydoc_data
+source:
+  path: src
+build:
+  type: cpython_module
+  script: |
+    wget ${PYTHON_ARCHIVE_URL} -O Python-${PYVERSION}.tgz
+    tar -xf Python-${PYVERSION}.tgz
+    cd Python-${PYVERSION}/Lib
+
+    tar --exclude=__pycache__ -cf - pydoc_data | tar -C ${PKG_BUILD_DIR} -xf -
+about:
+  license: PSF
