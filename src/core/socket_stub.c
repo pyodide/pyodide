@@ -21,10 +21,6 @@ __syscall_setsockopt(int sockfd,
                      size_t optlen,
                      int dummy)
 {
-  printf("[C:__syscall_setsockopt] fd=%d, level=%d, optname=%d\n",
-         sockfd,
-         level,
-         optname);
   // Emscripten's stub setsockopt returns ENOPROTOOPT without doing anything,
   // which is considered as an error by applications.
   // For now, we just log the call and return success.
