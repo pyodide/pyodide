@@ -265,6 +265,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,stackSave \
 		,stackRestore \
 		,runtimeKeepalivePush \
+		,SOCKFS \
 		,HEAP8 \
 		,HEAPU8 \
 		,HEAP16 \
