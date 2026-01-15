@@ -23,8 +23,7 @@ __syscall_setsockopt(int sockfd,
 {
   // Emscripten's stub setsockopt returns ENOPROTOOPT without doing anything,
   // which is considered as an error by applications.
-  // For now, we just log the call and return success.
-  // FIXME(before merge): do something more useful here if needed, and merge it
-  // with the patches in emscripten-settings.ts
+  // We cannot support any useful setsockopt for now, but we return success
+  // to avoid breaking applications.
   return 0;
 }
