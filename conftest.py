@@ -208,6 +208,17 @@ def pytest_collection_modifyitems(config, items):
                     )
                 )
                 continue
+        
+        if item.get_closest_marker("mysql"):
+            # Skip mysql tests if mark not explicitly included
+            markexpr = config.getoption("-m", default="")
+            if "mysql" not in markexpr:
+                item.add_marker(
+                    pytest.mark.skip(
+                        reason="mysql test skipped (use '-m mysql' to run)"
+                    )
+                )
+                continue
 
         maybe_skip_test(item, delayed=True)
 
