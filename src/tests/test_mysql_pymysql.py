@@ -59,7 +59,7 @@ def mysql_test_db(mysql_admin_config):
             time.sleep(1)
 
     if last_err is not None:
-        pytest.skip(f"MySQL not reachable: {last_err}")
+        raise RuntimeError("MySQL server not reachable within timeout") from last_err
 
     def admin_connect():
         return pymysql.connect(
