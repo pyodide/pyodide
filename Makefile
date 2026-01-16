@@ -250,6 +250,23 @@ dist/python: src/templates/python dist
 dist/python.bat: src/templates/python.bat dist
 	cp $< $@
 
+src/templates/python.exe: src/templates/python_exe.go
+	@if command -v go >/dev/null 2>&1; then \
+		if GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o $@ -ldflags="-s -w" $< 2>/dev/null; then \
+			echo "Successfully built python.exe"; \
+		elif [ -n "$$CI" ]; then \
+			echo "ERROR: Failed to build python.exe in CI environment" >&2; \
+			exit 1; \
+		else \
+			echo "WARNING: Failed to build python.exe. Using existing binary."; \
+		fi \
+	elif [ -n "$$CI" ]; then \
+		echo "ERROR: Go toolchain not found in CI environment" >&2; \
+		exit 1; \
+	else \
+		echo "WARNING: Go toolchain not found. Skipping python.exe build."; \
+	fi
+
 dist/python.exe: src/templates/python.exe dist
 	cp $< $@
 
