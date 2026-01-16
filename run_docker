@@ -120,6 +120,8 @@ useradd\
 ;
 echo "$USER_NAME:pyodide" | chpasswd;
 echo 'export PATH=\$PATH:$USER_HOME/.local/bin' >> /etc/profile;
+echo 'export RUSTUP_HOME=$USER_HOME/.rustup' >> /etc/profile;
+echo 'export CARGO_HOME=$USER_HOME/.cargo' >> /etc/profile;
 echo '$USER_NAME ALL=(ALL:ALL) ALL' >> /etc/sudoers ;
 if [ -S /var/run/docker.sock ]; then
   chmod 666 /var/run/docker.sock
