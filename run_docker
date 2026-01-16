@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DEFAULT_PYODIDE_DOCKER_IMAGE="pyodide/pyodide-env:20251125-chrome142-firefox145-py313"
+DEFAULT_PYODIDE_DOCKER_IMAGE="sihadan/pyodide-env-test:20260116"
 DEFAULT_PYODIDE_SYSTEM_PORT="none"
 DOCKER_COMMAND="/bin/bash"
 DOCKER_INTERACTIVE="--interactive"
