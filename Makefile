@@ -251,8 +251,9 @@ dist/python.bat: src/templates/python.bat dist
 	cp $< $@
 
 src/templates/python.exe: src/templates/python_exe.go
-	@if command -v go >/dev/null 2>&1; then \
-		if GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o $@ -ldflags="-s -w" $< 2>/dev/null; then \
+	@if command -v docker >/dev/null 2>&1; then \
+		if docker run --rm -v $(PWD)/src/templates:/src -w /src golang:1.21 \
+			sh -c "GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o python.exe -ldflags='-s -w' python_exe.go" 2>/dev/null; then \
 			echo "Successfully built python.exe"; \
 		elif [ -n "$$CI" ]; then \
 			echo "ERROR: Failed to build python.exe in CI environment" >&2; \
@@ -261,10 +262,10 @@ src/templates/python.exe: src/templates/python_exe.go
 			echo "WARNING: Failed to build python.exe. Using existing binary."; \
 		fi \
 	elif [ -n "$$CI" ]; then \
-		echo "ERROR: Go toolchain not found in CI environment" >&2; \
+		echo "ERROR: Docker not found in CI environment" >&2; \
 		exit 1; \
 	else \
-		echo "WARNING: Go toolchain not found. Skipping python.exe build."; \
+		echo "WARNING: Docker not found. Skipping python.exe build."; \
 	fi
 
 dist/python.exe: src/templates/python.exe dist
