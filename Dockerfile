@@ -81,6 +81,11 @@ RUN npm install -g \
   jsdoc \
   prettier
 
+# Normally, it is a bad idea to install rustup and cargo in
+# system directories (it should not be shared between users),
+# but this docker image is only for building packages, so I hope it is ok.
+ENV RUSTUP_HOME=/usr
+ENV CARGO_HOME=/usr
 RUN wget -q -O  -  https://sh.rustup.rs | \
   sh -s -- -y --profile minimal --no-modify-path
 
