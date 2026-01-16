@@ -120,9 +120,10 @@ useradd\
 ;
 echo "$USER_NAME:pyodide" | chpasswd;
 echo 'export PATH=\$PATH:$USER_HOME/.local/bin' >> /etc/profile;
-echo 'export RUSTUP_HOME=$USER_HOME/.rustup' >> /etc/profile;
-echo 'export CARGO_HOME=$USER_HOME/.cargo' >> /etc/profile;
 echo '$USER_NAME ALL=(ALL:ALL) ALL' >> /etc/sudoers ;
+if [ -S /var/run/docker.sock ]; then
+  chmod 666 /var/run/docker.sock
+fi
 echo '$HEALTHCHECK_MESSAGE';
 tail -f /dev/null
 EOF
@@ -133,6 +134,7 @@ CONTAINER=$(\
     -d --rm \
     --platform linux/amd64 \
     -v "$PWD":/src \
+    -v /var/run/docker.sock:/var/run/docker.sock \
     --user root \
     --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \

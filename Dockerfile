@@ -79,15 +79,8 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 
 RUN npm install -g \
   jsdoc \
-  prettier \
-  rollup \
-  rollup-plugin-terser
+  prettier
 
-# Normally, it is a bad idea to install rustup and cargo in
-# system directories (it should not be shared between users),
-# but this docker image is only for building packages, so I hope it is ok.
-ENV RUSTUP_HOME=/usr
-ENV CARGO_HOME=/usr
 RUN wget -q -O  -  https://sh.rustup.rs | \
   sh -s -- -y --profile minimal --no-modify-path
 
@@ -104,6 +97,13 @@ RUN ln -fs /opt/firefox/firefox /usr/local/bin/firefox \
   && echo "Using GeckoDriver version: $(geckodriver --version)" \
   && echo "Using Chrome version: $(chrome --version)" \
   && echo "Using Chrome Driver version: $(chromedriver --version)"
+
+ARG DOCKER_VERSION=27.4.1
+RUN wget -q -O /tmp/docker.tgz https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
+  && tar xzf /tmp/docker.tgz -C /tmp \
+  && mv /tmp/docker/docker /usr/local/bin/ \
+  && rm -rf /tmp/docker /tmp/docker.tgz \
+  && echo "Using Docker version: $(docker --version)"
 
 CMD ["/bin/sh"]
 WORKDIR /src
