@@ -61,6 +61,7 @@ def _copy_wasm_libs(
         Path("dist/pyodide-lock.json"),
         Path("dist/python"),
         Path("dist/python.bat"),
+        Path("dist/python.exe"),
         Path("dist/python_cli_entry.mjs"),
         Path("dist/python_stdlib.zip"),
         Path("tools/constraints.txt"),

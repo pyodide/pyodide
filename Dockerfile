@@ -105,5 +105,12 @@ RUN ln -fs /opt/firefox/firefox /usr/local/bin/firefox \
   && echo "Using Chrome version: $(chrome --version)" \
   && echo "Using Chrome Driver version: $(chromedriver --version)"
 
+ARG DOCKER_VERSION=27.4.1
+RUN wget -q -O /tmp/docker.tgz https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
+  && tar xzf /tmp/docker.tgz -C /tmp \
+  && mv /tmp/docker/docker /usr/local/bin/ \
+  && rm -rf /tmp/docker /tmp/docker.tgz \
+  && echo "Using Docker version: $(docker --version)"
+
 CMD ["/bin/sh"]
 WORKDIR /src

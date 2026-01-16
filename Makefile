@@ -24,6 +24,7 @@ all-but-packages: \
 	dist/package.json \
 	dist/python \
 	dist/python.bat \
+	dist/python.exe \
 	dist/python_cli_entry.mjs \
 	dist/python_stdlib.zip \
 	dist/test.html \
@@ -247,6 +248,27 @@ dist/python: src/templates/python dist
 	cp $< $@
 
 dist/python.bat: src/templates/python.bat dist
+	cp $< $@
+
+src/templates/python.exe: src/templates/python_exe.go
+	@if command -v docker >/dev/null 2>&1; then \
+		if docker run --rm -v $(PWD)/src/templates:/src -w /src golang:1.21 \
+			sh -c "GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o python.exe -ldflags='-s -w' python_exe.go" 2>/dev/null; then \
+			echo "Successfully built python.exe"; \
+		elif [ -n "$$CI" ]; then \
+			echo "ERROR: Failed to build python.exe in CI environment" >&2; \
+			exit 1; \
+		else \
+			echo "WARNING: Failed to build python.exe. Using existing binary."; \
+		fi \
+	elif [ -n "$$CI" ]; then \
+		echo "ERROR: Docker not found in CI environment" >&2; \
+		exit 1; \
+	else \
+		echo "WARNING: Docker not found. Skipping python.exe build."; \
+	fi
+
+dist/python.exe: src/templates/python.exe dist
 	cp $< $@
 
 dist/python_cli_entry.mjs: src/templates/python_cli_entry.mjs dist
