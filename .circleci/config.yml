@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: sihadan/pyodide-env-test:20260116
+    - image: sihadan/pyodide-env-test:20260116-2
   environment:
     EMSDK_NUM_CORES: 3
     EMCC_CORES: 3

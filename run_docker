@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DEFAULT_PYODIDE_DOCKER_IMAGE="sihadan/pyodide-env-test:20260116"
+DEFAULT_PYODIDE_DOCKER_IMAGE="sihadan/pyodide-env-test:20260116-2"
 DEFAULT_PYODIDE_SYSTEM_PORT="none"
 DOCKER_COMMAND="/bin/bash"
 DOCKER_INTERACTIVE="--interactive"
