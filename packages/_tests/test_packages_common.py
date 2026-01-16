@@ -23,6 +23,7 @@ XFAIL_PACKAGES: dict[str, str] = {
     "soupsieve": "Importing soupsieve without installing beautifulsoup4 fails.",
     "test-cpp-exceptions2": "Intentional",
     "matplotlib-inline": "circular dependency with IPython",
+    "numpy-tests": "test only package",
 }
 
 LOCKFILE_PATH = PYODIDE_ROOT / "dist" / "pyodide-lock.json"

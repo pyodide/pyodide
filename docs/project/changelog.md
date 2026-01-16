@@ -66,6 +66,19 @@ myst:
   `pyodide.webloop.WebLoop.shutdown_default_executor()`.
   {pr}`6050`
 
+- {{ Enhancement }} New packages added:
+  - Bottleneck (1.6.0)
+  - Cartopy (0.25.0) (Disabled in 0.28, re-enabled)
+  - geopandas (1.1.1) (Disabled in 0.28, re-enabled)
+  - google-crc32c (1.8.0)
+  - healpy (1.19.0)
+  - ml_dtypes (0.5.4)
+  - pyarrow (22.0.0) (Disabled in 0.28, re-enabled)
+  - pycdfpp (0.8.5)
+  - pyproj (3.7.2) (Disabled in 0.28, re-enabled)
+  - pyrodigal (3.7.0)
+  - typing-inspection (0.4.2)
+
 ## Version 0.29.1
 
 - {{ Enhancement }} Improved support for Windows/MacOS platform in the `python` CLI entrypoint.
