@@ -589,6 +589,10 @@ jobs:
 workflows:
   build-and-deploy:
     jobs:
+      - build-windows-binary:
+          filters:
+            tags:
+              only: /.*/
       - build-core:
           requires:
             - build-windows-binary
