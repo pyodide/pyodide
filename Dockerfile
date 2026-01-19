@@ -35,8 +35,9 @@ RUN if [ $CHROME_VERSION = "latest" ]; then SE_CHROME_VERSION="stable"; \
 
 
 FROM node:24.7-bookworm-slim AS node-image
-FROM python:3.13.2-slim-bookworm
 FROM golang:1.21-alpine AS golang-image
+
+FROM python:3.13.2-slim-bookworm
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
