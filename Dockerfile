@@ -97,6 +97,7 @@ COPY --from=selenium-manager-image /opt/chrome /opt/chrome
 COPY --from=selenium-manager-image /opt/chromedriver /opt/chromedriver
 
 COPY --from=golang-image /usr/local/go/ /usr/local/go/
+ENV PATH="/usr/local/go/bin:${PATH}"
 
 RUN ln -fs /opt/firefox/firefox /usr/local/bin/firefox \
   && ln -fs /opt/geckodriver/geckodriver /usr/local/bin/geckodriver \
