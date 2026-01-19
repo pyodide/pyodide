@@ -298,7 +298,6 @@ jobs:
             - ./dist-pyc
 
   build-windows-binary:
-    working_directory: ~/repo
     docker:
       - image: golang:1.21
     resource_class: small
