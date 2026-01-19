@@ -111,6 +111,9 @@ jobs:
             /tmp/ccache
           key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
 
+      - name: Set up Docker
+        uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4  # v4.7.0
+
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: pyodide-env
@@ -126,6 +129,7 @@ jobs:
           which python
           which node
           which npm
+          which docker
 
       - name: Install dependencies (ubuntu)
         shell: bash -l {0}
