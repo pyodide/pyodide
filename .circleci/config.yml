@@ -585,8 +585,6 @@ workflows:
 
       - build-core:
           name: "build-core-nodylink"
-          requires:
-            - build-windows-binary
           disable_dylink: 1
           filters:
             tags:
