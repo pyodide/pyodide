@@ -308,6 +308,8 @@ jobs:
       - run:
           name: build windows binary
           command: |
+            pwd
+            ls -al
             make dist/python.exe
       - persist_to_workspace:
           root: .
