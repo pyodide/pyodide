@@ -24,7 +24,6 @@ all-but-packages: \
 	dist/package.json \
 	dist/python \
 	dist/python.bat \
-	dist/python.exe \
 	dist/python_cli_entry.mjs \
 	dist/python_stdlib.zip \
 	dist/test.html \
@@ -251,21 +250,14 @@ dist/python.bat: src/templates/python.bat dist
 	cp $< $@
 
 src/templates/python.exe: src/templates/python_exe.go
-	@if command -v docker >/dev/null 2>&1; then \
-		if docker run --rm -v $(PWD)/src/templates:/src -w /src golang:1.21 \
-			sh -c "GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o python.exe -ldflags='-s -w' python_exe.go"; then \
-			echo "Successfully built python.exe"; \
-		elif [ -n "$$CI" ]; then \
-			echo "ERROR: Failed to build python.exe in CI environment" >&2; \
-			exit 1; \
-		else \
-			echo "WARNING: Failed to build python.exe. Using existing binary."; \
-		fi \
+	@if command -v go >/dev/null 2>&1; then \
+		cd src/templates && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o python.exe -ldflags='-s -w' python_exe.go && \
+		echo "Successfully built python.exe"; \
 	elif [ -n "$$CI" ]; then \
-		echo "ERROR: Docker not found in CI environment" >&2; \
+		echo "ERROR: Go not found in CI environment" >&2; \
 		exit 1; \
 	else \
-		echo "WARNING: Docker not found. Skipping python.exe build."; \
+		echo "WARNING: Go not found. Skipping python.exe build."; \
 	fi
 
 dist/python.exe: src/templates/python.exe dist

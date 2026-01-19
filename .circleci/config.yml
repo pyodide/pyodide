@@ -297,6 +297,23 @@ jobs:
           paths:
             - ./dist-pyc
 
+  build-windows-binary:
+    working_directory: ~/repo
+    docker:
+      - image: golang:1.21
+    resource_class: small
+    steps:
+      - attach_workspace:
+        at: .
+      - run:
+          name: build windows binary
+          command: |
+            make dist/python.exe
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./dist/python.exe
+
   test-main:
     parameters:
       test-params:
@@ -573,12 +590,16 @@ workflows:
   build-and-deploy:
     jobs:
       - build-core:
+          requires:
+            - build-windows-binary
           filters:
             tags:
               only: /.*/
 
       - build-core:
           name: "build-core-nodylink"
+          requires:
+            - build-windows-binary
           disable_dylink: 1
           filters:
             tags:
