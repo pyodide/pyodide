@@ -304,7 +304,8 @@ jobs:
     resource_class: small
     steps:
       - attach_workspace:
-        at: .
+          at: .
+  
       - run:
           name: build windows binary
           command: |
@@ -593,6 +594,7 @@ workflows:
           filters:
             tags:
               only: /.*/
+
       - build-core:
           requires:
             - build-windows-binary
