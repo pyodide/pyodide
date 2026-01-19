@@ -253,7 +253,7 @@ dist/python.bat: src/templates/python.bat dist
 src/templates/python.exe: src/templates/python_exe.go
 	@if command -v docker >/dev/null 2>&1; then \
 		if docker run --rm -v $(PWD)/src/templates:/src -w /src golang:1.21 \
-			sh -c "GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o python.exe -ldflags='-s -w' python_exe.go" 2>/dev/null; then \
+			sh -c "GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o python.exe -ldflags='-s -w' python_exe.go"; then \
 			echo "Successfully built python.exe"; \
 		elif [ -n "$$CI" ]; then \
 			echo "ERROR: Failed to build python.exe in CI environment" >&2; \
