@@ -84,6 +84,12 @@ jobs:
             ccache -s
 
       - run:
+          name: build windows binary
+          no_output_timeout: 5m
+          command: |
+            make dist/python.exe
+
+      - run:
           name: check-size
           command: |
             du dist/ -abh --max-depth 1  | sort -k 2
@@ -296,25 +302,6 @@ jobs:
           root: .
           paths:
             - ./dist-pyc
-
-  build-windows-binary:
-    docker:
-      - image: golang:1.21
-    resource_class: small
-    steps:
-      - attach_workspace:
-          at: .
-
-      - run:
-          name: build windows binary
-          command: |
-            pwd
-            ls -al
-            make dist/python.exe
-      - persist_to_workspace:
-          root: .
-          paths:
-            - ./dist/python.exe
 
   test-main:
     parameters:
@@ -591,14 +578,7 @@ jobs:
 workflows:
   build-and-deploy:
     jobs:
-      - build-windows-binary:
-          filters:
-            tags:
-              only: /.*/
-
       - build-core:
-          requires:
-            - build-windows-binary
           filters:
             tags:
               only: /.*/
