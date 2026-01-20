@@ -79,9 +79,7 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 
 RUN npm install -g \
   jsdoc \
-  prettier \
-  rollup \
-  rollup-plugin-terser
+  prettier
 
 # Normally, it is a bad idea to install rustup and cargo in
 # system directories (it should not be shared between users),
