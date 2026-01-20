@@ -3,6 +3,15 @@ From: ryanking13 <def6488@gmail.com>
 Date: Tue, 20 Jan 2026 15:22:19 +0900
 Subject: [PATCH 19/19] Explicitly convert return value of SUPERLU_MALLOC
 
+Fixes incompatible pointer type errors like:
+
+```
+error: incompatible pointer types assigning to 'float *' from 'int *' [-Wincompatible-pointer-types]
+```
+
+Upstream PR:
+https://github.com/scipy/scipy/pull/24408
+
 ---
  scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsitrf.c | 2 +-
  scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgsitrf.c | 2 +-
