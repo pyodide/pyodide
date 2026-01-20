@@ -60,10 +60,6 @@ These Docker images are also available from the Github packages at
 3. Run `make` to build.
 
 ```{note}
-If `make` is failing with `Permission denied`, you can run `./run_docker` with root permissions: `./run_docker --root`
-```
-
-```{note}
 You can control the resources allocated to the build by setting the env
 vars `EMSDK_NUM_CORE`, `EMCC_CORES` and `PYODIDE_JOBS` (the default for each is
 4).

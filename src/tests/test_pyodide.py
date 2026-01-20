@@ -905,7 +905,7 @@ def test_create_proxy_roundtrip(selenium):
     assert o.f.unwrap() is f
     o.f.destroy()
     o.f = create_proxy(f, roundtrip=False)
-    assert o.f is f  # type: ignore[comparison-overlap]
+    assert o.f is f
     run_js("(o) => { o.f.destroy(); }")(o)
 
 
@@ -1477,7 +1477,7 @@ def test_module_not_found_note(selenium_standalone):
     from _pyodide._importhook import add_note_to_module_not_found_error
     from pyodide.code import run_js
 
-    unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
+    unvendored_stdlibs = ["test", "lzma", "sqlite3"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
     lockfile_packages = [
         "micropip",
@@ -1525,13 +1525,6 @@ def test_module_not_found_note(selenium_standalone):
             importlib.import_module(pkg)
         add_note_to_module_not_found_error(e.value)
         assert getattr(e.value, "__notes__", None) is None
-
-    with pytest.raises(ModuleNotFoundError) as e:
-        importlib.import_module("_hashlib")
-    add_note_to_module_not_found_error(e.value)
-    add_note_to_module_not_found_error(e.value)
-    assert 'loadPackage("hashlib")' in e.value.__notes__[0]
-    assert len(e.value.__notes__) == 1
 
 
 @run_in_pyodide

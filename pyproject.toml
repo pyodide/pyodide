@@ -63,14 +63,26 @@ lint.select = [
   "UP",     # pyupgrade
   "W",      # pycodestyles
 ]
-lint.ignore = ["E402", "E501", "E731", "E741", "PLW2901", "UP031"]
+lint.ignore = ["E402", "E501", "E731", "E741", "PLC0415", "PLW2901", "UP031"]
 lint.flake8-comprehensions.allow-dict-calls-with-keyword-arguments = true
-# line-length = 219  # E501: Recommended goal is 88 to match black
 target-version = "py313"
 
 [tool.ruff.lint.per-file-ignores]
 "src/py/_pyodide/_base.py" = [
   "PGH001",  # No builtin `eval()` allowed
+]
+"benchmark/benchmarks/pystone_benchmarks/pystone.py" = [
+  "PGH004",  # Use specific rule codes when using `ruff: noqa`
+]
+"src/py/_pyodide/_core_docs.py" = [
+  "UP046",  # Generic class uses `Generic` subclass instead of type parameters
+  "UP047",  # Generic function should use type parameters
+]
+"src/py/pyodide/code.py" = [
+  "UP047",  # Generic function should use type parameters
+]
+"src/py/pyodide/ffi/__init__.py" = [
+  "PGH004",  # Use specific rule codes when using `ruff: noqa`
 ]
 "src/tests/test_*" = [
   "PLR0915",  # Too many statements (x > 50)
@@ -135,6 +147,8 @@ addopts = '''
 --ignore-glob="packages/**/extras/"
 --ignore-glob="packages/scipy/cmdline_test_file.py"
 --ignore-glob="packages/test-simd/src/test_simd/__init__.py"
+--ignore-glob="src/py/ssl.py"
+--ignore-glob="src/py/_ssl.py"
 --tb=short
 --dist-dir=dist'''
 testpaths = [

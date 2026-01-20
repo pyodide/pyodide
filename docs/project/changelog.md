@@ -15,6 +15,75 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Breaking }} The `ssl` module is now a stub implementation bundled with
+  Pyodide instead of being dynamically loaded with OpenSSL. This means the `ssl`
+  module is available immediately without loading additional packages, but
+  OpenSSL-dependent features (actual SSL/TLS connections, certificate validation,
+  etc.) are not available. Code that only imports `ssl` for constants, types, or
+  `SSLContext` configuration will continue to work. Code that attempts actual
+  SSL operations will raise `NotImplementedError`. Note that socket operations
+  using `ssl` never worked in Pyodide even before this change.
+  This change saves us more than 3MB (uncompressed) of space when using `ssl` module.
+  {pr}`6044`
+
+- {{ Breaking }} We do not provide hash functions in hashlib that are provided by OpenSSL.
+  Previously, this was available by running `pyodide.loadPackage('hashlib')` before importing
+  hashlib. Now, we do not provide hash functions coming from OpenSSL.
+  {pr}`6044`
+
+- {{ Enhancement }} A JavaScript object is now treated as an array-like object
+  if it has a `length` property and is iterable. Every JsProxy of an array-like
+  object now implements subscripting.
+  {pr}`5991`
+
+- {{ Enhancement }} It is now possible to slice-subscript a JsProxy of an
+  array-like object.
+  {pr}`6019`
+
+- {{ Enhancement }} `PyProxy` now has a `[Symbol.dispose]` method.
+  {pr}`6003`
+
+- {{ Enhancement }} A `JsProxy` of an object with a `[Symbol.dispose]` method is
+  now a context manager. A `JsProxy` of an object with a `[Symbol.asyncDispose]`
+  method is now an async context manager.
+  {pr}`6007` {pr}`6014`
+
+- {{ Enhancement }} `PyBufferView` (the return value of `PyProxy.getBuffer()`)
+  now has a `[Symbol.dispose]` method.
+  {pr}`6003`
+
+- {{ Enhancement }} Added `pyodide.ffi.JsBigInt` which is a subtype of `int`.
+  Now bigint will be translated to Python as a `JsBigInt` and `JsBigInt` will be
+  translated to bigint. In particular, this makes bigint round trip. Now Python
+  integers greater than 2**53 will round trip to a `JsBigInt`. Since `JsBigInt`
+  supports all operations supported by `int`, this change should cause very
+  limited backwards incompatibility.
+  {pr}`6022`
+
+- {{ Fix }} Added missing `timeout=None` parameter to
+  `pyodide.webloop.WebLoop.shutdown_default_executor()`.
+  {pr}`6050`
+
+- {{ Enhancement }} New packages added:
+  - Bottleneck (1.6.0)
+  - Cartopy (0.25.0) (Disabled in 0.28, re-enabled)
+  - geopandas (1.1.1) (Disabled in 0.28, re-enabled)
+  - google-crc32c (1.8.0)
+  - healpy (1.19.0)
+  - ml_dtypes (0.5.4)
+  - pyarrow (22.0.0) (Disabled in 0.28, re-enabled)
+  - pycdfpp (0.8.5)
+  - pyproj (3.7.2) (Disabled in 0.28, re-enabled)
+  - pyrodigal (3.7.0)
+  - typing-inspection (0.4.2)
+
+## Version 0.29.1
+
+- {{ Enhancement }} Improved support for Windows/MacOS platform in the `python` CLI entrypoint.
+  {pr}`6018` {pr}`6012` {pr}`6026` {pr}`6034` {pr}`6025`
+
 ## Version 0.29.0
 
 - {{ Feature }} Added `pyxhr`, a synchronous HTTP client using XMLHttpRequest
@@ -38,10 +107,6 @@ myst:
 - {{ Fix }} Fixed a bug where a weird object was used as `this` when there is no
   relevant `this`. See {issue}`5929`.
   {pr}`5937`
-
-- {{ Enhancement }} A JavaScript object is now treated as an array-like object
-  if it has a `length` property and is iterable. Every JsProxy of an array-like
-  object now implements subscripting. {pr}`5991`
 
 ### Packages
 

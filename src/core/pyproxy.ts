@@ -649,6 +649,8 @@ export interface PyProxy {
   [x: string]: any;
 }
 
+const dispose = Symbol.dispose ?? Symbol("dispose");
+
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` is an object that allows idiomatic use of a Python object from
  * JavaScript. See :ref:`type-translations-pyproxy`.
@@ -731,6 +733,13 @@ export class PyProxy {
     options = Object.assign({ message: "", destroyRoundtrip: true }, options);
     const { message: m, destroyRoundtrip: d } = options;
     Module.pyproxy_destroy(this, m, d);
+  }
+  /**
+   * JavaScript resource management
+   * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Resource_management#the_using_and_await_using_declarations
+   */
+  [dispose]() {
+    this.destroy();
   }
   /**
    * Make a new :js:class:`~pyodide.ffi.PyProxy` pointing to the same Python object.
@@ -859,7 +868,7 @@ PyProxyFunction.prototype = PyProxyFunctionProto;
  */
 export class PyProxyWithLength extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyProxyWithLength {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_LENGTH);
   }
 }
@@ -895,7 +904,7 @@ export class PyLengthMethods {
  */
 export class PyProxyWithGet extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyProxyWithGet {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_GET);
   }
 }
@@ -980,7 +989,7 @@ export class PyGetItemMethods {
  */
 export class PyProxyWithSet extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyProxyWithSet {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_SET);
   }
 }
@@ -1036,7 +1045,7 @@ export class PySetItemMethods {
  */
 export class PyProxyWithHas extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyProxyWithHas {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_CONTAINS);
   }
 }
@@ -1132,7 +1141,7 @@ function* iter_helper(
  */
 export class PyIterable extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyIterable {
     return (
       API.isPyProxy(obj) && !!(_getFlags(obj) & (IS_ITERABLE | IS_ITERATOR))
     );
@@ -1239,7 +1248,7 @@ async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
  */
 export class PyAsyncIterable extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyAsyncIterable {
     return (
       API.isPyProxy(obj) &&
       !!(_getFlags(obj) & (IS_ASYNC_ITERABLE | IS_ASYNC_ITERATOR))
@@ -1283,7 +1292,7 @@ export class PyAsyncIterableMethods {
  */
 export class PyIterator extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyIterator {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ITERATOR);
   }
 }
@@ -1336,7 +1345,7 @@ export class PyIteratorMethods {
  */
 export class PyGenerator extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyGenerator {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_GENERATOR);
   }
 }
@@ -1412,7 +1421,7 @@ export class PyGeneratorMethods {
  */
 export class PyAsyncIterator extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyAsyncIterator {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ASYNC_ITERATOR);
   }
 }
@@ -1476,7 +1485,7 @@ export class PyAsyncIteratorMethods {
  */
 export class PyAsyncGenerator extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyAsyncGenerator {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ASYNC_GENERATOR);
   }
 }
@@ -1579,7 +1588,7 @@ export class PyAsyncGeneratorMethods {
  */
 export class PySequence extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PySequence {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_SEQUENCE);
   }
 }
@@ -1886,7 +1895,7 @@ export class PySequenceMethods {
  */
 export class PyMutableSequence extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyMutableSequence {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_SEQUENCE);
   }
 }
@@ -2525,7 +2534,7 @@ const PyProxyDictHandlers = {
  */
 export class PyAwaitable extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyAwaitable {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_AWAITABLE);
   }
 }
@@ -2963,6 +2972,11 @@ export class PyBufferMethods {
    * data, so you might want to pass ``'dataview'`` as the type argument in that
    * case.
    *
+   * When you are done with the buffer view, you have to call
+   * :js:func:`~PyBufferView.release`. Alternatively, if you declare the buffer
+   * with `using pybuf = proxy.getBuffer()`, JavaScript will automatically
+   * release the buffer at the end of the current scope.
+   *
    * @param type The type of the :js:attr:`~pyodide.ffi.PyBufferView.data` field
    * in the output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``,
    * ``"i16"``, ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``,
@@ -3090,7 +3104,7 @@ export class PyBufferMethods {
  */
 export class PyDict extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyDict {
     // TODO: allow MutableMappings?
     return API.isPyProxy(obj) && obj.type === "dict";
   }
@@ -3105,10 +3119,13 @@ export interface PyDict
 
 /**
  * A class to allow access to Python data buffers from JavaScript. These are
- * produced by :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` and cannot be constructed directly.
- * When you are done, release it with the :js:func:`~PyBufferView.release` method.
- * See the Python :external:doc:`c-api/buffer` documentation for more
- * information.
+ * produced by :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` and cannot be
+ * constructed directly. When you are done, release it with the
+ * :js:func:`~PyBufferView.release` method. It has a `[Symbol.dispose]()` method
+ * which is identical to the `release` method, so if you create the buffer with
+ * `using pybuf = proxy.getBuffer();` and JavaScript will automatically release
+ * it at the end of the scope. See the Python :external:doc:`c-api/buffer`
+ * documentation for more information.
  *
  * To find the element ``x[a_1, ..., a_n]``, you could use the following code:
  *
@@ -3279,5 +3296,9 @@ export class PyBufferView {
     this._released = true;
     // @ts-ignore
     this.data = Module.error;
+  }
+
+  [dispose]() {
+    this.release();
   }
 }

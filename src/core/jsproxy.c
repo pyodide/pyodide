@@ -46,28 +46,30 @@
 #include "structmember.h"
 
 // clang-format off
-#define IS_ITERABLE        (1 << 0)
-#define IS_ITERATOR        (1 << 1)
-#define HAS_LENGTH         (1 << 2)
-#define HAS_GET            (1 << 3)
-#define HAS_SET            (1 << 4)
-#define HAS_HAS            (1 << 5)
-#define HAS_INCLUDES       (1 << 6)
-#define IS_AWAITABLE       (1 << 7)
-#define IS_BUFFER          (1 << 8)
-#define IS_CALLABLE        (1 << 9)
-#define IS_ARRAY           (1 << 10)
-#define IS_ARRAY_LIKE      (1 << 11)
-#define IS_TYPEDARRAY      (1 << 12)
-#define IS_DOUBLE_PROXY    (1 << 13)
-#define IS_OBJECT_MAP      (1 << 14)
-#define IS_ASYNC_ITERABLE  (1 << 15)
-#define IS_GENERATOR       (1 << 16)
-#define IS_ASYNC_GENERATOR (1 << 17)
-#define IS_ASYNC_ITERATOR  (1 << 18)
-#define IS_ERROR           (1 << 19)
-#define IS_PY_JSON_DICT    (1 << 20)
-#define IS_PY_JSON_SEQUENCE (1 << 21)
+#define IS_ITERABLE         (1 << 0)
+#define IS_ITERATOR         (1 << 1)
+#define HAS_LENGTH          (1 << 2)
+#define HAS_GET             (1 << 3)
+#define HAS_SET             (1 << 4)
+#define HAS_HAS             (1 << 5)
+#define HAS_INCLUDES        (1 << 6)
+#define HAS_DISPOSE         (1 << 7)
+#define HAS_ASYNC_DISPOSE   (1 << 8)
+#define IS_AWAITABLE        (1 << 9)
+#define IS_BUFFER           (1 << 10)
+#define IS_CALLABLE         (1 << 11)
+#define IS_ARRAY            (1 << 12)
+#define IS_ARRAY_LIKE       (1 << 13)
+#define IS_TYPEDARRAY       (1 << 14)
+#define IS_DOUBLE_PROXY     (1 << 15)
+#define IS_OBJECT_MAP       (1 << 16)
+#define IS_ASYNC_ITERABLE   (1 << 17)
+#define IS_GENERATOR        (1 << 18)
+#define IS_ASYNC_GENERATOR  (1 << 19)
+#define IS_ASYNC_ITERATOR   (1 << 20)
+#define IS_ERROR            (1 << 21)
+#define IS_PY_JSON_DICT     (1 << 22)
+#define IS_PY_JSON_SEQUENCE (1 << 23)
 // clang-format on
 
 _Py_IDENTIFIER(get_event_loop);
@@ -1699,22 +1701,6 @@ JsTypedArray_subscript(PyObject* o, PyObject* item)
 }
 
 /**
- * __getitem__ for proxies of array-like objects like HTMLCollection or
- * NodeList, controlled by IS_ARRAY_LIKE
- */
-static PyObject*
-JsArrayLike_subscript(PyObject* o, PyObject* item)
-{
-  if (PySlice_Check(item)) {
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "Slice subscripting is only implemented for arrays, not "
-                    "for array-like objects");
-    return NULL;
-  }
-  return JsArray_subscript(o, item);
-}
-
-/**
  * __setitem__ and __delitem__ for proxies of Js Arrays, controlled by IS_ARRAY
  */
 static int
@@ -2448,6 +2434,104 @@ JsProxy_has(JsProxy* self, PyObject* obj)
 finally:
   return result;
 }
+
+static PyObject*
+JsProxy_enter(JsProxy* self, PyObject* Py_UNUSED(ignored))
+{
+  return Py_NewRef(self);
+}
+
+static PyMethodDef JsProxy_enter_MethodDef = { "__enter__",
+                                               (PyCFunction)JsProxy_enter,
+                                               METH_NOARGS };
+
+// clang-format off
+EM_JS_NUM(int, JsProxy_exit_js, (JsVal obj), {
+  obj[Symbol.dispose]();
+});
+// clang-format on
+
+static PyObject*
+JsProxy_exit(JsProxy* self, PyObject* const* args, Py_ssize_t nargs)
+{
+  if (!_PyArg_CheckPositional("__exit__", nargs, 0, 3)) {
+    return NULL;
+  }
+
+  if (JsProxy_exit_js(JsProxy_VAL(self)) == -1) {
+    return NULL;
+  }
+
+  Py_RETURN_NONE;
+}
+
+static PyMethodDef JsProxy_exit_MethodDef = { "__exit__",
+                                              (PyCFunction)JsProxy_exit,
+                                              METH_FASTCALL };
+
+// clang-format off
+EM_JS_VAL(JsVal, JsProxy_aexit_js, (JsVal obj), {
+  return obj[Symbol.asyncDispose]();
+});
+// clang-format on
+
+static PyObject*
+JsProxy_aenter(JsProxy* self, PyObject* Py_UNUSED(ignored))
+{
+  bool success = false;
+  PyObject* loop = NULL;
+  PyObject* result = NULL;
+  PyObject* status = NULL;
+
+  loop = _PyObject_CallMethodIdNoArgs(asyncio_mod, &PyId_get_event_loop);
+  FAIL_IF_NULL(loop);
+
+  result = _PyObject_CallMethodIdNoArgs(loop, &PyId_create_future);
+  FAIL_IF_NULL(result);
+
+  status =
+    _PyObject_CallMethodIdOneArg(result, &PyId_set_result, (PyObject*)self);
+  FAIL_IF_NULL(status);
+
+  success = true;
+finally:
+  Py_CLEAR(loop);
+  Py_CLEAR(status);
+  if (!success) {
+    Py_CLEAR(result);
+  }
+
+  return result;
+}
+
+static PyMethodDef JsProxy_aenter_MethodDef = { "__aenter__",
+                                                (PyCFunction)JsProxy_aenter,
+                                                METH_NOARGS };
+
+static PyObject*
+JsProxy_aexit(JsProxy* self, PyObject* const* args, Py_ssize_t nargs)
+{
+  if (!_PyArg_CheckPositional("__aexit__", nargs, 0, 3)) {
+    return NULL;
+  }
+  PyObject* result = NULL;
+
+  // We have to return an awaitable here but [Symbol.asyncDispose]() does not.
+  // Conveniently, wrap_promise() calls Promise.resolve() on the argument, so it
+  // works in both cases.
+  JsVal jsresult = JsProxy_aexit_js(JsProxy_VAL(self));
+  FAIL_IF_JS_ERROR(jsresult);
+
+  result = wrap_promise(jsresult, Jsv_null, NULL);
+  FAIL_IF_NULL(result);
+
+finally:
+  return result;
+}
+
+static PyMethodDef JsProxy_aexit_MethodDef = { "__aexit__",
+                                               (PyCFunction)JsProxy_aexit,
+                                               METH_FASTCALL };
 
 EM_JS_VAL(JsVal, JsMap_GetIter_js, (JsVal obj), {
   let result;
@@ -4079,6 +4163,14 @@ JsProxy_create_subtype(int flags)
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_sq_contains, .pfunc = (void*)JsProxy_has };
   }
+  if (flags & HAS_DISPOSE) {
+    methods[cur_method++] = JsProxy_enter_MethodDef;
+    methods[cur_method++] = JsProxy_exit_MethodDef;
+  }
+  if (flags & HAS_ASYNC_DISPOSE) {
+    methods[cur_method++] = JsProxy_aenter_MethodDef;
+    methods[cur_method++] = JsProxy_aexit_MethodDef;
+  }
 skip_container_slots:
 
   if (flags & IS_AWAITABLE) {
@@ -4163,7 +4255,7 @@ skip_container_slots:
   }
   if (flags & IS_ARRAY_LIKE) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
-                                       .pfunc = (void*)JsArrayLike_subscript };
+                                       .pfunc = (void*)JsArray_subscript };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_sq_length, .pfunc = (void*)JsProxy_length };
     slots[cur_slot++] =
@@ -4410,6 +4502,10 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
   SET_FLAG_IF_HAS_METHOD(HAS_SET, "set");
   SET_FLAG_IF_HAS_METHOD(HAS_HAS, "has");
   SET_FLAG_IF_HAS_METHOD(HAS_INCLUDES, "includes");
+  if (Symbol.asyncDispose) {
+    SET_FLAG_IF_HAS_METHOD(HAS_DISPOSE, Symbol.dispose);
+    SET_FLAG_IF_HAS_METHOD(HAS_ASYNC_DISPOSE, Symbol.asyncDispose);
+  }
   SET_FLAG_IF(
     IS_BUFFER,
     (isBufferView || typeTag === "[object ArrayBuffer]") &&
@@ -4805,6 +4901,7 @@ jsproxy_init(PyObject* core_module)
   AddFlag(HAS_SET);
   AddFlag(HAS_HAS);
   AddFlag(HAS_INCLUDES);
+  AddFlag(HAS_DISPOSE);
   AddFlag(IS_AWAITABLE);
   AddFlag(IS_BUFFER);
   AddFlag(IS_CALLABLE);
