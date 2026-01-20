@@ -150,7 +150,7 @@ export class PackageManager {
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
     this.#api = api;
     this.#module = pyodideModule;
-    this.#installer = new Installer(api, pyodideModule);
+    this.#installer = new Installer(api);
 
     if (RUNTIME_ENV.IN_NODE) {
       // In node, we'll try first to load from the packageCacheDir and then fall
