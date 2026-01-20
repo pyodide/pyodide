@@ -1,7 +1,7 @@
 From 12ba8a395ce04194074a24d362143c22e7ac54bd Mon Sep 17 00:00:00 2001
 From: Ilhan Polat <ilhanpolat@gmail.com>
 Date: Tue, 23 Apr 2024 09:26:38 +0200
-Subject: [PATCH 7/18] MAINT:linalg:Remove id_dist Fortran files
+Subject: [PATCH 7/19] MAINT:linalg:Remove id_dist Fortran files
 
 [skip ci]
 

@@ -41,6 +41,7 @@ source:
     - patches/0016-Make-sf_error_state_lib-a-static-library.patch
     - patches/0017-Remove-test-modules-that-fail-to-build.patch
     - patches/0018-Fix-lapack-larfg-function-signature.patch
+    - patches/0019-Explicitly-convert-return-value-of-SUPERLU_MALLOC.patch
 
 build:
   # NumPy 2.1 disabled visibility for symbols outside of extension modules

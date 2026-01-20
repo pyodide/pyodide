@@ -1,0 +1,67 @@
+From 6a800412b14b5ab905721abe9a509a5e4f44ecef Mon Sep 17 00:00:00 2001
+From: ryanking13 <def6488@gmail.com>
+Date: Tue, 20 Jan 2026 15:22:19 +0900
+Subject: [PATCH 19/19] Explicitly convert return value of SUPERLU_MALLOC
+
+---
+ scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsitrf.c | 2 +-
+ scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgsitrf.c | 2 +-
+ scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsitrf.c | 2 +-
+ scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsitrf.c | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsitrf.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsitrf.c
+index 21fb2497b..ae2a3fd2e 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsitrf.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsitrf.c
+@@ -299,7 +299,7 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
+     for (k = 0; k < n; k++) iswap[k] = perm_c[k];
+     amax = (float *) SUPERLU_MALLOC(panel_size * sizeof(float));
+     if (drop_rule & DROP_SECONDARY)
+-	swork2 = SUPERLU_MALLOC(n * sizeof(float));
++	swork2 = (float *) SUPERLU_MALLOC(n * sizeof(float));
+     else
+ 	swork2 = NULL;
+ 
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgsitrf.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgsitrf.c
+index b3c1ffc15..57f242361 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgsitrf.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgsitrf.c
+@@ -298,7 +298,7 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
+     for (k = 0; k < n; k++) iswap[k] = perm_c[k];
+     amax = (double *) SUPERLU_MALLOC(panel_size * sizeof(double));
+     if (drop_rule & DROP_SECONDARY)
+-	dwork2 = SUPERLU_MALLOC(n * sizeof(double));
++	dwork2 = (double *) SUPERLU_MALLOC(n * sizeof(double));
+     else
+ 	dwork2 = NULL;
+ 
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsitrf.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsitrf.c
+index cc143726f..5c9722c45 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsitrf.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsitrf.c
+@@ -298,7 +298,7 @@ sgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
+     for (k = 0; k < n; k++) iswap[k] = perm_c[k];
+     amax = (float *) SUPERLU_MALLOC(panel_size * sizeof(float));
+     if (drop_rule & DROP_SECONDARY)
+-	swork2 = SUPERLU_MALLOC(n * sizeof(float));
++	swork2 = (float *) SUPERLU_MALLOC(n * sizeof(float));
+     else
+ 	swork2 = NULL;
+ 
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsitrf.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsitrf.c
+index 4658eaf4c..a60c8119b 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsitrf.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsitrf.c
+@@ -299,7 +299,7 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
+     for (k = 0; k < n; k++) iswap[k] = perm_c[k];
+     amax = (double *) SUPERLU_MALLOC(panel_size * sizeof(double));
+     if (drop_rule & DROP_SECONDARY)
+-	dwork2 = SUPERLU_MALLOC(n * sizeof(double));
++	dwork2 = (double *) SUPERLU_MALLOC(n * sizeof(double));
+     else
+ 	dwork2 = NULL;
+ 
+-- 
+2.29.2.windows.2
+
