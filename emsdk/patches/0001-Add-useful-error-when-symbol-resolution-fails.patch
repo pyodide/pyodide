@@ -22,7 +22,7 @@ diff --git a/src/lib/libdylink.js b/src/lib/libdylink.js
 index 491b62735..3e6839be9 100644
 --- a/src/lib/libdylink.js
 +++ b/src/lib/libdylink.js
-@@ -736,6 +736,9 @@ var LibraryDylink = {
+@@ -793,6 +793,9 @@ var LibraryDylink = {
              var resolved;
              stubs[prop] = (...args) => {
                resolved ||= resolveSymbol(prop);
