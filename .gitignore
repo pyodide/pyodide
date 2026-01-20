@@ -46,4 +46,3 @@ xbuildenv/
 DS_Store
 .pyodide_build_installed
 test-cmdline-runner/
-src/templates/python.exe
