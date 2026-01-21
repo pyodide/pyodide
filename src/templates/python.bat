@@ -3,10 +3,10 @@ setlocal ENABLEDELAYEDEXPANSION
 
 REM VENV_DIR = Directory of this script (symlink)
 REM RESOLVED_DIR = Directory of this script (resolved)
-REM THIS_PROGRAM = Full path to this script
+REM THIS_PROGRAM = Full path to this script (executable)
 set "VENV_DIR=%~dp0"
 set "RESOLVED_DIR=%~dp0"
-set "THIS_PROGRAM=%~f0"
+set "THIS_PROGRAM=%~dpn0.exe"
 
 REM Set initial arguments placeholder for the Node flags
 set "NODE_ARGS="
