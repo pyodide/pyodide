@@ -6,7 +6,9 @@ REM RESOLVED_DIR = Directory of this script (resolved)
 REM THIS_PROGRAM = Full path to this script (executable)
 set "VENV_DIR=%~dp0"
 set "RESOLVED_DIR=%~dp0"
-set "THIS_PROGRAM=%~dpn0.exe"
+set "THIS_PROGRAM_BATCH_FILE=%~f0"
+REM replace the suffix of THIS_PROGRAM from .bat to .exe for better sys.executable compatibility
+set "THIS_PROGRAM=%THIS_PROGRAM_BATCH_FILE:~0,-4%.exe"
 
 REM Set initial arguments placeholder for the Node flags
 set "NODE_ARGS="
@@ -34,7 +36,7 @@ REM findstr filters the line containing the link, and FOR /F is used to parse it
 REM Note: This relies heavily on the output format being consistent.
 
 set "TargetFullPath="
-for /f "tokens=*" %%a in ('dir /l "%THIS_PROGRAM%" ^| findstr /i /c:"SYMLINK" /c:"JUNCTION"') do (
+for /f "tokens=*" %%a in ('dir /l "%THIS_PROGRAM_BATCH_FILE%" ^| findstr /i /c:"SYMLINK" /c:"JUNCTION"') do (
     REM %%a contains the full line, e.g., "... <SYMLINKD> MyLink [C:\Original\Target\Folder]"
 
     REM --- Single-Block Parsing Logic ---
