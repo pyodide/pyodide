@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DEFAULT_PYODIDE_DOCKER_IMAGE="pyodide/pyodide-env:20250915-chrome140-firefox140-py313"
+DEFAULT_PYODIDE_DOCKER_IMAGE="pyodide/pyodide-env:20260120-chrome145-firefox146-py313"
 DEFAULT_PYODIDE_SYSTEM_PORT="none"
 DOCKER_COMMAND="/bin/bash"
 DOCKER_INTERACTIVE="--interactive"
@@ -124,8 +124,14 @@ useradd\
   --groups sudo\
   $USER_NAME\
 ;
-echo 'export PATH=\$PATH:$USER_HOME/.local/bin' >> /etc/profile;
-echo '%sudo ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers ;
+echo "$USER_NAME:pyodide" | chpasswd;
+echo 'export PATH=\$PATH:$USER_HOME/.local/bin:/usr/local/go/bin' >> /etc/profile;
+echo 'export RUSTUP_HOME=$USER_HOME/.rustup' >> /etc/profile;
+echo 'export CARGO_HOME=$USER_HOME/.cargo' >> /etc/profile;
+echo '$USER_NAME ALL=(ALL:ALL) ALL' >> /etc/sudoers ;
+if [ -S /var/run/docker.sock ]; then
+  chmod 666 /var/run/docker.sock
+fi
 echo '$HEALTHCHECK_MESSAGE';
 tail -f /dev/null
 EOF
@@ -135,6 +141,7 @@ CONTAINER=$(\
     "${PORT_CONFIGURATION_LINE[@]}" \
     -d --rm \
     -v "$PWD":/src \
+    -v /var/run/docker.sock:/var/run/docker.sock \
     --user root \
     --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \

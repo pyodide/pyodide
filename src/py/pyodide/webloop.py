@@ -301,7 +301,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                     }
                 )
 
-    async def shutdown_default_executor(self):
+    async def shutdown_default_executor(self, timeout=None):
         """Schedule the shutdown of the default executor.
 
         This is a no-op since WebLoop doesn't use thread executors.

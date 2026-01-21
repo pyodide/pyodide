@@ -250,6 +250,17 @@ dist/python: src/templates/python
 dist/python.bat: src/templates/python.bat
 	cp $< $@
 
+dist/python.exe: src/templates/python_exe.go dist
+	@if command -v go >/dev/null 2>&1; then \
+		cd src/templates && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o ../../dist/python.exe -ldflags='-s -w' python_exe.go && \
+		echo "Successfully built python.exe"; \
+	elif [ -n "$$CI" ]; then \
+		echo "ERROR: Go not found in CI environment" >&2; \
+		exit 1; \
+	else \
+		echo "WARNING: Go not found. Skipping python.exe build."; \
+	fi
+
 dist/python_cli_entry.mjs: src/templates/python_cli_entry.mjs dist
 	cp $< $@
 

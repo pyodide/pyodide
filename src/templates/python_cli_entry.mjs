@@ -53,6 +53,16 @@ function windowsPathToUnix(path) {
   return path;
 }
 
+/**
+ * Escape backslashes in a Windows path for use in Python strings.
+ */
+function escapeWindowsPath(path) {
+  if (process.platform === "win32") {
+    return path.replace(/\\/g, "\\\\");
+  }
+  return path;
+}
+
 const thisProgramFlag = "--this-program=";
 const thisProgramIndex = process.argv.findIndex((x) =>
   x.startsWith(thisProgramFlag),
@@ -67,6 +77,55 @@ function fsInit(FS) {
   for (const mount of mounts) {
     FS.mkdirTree(mount);
     FS.mount(FS.filesystems.NODEFS, { root: mount }, mount);
+  }
+}
+
+function patchPlatformForUv(py) {
+  // UV uses sysconfig configs to determine platform details when installing
+  // packages through `uv pip`. When running on Windows, we need to patch
+  // sysconfig to return the correct values for a Windows platform.
+  if (process.platform !== "win32" || process.env.UV === undefined) {
+    return;
+  }
+
+  const virtualEnvPrefix = process.env.VIRTUAL_ENV || "/";
+  py.runPython(
+    `
+    import sys
+    import sysconfig
+    sys.prefix = "${escapeWindowsPath(virtualEnvPrefix)}"
+    sys.executable = "${escapeWindowsPath(_sysExecutable)}"
+    sysconfig._INSTALL_SCHEMES['venv'] = sysconfig._INSTALL_SCHEMES['nt_venv']
+    `,
+  );
+}
+
+function calculateSysPath(py) {
+  // On windows, packages are installed in a different location (Lib\\site-packages)
+  // compared to other platforms (lib/pythonX.Y/site-packages).
+  // In this case, Python will not be able to setup the sys.path correctly by itself,
+  // so we need to manually add the site-packages path to sys.path.
+  if (process.platform === "win32") {
+    const virtualEnvPrefix = process.env.VIRTUAL_ENV;
+    if (!virtualEnvPrefix) {
+      return;
+    }
+
+    const sitePackagesPath = `${virtualEnvPrefix}\\Lib\\site-packages`;
+    // check if the path exists
+    const stat = statSync(sitePackagesPath);
+    if (!stat.isDirectory()) {
+      return;
+    }
+
+    py.runPython(
+      `
+      import sys
+      site_packages_path = "${windowsPathToUnix(sitePackagesPath)}"
+      if site_packages_path not in sys.path:
+          sys.path.append(site_packages_path)
+      `,
+    );
   }
 }
 
@@ -136,6 +195,10 @@ async function main() {
       console.error(e);
     }
   }
+
+  patchPlatformForUv(py);
+  calculateSysPath(py);
+
   py.runPython(
     `
     import asyncio
