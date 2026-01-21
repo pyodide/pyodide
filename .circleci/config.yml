@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20260117-chrome145-firefox145-py313
+    - image: pyodide/pyodide-env:20260120-chrome145-firefox146-py313
   environment:
     EMSDK_NUM_CORES: 3
     EMCC_CORES: 3
@@ -84,6 +84,12 @@ jobs:
             ccache -s
 
       - run:
+          name: build windows binary
+          no_output_timeout: 5m
+          command: |
+            make dist/python.exe
+
+      - run:
           name: check-size
           command: |
             du dist/ -abh --max-depth 1  | sort -k 2
@@ -110,7 +116,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip dist/python dist/python.bat dist/python_cli_entry.mjs
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip dist/python dist/python.bat dist/python.exe dist/python_cli_entry.mjs
             tar cjf pyodide-static-libs.tar.gz -C cpython/installs  .
 
       - store_artifacts:
@@ -176,7 +182,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip dist/python dist/python.bat dist/python_cli_entry.mjs
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip dist/python dist/python.bat dist/python.exe dist/python_cli_entry.mjs
             tar cjf build-logs.tar.gz  packages/build-logs
 
       - run:
@@ -469,7 +475,7 @@ jobs:
             cp -r cpython/installs /tmp/ghr/static-libraries
             cd /tmp/ghr
             tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
-            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip pyodide/python pyodide/python.bat pyodide/python_cli_entry.mjs
+            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip pyodide/python pyodide/python.bat pyodide/python.exe pyodide/python_cli_entry.mjs
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
             tar cjf dist/static-libraries-${CIRCLE_TAG}.tar.bz2  static-libraries/
 
@@ -562,7 +568,7 @@ jobs:
             cp -r xbuildenv /tmp/ghr/xbuildenv
             cp -r cpython/installs /tmp/ghr/static-libraries
             cd /tmp/ghr
-            tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip pyodide/python pyodide/python.bat pyodide/python_cli_entry.mjs
+            tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip pyodide/python pyodide/python.bat pyodide/python.exe pyodide/python_cli_entry.mjs
             tar cjf dist/xbuildenv.tar.bz2  xbuildenv/
             tar cjf dist/static-libraries.tar.bz2  static-libraries/
 
