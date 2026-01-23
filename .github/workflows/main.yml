@@ -111,6 +111,10 @@ jobs:
             /tmp/ccache
           key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
 
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.21'
+
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: pyodide-env
@@ -126,6 +130,7 @@ jobs:
           which python
           which node
           which npm
+          which go
 
       - name: Install dependencies (ubuntu)
         shell: bash -l {0}
@@ -173,6 +178,11 @@ jobs:
           ccache -z
           PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make -j${{ env.PYODIDE_JOBS }}
           ccache -s
+
+      - name: Build windows python.exe
+        shell: bash -l {0}
+        run: |
+          make dist/python.exe
 
       - name: check-size
         shell: bash -l {0}
