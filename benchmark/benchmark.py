@@ -115,14 +115,6 @@ def get_numpy_benchmarks():
     return get_benchmark_scripts("benchmarks/numpy_benchmarks")
 
 
-def get_matplotlib_benchmarks():
-    return get_benchmark_scripts("benchmarks/matplotlib_benchmarks")
-
-
-def get_pandas_benchmarks():
-    return get_benchmark_scripts("benchmarks/pandas_benchmarks")
-
-
 def get_benchmarks(benchmarks, targets=("all",)):
     if "all" in targets:
         for benchmark in benchmarks.values():
@@ -167,11 +159,6 @@ def main():
     BENCHMARKS = {
         "pystone": get_pystone_benchmarks,
         "numpy": get_numpy_benchmarks,
-        # TODO: matplotlib benchmark occasionally fails after https://github.com/pyodide/pyodide/pull/3130
-        #       but it is not clear why.
-        # "matplotlib": get_matplotlib_benchmarks,
-        # TODO: pandas is not included in the core packages suite
-        # "pandas": get_pandas_benchmarks,
     }
 
     args = parse_args(list(BENCHMARKS.keys()))
@@ -202,7 +189,7 @@ def main():
         print_entry("selenium init", result)
 
         # package loading time
-        for package_name in ["numpy", "pandas"]:
+        for package_name in ["numpy"]:
             result = {"native": float("NaN")}
             for browser_name, cls in browser_cls:
                 selenium = cls(port)
