@@ -481,6 +481,8 @@
     skip:
       # Incompatible with zipimported stdlib
       - test_getsource_stdlib_collections_abc
+      # no _pydecimal
+      - test_getsource_stdlib_decimal
 - test_int
 - test_int_literal
 - test_interpreters.test_api

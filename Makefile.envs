@@ -82,8 +82,6 @@ export PYZIP_EXCLUDE_FILES=\
 	turtle.py \
 	turtledemo/ \
 	test/ \
-	sqlite3/ \
-	lzma.py \
 	_pydecimal.py \
 	pydoc_data/
 
@@ -181,6 +179,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 	-lffi \
+	-llzma \
+	-lsqlite3 \
 	-lstdc++ \
 	-lidbfs.js \
 	-lnodefs.js \
@@ -296,6 +296,8 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 		-lffi \
 		-lhiwire \
+		-llzma \
+		-lsqlite3 \
 		-lidbfs.js \
 		-lnodefs.js \
     -lproxyfs.js
