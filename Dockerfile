@@ -35,6 +35,8 @@ RUN if [ $CHROME_VERSION = "latest" ]; then SE_CHROME_VERSION="stable"; \
 
 
 FROM node:24.7-bookworm-slim AS node-image
+FROM golang:1.21-alpine AS golang-image
+
 FROM python:3.13.2-slim-bookworm
 
 RUN apt-get update \
@@ -93,6 +95,9 @@ COPY --from=selenium-manager-image /opt/firefox /opt/firefox
 COPY --from=selenium-manager-image /opt/geckodriver /opt/geckodriver
 COPY --from=selenium-manager-image /opt/chrome /opt/chrome
 COPY --from=selenium-manager-image /opt/chromedriver /opt/chromedriver
+
+COPY --from=golang-image /usr/local/go/ /usr/local/go/
+ENV PATH="/usr/local/go/bin:${PATH}"
 
 RUN ln -fs /opt/firefox/firefox /usr/local/bin/firefox \
   && ln -fs /opt/geckodriver/geckodriver /usr/local/bin/geckodriver \

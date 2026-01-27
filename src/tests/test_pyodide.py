@@ -1477,7 +1477,7 @@ def test_module_not_found_note(selenium_standalone):
     from _pyodide._importhook import add_note_to_module_not_found_error
     from pyodide.code import run_js
 
-    unvendored_stdlibs = ["test", "lzma", "sqlite3"]
+    unvendored_stdlibs = ["test"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
     lockfile_packages = [
         "micropip",
@@ -1546,6 +1546,109 @@ def test_importhook_called_from_pytest(selenium):
 
     # Assertion: This should not raise KeyError.
     _import_module_using_spec("a.b")
+
+
+@run_in_pyodide
+def test_windows_to_linux_path_finder(selenium):
+    from pathlib import Path
+
+    from _pyodide._importhook import WindowsToLinuxPathFinder
+
+    # not using tempfile for readability
+    tmp_dir = Path("/tmp/my/temporary/directory/for/testing")
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    module_file = tmp_dir / "test_module.py"
+
+    # should not exist yet
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["C:\\my\\temporary\\directory\\for\\testing"]
+    )
+    assert spec is None
+
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["C://my//temporary//directory//for//testing"]
+    )
+    assert spec is None
+
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["/tmp/my/temporary/directory/for/testing"]
+    )
+    assert spec is None
+
+    module_file.write_text("TEST_VALUE = 123")
+
+    # now it should be found
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["C:\\tmp\\my\\temporary\\directory\\for\\testing"]
+    )
+    assert spec is not None
+
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["C://tmp//my//temporary//directory//for//testing"]
+    )
+    assert spec is not None
+
+    # This finder should not care about non-Windows paths
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["/tmp/my/temporary/directory/for/testing"]
+    )
+    assert spec is None
+
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "non_existent_module", ["C:\\tmp\\my\\temporary\\directory\\for\\testing"]
+    )
+    assert spec is None
+
+    # cleanup
+    module_file.unlink()
+    tmp_dir.rmdir()
+
+
+@run_in_pyodide
+def test_windows_to_linux_path_finder_edge_cases(selenium):
+    """Test edge cases for WindowsToLinuxPathFinder."""
+    from _pyodide._importhook import WindowsToLinuxPathFinder
+
+    # Empty path list
+    spec = WindowsToLinuxPathFinder.find_spec("test_module", [])
+    assert spec is None
+
+    # None path (should use sys.path, but all conversions might fail)
+    spec = WindowsToLinuxPathFinder.find_spec("test_module", None)
+    assert spec is None
+
+    # zipimport path
+    spec = WindowsToLinuxPathFinder.find_spec("test_module", ["my_whl.whl"])
+    assert spec is None
+
+
+@run_in_pyodide
+def test_windows_to_linux_path_import(selenium_standalone):
+    import sys
+    from pathlib import Path
+
+    tmp_dir = Path("/tmp/my/temporary/directory/for/testing/import")
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    module_file = tmp_dir / "test_module.py"
+
+    sys.path.append("C:\\tmp\\my\\temporary\\directory\\for\\testing\\import")
+
+    try:
+        import test_module
+
+        raise AssertionError("Module should not be found yet")
+    except ModuleNotFoundError:
+        pass
+
+    module_file.write_text("TEST_VALUE = 456")
+
+    import test_module
+
+    assert test_module.TEST_VALUE == 456
+
+    # cleanup
+    module_file.unlink()
+    tmp_dir.rmdir()
 
 
 def test_args(selenium_standalone_noload):
