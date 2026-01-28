@@ -93,9 +93,19 @@ function patchPlatformForUv(py) {
     `
     import sys
     import sysconfig
+    import os, ntpath, posixpath
     sys.prefix = "${escapeWindowsPath(virtualEnvPrefix)}"
     sys.executable = "${escapeWindowsPath(_sysExecutable)}"
     sysconfig._INSTALL_SCHEMES['venv'] = sysconfig._INSTALL_SCHEMES['nt_venv']
+    def _abspath(path):
+      """uv tries to call abspath on a windows path, make it work"""
+      if ntpath.isabs(path):
+        return path
+      elif posixpath.isabs(path):  # we cannot use posixpath.abspath directly here because it ends up infinite recursion
+        return path
+      else:
+        return posixpath.abspath(path)
+    os.path.abspath = _abspath
     `,
   );
 }

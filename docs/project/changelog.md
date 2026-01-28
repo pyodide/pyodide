@@ -15,6 +15,11 @@ myst:
 
 # Change Log
 
+## Version 0.29.3
+
+- {{ Enhancement }} Improved support for Windows platform in the `python` CLI entrypoint.
+  {pr}`6087`
+
 ## Version 0.29.2
 
 - {{ Enhancement }} Improved support for Windows platform in the `python` CLI entrypoint.
