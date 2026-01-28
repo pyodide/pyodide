@@ -1625,8 +1625,8 @@ def test_windows_to_linux_path_finder_edge_cases(selenium):
 @run_in_pyodide
 def test_windows_to_linux_path_import(selenium_standalone):
     import sys
-    from pathlib import Path
     from importlib import invalidate_caches
+    from pathlib import Path
 
     tmp_dir = Path("/tmp/my/temporary/directory/for/testing/import")
     tmp_dir.mkdir(parents=True, exist_ok=True)
