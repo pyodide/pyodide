@@ -215,11 +215,13 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 			  CFLAGS="${PYTHON_CFLAGS}" \
 			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1" \
 			  PLATFORM_TRIPLET="$(PLATFORM_TRIPLET)" \
+			  ac_cv_lib_sqlite3_sqlite3_load_extension=yes \
 			  --without-pymalloc \
 			  --disable-shared \
 			  --disable-ipv6 \
 			  --enable-big-digits=30 \
 			  --enable-optimizations \
+			  --enable-loadable-sqlite-extensions \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(PYBUILD)/config.guess) \
 			  --prefix=$(PYINSTALL)  \
