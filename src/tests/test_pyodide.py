@@ -1626,12 +1626,14 @@ def test_windows_to_linux_path_finder_edge_cases(selenium):
 def test_windows_to_linux_path_import(selenium_standalone):
     import sys
     from pathlib import Path
+    from importlib import invalidate_caches
 
     tmp_dir = Path("/tmp/my/temporary/directory/for/testing/import")
     tmp_dir.mkdir(parents=True, exist_ok=True)
     module_file = tmp_dir / "test_module.py"
 
     sys.path.append("C:\\tmp\\my\\temporary\\directory\\for\\testing\\import")
+    invalidate_caches()
 
     try:
         import test_module
