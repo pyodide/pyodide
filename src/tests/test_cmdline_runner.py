@@ -11,6 +11,7 @@ import pytest
 
 import pyodide
 from pyodide_build.build_env import (
+    emscripten_version,
     get_build_environment_vars,
     get_pyodide_root,
 )
@@ -119,9 +120,7 @@ def test_dash_m(selenium):
     )
     assert result.returncode == 0
     assert result.stderr == ""
-    # Emscripten 5.0.0 has incorrect uname (4.0.24).
-    # TODO: enable when we update emscripten version again
-    # assert result.stdout.strip() == f"Emscripten-{emscripten_version()}-wasm32-32bit"
+    assert result.stdout.strip() == f"Emscripten-{emscripten_version()}-wasm32-32bit"
 
 
 @only_node
