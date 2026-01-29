@@ -1,0 +1,27 @@
+From ca9327c7d38347feff2207ea8ede377479bb7ed1 Mon Sep 17 00:00:00 2001
+From: ryanking13 <def6488@gmail.com>
+Date: Thu, 29 Jan 2026 20:52:18 +0900
+Subject: [PATCH 1/1] Do not link emscripten_syscalls.o
+
+emscripten_syscalls.c is added to make pyrepl work in CPython 3.14,
+but it conflict with how we runs JSPI-enabled commands.
+---
+ configure | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure b/configure
+index 46eb0665bf4..a6724fc89d1 100755
+--- a/configure
++++ b/configure
+@@ -19108,7 +19108,7 @@ PLATFORM_OBJS=
+ case $ac_sys_system in #(
+   Emscripten) :
+ 
+-    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o Python/emscripten_syscalls.o'
++    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o'
+     as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
+    ;; #(
+   *) :
+-- 
+2.29.2.windows.2
+
