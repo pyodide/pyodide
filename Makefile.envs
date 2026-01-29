@@ -1,9 +1,9 @@
-export PYVERSION ?= 3.13.2
+export PYVERSION ?= 3.14.0
 export PYODIDE_EMSCRIPTEN_VERSION ?= 5.0.0
 export PYODIDE_VERSION ?= 0.30.0.dev0
-export PYODIDE_ABI_VERSION ?= 2025_0
+export PYODIDE_ABI_VERSION ?= 2026_0
 
-export PYTHON_ARCHIVE_SHA256=b8d79530e3b7c96a5cb2d40d431ddb512af4a563e863728d8713039aa50203f9
+export PYTHON_ARCHIVE_SHA256=88d2da4eed42fa9a5f42ff58a8bc8988881bd6c547e297e46682c2687638a851
 
 export SED ?= sed
 
@@ -245,7 +245,6 @@ EXPORTS=_main \
    ,_PyObject_Size \
    ,_PyRun_SimpleString \
    ,__PyRuntime \
-   ,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET \
    ,_PySet_Add \
    ,_PySet_New \
    ,__PyTraceback_Add \

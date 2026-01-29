@@ -79,7 +79,7 @@ autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3.13", None),
+    "python": ("https://docs.python.org/3.14", None),
     "micropip": ("https://micropip.pyodide.org/en/stable/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
 }
