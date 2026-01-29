@@ -389,7 +389,7 @@ JsProxy_js_id(PyObject* self, void* _unused)
 
   JsRef idval = JsProxy_REF(self);
   int x[2] = { (int)Py_TYPE(self), (int)idval };
-  Py_hash_t result_c = _Py_HashBytes(x, 8);
+  Py_hash_t result_c = Py_HashBuffer(x, 8);
   FAIL_IF_MINUS_ONE(result_c);
   result = PyLong_FromLong(result_c);
 finally:

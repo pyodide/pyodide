@@ -65,6 +65,9 @@ $(PYBUILD)/.patched_makefile:
 $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched_makefile
 	# touch libpython3.13.a so we don't remake it due to modified Makefile(??)
 	touch $(PYBUILD)/$(PYLIB)
+	# Ensure build-details.json is present before installing the library
+	# This is included in the CPython `build_wasm` target, but not in our custom build
+	emmake make -C $(PYBUILD) build-details.json
 	CFLAGS="$(CFLAGS_BASE)" emmake make -C $(PYBUILD) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
 	cp $(PYBUILD)/$(PYLIB) $(PYINSTALL)/lib/
 
@@ -210,7 +213,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 	#   so it is more efficient to use 30 bit digits.
 	( \
 		cd $(PYBUILD); \
-		CONFIG_SITE=./Tools/wasm/config.site-wasm32-emscripten READELF=true emconfigure \
+		CONFIG_SITE=./Tools/wasm/emscripten/config.site-wasm32-emscripten READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
 			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1" \
