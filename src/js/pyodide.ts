@@ -370,7 +370,7 @@ async function createPyodideModule(
   const module = await _createPyodideModule(emscriptenSettings);
 
   // Handle early exit
-  if (emscriptenSettings.exitCode !== undefined) {
+  if (emscriptenSettings.exitCode !== undefined && emscriptenSettings.exitCode !== 0) {
     throw new module.ExitStatus(emscriptenSettings.exitCode);
   }
 
