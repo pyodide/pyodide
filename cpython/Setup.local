@@ -14,7 +14,7 @@ _posixsubprocess _posixsubprocess.c
 _bz2 _bz2module.c -lbz2
 zlib zlibmodule.c
 
-_hmac hmacmodule.c -IModules/_hacl/include
+_hmac hmacmodule.c _hacl/Hacl_Hash_MD5.c _hacl/Hacl_Hash_SHA1.c _hacl/Hacl_Hash_SHA2.c _hacl/Hacl_Hash_SHA3.c _hacl/Hacl_Hash_Blake2b.c _hacl/Hacl_Hash_Blake2s.c _hacl/Hacl_Hash_Blake2b_Simd256.c _hacl/Hacl_Hash_Blake2s_Simd128.c _hacl/Hacl_HMAC.c _hacl/Hacl_Streaming_HMAC.c _hacl/Lib_Memzero0.c -I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include
 _sqlite3 _sqlite/blob.c _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c -lsqlite3
 _lzma _lzmamodule.c -I../lzma/dist/include -L../lzma/dist/lib -llzma
 
