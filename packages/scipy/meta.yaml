@@ -34,6 +34,7 @@ source:
     - patches/0020-Change-nc-type-from-int64_t-to-Py_ssize_t.patch  # drop after scipy 1.18
 
 build:
+  vendor-sharedlib: true
   # NumPy 2.1 disabled visibility for symbols outside of extension modules
   # by default, so this breaks SciPy tests from modules that use f2py to
   # build because they rely on the visibility of symbols in NumPy. This flag
@@ -146,10 +147,11 @@ requirements:
     - libboost
   run:
     - numpy
-    - libopenblas
   executable:
     - gfortran
-
+  constraint:
+    # Getting: Error: Dynamic linking error: cannot resolve symbol pow_di
+    - meson < 1.10
 test:
   imports:
     - scipy
