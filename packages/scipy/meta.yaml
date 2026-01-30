@@ -31,6 +31,7 @@ source:
     - patches/0013-Set-wrapper-return-type-to-int.patch
     - patches/0015-Remove-f2py-generators.patch
     - patches/0019-Explicitly-convert-return-value-of-SUPERLU_MALLOC.patch
+    - patches/0020-Change-nc-type-from-int64_t-to-Py_ssize_t.patch  # drop after scipy 1.18
 
 build:
   # NumPy 2.1 disabled visibility for symbols outside of extension modules
@@ -52,6 +53,7 @@ build:
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
     -fwasm-exceptions
+
 
   # Exclude tests via Meson's install tags functionality.
   unvendor-tests: true
@@ -89,7 +91,20 @@ build:
     sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
     sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
     sed -i 's/void/int/g' scipy/linalg/cython_lapack_signatures.txt
+    sed -i 's/^void/int/g' scipy/linalg/src/_common_array_utils.hh
+    # Change fortran functions called in C code to return int instead of void
+    # This adhoc regex checks function names ending with _ such as `void zgetrs_(`
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/linalg/_common_array_utils.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/linalg/_matfuncs_expm.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/sparse/linalg/_propack/PROPACK/src/include/blaslapack_declarations.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/sparse/linalg/_eigen/arpack/arnaud/src/blaslapack_declarations.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/integrate/src/blaslapack_declarations.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/optimize/__lbfgsb.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/optimize/__nnls.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/optimize/__slsqp.h
+
     sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
+    sed -i 's/void BLAS_FUNC/int BLAS_FUNC/g' scipy/interpolate/src/__fitpack.h
 
     sed -i 's/extern void/extern int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
     sed -i 's/PUBLIC void/PUBLIC int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
