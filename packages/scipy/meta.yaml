@@ -1,7 +1,6 @@
 package:
   name: scipy
-  version: 1.14.1
-  pinned: true
+  version: 1.17.0
   tag:
     - min-scipy-stack
     - cross-build
@@ -19,28 +18,18 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/62/11/4d44a1f274e002784e4dbdb81e0ea96d2de2d1045b2132d5af62cc31fd28/scipy-1.14.1.tar.gz
-  sha256: 5a275584e726026a5699459aa72f828a610821006228e841b94275c4a7c08417
+  url: https://files.pythonhosted.org/packages/source/s/scipy/scipy-1.17.0.tar.gz
+  sha256: 2591060c8e648d8b96439e111ac41fd8342fdeff1876be2e19dea3fe8930454e
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
-    - patches/0002-int-to-string.patch
     - patches/0003-gemm_-no-const.patch
     - patches/0004-make-int-return-values.patch
     - patches/0005-Fix-fitpack.patch
     - patches/0006-Fix-gees-calls.patch
-    - patches/0007-MAINT-linalg-Remove-id_dist-Fortran-files.patch
-    - patches/0008-Mark-mvndst-functions-recursive.patch
-    - patches/0009-Make-sreorth-recursive.patch
-    - patches/0010-Link-openblas-with-modules-that-require-f2c.patch
-    - patches/0011-Remove-fpchec-inline-if-then-endif-constructs.patch # remove with SciPy v1.15.0
     - patches/0012-Remove-chla_transtype.patch
     - patches/0013-Set-wrapper-return-type-to-int.patch
-    - patches/0014-Skip-svd_gesdd-test.patch # remove with SciPy v1.15.0
     - patches/0015-Remove-f2py-generators.patch
-    - patches/0016-Make-sf_error_state_lib-a-static-library.patch
-    - patches/0017-Remove-test-modules-that-fail-to-build.patch
-    - patches/0018-Fix-lapack-larfg-function-signature.patch
     - patches/0019-Explicitly-convert-return-value-of-SUPERLU_MALLOC.patch
 
 build:
@@ -145,9 +134,6 @@ requirements:
     - libopenblas
   executable:
     - gfortran
-  constraint:
-    # Getting: Error: Dynamic linking error: cannot resolve symbol pow_di
-    - meson < 1.10
 
 test:
   imports:
