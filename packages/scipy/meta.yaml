@@ -27,6 +27,7 @@ source:
     - patches/0004-make-int-return-values.patch
     - patches/0005-Fix-fitpack.patch
     - patches/0006-Fix-gees-calls.patch
+    - patches/0010-Link-openblas-with-modules-that-require-f2c.patch
     - patches/0012-Remove-chla_transtype.patch
     - patches/0013-Set-wrapper-return-type-to-int.patch
     - patches/0015-Remove-f2py-generators.patch
