@@ -1,20 +1,29 @@
-From c3e55561d8ce323da67a82ad2702e032fa07945c Mon Sep 17 00:00:00 2001
+From 5a684821668bcbbd3a4976c91b4967bfdaee2a59 Mon Sep 17 00:00:00 2001
 From: Ilhan Polat <ilhanpolat@gmail.com>
-Date: Mon, 5 Jan 2026 01:52:48 +0100
-Subject: [PATCH 1/1] MAINT:linalg: Remove dummy argument from ?larf wrapper
-
-https://github.com/scipy/scipy/pull/24274
+Date: Mon, 5 Jan 2026 01:15:17 +0100
+Subject: [PATCH 1/21] MAINT:linalg: Remove dummy larfg parameter
 
 ---
- scipy/linalg/flapack_other.pyf.src | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
-
 diff --git a/scipy/linalg/flapack_other.pyf.src b/scipy/linalg/flapack_other.pyf.src
-index e68ce7f2c1..049344ae5e 100644
+index 1db51bbd83..049344ae5e 100644
 --- a/scipy/linalg/flapack_other.pyf.src
 +++ b/scipy/linalg/flapack_other.pyf.src
-@@ -2225,7 +2225,10 @@ subroutine <prefix>larfg(n, alpha, x, incx, tau)
+@@ -2214,16 +2214,21 @@ function <prefix>lantr(norm, uplo, diag, m, n, a, lda, work) result(n2)
+ 
+ end function <prefix>lantr
+ 
+-subroutine <prefix>larfg(n, alpha, x, incx, tau, lx)
++subroutine <prefix>larfg(n, alpha, x, incx, tau)
++    callstatement (*f2py_func)(&n,&alpha,x,&incx,&tau)
++    callprotoargument F_INT*, <ctype>*, <ctype>*, F_INT*, <ctype>*
++
+     integer intent(in), check(n>=1) :: n
+     <ftype> intent(in,out) :: alpha
+-    <ftype> intent(in,copy,out), dimension(lx) :: x
++    <ftype> intent(in,copy,out), dimension(1+(n-2)*abs(incx)), depend(n,incx) :: x
+     integer intent(in), check(incx>0||incx<0) :: incx = 1
      <ftype> intent(out) :: tau
+-    integer intent(hide),depend(x,n,incx),check(lx > (n-2)*incx) :: lx = len(x)
  end subroutine <prefix>larfg
  
 -subroutine <prefix>larf(side,m,n,v,incv,tau,c,ldc,work,lwork)
@@ -25,7 +34,7 @@ index e68ce7f2c1..049344ae5e 100644
      character intent(in), check(side[0]=='L'||side[0]=='R') :: side = 'L'
      integer intent(in,hide), depend(c) :: m = shape(c,0)
      integer intent(in,hide), depend(c) :: n = shape(c,1)
-@@ -2235,8 +2238,7 @@ subroutine <prefix>larf(side,m,n,v,incv,tau,c,ldc,work,lwork)
+@@ -2233,8 +2238,7 @@ subroutine <prefix>larf(side,m,n,v,incv,tau,c,ldc,work,lwork)
      <ftype> dimension(m,n), intent(in,copy,out) :: c
      integer intent(in,hide) :: ldc = max(1,shape(c,0))
      ! FIXME: work should not have been an input argument but kept here for backwards compatibility!
@@ -35,6 +44,3 @@ index e68ce7f2c1..049344ae5e 100644
  end subroutine <prefix>larf
  
  subroutine <prefix>lartg(f,g,cs,sn,r)
--- 
-2.50.1 (Apple Git-155)
-
