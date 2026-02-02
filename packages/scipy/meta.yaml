@@ -32,6 +32,7 @@ source:
     - patches/0015-Remove-f2py-generators.patch
     - patches/0019-Explicitly-convert-return-value-of-SUPERLU_MALLOC.patch
     - patches/0020-Change-nc-type-from-int64_t-to-Py_ssize_t.patch  # drop after scipy 1.18
+    - patches/0021-MAINT-linalg-Remove-dummy-argument-from-larf-wrapper.patch  # drop after scipy 1.18
 
 build:
   vendor-sharedlib: true
