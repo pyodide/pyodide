@@ -13,7 +13,8 @@ Co-Developed-by: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github
  scipy/integrate/meson.build | 2 +-
  scipy/optimize/meson.build  | 6 +++---
  scipy/stats/meson.build     | 2 +-
- 3 files changed, 5 insertions(+), 5 deletions(-)
+ scipy/interpolate/meson.build | 2 +-
+ 4 files changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/scipy/integrate/meson.build b/scipy/integrate/meson.build
 index 23a715dd58..e5cd9ad4c8 100644
@@ -72,5 +73,18 @@ index bb43e3b2e9..358279a93b 100644
    link_args: version_link_args,
    install: true,
    link_language: 'fortran',
+diff --git a/scipy/interpolate/meson.build b/scipy/interpolate/meson.build
+index 33783fc034..877a77539c 100644
+--- a/scipy/interpolate/meson.build
++++ b/scipy/interpolate/meson.build
+@@ -172,7 +172,7 @@ py3.extension_module('_dfitpack',
+   f2py_gen.process('src/dfitpack.pyf', extra_args: extra_f2py_arg),
+   c_args: [Wno_unused_variable] +  c_flags_ilp64,
+   link_args: version_link_args,
+-  dependencies: [fortranobject_dep],
++  dependencies: [lapack, fortranobject_dep],
+   link_with: [fitpack_lib],
+   override_options: ['b_lto=false'],
+   install: true,
 -- 
 2.39.3 (Apple Git-146)
