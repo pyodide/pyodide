@@ -93,7 +93,8 @@ build:
     sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
     sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
     sed -i 's/void/int/g' scipy/linalg/cython_lapack_signatures.txt
-    sed -i 's/^void/int/g' scipy/linalg/src/_common_array_utils.hh
+    sed -i 's/^void BLAS_FUNC/int BLAS_FUNC/g' scipy/linalg/src/_common_array_utils.hh
+
     # Change fortran functions called in C code to return int instead of void
     # This adhoc regex checks function names ending with _ such as `void zgetrs_(`
     sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/linalg/_common_array_utils.h
