@@ -58,6 +58,13 @@ async function main() {
       os.unlink(path)
     `);
 
+    // get_native_id is not available in Pyodide but scipy uses it a lot in tests
+    await pyodide.runPythonAsync(`
+      import threading
+      import random
+      threading.get_native_id = lambda self: random.randint(0, 10000)
+    `);
+
     await pyodide.runPythonAsync(
       "import micropip; micropip.install(['pytest', 'hypothesis', 'pooch', 'lzma'])",
     );
