@@ -98,6 +98,40 @@ index f35c94f984..1872d335aa 100644
      *ret = F_FUNC(wzladiv,WZLADIV)(x, y);
  }
  
+diff --git a/scipy/integrate/_odepackmodule.c b/scipy/integrate/_odepackmodule.c
+index 0c8067e652..d085939859 100644
+--- a/scipy/integrate/_odepackmodule.c
++++ b/scipy/integrate/_odepackmodule.c
+@@ -156,17 +156,17 @@ static PyObject *odepack_error;
+     #endif
+ #endif
+ 
+-typedef void lsoda_f_t(F_INT *n, double *t, double *y, double *ydot);
++typedef int lsoda_f_t(F_INT *n, double *t, double *y, double *ydot);
+ typedef int lsoda_jac_t(F_INT *n, double *t, double *y, F_INT *ml, F_INT *mu,
+                         double *pd, F_INT *nrowpd);
+ 
+-void LSODA(lsoda_f_t *f, F_INT *neq, double *y, double *t, double *tout, F_INT *itol,
++int LSODA(lsoda_f_t *f, F_INT *neq, double *y, double *t, double *tout, F_INT *itol,
+            double *rtol, double *atol, F_INT *itask, F_INT *istate, F_INT *iopt,
+            double *rwork, F_INT *lrw, F_INT *iwork, F_INT *liw, lsoda_jac_t *jac,
+            F_INT *jt);
+ 
+ /*
+-void ode_function(int *n, double *t, double *y, double *ydot)
++int ode_function(int *n, double *t, double *y, double *ydot)
+ {
+   ydot[0] = -0.04*y[0] + 1e4*y[1]*y[2];
+   ydot[2] = 3e7*y[1]*y[1];
+@@ -175,7 +175,7 @@ void ode_function(int *n, double *t, double *y, double *ydot)
+ }
+ */
+ 
+-void
++int
+ ode_function(F_INT *n, double *t, double *y, double *ydot)
+ {
+     /*
 diff --git a/scipy/odr/__odrpack.c b/scipy/odr/__odrpack.c
 index c806e33fbf..c4b822eb92 100644
 --- a/scipy/odr/__odrpack.c
@@ -240,6 +274,72 @@ index 49b928a431..0822687719 100644
  	     int *g, int h[], int *i, int j[], int *k, double l[],
  	     int m[], int n[])
  {
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/debug.h b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/debug.h
+index 5eb0bb1b3d..81a6efafb9 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/debug.h
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/debug.h
+@@ -1,16 +1,16 @@
+-c
++
+ c\SCCS Information: @(#) 
+ c FILE: debug.h   SID: 2.3   DATE OF SID: 11/16/95   RELEASE: 2 
+ c
+ c     %---------------------------------%
+ c     | See debug.doc for documentation |
+ c     %---------------------------------%
+-      integer  logfil, ndigit, mgetv0,
+-     &         msaupd, msaup2, msaitr, mseigt, msapps, msgets, mseupd,
+-     &         mnaupd, mnaup2, mnaitr, mneigh, mnapps, mngets, mneupd,
+-     &         mcaupd, mcaup2, mcaitr, mceigh, mcapps, mcgets, mceupd
+-      common /debug/ 
+-     &         logfil, ndigit, mgetv0,
+-     &         msaupd, msaup2, msaitr, mseigt, msapps, msgets, mseupd,
+-     &         mnaupd, mnaup2, mnaitr, mneigh, mnapps, mngets, mneupd,
+-     &         mcaupd, mcaup2, mcaitr, mceigh, mcapps, mcgets, mceupd
++c      integer  logfil, ndigit, mgetv0,
++c     &         msaupd, msaup2, msaitr, mseigt, msapps, msgets, mseupd,
++c     &         mnaupd, mnaup2, mnaitr, mneigh, mnapps, mngets, mneupd,
++c     &         mcaupd, mcaup2, mcaitr, mceigh, mcapps, mcgets, mceupd
++c      common /debug/
++c     &         logfil, ndigit, mgetv0,
++c     &         msaupd, msaup2, msaitr, mseigt, msapps, msgets, mseupd,
++c     &         mnaupd, mnaup2, mnaitr, mneigh, mnapps, mngets, mneupd,
++c     &         mcaupd, mcaup2, mcaitr, mceigh, mcapps, mcgets, mceupd
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/stat.h b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/stat.h
+index 66a8e9f87f..81d49c3bd2 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/stat.h
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/stat.h
+@@ -5,17 +5,17 @@ c
+ c\SCCS Information: @(#) 
+ c FILE: stat.h   SID: 2.2   DATE OF SID: 11/16/95   RELEASE: 2 
+ c
+-      real       t0, t1, t2, t3, t4, t5
+-      save       t0, t1, t2, t3, t4, t5
++c      real       t0, t1, t2, t3, t4, t5
++c      save       t0, t1, t2, t3, t4, t5
+ c
+-      integer    nopx, nbx, nrorth, nitref, nrstrt
+-      real       tsaupd, tsaup2, tsaitr, tseigt, tsgets, tsapps, tsconv,
+-     &           tnaupd, tnaup2, tnaitr, tneigh, tngets, tnapps, tnconv,
+-     &           tcaupd, tcaup2, tcaitr, tceigh, tcgets, tcapps, tcconv,
+-     &           tmvopx, tmvbx, tgetv0, titref, trvec
+-      common /timing/ 
+-     &           nopx, nbx, nrorth, nitref, nrstrt,
+-     &           tsaupd, tsaup2, tsaitr, tseigt, tsgets, tsapps, tsconv,
+-     &           tnaupd, tnaup2, tnaitr, tneigh, tngets, tnapps, tnconv,
+-     &           tcaupd, tcaup2, tcaitr, tceigh, tcgets, tcapps, tcconv,
+-     &           tmvopx, tmvbx, tgetv0, titref, trvec
++c      integer    nopx, nbx, nrorth, nitref, nrstrt
++c      real       tsaupd, tsaup2, tsaitr, tseigt, tsgets, tsapps, tsconv,
++c     &           tnaupd, tnaup2, tnaitr, tneigh, tngets, tnapps, tnconv,
++c     &           tcaupd, tcaup2, tcaitr, tceigh, tcgets, tcapps, tcconv,
++c     &           tmvopx, tmvbx, tgetv0, titref, trvec
++c      common /timing/
++c     &           nopx, nbx, nrorth, nitref, nrstrt,
++c     &           tsaupd, tsaup2, tsaitr, tseigt, tsgets, tsapps, tsconv,
++c     &           tnaupd, tnaup2, tnaitr, tneigh, tngets, tnapps, tnconv,
++c     &           tcaupd, tcaup2, tcaitr, tceigh, tcgets, tcapps, tcconv,
++c     &           tmvopx, tmvbx, tgetv0, titref, trvec
 -- 
 2.34.1
 

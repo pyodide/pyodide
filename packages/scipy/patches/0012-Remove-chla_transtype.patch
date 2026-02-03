@@ -11,10 +11,10 @@ This just deletes it entirely due to laziness.
  1 file changed, 1 deletion(-)
 
 diff --git a/scipy/linalg/cython_lapack_signatures.txt b/scipy/linalg/cython_lapack_signatures.txt
-index 5aa59d96ea..afdc9480f1 100644
+index 1f3dc226ab..28aa8b8c22 100644
 --- a/scipy/linalg/cython_lapack_signatures.txt
 +++ b/scipy/linalg/cython_lapack_signatures.txt
-@@ -111,7 +111,6 @@ void chetrs(char *uplo, int *n, int *nrhs, c *a, int *lda, int *ipiv, c *b, int
+@@ -108,7 +108,6 @@ void chetrs(char *uplo, int *n, int *nrhs, c *a, int *lda, int *ipiv, c *b, int
  void chetrs2(char *uplo, int *n, int *nrhs, c *a, int *lda, int *ipiv, c *b, int *ldb, c *work, int *info)
  void chfrk(char *transr, char *uplo, char *trans, int *n, int *k, s *alpha, c *a, int *lda, s *beta, c *c)
  void chgeqz(char *job, char *compq, char *compz, int *n, int *ilo, int *ihi, c *h, int *ldh, c *t, int *ldt, c *alpha, c *beta, c *q, int *ldq, c *z, int *ldz, c *work, int *lwork, s *rwork, int *info)
