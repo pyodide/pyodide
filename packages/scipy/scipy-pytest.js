@@ -62,7 +62,7 @@ async function main() {
     await pyodide.runPythonAsync(`
       import threading
       import random
-      threading.get_native_id = lambda self: random.randint(0, 10000)
+      threading.get_native_id = lambda: random.randint(0, 10000)
     `);
 
     await pyodide.runPythonAsync(
