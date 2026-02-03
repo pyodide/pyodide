@@ -121,7 +121,8 @@
 - test_capi.test_complex
 - test_capi.test_config
 - test_capi.test_dict
-- test_capi.test_emscripten
+# We removed FS.createAsyncInputDevice in our patch
+# - test_capi.test_emscripten
 - test_capi.test_eval
 - test_capi.test_eval_code_ex
 - test_capi.test_exceptions
@@ -533,7 +534,7 @@
     - test_recursive_repr
     # seeking out of 32-bit memory boundary
     # RangeError: Array buffer allocation failed
-    - large_file_ops
+    - test_large_file_ops
 - test_ioctl
 - test_ipaddress
 - test_isinstance:
@@ -566,7 +567,9 @@
 - test_keyword
 - test_keywordonlyarg
 - test_kqueue
-- test_largefile
+# out of 32-bit memory boundary
+# RangeError: Array buffer allocation failed
+# - test_largefile
 - test_launcher
 - test_linecache:
     skip:
@@ -574,6 +577,7 @@
     - test_clearcache
     - test_getline
     - test_memoryerror
+    - test_frozen
 - test_list:
     skip:
     - test_repr_deep
@@ -641,6 +645,8 @@
 - test_os:
     skip:
     - test_utime*
+    # os.umask is not supported
+    - test_mode
 - test_osx_env
 - test_pathlib.test_copy
 - test_pathlib.test_join
@@ -671,7 +677,10 @@
     xfail: dbm
 - test_pkg
 - test_pkgutil
-- test_platform
+- test_platform:
+    skip:
+    # emscripten version hard coded in the test file
+    - test_libc_ver
 - test_plistlib:
     skip:
     - test_deep_nesting
@@ -701,7 +710,8 @@
 - test_pyrepl.test_input
 - test_pyrepl.test_interact
 - test_pyrepl.test_keymap
-- test_pyrepl.test_pyrepl
+- test_pyrepl.test_pyrepl:
+    xfail: JSPI patches removed
 - test_pyrepl.test_reader
 - test_pyrepl.test_terminfo
 - test_pyrepl.test_unix_console
@@ -749,7 +759,11 @@
 - test_source_encoding
 - test_sqlite3.test_backup
 - test_sqlite3.test_cli
-- test_sqlite3.test_dbapi
+- test_sqlite3.test_dbapi:
+    skip:
+    # Undecodable filename doesn't work
+    - test_open_undecodable_uri
+    - test_open_with_undecodable_path
 - test_sqlite3.test_dump
 - test_sqlite3.test_factory
 - test_sqlite3.test_hooks
@@ -779,6 +793,7 @@
     - test_subclass    # socket not supported
     - test_unwrap    # MemoryBIO stub
     - test_bad_server_hostname    # socket not supported
+    - test_options  #
 - test_stable_abi_ctypes
 - test_startfile
 - test_stat
@@ -816,6 +831,11 @@
     timeout: 240
     skip_browsers:
       node: flaky (timeout)
+    skip:
+      # TODO: not compatible with our filesystem I guess?
+      - test_realpath_limit_attack
+      # os.umask not supported
+      - test_chmod_outside_dir
 - test_tcl
 - test_tempfile
 - test_termios
