@@ -51,7 +51,7 @@ tests_to_mark = [
         thread_msg,
     ),
     # scipy/integrate tests
-    ("test__quad_vec.py::TestQuadVec::test_quad_vec_pool", xfail, process_msg),
+    ("test__quad_vec.py::TestQuadVec.test_quad_vec_pool.*", xfail, process_msg),
     (
         "test_quadpack.py.+TestCtypesQuad.test_ctypes.*",
         xfail,
@@ -132,22 +132,22 @@ tests_to_mark = [
     ("test_optimize.py::test_cobyla_threadsafe", xfail, thread_msg),
     ("test_optimize.py::TestBrute.test_workers", xfail, process_msg),
     (
-        "test__numdiff.py::TestApproxDerivativesDense::test_scalar_vector",
+        "test__numdiff.py::TestApproxDerivativesDense.test_scalar_vector",
         xfail,
         process_msg,
     ),
     (
-        "test__numdiff.py::TestApproxDerivativesDense::test_workers_evaluations_and_nfev",
+        "test__numdiff.py::TestApproxDerivativesDense.test_workers_evaluations_and_nfev",
         xfail,
         process_msg,
     ),
     (
-        "test__numdiff.py::TestApproxDerivativesDense::test_vector_vector",
+        "test__numdiff.py::TestApproxDerivativesDense.test_vector_vector",
         xfail,
         process_msg,
     ),
     (
-        "test__numdiff.py::TestApproxDerivativeSparse::test_all",
+        "test__numdiff.py::TestApproxDerivativeSparse.test_all",
         xfail,
         process_msg,
     ),
@@ -323,12 +323,12 @@ tests_to_mark = [
         todo_runtime_warning,
     ),
     (
-        "test_stats.py::TestWassersteinDistance::test_inf_values",
+        "test_stats.py::TestWassersteinDistance.test_inf_values",
         xfail,
         todo_runtime_warning,
     ),
     (
-        "test_stats.py::TestEnergyDistance::test_inf_values",
+        "test_stats.py::TestEnergyDistance.test_inf_values",
         xfail,
         todo_runtime_warning,
     ),
