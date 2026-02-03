@@ -128,7 +128,7 @@ tests_to_mark = [
         "TODO no warnings emitted maybe due to no floating point exception?",
     ),
     ("test_minpack.py::TestFSolve.test_concurrent.+", xfail, process_msg),
-    ("test_minpack.py::TestLeastSq.test_concurrent+", xfail, process_msg),
+    ("test_minpack.py::TestLeastSq.test_concurrent.+", xfail, process_msg),
     ("test_optimize.py::test_cobyla_threadsafe", xfail, thread_msg),
     ("test_optimize.py::TestBrute.test_workers", xfail, process_msg),
     (
@@ -152,12 +152,12 @@ tests_to_mark = [
         process_msg,
     ),
     (
-        "*test_workers*",
+        ".*test_workers.*",
         xfail,
         process_msg,
     ),
     (
-        "test_optimize.py::TestWorkers*",
+        "test_optimize.py::TestWorkers.*",
         xfail,
         process_msg,
     ),
@@ -333,7 +333,7 @@ tests_to_mark = [
         todo_runtime_warning,
     ),
     # many
-    ("*test_concurrency*", xfail, thread_msg),
+    (".*test_concurrency.*", xfail, thread_msg),
 ]
 
 
