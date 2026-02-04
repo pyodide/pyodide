@@ -1,7 +1,7 @@
 From 848c94e218e89d866978fbc883cbb2d919f56ce9 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 31 Jul 2024 10:29:47 +0200
-Subject: [PATCH 12/19] Remove chla_transtype
+Subject: [PATCH 07/12] Remove chla_transtype
 
 The signature should probably be `int chla_transtype(char* res, int *trans)`.
 This just deletes it entirely due to laziness.

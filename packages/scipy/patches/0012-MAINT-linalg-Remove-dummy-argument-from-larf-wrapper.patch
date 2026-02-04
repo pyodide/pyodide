@@ -1,7 +1,7 @@
 From 5a684821668bcbbd3a4976c91b4967bfdaee2a59 Mon Sep 17 00:00:00 2001
 From: Ilhan Polat <ilhanpolat@gmail.com>
 Date: Mon, 5 Jan 2026 01:15:17 +0100
-Subject: [PATCH 1/21] MAINT:linalg: Remove dummy larfg parameter
+Subject: [PATCH 12/12] MAINT:linalg: Remove dummy larfg parameter
 
 ---
 diff --git a/scipy/linalg/flapack_other.pyf.src b/scipy/linalg/flapack_other.pyf.src

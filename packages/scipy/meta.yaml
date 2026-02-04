@@ -23,17 +23,17 @@ source:
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
-    - patches/0003-gemm_-no-const.patch
-    - patches/0004-make-int-return-values.patch
-    - patches/0005-Fix-fitpack.patch
-    - patches/0006-Fix-gees-calls.patch
-    - patches/0010-Link-openblas-with-modules-that-require-f2c.patch
-    - patches/0012-Remove-chla_transtype.patch
-    - patches/0013-Set-wrapper-return-type-to-int.patch
-    - patches/0015-Remove-f2py-generators.patch
-    - patches/0019-Explicitly-convert-return-value-of-SUPERLU_MALLOC.patch
-    - patches/0020-Change-nc-type-from-int64_t-to-Py_ssize_t.patch  # drop after scipy 1.18
-    - patches/0021-MAINT-linalg-Remove-dummy-argument-from-larf-wrapper.patch  # drop after scipy 1.18
+    - patches/0002-gemm_-no-const.patch
+    - patches/0003-make-int-return-values.patch
+    - patches/0004-Fix-fitpack.patch
+    - patches/0005-Fix-gees-calls.patch
+    - patches/0006-Link-openblas-with-modules-that-require-f2c.patch
+    - patches/0007-Remove-chla_transtype.patch
+    - patches/0008-Set-wrapper-return-type-to-int.patch
+    - patches/0009-Remove-f2py-generators.patch
+    - patches/0010-Explicitly-convert-return-value-of-SUPERLU_MALLOC.patch
+    - patches/0011-Change-nc-type-from-int64_t-to-Py_ssize_t.patch  # drop after scipy 1.18
+    - patches/0012-MAINT-linalg-Remove-dummy-argument-from-larf-wrapper.patch  # drop after scipy 1.18
 
 build:
   vendor-sharedlib: true
