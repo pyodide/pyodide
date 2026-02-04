@@ -26,7 +26,7 @@ typedef struct
 } AsyncioState;
 
 _Py_IDENTIFIER(get_event_loop);
-_Py_IDENTIFIER(_current_tasks);
+_Py_IDENTIFIER(current_task);
 _Py_IDENTIFIER(_leave_task);
 _Py_IDENTIFIER(_enter_task);
 
@@ -37,10 +37,8 @@ saveAsyncioState()
   PyObject* asyncio_module = NULL;
   PyObject* _asyncio_module = NULL;
   PyObject* loop = NULL;
-  PyObject* _current_tasks = NULL;
   PyObject* task = NULL;
   PyObject* status = NULL;
-  Py_hash_t hash;
   bool success = false;
 
   asyncio_module = PyImport_ImportModule("asyncio");
@@ -49,11 +47,7 @@ saveAsyncioState()
   FAIL_IF_NULL(_asyncio_module);
   loop = _PyObject_CallMethodIdNoArgs(asyncio_module, &PyId_get_event_loop);
   FAIL_IF_NULL(loop);
-  _current_tasks = _PyObject_GetAttrId(_asyncio_module, &PyId__current_tasks);
-  FAIL_IF_NULL(_current_tasks);
-  hash = PyObject_Hash(loop);
-  FAIL_IF_MINUS_ONE(hash);
-  task = _PyDict_GetItem_KnownHash(_current_tasks, loop, hash);
+  task = _PyObject_CallMethodIdOneArg(_asyncio_module, &PyId_current_task, loop);
   Py_XINCREF(task);
   if (task == NULL) {
     FAIL_IF_ERR_OCCURRED();
@@ -74,7 +68,6 @@ finally:
   }
   Py_CLEAR(asyncio_module);
   Py_CLEAR(_asyncio_module);
-  Py_CLEAR(_current_tasks);
   Py_CLEAR(status);
   as.loop = loop;
   as.task = task;
