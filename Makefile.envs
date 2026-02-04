@@ -83,7 +83,9 @@ export PYZIP_EXCLUDE_FILES=\
 	turtledemo/ \
 	test/ \
 	_pydecimal.py \
-	pydoc_data/
+	pydoc_data/ \
+  _sysconfig_vars__emscripten_wasm32-emscripten.json \
+  build-details.json
 
 # List of modules that we replace with a stub in the zipped standard library
 export PYZIP_JS_STUBS=\
