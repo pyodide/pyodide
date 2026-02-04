@@ -818,13 +818,13 @@ def test_create_once_callable(selenium):
             destroyed = True
 
     f = Square()
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     proxy = create_once_callable(f)
-    assert sys.getrefcount(f) == 3
+    assert sys.getrefcount(f) == 2
 
     call7 = run_js("(f) => f(7)")
     assert call7(proxy) == 49
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     with raises(JsException, match="can only be called once"):
         call7(proxy)
     del f
@@ -864,20 +864,20 @@ def test_create_proxy(selenium):
     f = Test()
     import sys
 
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     proxy = create_proxy(f)
-    assert sys.getrefcount(f) == 3
+    assert sys.getrefcount(f) == 2
     assert proxy() == 7
     testAddListener(proxy)
-    assert sys.getrefcount(f) == 3
-    assert testCallListener() == 7
-    assert sys.getrefcount(f) == 3
-    assert testCallListener() == 7
-    assert sys.getrefcount(f) == 3
-    assert testRemoveListener(proxy)
-    assert sys.getrefcount(f) == 3
-    proxy.destroy()
     assert sys.getrefcount(f) == 2
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 2
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 2
+    assert testRemoveListener(proxy)
+    assert sys.getrefcount(f) == 2
+    proxy.destroy()
+    assert sys.getrefcount(f) == 1
     destroyed = False
     del f
     assert destroyed

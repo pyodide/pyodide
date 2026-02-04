@@ -18,7 +18,7 @@ print("from ssl import (\n{})".format(",\n    ".join(public_attrs)))
     """
 
     # Guardrail to ensure we don't forget to update this test when Python version changes
-    assert sys.version_info.minor == 13
+    assert sys.version_info.minor == 14
 
     from ssl import (  # type: ignore[attr-defined]  # noqa: F401
         ALERT_DESCRIPTION_ACCESS_DENIED,

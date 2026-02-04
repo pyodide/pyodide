@@ -2572,7 +2572,7 @@ def test_gen_lifetimes(selenium):
     v = exc_info.value.value
     del exc_info
     assert v == ["{1}", "{2}", "{3}", "{4}"]
-    assert sys.getrefcount(v) == 2
+    assert sys.getrefcount(v) == 1
 
 
 @run_in_pyodide
@@ -2611,7 +2611,7 @@ async def test_agen_lifetimes(selenium):
     v = res.exception().args[0]  # type:ignore[attr-defined]
     del res
     assert v == ["{1}", "{2}", "{3}", "{4}"]
-    assert sys.getrefcount(v) == 2
+    assert sys.getrefcount(v) == 1
 
 
 @run_in_pyodide
