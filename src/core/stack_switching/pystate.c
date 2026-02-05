@@ -47,7 +47,8 @@ saveAsyncioState()
   FAIL_IF_NULL(_asyncio_module);
   loop = _PyObject_CallMethodIdNoArgs(asyncio_module, &PyId_get_event_loop);
   FAIL_IF_NULL(loop);
-  task = _PyObject_CallMethodIdOneArg(_asyncio_module, &PyId_current_task, loop);
+  task =
+    _PyObject_CallMethodIdOneArg(_asyncio_module, &PyId_current_task, loop);
   Py_XINCREF(task);
   if (task == NULL) {
     FAIL_IF_ERR_OCCURRED();
