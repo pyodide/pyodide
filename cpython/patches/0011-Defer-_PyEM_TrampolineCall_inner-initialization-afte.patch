@@ -1,0 +1,65 @@
+From e75e2e7ca2d367c38c00d00ab26ac36d72c90619 Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <gyeongjae@cloudflare.com>
+Date: Thu, 5 Feb 2026 16:57:28 +0900
+Subject: [PATCH 1/1] Defer _PyEM_TrampolineCall_inner initialization after
+ module initialization
+
+---
+ Python/emscripten_trampoline.c | 33 ++++++++++++++++++++++-----------
+ 1 file changed, 22 insertions(+), 11 deletions(-)
+
+diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
+index d61146504d0..2f31285f011 100644
+--- a/Python/emscripten_trampoline.c
++++ b/Python/emscripten_trampoline.c
+@@ -15,7 +15,7 @@ _PyEM_TrampolineCall_inner, (int* success,
+ }
+ // Try to replace the JS definition of _PyEM_TrampolineCall_inner with a wasm
+ // version.
+-(function () {
++(function (Module) {
+     // Starting with iOS 18.3.1, WebKit on iOS has an issue with the garbage
+     // collector that breaks the call trampoline. See #130418 and
+     // https://bugs.webkit.org/show_bug.cgi?id=293113 for details.
+@@ -29,17 +29,28 @@ _PyEM_TrampolineCall_inner, (int* success,
+     if (isIOS) {
+         return;
+     }
+-    try {
+-        const trampolineModule = getWasmTrampolineModule();
+-        const trampolineInstance = new WebAssembly.Instance(trampolineModule, {
+-            env: { __indirect_function_table: wasmTable, memory: wasmMemory },
+-        });
+-        _PyEM_TrampolineCall_inner = trampolineInstance.exports.trampoline_call;
+-    } catch (e) {
+-        // Compilation error due to missing wasm-gc support, fall back to JS
+-        // trampoline
++
++    if (!Module) {
++        return;
+     }
+-})();
++
++    Module.preRun.push((module) => {
++        if (!module.wasmTable || !module.memory) {
++            return;
++        }
++
++        try {
++            const trampolineModule = getWasmTrampolineModule();
++            const trampolineInstance = new WebAssembly.Instance(trampolineModule, {
++                env: { __indirect_function_table: module.wasmTable, memory: module.memory },
++            });
++            _PyEM_TrampolineCall_inner = trampolineInstance.exports.trampoline_call;
++        } catch (e) {
++            // Compilation error due to missing wasm-gc support, fall back to JS
++            // trampoline
++        }
++    });
++})(Module);
+ );
+ 
+ PyObject*
+-- 
+2.50.1 (Apple Git-155)
+
