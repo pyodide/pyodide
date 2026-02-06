@@ -115,7 +115,7 @@ def test_zipimport_traceback(selenium):
         tb = traceback.extract_tb(exc_traceback)
 
         assert zipfile in tb[-1].filename.split("/")
-        assert tb[-1].filename == pathlib.__file__  # type:ignore[attr-defined]
+        assert tb[-1].filename == pathlib.__file__
 
     try:
         json.decoder.JSONDecoder().decode(1)  # type: ignore[arg-type]
