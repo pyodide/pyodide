@@ -4747,23 +4747,33 @@ run_sync_not_supported(PyObject* mod, PyObject* Py_UNUSED(arg))
 PyObject*
 run_sync(PyObject* self, PyObject* pyarg)
 {
+  printf("[DEBUG] run_sync: Starting with pyarg: %p\n", (void*)pyarg);
   if (!py_is_awaitable(pyarg)) {
+    printf("[DEBUG] run_sync: ERROR - pyarg is not awaitable\n");
     PyErr_Format(PyExc_TypeError,
                  "object %.100s is not awaitable",
                  Py_TYPE(pyarg)->tp_name);
     return NULL;
   }
+  printf("[DEBUG] run_sync: pyarg is awaitable\n");
   PyObject* ensured_future = NULL;
   PyObject* pyresult = NULL;
 
   // For reasons that I absolutely do not comprehend, we leak memory if use a
   // coroutine directly, but if we ensure_future it first we don't.
+  printf("[DEBUG] run_sync: Calling ensure_future\n");
   ensured_future =
     _PyObject_CallMethodIdOneArg(asyncio_mod, &PyId_ensure_future, pyarg);
+  printf("[DEBUG] run_sync: ensured_future: %p\n", (void*)ensured_future);
+  printf("[DEBUG] run_sync: Converting to JS\n");
   JsVal jsarg = python2js(ensured_future);
   FAIL_IF_JS_ERROR(jsarg);
+  printf("[DEBUG] run_sync: jsarg converted successfully\n");
+  printf("[DEBUG] run_sync: Calling JsvPromise_Syncify\n");
   JsVal jsresult = JsvPromise_Syncify(jsarg);
+  printf("[DEBUG] run_sync: JsvPromise_Syncify returned\n");
   if (JsvError_Check(jsresult)) {
+    printf("[DEBUG] run_sync: ERROR - JsvPromise_Syncify returned error\n");
     if (!PyErr_Occurred()) {
       PyErr_SetString(
         PyExc_RuntimeError,
@@ -4772,16 +4782,22 @@ run_sync(PyObject* self, PyObject* pyarg)
     }
     FAIL();
   }
+  printf("[DEBUG] run_sync: Converting result back to Python\n");
   pyresult = js2python(jsresult);
+  printf("[DEBUG] run_sync: pyresult: %p\n", (void*)pyresult);
 
 finally:
+  printf("[DEBUG] run_sync: Cleanup phase\n");
   if (pyproxy_Check(jsarg)) {
+    printf("[DEBUG] run_sync: Destroying jsarg proxy\n");
     destroy_proxy(jsarg, NULL);
   }
   if (pyproxy_Check(jsresult)) {
+    printf("[DEBUG] run_sync: Destroying jsresult proxy\n");
     destroy_proxy(jsresult, NULL);
   }
   Py_CLEAR(ensured_future);
+  printf("[DEBUG] run_sync: Returning pyresult: %p\n", (void*)pyresult);
   return pyresult;
 }
 
