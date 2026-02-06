@@ -17,37 +17,14 @@ def test_syncify_awaitable_types_accept(selenium):
         await sleep(0.1)
         return 7
 
-    print("[TEST DEBUG] Starting test_syncify_awaitable_types_accept")
-
-    print("[TEST DEBUG] Test 1: run_sync(test())")
-    result = run_sync(test())
-    print(f"[TEST DEBUG] Test 1 result: {result}")
-    assert result == 7
-
-    print("[TEST DEBUG] Test 2: run_sync(create_task(test()))")
-    result = run_sync(create_task(test()))
-    print(f"[TEST DEBUG] Test 2 result: {result}")
-    assert result == 7
-
-    print("[TEST DEBUG] Test 3: run_sync(sleep(0.1))")
+    assert run_sync(test()) == 7
+    assert run_sync(create_task(test())) == 7
     run_sync(sleep(0.1))
-    print("[TEST DEBUG] Test 3 completed")
-
-    print("[TEST DEBUG] Test 4: run_sync(js_sleep(100))")
     run_sync(js_sleep(100))
-    print("[TEST DEBUG] Test 4 completed")
-
-    print("[TEST DEBUG] Test 5: run_sync(gather(...))")
     res = run_sync(gather(test(), sleep(0.1), js_sleep(100), js_sleep(100)))
-    print(f"[TEST DEBUG] Test 5 result: {list(res)}")
     assert list(res) == [7, None, None, None]
-
-    print("[TEST DEBUG] Test 6: run_sync(promise)")
     p = run_js("[sleep(100)]")[0]
     run_sync(p)
-    print("[TEST DEBUG] Test 6 completed")
-
-    print("[TEST DEBUG] test_syncify_awaitable_types_accept completed successfully")
 
 
 @requires_jspi

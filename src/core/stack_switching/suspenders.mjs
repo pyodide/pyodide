@@ -2,15 +2,13 @@ export let suspenderGlobal = { value: null };
 export let validSuspender = { value: false };
 
 let promisingApplyHandler;
-
 export function promisingApply(...args) {
   // validSuspender is a flag so that we can ask for permission before trying to
   // suspend.
   validSuspender.value = true;
   // Record the current stack position. Used in stack_state.mjs
   Module.stackStop = stackSave();
-  const result = promisingApplyHandler(...args);
-  return result;
+  return promisingApplyHandler(...args);
 }
 
 let promisingRunMainHandler;
@@ -20,8 +18,7 @@ export function promisingRunMain(...args) {
   validSuspender.value = true;
   // Record the current stack position. Used in stack_state.mjs
   Module.stackStop = stackSave();
-  const result = promisingRunMainHandler(...args);
-  return result;
+  return promisingRunMainHandler(...args);
 }
 
 /**
@@ -36,8 +33,7 @@ export function createPromising(wasm_func) {
       const orig = validSuspender.value;
       validSuspender.value = true;
       try {
-        const result = await promisingFunc(null, ...args);
-        return result;
+        return await promisingFunc(null, ...args);
       } finally {
         validSuspender.value = orig;
       }
