@@ -1,4 +1,3 @@
-# NOTE: keep the name, version, and other fields in sync with source/path in numpy-tests/meta.yaml.
 package:
   name: numpy
   version: 2.3.1
