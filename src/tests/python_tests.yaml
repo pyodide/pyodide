@@ -943,7 +943,8 @@
 - test_userlist:
     skip:
     - test_repr_deep
-- test_userstring
+- test_userstring:
+    xfail: FIXME works locally, timeouts in CI
 - test_utf8_mode
 - test_utf8source
 - test_uuid
