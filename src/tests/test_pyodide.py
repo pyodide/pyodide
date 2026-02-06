@@ -2069,17 +2069,17 @@ def test_hiwire_invalid_ref(selenium):
             }
             """
         )
-    msg = "hiwire_{} on invalid reference 77. This is most likely due to use after free. It may also be due to memory corruption."
+    msg = "hiwire_{} on invalid reference 12345. This is most likely due to use after free. It may also be due to memory corruption."
     with pytest.raises(JsException, match=msg.format("get")):
-        _hiwire_get(77)
+        _hiwire_get(12345)
     assert _api.fail_test
     _api.fail_test = False
     with pytest.raises(JsException, match=msg.format("incref")):
-        _hiwire_incref(77)
+        _hiwire_incref(12345)
     assert _api.fail_test
     _api.fail_test = False
     with pytest.raises(JsException, match=msg.format("decref")):
-        _hiwire_decref(77)
+        _hiwire_decref(12345)
     assert _api.fail_test
     _api.fail_test = False
 
