@@ -187,6 +187,7 @@ $(PYINSTALL)/lib/libsqlite3.a:
 			--enable-static \
 			--disable-static-shell \
 			--disable-dependency-tracking \
+			--with-tail-call-interp \
 			--prefix=$(SQLITE3BUILD)/dist \
 		&& emmake make libsqlite3.la \
 		&& emmake make install-libLTLIBRARIES install-includeHEADERS \
