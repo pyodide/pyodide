@@ -12,6 +12,12 @@ def _sql_string_literal(value: str) -> str:
     return value.replace("\\", "\\\\").replace("'", "\\'")
 
 
+@pytest.fixture(scope="function")
+def selenium_nodesock(selenium):
+    selenium.run_js("""pyodide.mountNodeSockFS();""")
+    yield selenium
+
+
 # When running this test locally, consider using the following command to start a
 # temporary MySQL server in a Docker container:
 # docker run -d --name mysql-server -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -p 3306:3306 mysql:8.0.0
@@ -34,6 +40,7 @@ def mysql_admin_config():
 @pytest.fixture()
 def mysql_test_db(mysql_admin_config):
     pymysql = pytest.importorskip("pymysql")
+    pytest.importorskip("cryptography")  # for mysql_native_password
 
     suffix = uuid.uuid4().hex[:10]
     db = f"pyodide_it_{suffix}"
@@ -112,7 +119,7 @@ def mysql_test_db(mysql_admin_config):
 @pytest.mark.skip_refcount_check
 @pytest.mark.mysql
 @only_node
-def test_mysql_pymysql_features(selenium, mysql_test_db):
+def test_mysql_pymysql_features(selenium_nodesock, mysql_test_db):
     cfg = mysql_test_db
 
     @run_in_pyodide(packages=["micropip"])
@@ -251,7 +258,7 @@ def test_mysql_pymysql_features(selenium, mysql_test_db):
         return results
 
     results = mysql_features(
-        selenium,
+        selenium_nodesock,
         cfg["host"],
         cfg["port"],
         cfg["user"],

@@ -2,13 +2,20 @@ import socket
 import threading
 import time
 
+import pytest
 from pytest_pyodide import run_in_pyodide
 
 from conftest import only_node
 
 
+@pytest.fixture(scope="function")
+def selenium_nodesock(selenium):
+    selenium.run_js("""pyodide.mountNodeSockFS();""")
+    yield selenium
+
+
 @only_node
-def test_socket_connect(selenium):
+def test_socket_connect(selenium_nodesock):
     """Test that Python socket can connect to a server and exchange data."""
     PORT = 12345
     TEST_MESSAGE = b"Hello from client"
@@ -51,7 +58,7 @@ def test_socket_connect(selenium):
     time.sleep(0.5)
 
     @run_in_pyodide
-    async def socket_client_test(selenium, port, message):
+    async def socket_client_test(selenium_nodesock, port, message):
         import socket
 
         # Create socket and connect
@@ -69,7 +76,7 @@ def test_socket_connect(selenium):
         return response
 
     # Run the client test in Pyodide
-    result = socket_client_test(selenium, PORT, TEST_MESSAGE)
+    result = socket_client_test(selenium_nodesock, PORT, TEST_MESSAGE)
 
     # Wait for server thread to finish
     server_thread.join(timeout=5.0)
@@ -92,7 +99,7 @@ def test_socket_connect(selenium):
 
 
 @only_node
-def test_socket_multiple_send_recv(selenium):
+def test_socket_multiple_send_recv(selenium_nodesock):
     """Test multiple send/recv operations on the same connection."""
     PORT = 12346
     MESSAGES = [b"First message", b"Second message", b"Third message"]
@@ -145,7 +152,7 @@ def test_socket_multiple_send_recv(selenium):
         s.close()
         return responses
 
-    results = multiple_send_recv_test(selenium, PORT, MESSAGES)
+    results = multiple_send_recv_test(selenium_nodesock, PORT, MESSAGES)
     server_thread.join(timeout=5.0)
 
     assert not server_error, f"Server error: {server_error}"
@@ -154,7 +161,7 @@ def test_socket_multiple_send_recv(selenium):
 
 
 @only_node
-def test_socket_large_data_transfer(selenium):
+def test_socket_large_data_transfer(selenium_nodesock):
     """Test transferring larger amounts of data."""
     PORT = 12347
     DATA_SIZE = 64 * 1024  # 64KB
@@ -197,7 +204,7 @@ def test_socket_large_data_transfer(selenium):
     time.sleep(0.5)
 
     @run_in_pyodide
-    async def large_data_test(selenium, port, data_size):
+    async def large_data_test(selenium_nodesock, port, data_size):
         import socket
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -212,7 +219,7 @@ def test_socket_large_data_transfer(selenium):
         s.close()
         return response
 
-    result = large_data_test(selenium, PORT, DATA_SIZE)
+    result = large_data_test(selenium_nodesock, PORT, DATA_SIZE)
     server_thread.join(timeout=10.0)
 
     assert not server_error, f"Server error: {server_error}"
@@ -224,7 +231,7 @@ def test_socket_large_data_transfer(selenium):
 
 
 @only_node
-def test_socket_getpeername(selenium):
+def test_socket_getpeername(selenium_nodesock):
     """Test socket.getpeername() returns correct remote address."""
     PORT = 12348
 
@@ -256,7 +263,7 @@ def test_socket_getpeername(selenium):
     time.sleep(0.5)
 
     @run_in_pyodide
-    async def getpeername_test(selenium, port):
+    async def getpeername_test(selenium_nodesock, port):
         import socket
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -268,7 +275,7 @@ def test_socket_getpeername(selenium):
         s.close()
         return peer
 
-    result = getpeername_test(selenium, PORT)
+    result = getpeername_test(selenium_nodesock, PORT)
     server_thread.join(timeout=5.0)
 
     assert not server_error, f"Server error: {server_error}"
@@ -281,7 +288,7 @@ def test_socket_getpeername(selenium):
 
 
 @only_node
-def test_socket_getsockname(selenium):
+def test_socket_getsockname(selenium_nodesock):
     """Test socket.getsockname() returns local address info."""
     PORT = 12349
 
@@ -313,7 +320,7 @@ def test_socket_getsockname(selenium):
     time.sleep(0.5)
 
     @run_in_pyodide
-    async def getsockname_test(selenium, port):
+    async def getsockname_test(selenium_nodesock, port):
         import socket
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -325,7 +332,7 @@ def test_socket_getsockname(selenium):
         s.close()
         return local
 
-    result = getsockname_test(selenium, PORT)
+    result = getsockname_test(selenium_nodesock, PORT)
     server_thread.join(timeout=5.0)
 
     assert not server_error, f"Server error: {server_error}"
@@ -335,11 +342,11 @@ def test_socket_getsockname(selenium):
 
 
 @only_node
-def test_socket_connection_refused(selenium):
+def test_socket_connection_refused(selenium_nodesock):
     """Test that connecting to a non-listening port raises an error."""
 
     @run_in_pyodide
-    async def connection_refused_test(selenium):
+    async def connection_refused_test(selenium_nodesock):
         import socket
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -354,7 +361,7 @@ def test_socket_connection_refused(selenium):
         finally:
             s.close()
 
-    result = connection_refused_test(selenium)
+    result = connection_refused_test(selenium_nodesock)
     # Should get an OSError (connection refused)
     assert "OSError" in result or "Other" in result, (
         f"Expected connection error, got: {result}"
@@ -362,7 +369,7 @@ def test_socket_connection_refused(selenium):
 
 
 @only_node
-def test_socket_recv_after_close(selenium):
+def test_socket_recv_after_close(selenium_nodesock):
     """Test receiving data after server closes connection."""
     PORT = 12350
 
@@ -394,7 +401,7 @@ def test_socket_recv_after_close(selenium):
     time.sleep(0.5)
 
     @run_in_pyodide
-    async def recv_after_close_test(selenium, port):
+    async def recv_after_close_test(selenium_nodesock, port):
         import socket
         import time
 
@@ -409,7 +416,7 @@ def test_socket_recv_after_close(selenium):
         s.close()
         return data
 
-    result = recv_after_close_test(selenium, PORT)
+    result = recv_after_close_test(selenium_nodesock, PORT)
     server_thread.join(timeout=5.0)
 
     assert not server_error, f"Server error: {server_error}"
@@ -417,7 +424,7 @@ def test_socket_recv_after_close(selenium):
 
 
 @only_node
-def test_socket_fileno(selenium):
+def test_socket_fileno(selenium_nodesock):
     """Test that socket.fileno() returns a valid file descriptor."""
     PORT = 12351
 
@@ -449,7 +456,7 @@ def test_socket_fileno(selenium):
     time.sleep(0.5)
 
     @run_in_pyodide
-    async def fileno_test(selenium, port):
+    async def fileno_test(selenium_nodesock, port):
         import socket
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -464,7 +471,7 @@ def test_socket_fileno(selenium):
 
         return (fd_before, fd_after)
 
-    result = fileno_test(selenium, PORT)
+    result = fileno_test(selenium_nodesock, PORT)
     server_thread.join(timeout=5.0)
 
     assert not server_error, f"Server error: {server_error}"
@@ -482,7 +489,7 @@ def test_socket_fileno(selenium):
 
 
 @only_node
-def test_socket_send_recv_partial(selenium):
+def test_socket_send_recv_partial(selenium_nodesock):
     """Test partial recv when buffer is smaller than data."""
     PORT = 12352
     FULL_MESSAGE = b"A" * 1000
@@ -515,7 +522,7 @@ def test_socket_send_recv_partial(selenium):
     time.sleep(0.5)
 
     @run_in_pyodide
-    async def partial_recv_test(selenium, port, expected_total):
+    async def partial_recv_test(selenium_nodesock, port, expected_total):
         import socket
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -534,7 +541,7 @@ def test_socket_send_recv_partial(selenium):
         s.close()
         return len(received)
 
-    result = partial_recv_test(selenium, PORT, len(FULL_MESSAGE))
+    result = partial_recv_test(selenium_nodesock, PORT, len(FULL_MESSAGE))
     server_thread.join(timeout=5.0)
 
     assert not server_error, f"Server error: {server_error}"
@@ -544,7 +551,7 @@ def test_socket_send_recv_partial(selenium):
 
 
 @only_node
-def test_socket_create_multiple(selenium):
+def test_socket_create_multiple(selenium_nodesock):
     """Test creating multiple sockets simultaneously."""
     PORT1 = 12353
     PORT2 = 12354
@@ -579,7 +586,7 @@ def test_socket_create_multiple(selenium):
     time.sleep(0.5)
 
     @run_in_pyodide
-    async def multiple_sockets_test(selenium, port1, port2):
+    async def multiple_sockets_test(selenium_nodesock, port1, port2):
         import socket
 
         s1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -599,7 +606,7 @@ def test_socket_create_multiple(selenium):
 
         return (r1, r2)
 
-    result = multiple_sockets_test(selenium, PORT1, PORT2)
+    result = multiple_sockets_test(selenium_nodesock, PORT1, PORT2)
     thread1.join(timeout=5.0)
     thread2.join(timeout=5.0)
 
