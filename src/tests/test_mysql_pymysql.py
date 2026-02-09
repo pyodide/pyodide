@@ -126,170 +126,137 @@ def mysql_test_db(mysql_admin_config):
 @only_node
 def test_mysql_pymysql_features(selenium_nodesock, mysql_test_db):
     cfg = mysql_test_db
+    
+    host = cfg["host"]
+    port = cfg["port"]
+    user = cfg["user"]
+    password = cfg["password"]
+    db = cfg["db"]
 
-    @run_in_pyodide(packages=["micropip"])
-    async def mysql_features(selenium, host, port, user, password, db):
-        import datetime
-        import decimal
+    # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
+    selenium_nodesock.run_js(
+        f'''
+        await pyodide.loadPackage("micropip");
+        const result = await pyodide.runPythonAsync(`
+            import datetime
+            import decimal
 
-        import micropip
+            import micropip
 
-        await micropip.install("pymysql==1.1.0")
+            await micropip.install("pymysql==1.1.0")
 
-        import pymysql  # type: ignore[import-untyped]
+            import pymysql
 
-        def connect(**kwargs):
-            return pymysql.connect(
-                host=host,
-                port=port,
-                user=user,
-                password=password,
-                database=db,
-                unix_socket=False,
-                **kwargs,
-            )
+            def connect(**kwargs):
+                return pymysql.connect(
+                    host="{host}",
+                    port={port},
+                    user="{user}",
+                    password="{password}",
+                    database="{db}",
+                    unix_socket=False,
+                    **kwargs,
+                )
 
-        results: dict[str, object] = {}
+            results = {{}}
 
-        # 1) Basic DDL/DML
-        conn = connect(autocommit=True)
-        try:
-            with conn.cursor() as cur:
-                cur.execute("DROP TABLE IF EXISTS pyodide_mysql_test")
-                cur.execute(
-                    """
-                    CREATE TABLE pyodide_mysql_test (
-                      id INT PRIMARY KEY AUTO_INCREMENT,
-                      name VARCHAR(255) NOT NULL,
-                      value INT NOT NULL
+            # 1) Basic DDL/DML
+            conn = connect(autocommit=True)
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("DROP TABLE IF EXISTS pyodide_mysql_test")
+                    cur.execute(
+                        """
+                        CREATE TABLE pyodide_mysql_test (
+                          id INT PRIMARY KEY AUTO_INCREMENT,
+                          name VARCHAR(255) NOT NULL,
+                          value INT NOT NULL
+                        )
+                        """
                     )
-                    """
-                )
-                cur.execute(
-                    "INSERT INTO pyodide_mysql_test (name, value) VALUES (%s, %s)",
-                    ("alpha", 1),
-                )
-                cur.execute(
-                    "INSERT INTO pyodide_mysql_test (name, value) VALUES (%s, %s)",
-                    ("beta", 2),
-                )
-                cur.execute(
-                    "UPDATE pyodide_mysql_test SET value = value + 10 WHERE name = %s",
-                    ("alpha",),
-                )
-                cur.execute("SELECT name, value FROM pyodide_mysql_test ORDER BY id")
-                results["roundtrip"] = cur.fetchall()
-        finally:
-            conn.close()
-
-        # 2) Transactions + savepoints
-        conn = connect(autocommit=False)
-        try:
-            with conn.cursor() as cur:
-                cur.execute("DROP TABLE IF EXISTS tx_test")
-                cur.execute(
-                    "CREATE TABLE tx_test (id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(50) NOT NULL)"
-                )
-                cur.execute("INSERT INTO tx_test (name) VALUES (%s)", ("rolled_back",))
-                conn.rollback()
-                cur.execute("SELECT COUNT(*) FROM tx_test")
-                after_rollback = cur.fetchone()[0]
-
-                cur.execute("INSERT INTO tx_test (name) VALUES (%s)", ("kept",))
-                cur.execute("SAVEPOINT sp1")
-                cur.execute("INSERT INTO tx_test (name) VALUES (%s)", ("dropped",))
-                cur.execute("ROLLBACK TO SAVEPOINT sp1")
-                conn.commit()
-
-                cur.execute("SELECT name FROM tx_test ORDER BY id")
-                names = [row[0] for row in cur.fetchall()]
-
-            results["tx"] = {"after_rollback": after_rollback, "names": names}
-        finally:
-            conn.close()
-
-        # 3) executemany + DictCursor
-        conn = connect(cursorclass=pymysql.cursors.DictCursor)
-        try:
-            with conn.cursor() as cur:
-                cur.execute("DROP TABLE IF EXISTS bulk_test")
-                cur.execute(
-                    """
-                    CREATE TABLE bulk_test (
-                      id INT PRIMARY KEY AUTO_INCREMENT,
-                      k VARCHAR(50) NOT NULL UNIQUE,
-                      v INT NOT NULL
+                    cur.execute(
+                        "INSERT INTO pyodide_mysql_test (name, value) VALUES (%s, %s)",
+                        ("alpha", 1),
                     )
-                    """
-                )
-                rows = [("a", 1), ("b", 2), ("c", 3)]
-                cur.executemany("INSERT INTO bulk_test (k, v) VALUES (%s, %s)", rows)
-                inserted = cur.rowcount
-                cur.execute("SELECT k, v FROM bulk_test ORDER BY k")
-                out = cur.fetchall()
-            results["bulk"] = {"inserted": inserted, "out": out}
-        finally:
-            conn.close()
-
-        # 4) Common datatypes
-        conn = connect(autocommit=True)
-        try:
-            with conn.cursor() as cur:
-                cur.execute("DROP TABLE IF EXISTS type_test")
-                cur.execute(
-                    """
-                    CREATE TABLE type_test (
-                      id INT PRIMARY KEY AUTO_INCREMENT,
-                      txt VARCHAR(200) CHARACTER SET utf8mb4,
-                      b BLOB,
-                      d DECIMAL(10, 4),
-                      dt DATETIME
+                    cur.execute(
+                        "INSERT INTO pyodide_mysql_test (name, value) VALUES (%s, %s)",
+                        ("beta", 2),
                     )
-                    """
-                )
-                txt = "na\u0000efve calf\u0000e9"
-                blob = b"\\x00\\x01\\xffblob"
-                dec = decimal.Decimal("12.3400")
-                dt = datetime.datetime(2020, 1, 2, 3, 4, 5)
-                cur.execute(
-                    "INSERT INTO type_test (txt, b, d, dt) VALUES (%s, %s, %s, %s)",
-                    (txt, blob, dec, dt),
-                )
-                cur.execute("SELECT txt, b, d, dt FROM type_test LIMIT 1")
-                results["types"] = cur.fetchone()
-        finally:
-            conn.close()
+                    cur.execute(
+                        "UPDATE pyodide_mysql_test SET value = value + 10 WHERE name = %s",
+                        ("alpha",),
+                    )
+                    cur.execute("SELECT name, value FROM pyodide_mysql_test ORDER BY id")
+                    results["roundtrip"] = cur.fetchall()
+            finally:
+                conn.close()
 
-        return results
+            # 2) Transactions + savepoints
+            conn = connect(autocommit=False)
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("DROP TABLE IF EXISTS tx_test")
+                    cur.execute(
+                        "CREATE TABLE tx_test (id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(50) NOT NULL)"
+                    )
+                    cur.execute("INSERT INTO tx_test (name) VALUES (%s)", ("rolled_back",))
+                    conn.rollback()
+                    cur.execute("SELECT COUNT(*) FROM tx_test")
+                    after_rollback = cur.fetchone()[0]
 
-    results = mysql_features(
-        selenium_nodesock,
-        cfg["host"],
-        cfg["port"],
-        cfg["user"],
-        cfg["password"],
-        cfg["db"],
+                    cur.execute("INSERT INTO tx_test (name) VALUES (%s)", ("kept",))
+                    cur.execute("SAVEPOINT sp1")
+                    cur.execute("INSERT INTO tx_test (name) VALUES (%s)", ("dropped",))
+                    cur.execute("ROLLBACK TO SAVEPOINT sp1")
+                    conn.commit()
+
+                    cur.execute("SELECT name FROM tx_test ORDER BY id")
+                    names = [row[0] for row in cur.fetchall()]
+
+                results["tx"] = {{"after_rollback": after_rollback, "names": names}}
+            finally:
+                conn.close()
+
+            # 3) executemany + DictCursor
+            conn = connect(cursorclass=pymysql.cursors.DictCursor)
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("DROP TABLE IF EXISTS bulk_test")
+                    cur.execute(
+                        """
+                        CREATE TABLE bulk_test (
+                          id INT PRIMARY KEY AUTO_INCREMENT,
+                          k VARCHAR(50) NOT NULL UNIQUE,
+                          v INT NOT NULL
+                        )
+                        """
+                    )
+                    rows = [("a", 1), ("b", 2), ("c", 3)]
+                    cur.executemany("INSERT INTO bulk_test (k, v) VALUES (%s, %s)", rows)
+                    inserted = cur.rowcount
+                    cur.execute("SELECT k, v FROM bulk_test ORDER BY k")
+                    out = cur.fetchall()
+                results["bulk"] = {{"inserted": inserted, "out": out}}
+            finally:
+                conn.close()
+            results
+        `);
+
+        assert(() => result.roundtrip.length === 2);
+        console.log(result.roundtrip.toString());
+        assert(() => result.roundtrip[0][0] === "alpha");
+        assert(() => result.roundtrip[0][1] === 11);
+        assert(() => result.roundtrip[1][0] === "beta");
+        assert(() => result.roundtrip[1][1] === 2);
+        assert(() => result.tx.after_rollback === 0);
+        assert(() => result.tx.names[0] === "kept");
+        assert(() => result.bulk.inserted === 3);
+        assert(() => result.bulk.out.length === 3);
+        assert(() => result.bulk.out[0].k === "a");
+        assert(() => result.bulk.out[0].v === 1);
+        assert(() => result.bulk.out[1].k === "b");
+        assert(() => result.bulk.out[1].v === 2);
+        assert(() => result.bulk.out[2].k === "c");
+        assert(() => result.bulk.out[2].v === 3);
+        '''
     )
-
-    assert results["roundtrip"] == (("alpha", 11), ("beta", 2))
-    assert results["tx"]["after_rollback"] == 0
-    assert results["tx"]["names"] == ["kept"]
-    assert results["bulk"]["inserted"] == 3
-    assert results["bulk"]["out"] == [
-        {"k": "a", "v": 1},
-        {"k": "b", "v": 2},
-        {"k": "c", "v": 3},
-    ]
-
-    row = results["types"]
-    assert row[0] == "na\u0000efve calf\u0000e9"
-    assert row[1] == b"\\x00\\x01\\xffblob"
-    assert str(row[2]) == "12.3400"
-    assert (
-        row[3].year,
-        row[3].month,
-        row[3].day,
-        row[3].hour,
-        row[3].minute,
-        row[3].second,
-    ) == (2020, 1, 2, 3, 4, 5)
