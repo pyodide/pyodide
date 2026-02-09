@@ -191,7 +191,7 @@ export interface PyodideConfig {
    * Use NodeJS's native socket implementation for socket syscalls.
    * This allows running code that uses sockets, such as database clients or
    * HTTP clients that use sockets under the hood.
-   * 
+   *
    * @experimental
    */
   withNodeSocket?: boolean;

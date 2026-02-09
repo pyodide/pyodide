@@ -72,7 +72,10 @@ export function createSettings(
     // means dependency resolution has already failed and we want to throw an
     // error anyways.
     locateFile: (path: string) => config.indexURL + path,
-    instantiateWasm: getInstantiateWasmFunc(config.indexURL, config.withNodeSocket),
+    instantiateWasm: getInstantiateWasmFunc(
+      config.indexURL,
+      config.withNodeSocket,
+    ),
   };
   return settings;
 }
@@ -183,7 +186,7 @@ function getFileSystemInitializationFuncs(
   } else {
     stdLibURL = config.indexURL + "python_stdlib.zip";
   }
-  
+
   const hooks = [
     installStdlib(stdLibURL),
     createHomeDirectory(config.env.HOME),
@@ -196,7 +199,7 @@ function getFileSystemInitializationFuncs(
     hooks.push(...initializeNodeSockFS());
   }
 
-  return hooks
+  return hooks;
 }
 
 // Global pyodide module used in wrapSocketSyscallsWithJSPI

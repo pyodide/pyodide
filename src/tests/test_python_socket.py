@@ -3,7 +3,6 @@ import threading
 import time
 
 import pytest
-from pytest_pyodide import run_in_pyodide
 
 from conftest import only_node
 
@@ -12,7 +11,6 @@ from conftest import only_node
 def selenium_nodesock(selenium_standalone_noload):
     selenium = selenium_standalone_noload
 
-    
     selenium.run_js(
         """
         globalThis.pyodide = await loadPyodide({
@@ -178,7 +176,9 @@ def test_socket_multiple_send_recv(selenium_nodesock):
 
     assert not server_error, f"Server error: {server_error}"
     assert len(server_received) == len(MESSAGES), "Server should receive all messages"
-    assert results == "-".join([msg.decode() for msg in MESSAGES]), f"Expected echo responses {'-'.join([msg.decode() for msg in MESSAGES])}, got {results}"
+    assert results == "-".join([msg.decode() for msg in MESSAGES]), (
+        f"Expected echo responses {'-'.join([msg.decode() for msg in MESSAGES])}, got {results}"
+    )
 
 
 # skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects

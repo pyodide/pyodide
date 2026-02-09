@@ -3,7 +3,6 @@ import time
 import uuid
 
 import pytest
-from pytest_pyodide import run_in_pyodide
 
 from conftest import only_node
 
@@ -126,7 +125,7 @@ def mysql_test_db(mysql_admin_config):
 @only_node
 def test_mysql_pymysql_features(selenium_nodesock, mysql_test_db):
     cfg = mysql_test_db
-    
+
     host = cfg["host"]
     port = cfg["port"]
     user = cfg["user"]
