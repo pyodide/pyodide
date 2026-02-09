@@ -816,6 +816,7 @@ API.finalizeBootstrap = function (
     importhook.register_js_finder();
     importhook.register_js_module("js", jsglobals);
     importhook.register_js_module("pyodide_js", pyodide);
+    importhook.register_windows_finder();
   }
 
   // import pyodide_py. We want to ensure that as much stuff as possible is

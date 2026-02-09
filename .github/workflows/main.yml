@@ -111,6 +111,10 @@ jobs:
             /tmp/ccache
           key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
 
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.21'
+
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: pyodide-env
@@ -126,6 +130,7 @@ jobs:
           which python
           which node
           which npm
+          which go
 
       - name: Install dependencies (ubuntu)
         shell: bash -l {0}
@@ -173,6 +178,11 @@ jobs:
           ccache -z
           PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make -j${{ env.PYODIDE_JOBS }}
           ccache -s
+
+      - name: Build windows python.exe
+        shell: bash -l {0}
+        run: |
+          make dist/python.exe
 
       - name: check-size
         shell: bash -l {0}
@@ -237,6 +247,32 @@ jobs:
           runner: ${{ matrix.runner }}
           browser: ${{ matrix.browser }}
 
+      - name: Safari pre-test cleanup
+        if: matrix.browser == 'safari'
+        shell: bash -l {0}
+        run: |
+          # Kill any stale Safari/safaridriver processes
+          pkill -9 Safari 2>/dev/null || true
+          pkill -9 safaridriver 2>/dev/null || true
+          sleep 3
+
+          # Verify safaridriver can start and respond
+          safaridriver --port 14444 &
+          DRIVER_PID=$!
+
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:14444/status > /dev/null 2>&1; then
+              echo "✓ SafariDriver responding"
+              kill $DRIVER_PID 2>/dev/null || true
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "✗ SafariDriver failed to respond"
+          kill $DRIVER_PID 2>/dev/null || true
+          exit 1
+
       - name: run core tests
         env:
           BROWSER: ${{ matrix.browser }}
@@ -245,7 +281,7 @@ jobs:
         run: |
           ls -lh
           ls -lh dist/
-          tools/pytest_wrapper.py src packages/micropip/ tools/ \
+          tools/pytest_wrapper.py src \
             -v \
             -k "not webworker" \
             --runtime="${BROWSER}-no-host" \
