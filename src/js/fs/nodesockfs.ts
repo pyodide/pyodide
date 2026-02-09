@@ -513,5 +513,15 @@ async function _initializeNodeSockFS(module: PyodideModule) {
 
   module.FS.filesystems.NODESOCKFS = NodeSockFS;
 
+  // @ts-ignore - Use `pseudo` mountpoint which is null. It is not documented but used in Emscripten code
+  NodeSockFS.root = module.FS.mount(NodeSockFS, {}, null);
+
+  // Replace the SOCKFS APIs with NodeSockFS
+  // This makes the syscall layer use our implementation
+  // FIXME: This depends on internal Emscripten structures, which may change anytime.
+  //        We should consider contributing upstream or finding a more stable integration method.
+  module.SOCKFS.createSocket = NodeSockFS.createSocket;
+  module.SOCKFS.getSocket = NodeSockFS.getSocket;
+
   return NodeSockFS;
 }

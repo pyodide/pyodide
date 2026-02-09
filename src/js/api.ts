@@ -572,28 +572,6 @@ export class PyodideAPI_ {
   }
 
   /**
-   * @experimental
-   * Enables network socket support in Node.js via the `NodeSockFS` file system.
-   */
-  static mountNodeSockFS(): void {
-    if (!RUNTIME_ENV.IN_NODE) {
-      throw new Error("mountNodeSockFS only works in Node");
-    }
-
-    // Mount the filesystem and store root
-    const nodeSockFS = Module.FS.filesystems.NODESOCKFS;
-    // @ts-ignore - Use `pseudo` mountpoint which is null. It is not documented but used in Emscripten code
-    nodeSockFS.root = Module.FS.mount(nodeSockFS, {}, null);
-
-    // Replace the SOCKFS APIs with NodeSockFS
-    // This makes the syscall layer use our implementation
-    // FIXME: This depends on internal Emscripten structures, which may change anytime.
-    //        We should consider contributing upstream or finding a more stable integration method.
-    Module.SOCKFS.createSocket = nodeSockFS.createSocket;
-    Module.SOCKFS.getSocket = nodeSockFS.getSocket;
-  }
-
-  /**
    * Mounts a host directory into Pyodide file system. Only works in node.
    *
    * @param emscriptenPath The absolute path in the Emscripten file system to

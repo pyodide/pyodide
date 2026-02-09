@@ -72,7 +72,7 @@ export function createSettings(
     // means dependency resolution has already failed and we want to throw an
     // error anyways.
     locateFile: (path: string) => config.indexURL + path,
-    instantiateWasm: getInstantiateWasmFunc(config.indexURL),
+    instantiateWasm: getInstantiateWasmFunc(config.indexURL, config.withNodeSocket),
   };
   return settings;
 }
@@ -183,15 +183,20 @@ function getFileSystemInitializationFuncs(
   } else {
     stdLibURL = config.indexURL + "python_stdlib.zip";
   }
-
-  return [
+  
+  const hooks = [
     installStdlib(stdLibURL),
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
     initializeNativeFS,
-    ...initializeNodeSockFS(),
     ...callFsInitHook(config.fsInit),
   ];
+
+  if (config.withNodeSocket) {
+    hooks.push(...initializeNodeSockFS());
+  }
+
+  return hooks
 }
 
 // Global pyodide module used in wrapSocketSyscallsWithJSPI
@@ -367,6 +372,7 @@ function wrapSocketSyscallsWithJSPI(imports: {
 
 function getInstantiateWasmFunc(
   indexURL: string,
+  withNodeSocket: boolean = false,
 ): EmscriptenSettings["instantiateWasm"] {
   // @ts-ignore
   if (SOURCEMAP || typeof WasmOffsetConverter !== "undefined") {
@@ -392,7 +398,9 @@ function getInstantiateWasmFunc(
       imports.sentinel = await sentinelImportPromise;
 
       // Wrap socket syscalls with JSPI support before instantiation
-      wrapSocketSyscallsWithJSPI(imports);
+      if (withNodeSocket) {
+        wrapSocketSyscallsWithJSPI(imports);
+      }
 
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
