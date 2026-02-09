@@ -511,15 +511,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     },
   };
 
-  // Mount the filesystem and store root
-  NodeSockFS.root = FS.mount(NodeSockFS, {}, null);
-
-  // Replace the SOCKFS APIs with NodeSockFS
-  // This makes the syscall layer use our implementation
-  // FIXME: This depends on internal Emscripten structures, which may change anytime.
-  //        We should consider contributing upstream or finding a more stable integration method.
-  (module as any).SOCKFS.createSocket = NodeSockFS.createSocket;
-  (module as any).SOCKFS.getSocket = NodeSockFS.getSocket;
+  module.FS.filesystems.NODESOCKFS = NodeSockFS;
 
   return NodeSockFS;
 }
