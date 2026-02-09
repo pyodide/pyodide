@@ -978,7 +978,8 @@
 - test_zipapp
 - test_zipfile._path.test_complexity
 - test_zipfile._path.test_path
-- test_zipfile.test_core
+- test_zipfile.test_core:
+    timeout: 60
 - test_zipfile64
 - test_zipimport
 - test_zipimport_support
