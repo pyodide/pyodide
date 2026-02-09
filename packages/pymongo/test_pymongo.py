@@ -1,4 +1,3 @@
-import pytest
 from pytest_pyodide import run_in_pyodide
 
 
@@ -29,7 +28,11 @@ def test_pymongo_basic(selenium):
     assert ObjectId(str(oid)) == oid
 
     # json_util dumps/loads for BSON types (does not require sockets)
-    doc = {"_id": oid, "x": 1, "when": datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)}
+    doc = {
+        "_id": oid,
+        "x": 1,
+        "when": datetime.datetime(2020, 1, 1, tzinfo=datetime.UTC),
+    }
     dumped = json_util.dumps(doc)
     loaded = json_util.loads(dumped)
     assert loaded["_id"] == oid
@@ -53,7 +56,7 @@ def test_pymongo_basic(selenium):
     except InvalidURI:
         pass
     else:
-        assert False, "InvalidURI not raised"
+        raise AssertionError("InvalidURI not raised")
 
     # Construction of objects should be possible without connecting.
     # `connect=False` prevents an eager connection attempt.
@@ -68,7 +71,9 @@ def test_pymongo_basic(selenium):
     rp = ReadPreference.PRIMARY
     codec = CodecOptions(tz_aware=True)
 
-    db2 = client.get_database("testdb2", write_concern=wc, read_preference=rp, codec_options=codec)
+    db2 = client.get_database(
+        "testdb2", write_concern=wc, read_preference=rp, codec_options=codec
+    )
     coll2 = db2.get_collection("testcoll2")
     assert db2.codec_options.tz_aware is True
     assert db2.read_preference == ReadPreference.PRIMARY
