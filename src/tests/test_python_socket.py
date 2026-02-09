@@ -9,11 +9,25 @@ from conftest import only_node
 
 
 @pytest.fixture(scope="function")
-def selenium_nodesock(selenium):
-    selenium.run_js("""pyodide.mountNodeSockFS();""")
-    yield selenium
+def selenium_nodesock(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+
+    
+    selenium.run_js(
+        """
+        globalThis.pyodide = await loadPyodide({
+            withNodeSocket: true,
+        });
+        """
+    )
+    try:
+        yield selenium
+    finally:
+        selenium.run_js("globalThis.pyodide;")
 
 
+# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
+@pytest.mark.skip_refcount_check
 @only_node
 def test_socket_connect(selenium_nodesock):
     """Test that Python socket can connect to a server and exchange data."""
@@ -57,26 +71,28 @@ def test_socket_connect(selenium_nodesock):
     # Give server time to start
     time.sleep(0.5)
 
-    @run_in_pyodide
-    async def socket_client_test(selenium_nodesock, port, message):
-        import socket
+    # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
+    result = selenium_nodesock.run_js(
+        f"""
+        return await pyodide.runPythonAsync(`
+            import socket
 
-        # Create socket and connect
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(("localhost", port))
+            # Create socket and connect
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(("localhost", {PORT}))
 
-        # Send data
-        s.sendall(message)
+            # Send data
+            s.sendall({TEST_MESSAGE})
 
-        # Receive response
-        response = s.recv(1024)
+            # Receive response
+            response = s.recv(1024)
 
-        s.close()
+            s.close()
 
-        return response
-
-    # Run the client test in Pyodide
-    result = socket_client_test(selenium_nodesock, PORT, TEST_MESSAGE)
+            response.decode()
+        `);
+        """
+    )
 
     # Wait for server thread to finish
     server_thread.join(timeout=5.0)
@@ -93,11 +109,13 @@ def test_socket_connect(selenium_nodesock):
     )
 
     # Verify client received response
-    assert result == RESPONSE_MESSAGE, (
+    assert result == RESPONSE_MESSAGE.decode(), (
         f"Client received {result!r}, expected {RESPONSE_MESSAGE!r}"
     )
 
 
+# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
+@pytest.mark.skip_refcount_check
 @only_node
 def test_socket_multiple_send_recv(selenium_nodesock):
     """Test multiple send/recv operations on the same connection."""
@@ -136,30 +154,35 @@ def test_socket_multiple_send_recv(selenium_nodesock):
     server_thread.start()
     time.sleep(0.5)
 
-    @run_in_pyodide
-    async def multiple_send_recv_test(selenium, port, messages):
-        import socket
+    # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
+    results = selenium_nodesock.run_js(
+        f"""
+        return await pyodide.runPythonAsync(`
+            import socket
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(("localhost", port))
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(("localhost", {PORT}))
 
-        responses = []
-        for msg in messages:
-            s.sendall(msg)
-            response = s.recv(1024)
-            responses.append(response)
+            responses = []
+            for msg in {MESSAGES}:
+                s.sendall(msg)
+                response = s.recv(1024)
+                responses.append(response.decode())
 
-        s.close()
-        return responses
-
-    results = multiple_send_recv_test(selenium_nodesock, PORT, MESSAGES)
+            s.close()
+            "-".join(responses)
+        `);
+        """
+    )
     server_thread.join(timeout=5.0)
 
     assert not server_error, f"Server error: {server_error}"
     assert len(server_received) == len(MESSAGES), "Server should receive all messages"
-    assert results == MESSAGES, f"Expected echo responses {MESSAGES}, got {results}"
+    assert results == "-".join([msg.decode() for msg in MESSAGES]), f"Expected echo responses {'-'.join([msg.decode() for msg in MESSAGES])}, got {results}"
 
 
+# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
+@pytest.mark.skip_refcount_check
 @only_node
 def test_socket_large_data_transfer(selenium_nodesock):
     """Test transferring larger amounts of data."""
@@ -203,23 +226,26 @@ def test_socket_large_data_transfer(selenium_nodesock):
     server_thread.start()
     time.sleep(0.5)
 
-    @run_in_pyodide
-    async def large_data_test(selenium_nodesock, port, data_size):
-        import socket
+    # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
+    result = selenium_nodesock.run_js(
+        f"""
+        return await pyodide.runPythonAsync(`
+            import socket
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(("localhost", port))
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(("localhost", {PORT}))
 
-        # Send large data
-        data = b"X" * data_size
-        s.sendall(data)
+            # Send large data
+            data = b"X" * {DATA_SIZE}
+            s.sendall(data)
 
-        # Receive acknowledgment
-        response = s.recv(1024)
-        s.close()
-        return response
-
-    result = large_data_test(selenium_nodesock, PORT, DATA_SIZE)
+            # Receive acknowledgment
+            response = s.recv(1024)
+            s.close()
+            response.decode()
+        `);
+        """
+    )
     server_thread.join(timeout=10.0)
 
     assert not server_error, f"Server error: {server_error}"
@@ -227,9 +253,11 @@ def test_socket_large_data_transfer(selenium_nodesock):
     assert len(server_received[0]) == DATA_SIZE, (
         f"Server received {len(server_received[0])} bytes, expected {DATA_SIZE}"
     )
-    assert result == f"Received {DATA_SIZE} bytes".encode()
+    assert result == f"Received {DATA_SIZE} bytes"
 
 
+# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
+@pytest.mark.skip_refcount_check
 @only_node
 def test_socket_getpeername(selenium_nodesock):
     """Test socket.getpeername() returns correct remote address."""
@@ -262,20 +290,23 @@ def test_socket_getpeername(selenium_nodesock):
     server_thread.start()
     time.sleep(0.5)
 
-    @run_in_pyodide
-    async def getpeername_test(selenium_nodesock, port):
-        import socket
+    # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
+    result = selenium_nodesock.run_js(
+        f"""
+        return await pyodide.runPythonAsync(`
+            import socket
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(("localhost", port))
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(("localhost", {PORT}))
 
-        peer = s.getpeername()
-        s.sendall(b"test")
-        s.recv(1024)
-        s.close()
-        return peer
-
-    result = getpeername_test(selenium_nodesock, PORT)
+            peer = s.getpeername()
+            s.sendall(b"test")
+            s.recv(1024)
+            s.close()
+            peer
+        `);
+        """
+    )
     server_thread.join(timeout=5.0)
 
     assert not server_error, f"Server error: {server_error}"
@@ -287,6 +318,8 @@ def test_socket_getpeername(selenium_nodesock):
     )
 
 
+# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
+@pytest.mark.skip_refcount_check
 @only_node
 def test_socket_getsockname(selenium_nodesock):
     """Test socket.getsockname() returns local address info."""
@@ -319,55 +352,65 @@ def test_socket_getsockname(selenium_nodesock):
     server_thread.start()
     time.sleep(0.5)
 
-    @run_in_pyodide
-    async def getsockname_test(selenium_nodesock, port):
-        import socket
+    # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
+    result = selenium_nodesock.run_js(
+        f"""
+        return await pyodide.runPythonAsync(`
+            import socket
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(("localhost", port))
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(("localhost", {PORT}))
 
-        local = s.getsockname()
-        s.sendall(b"test")
-        s.recv(1024)
-        s.close()
-        return local
-
-    result = getsockname_test(selenium_nodesock, PORT)
+            local = s.getsockname()
+            s.sendall(b"test")
+            s.recv(1024)
+            s.close()
+            local
+        `);
+        """
+    )
     server_thread.join(timeout=5.0)
 
     assert not server_error, f"Server error: {server_error}"
-    # getsockname should return (host, port) tuple
-    assert isinstance(result, tuple), f"Expected tuple, got {type(result)}"
+    assert isinstance(result, list), f"Expected list, got {type(result)}"
     assert len(result) >= 2, f"Expected at least 2 elements, got {len(result)}"
 
 
+# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
+@pytest.mark.skip_refcount_check
 @only_node
 def test_socket_connection_refused(selenium_nodesock):
     """Test that connecting to a non-listening port raises an error."""
 
-    @run_in_pyodide
-    async def connection_refused_test(selenium_nodesock):
-        import socket
+    # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
+    result = selenium_nodesock.run_js(
+        """
+        return await pyodide.runPythonAsync(`
+            import socket
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            # Port 59999 should not have anything listening
-            s.connect(("localhost", 59999))
-            return "no_error"
-        except OSError as e:
-            return f"OSError: {e.errno}"
-        except Exception as e:
-            return f"Other: {type(e).__name__}"
-        finally:
-            s.close()
-
-    result = connection_refused_test(selenium_nodesock)
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                # Port 59999 should not have anything listening
+                s.connect(("localhost", 59999))
+                result = "no_error"
+            except OSError as e:
+                result = f"OSError: {e.errno}"
+            except Exception as e:
+                result = f"Other: {type(e).__name__}"
+            finally:
+                s.close()
+            result
+        `);
+        """
+    )
     # Should get an OSError (connection refused)
     assert "OSError" in result or "Other" in result, (
         f"Expected connection error, got: {result}"
     )
 
 
+# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
+@pytest.mark.skip_refcount_check
 @only_node
 def test_socket_recv_after_close(selenium_nodesock):
     """Test receiving data after server closes connection."""
@@ -400,29 +443,34 @@ def test_socket_recv_after_close(selenium_nodesock):
     server_thread.start()
     time.sleep(0.5)
 
-    @run_in_pyodide
-    async def recv_after_close_test(selenium_nodesock, port):
-        import socket
-        import time
+    # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
+    result = selenium_nodesock.run_js(
+        f"""
+        return await pyodide.runPythonAsync(`
+            import socket
+            import time
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(("localhost", port))
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(("localhost", {PORT}))
 
-        # Wait a bit for server to send and close
-        time.sleep(0.5)
+            # Wait a bit for server to send and close
+            time.sleep(0.5)
 
-        # Should still be able to receive buffered data
-        data = s.recv(1024)
-        s.close()
-        return data
-
-    result = recv_after_close_test(selenium_nodesock, PORT)
+            # Should still be able to receive buffered data
+            data = s.recv(1024)
+            s.close()
+            data.decode()
+        `);
+        """
+    )
     server_thread.join(timeout=5.0)
 
     assert not server_error, f"Server error: {server_error}"
-    assert result == b"Final message", f"Expected 'Final message', got {result!r}"
+    assert result == "Final message", f"Expected 'Final message', got {result!r}"
 
 
+# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
+@pytest.mark.skip_refcount_check
 @only_node
 def test_socket_fileno(selenium_nodesock):
     """Test that socket.fileno() returns a valid file descriptor."""
@@ -455,23 +503,26 @@ def test_socket_fileno(selenium_nodesock):
     server_thread.start()
     time.sleep(0.5)
 
-    @run_in_pyodide
-    async def fileno_test(selenium_nodesock, port):
-        import socket
+    # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
+    result = selenium_nodesock.run_js(
+        f"""
+        return await pyodide.runPythonAsync(`
+            import socket
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        fd_before = s.fileno()
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            fd_before = s.fileno()
 
-        s.connect(("localhost", port))
-        fd_after = s.fileno()
+            s.connect(("localhost", {PORT}))
+            fd_after = s.fileno()
 
-        s.sendall(b"test")
-        s.recv(1024)
-        s.close()
+            s.sendall(b"test")
+            s.recv(1024)
+            s.close()
 
-        return (fd_before, fd_after)
-
-    result = fileno_test(selenium_nodesock, PORT)
+            (fd_before, fd_after)
+        `);
+        """
+    )
     server_thread.join(timeout=5.0)
 
     assert not server_error, f"Server error: {server_error}"
@@ -488,6 +539,8 @@ def test_socket_fileno(selenium_nodesock):
     )
 
 
+# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
+@pytest.mark.skip_refcount_check
 @only_node
 def test_socket_send_recv_partial(selenium_nodesock):
     """Test partial recv when buffer is smaller than data."""
@@ -521,27 +574,30 @@ def test_socket_send_recv_partial(selenium_nodesock):
     server_thread.start()
     time.sleep(0.5)
 
-    @run_in_pyodide
-    async def partial_recv_test(selenium_nodesock, port, expected_total):
-        import socket
+    # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
+    result = selenium_nodesock.run_js(
+        f"""
+        return await pyodide.runPythonAsync(`
+            import socket
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(("localhost", port))
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(("localhost", {PORT}))
 
-        s.sendall(b"start")
+            s.sendall(b"start")
 
-        # Receive in small chunks
-        received = b""
-        while len(received) < expected_total:
-            chunk = s.recv(100)  # Small buffer
-            if not chunk:
-                break
-            received += chunk
+            # Receive in small chunks
+            received = b""
+            while len(received) < {len(FULL_MESSAGE)}:
+                chunk = s.recv(100)  # Small buffer
+                if not chunk:
+                    break
+                received += chunk
 
-        s.close()
-        return len(received)
-
-    result = partial_recv_test(selenium_nodesock, PORT, len(FULL_MESSAGE))
+            s.close()
+            len(received)
+        `);
+        """
+    )
     server_thread.join(timeout=5.0)
 
     assert not server_error, f"Server error: {server_error}"
@@ -550,6 +606,8 @@ def test_socket_send_recv_partial(selenium_nodesock):
     )
 
 
+# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
+@pytest.mark.skip_refcount_check
 @only_node
 def test_socket_create_multiple(selenium_nodesock):
     """Test creating multiple sockets simultaneously."""
@@ -585,31 +643,33 @@ def test_socket_create_multiple(selenium_nodesock):
     thread2.start()
     time.sleep(0.5)
 
-    @run_in_pyodide
-    async def multiple_sockets_test(selenium_nodesock, port1, port2):
-        import socket
+    # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
+    result = selenium_nodesock.run_js(
+        f"""
+        return await pyodide.runPythonAsync(`
+            import socket
 
-        s1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        s1.connect(("localhost", port1))
-        s2.connect(("localhost", port2))
+            s1.connect(("localhost", {PORT1}))
+            s2.connect(("localhost", {PORT2}))
 
-        s1.sendall(b"Hello1")
-        s2.sendall(b"Hello2")
+            s1.sendall(b"Hello1")
+            s2.sendall(b"Hello2")
 
-        r1 = s1.recv(1024)
-        r2 = s2.recv(1024)
+            r1 = s1.recv(1024)
+            r2 = s2.recv(1024)
 
-        s1.close()
-        s2.close()
+            s1.close()
+            s2.close()
 
-        return (r1, r2)
-
-    result = multiple_sockets_test(selenium_nodesock, PORT1, PORT2)
+            f"{{r1.decode()}}-{{r2.decode()}}"
+        `);
+        """
+    )
     thread1.join(timeout=5.0)
     thread2.join(timeout=5.0)
 
     assert not server_error, f"Server errors: {server_error}"
-    assert result[0] == f"Server{PORT1}:Hello1".encode()
-    assert result[1] == f"Server{PORT2}:Hello2".encode()
+    assert result == f"Server{PORT1}:Hello1-Server{PORT2}:Hello2"

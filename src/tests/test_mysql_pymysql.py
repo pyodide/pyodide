@@ -13,8 +13,14 @@ def _sql_string_literal(value: str) -> str:
 
 
 @pytest.fixture(scope="function")
-def selenium_nodesock(selenium):
-    selenium.run_js("""pyodide.mountNodeSockFS();""")
+def selenium_nodesock(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+
+    selenium.run_js("""
+    pyodide = await loadPyodide({
+        withNodeSocket: true,
+    });
+    """)
     yield selenium
 
 
@@ -115,7 +121,6 @@ def mysql_test_db(mysql_admin_config):
             conn.close()
 
 
-# TODO: Analyse the leaked refcounts
 @pytest.mark.skip_refcount_check
 @pytest.mark.mysql
 @only_node
