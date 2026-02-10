@@ -111,8 +111,8 @@ def mongodb_test_db(mongodb_admin_config):
 def test_mongodb_pymongo_features(selenium_nodesock, mongodb_test_db):
     cfg = mongodb_test_db
 
-    host = cfg["host"]
-    port = cfg["port"]
+    # host = cfg["host"]
+    # port = cfg["port"]
     db_name = cfg["db"]
     conn_str = cfg["conn_str"]
 
@@ -135,32 +135,32 @@ def test_mongodb_pymongo_features(selenium_nodesock, mongodb_test_db):
 
             # 1) Basic CRUD operations
             collection = db.test_collection
-            
+
             # Create
             insert_result = await collection.insert_one({{"name": "alpha", "value": 1}})
             inserted_id = str(insert_result.inserted_id)
-            
+
             # Read
             doc = await collection.find_one({{"name": "alpha"}})
             results["create_read"] = {{"name": doc["name"], "value": doc["value"]}}
-            
+
             # Update
             await collection.update_one({{"name": "alpha"}}, {{"$set": {{"value": 11}}}})
             updated_doc = await collection.find_one({{"name": "alpha"}})
             results["update"] = updated_doc["value"]
-            
+
             # Insert another document
             await collection.insert_one({{"name": "beta", "value": 2}})
-            
+
             # Query multiple documents
             cursor = collection.find().sort("value", pymongo.ASCENDING)
             docs = await cursor.to_list(length=None)
             results["find_all"] = [{{"name": d["name"], "value": d["value"]}} for d in docs]
-            
+
             # Delete
             delete_result = await collection.delete_one({{"name": "beta"}})
             results["delete_count"] = delete_result.deleted_count
-            
+
             remaining = await collection.count_documents({{}})
             results["remaining_count"] = remaining
 
@@ -191,32 +191,32 @@ def test_mongodb_pymongo_features(selenium_nodesock, mongodb_test_db):
 
     #         # 1) Basic CRUD operations
     #         collection = db.test_collection
-            
+
     #         # Create
     #         insert_result = await collection.insert_one({{"name": "alpha", "value": 1}})
     #         inserted_id = str(insert_result.inserted_id)
-            
+
     #         # Read
     #         doc = await collection.find_one({{"name": "alpha"}})
     #         results["create_read"] = {{"name": doc["name"], "value": doc["value"]}}
-            
+
     #         # Update
     #         await collection.update_one({{"name": "alpha"}}, {{"$set": {{"value": 11}}}})
     #         updated_doc = await collection.find_one({{"name": "alpha"}})
     #         results["update"] = updated_doc["value"]
-            
+
     #         # Insert another document
     #         await collection.insert_one({{"name": "beta", "value": 2}})
-            
+
     #         # Query multiple documents
     #         cursor = collection.find().sort("value", pymongo.ASCENDING)
     #         docs = await cursor.to_list(length=None)
     #         results["find_all"] = [{{"name": d["name"], "value": d["value"]}} for d in docs]
-            
+
     #         # Delete
     #         delete_result = await collection.delete_one({{"name": "beta"}})
     #         results["delete_count"] = delete_result.deleted_count
-            
+
     #         remaining = await collection.count_documents({{}})
     #         results["remaining_count"] = remaining
 
@@ -229,19 +229,19 @@ def test_mongodb_pymongo_features(selenium_nodesock, mongodb_test_db):
     #         ]
     #         bulk_result = await bulk_collection.insert_many(docs_to_insert)
     #         results["bulk_inserted"] = len(bulk_result.inserted_ids)
-            
+
     #         # Query bulk inserts
     #         cursor = bulk_collection.find().sort("k", pymongo.ASCENDING)
     #         bulk_docs = await cursor.to_list(length=None)
     #         results["bulk_out"] = [{{"k": d["k"], "v": d["v"]}} for d in bulk_docs]
-            
+
     #         # Bulk update
     #         update_result = await bulk_collection.update_many(
     #             {{"v": {{"$gte": 2}}}},
     #             {{"$inc": {{"v": 10}}}}
     #         )
     #         results["bulk_updated"] = update_result.modified_count
-            
+
     #         # Verify updates
     #         cursor = bulk_collection.find().sort("k", pymongo.ASCENDING)
     #         updated_docs = await cursor.to_list(length=None)
@@ -255,7 +255,7 @@ def test_mongodb_pymongo_features(selenium_nodesock, mongodb_test_db):
     #             {{"category": "vegetable", "name": "carrot", "price": 1.0}},
     #             {{"category": "fruit", "name": "cherry", "price": 2.0}},
     #         ])
-            
+
     #         pipeline = [
     #             {{"$match": {{"category": "fruit"}}}},
     #             {{"$group": {{"_id": "$category", "avg_price": {{"$avg": "$price"}}, "count": {{"$sum": 1}}}}}},
@@ -273,11 +273,11 @@ def test_mongodb_pymongo_features(selenium_nodesock, mongodb_test_db):
     #             {{"username": "user1", "email": "user1@example.com"}},
     #             {{"username": "user2", "email": "user2@example.com"}},
     #         ])
-            
+
     #         # Create index
     #         index_name = await index_collection.create_index([("username", pymongo.ASCENDING)], unique=True)
     #         results["index_created"] = index_name
-            
+
     #         # List indexes
     #         cursor = index_collection.list_indexes()
     #         indexes = await cursor.to_list(length=None)
@@ -291,7 +291,7 @@ def test_mongodb_pymongo_features(selenium_nodesock, mongodb_test_db):
 
     #     // Verify results
     #     console.log("Results:", JSON.stringify(result, null, 2));
-        
+
     #     // Test 1: Basic CRUD
     #     assert(() => result.create_read.name === "alpha");
     #     assert(() => result.create_read.value === 1);
@@ -303,7 +303,7 @@ def test_mongodb_pymongo_features(selenium_nodesock, mongodb_test_db):
     #     assert(() => result.find_all[1].value === 11);
     #     assert(() => result.delete_count === 1);
     #     assert(() => result.remaining_count === 1);
-        
+
     #     // Test 2: Bulk operations
     #     assert(() => result.bulk_inserted === 3);
     #     assert(() => result.bulk_out.length === 3);
@@ -317,11 +317,11 @@ def test_mongodb_pymongo_features(selenium_nodesock, mongodb_test_db):
     #     assert(() => result.bulk_updated_out[0].v === 1);  // "a" unchanged
     #     assert(() => result.bulk_updated_out[1].v === 12); // "b" incremented
     #     assert(() => result.bulk_updated_out[2].v === 13); // "c" incremented
-        
+
     #     // Test 3: Aggregation
     #     assert(() => result.aggregation.count === 3);
     #     assert(() => Math.abs(result.aggregation.avg_price - 1.333) < 0.01);
-        
+
     #     // Test 4: Indexing
     #     assert(() => result.index_created === "username_1");
     #     assert(() => result.index_count >= 2); // _id index + username index

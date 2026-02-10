@@ -783,7 +783,9 @@ class WebLoop(asyncio.AbstractEventLoop):
         """Asynchronous version of socket.getaddrinfo()."""
         import socket
 
-        return await self.run_in_executor(None, socket.getaddrinfo, host, port, family, type, proto, flags)
+        return await self.run_in_executor(
+            None, socket.getaddrinfo, host, port, family, type, proto, flags
+        )
 
     async def getnameinfo(self, sockaddr, flags=0):
         """Asynchronous version of socket.getnameinfo()."""
