@@ -299,7 +299,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lsqlite3 \
 		-lidbfs.js \
 		-lnodefs.js \
-    -lproxyfs.js
+		-lproxyfs.js
 
 endif
 
