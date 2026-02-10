@@ -39,7 +39,7 @@ def mongodb_admin_config():
 
 @pytest.fixture()
 def mongodb_test_db(mongodb_admin_config):
-    pymongo = pytest.importorskip("pymongo")
+    pytest.importorskip("pymongo")
     import asyncio
 
     suffix = uuid.uuid4().hex[:10]
