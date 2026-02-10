@@ -523,5 +523,59 @@ async function _initializeNodeSockFS(module: PyodideModule) {
   module.SOCKFS.createSocket = NodeSockFS.createSocket;
   module.SOCKFS.getSocket = NodeSockFS.getSocket;
 
+  // Expose async socket helpers on globalThis for Python's asyncio event loop.
+  // The WebLoop cannot use the JSPI-wrapped syscalls (they suspend the WASM
+  // stack which corrupts the Python thread state in an asyncio callback context).
+  // Instead, the WebLoop's sock_* methods call these JS functions and await the
+  // returned Promises, which is a normal JS→Python async bridge with no JSPI.
+  const g = globalThis as any;
+
+  g._pyodideSockConnect = async (
+    fd: number,
+    host: string,
+    port: number,
+  ): Promise<void> => {
+    const sock = NodeSockFS.getSocket(fd);
+    if (!sock) {
+      throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+    }
+    const result = await tcp_sock_ops.connectAsync(sock, host, port);
+    if (result < 0) {
+      throw new FS.ErrnoError(-result);
+    }
+  };
+
+  g._pyodideSockRecv = async (
+    fd: number,
+    nbytes: number,
+  ): Promise<Uint8Array> => {
+    const sock = NodeSockFS.getSocket(fd);
+    if (!sock) {
+      throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+    }
+    const result = await tcp_sock_ops.recvmsgAsync(sock, nbytes);
+    if (result === null) {
+      return new Uint8Array(0);
+    }
+    return result.buffer;
+  };
+
+  g._pyodideSockSend = (fd: number, data: any): number => {
+    const sock = NodeSockFS.getSocket(fd);
+    if (!sock) {
+      throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+    }
+    // `data` may be a Python bytes/bytearray PyProxy — convert to Uint8Array.
+    let buf: Uint8Array;
+    if (data instanceof Uint8Array) {
+      buf = data;
+    } else if (data.toJs) {
+      buf = data.toJs();
+    } else {
+      buf = new Uint8Array(data);
+    }
+    return tcp_sock_ops.sendmsg(sock, buf, 0, buf.length);
+  };
+
   return NodeSockFS;
 }
