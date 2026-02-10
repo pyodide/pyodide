@@ -253,6 +253,7 @@ def test_snapshot_serializer_need_deserializer(selenium_standalone_noload):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_syncify_in_snapshot_load(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     selenium.run_js(
