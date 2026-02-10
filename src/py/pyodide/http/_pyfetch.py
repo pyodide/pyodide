@@ -2,6 +2,7 @@
 Async fetch API implementation for Pyodide.
 """
 
+import builtins
 import json
 from asyncio import CancelledError
 from collections.abc import Awaitable, Callable
@@ -234,7 +235,7 @@ class FetchResponse:
         return json.loads(await self.string(), **kwargs)
 
     @_abort_on_cancel
-    async def memoryview(self) -> memoryview:
+    async def memoryview(self) -> "builtins.memoryview":
         """Return the response body as a :py:class:`memoryview` object"""
         self._raise_if_failed()
         return (await self.buffer()).to_memoryview()
@@ -273,7 +274,7 @@ class FetchResponse:
             await self._into_file(f)
 
     @_abort_on_cancel
-    async def bytes(self) -> bytes:
+    async def bytes(self) -> "builtins.bytes":
         """Return the response body as a bytes object"""
         self._raise_if_failed()
         return (await self.buffer()).to_bytes()
