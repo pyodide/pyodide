@@ -780,16 +780,16 @@ class WebLoop(asyncio.AbstractEventLoop):
     #
 
     async def getaddrinfo(self, host, port, *, family=0, type=0, proto=0, flags=0):
-        """Asynchronous version of socket.getaddrinfo() (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "getaddrinfo() is not available in browser environments due to restricted raw network access."
-        )
+        """Asynchronous version of socket.getaddrinfo()."""
+        import socket
+
+        return await self.run_in_executor(None, socket.getaddrinfo, host, port, family, type, proto, flags)
 
     async def getnameinfo(self, sockaddr, flags=0):
-        """Asynchronous version of socket.getnameinfo() (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "getnameinfo() is not available in browser environments due to restricted raw network access."
-        )
+        """Asynchronous version of socket.getnameinfo()."""
+        import socket
+
+        return await self.run_in_executor(None, socket.getnameinfo, sockaddr, flags)
 
     async def create_connection(self, protocol_factory, host=None, port=None, **kwargs):
         """Open a streaming transport connection to a given address (unsupported on WebLoop)."""
