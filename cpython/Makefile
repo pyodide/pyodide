@@ -3,7 +3,7 @@ include ../Makefile.envs
 
 ROOT=$(abspath .)
 
-PYTHON_CFLAGS=$(CFLAGS_BASE) -DPY_CALL_TRAMPOLINE
+PYTHON_CFLAGS=$(CFLAGS_BASE) -DPY_CALL_TRAMPOLINE -mtail-call
 
 PYBUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)
 PYINSTALL=$(CPYTHONINSTALL)
@@ -222,6 +222,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 			  --disable-ipv6 \
 			  --enable-big-digits=30 \
 			  --enable-optimizations \
+			  --with-tail-call-interp \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(PYBUILD)/config.guess) \
 			  --prefix=$(PYINSTALL)  \
