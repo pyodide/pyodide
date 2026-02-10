@@ -59,6 +59,9 @@ export function initializeNodeSockFS(): PreRunFunc[] {
 async function _initializeNodeSockFS(module: PyodideModule) {
   const FS: any = module.FS;
   const ERRNO_CODES: any = module.ERRNO_CODES;
+  // Grab the API object from the module — the global `API` isn't available yet
+  // during pre-run hooks; it's set later by Emscripten.
+  const api: any = (module as any).API;
 
   setPyodideModuleforJSPI(module);
 
@@ -523,14 +526,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
   module.SOCKFS.createSocket = NodeSockFS.createSocket;
   module.SOCKFS.getSocket = NodeSockFS.getSocket;
 
-  // Expose async socket helpers on globalThis for Python's asyncio event loop.
-  // The WebLoop cannot use the JSPI-wrapped syscalls (they suspend the WASM
-  // stack which corrupts the Python thread state in an asyncio callback context).
-  // Instead, the WebLoop's sock_* methods call these JS functions and await the
-  // returned Promises, which is a normal JS→Python async bridge with no JSPI.
-  const g = globalThis as any;
-
-  g._pyodideSockConnect = async (
+  api._nodeSockConnect = async (
     fd: number,
     host: string,
     port: number,
@@ -545,7 +541,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     }
   };
 
-  g._pyodideSockRecv = async (
+  api._nodeSockRecv = async (
     fd: number,
     nbytes: number,
   ): Promise<Uint8Array> => {
@@ -560,17 +556,17 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     return result.buffer;
   };
 
-  g._pyodideSockSend = (fd: number, data: any): number => {
+  api._nodeSockSend = (fd: number, data: any): number => {
     const sock = NodeSockFS.getSocket(fd);
     if (!sock) {
       throw new FS.ErrnoError(ERRNO_CODES.EBADF);
     }
-    // `data` may be a Python bytes/bytearray PyProxy — convert to Uint8Array.
     let buf: Uint8Array;
     if (data instanceof Uint8Array) {
       buf = data;
     } else if (data.toJs) {
       buf = data.toJs();
+      data.destroy();
     } else {
       buf = new Uint8Array(data);
     }

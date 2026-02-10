@@ -183,224 +183,6 @@ class PyodideTask(Task[T], PyodideFuture[T]):
         return res
 
 
-class NodeSocketTransport(asyncio.Transport):
-    """asyncio Transport backed by a NodeSockFS socket.
-
-    Uses the JS-level ``_pyodideSockRecv`` / ``_pyodideSockSend`` helpers so
-    that data flows through normal JS Promises rather than JSPI WASM stack
-    suspension (which corrupts the Python thread state in an asyncio context).
-
-    Implements the ``BufferedProtocol`` data path: the read loop calls
-    ``protocol.get_buffer()`` / ``protocol.buffer_updated()`` to feed incoming
-    data without an extra copy into an intermediate ``bytes`` object.
-    """
-
-    def __init__(
-        self,
-        loop: "WebLoop",
-        sock: Any,  # socket.socket — not imported at module level
-        protocol: asyncio.BaseProtocol,
-        waiter: "asyncio.Future[None] | None" = None,
-        extra: dict[str, Any] | None = None,
-    ):
-        super().__init__(extra)
-        self._loop = loop
-        self._sock = sock
-        self._sock_fd = sock.fileno()
-        self._protocol = protocol
-        self._closing = False
-        self._closed = False
-        self._paused = True  # start paused; _start_reading will resume
-        self._read_task: asyncio.Task[None] | None = None
-
-        # Populate extra info expected by consumers (e.g. pymongo)
-        self._extra.setdefault("socket", sock)
-        try:
-            self._extra.setdefault("sockname", sock.getsockname())
-        except Exception:
-            pass
-        try:
-            self._extra.setdefault("peername", sock.getpeername())
-        except Exception:
-            pass
-
-        # Wire up: connection_made → resolve waiter.
-        # Reading is NOT started automatically.  pymongo (and most protocol
-        # implementations) call transport.resume_reading() explicitly after
-        # sending a command, so we wait for that instead of eagerly reading
-        # from the socket (which would call recvmsgAsync before any request
-        # is sent and could race against the Node.js data-event plumbing).
-        loop.call_soon(self._protocol.connection_made, self)
-        if waiter is not None:
-            loop.call_soon(self._resolve_waiter, waiter)
-
-    @staticmethod
-    def _resolve_waiter(waiter: "asyncio.Future[None]") -> None:
-        if not waiter.done():
-            waiter.set_result(None)
-
-    # ------------------------------------------------------------------
-    # BaseTransport
-    # ------------------------------------------------------------------
-
-    def is_closing(self) -> bool:
-        return self._closing
-
-    def close(self) -> None:
-        if self._closing:
-            return
-        self._closing = True
-        self._stop_reading()
-        self._loop.call_soon(self._call_connection_lost, None)
-
-    def abort(self) -> None:
-        if self._closed:
-            return
-        if not self._closing:
-            self._closing = True
-        self._stop_reading()
-        try:
-            self._sock.close()
-        except Exception:
-            pass
-        self._loop.call_soon(self._call_connection_lost, None)
-
-    def _call_connection_lost(self, exc: BaseException | None) -> None:
-        if self._closed:
-            return
-        self._closed = True
-        try:
-            self._protocol.connection_lost(exc)  # type: ignore[arg-type]
-        except Exception:
-            pass
-        try:
-            self._sock.close()
-        except Exception:
-            pass
-
-    # ------------------------------------------------------------------
-    # ReadTransport
-    # ------------------------------------------------------------------
-
-    def is_reading(self) -> bool:
-        return not self._paused and not self._closing
-
-    def pause_reading(self) -> None:
-        self._paused = True
-
-    def resume_reading(self) -> None:
-        if self._closing or self._closed:
-            return
-        if self._paused:
-            self._paused = False
-            self._ensure_reading()
-
-    def _start_reading(self) -> None:
-        self._paused = False
-        self._ensure_reading()
-
-    def _stop_reading(self) -> None:
-        self._paused = True
-        if self._read_task is not None and not self._read_task.done():
-            self._read_task.cancel()
-            self._read_task = None
-
-    def _ensure_reading(self) -> None:
-        if self._read_task is None or self._read_task.done():
-            self._read_task = self._loop.create_task(self._read_loop())
-
-    async def _read_loop(self) -> None:
-        try:
-            from js import _pyodideSockRecv
-        except ImportError:
-            self._force_close(
-                OSError("Node.js socket support not available (_pyodideSockRecv)")
-            )
-            return
-
-        try:
-            while not self._paused and not self._closing:
-                if isinstance(self._protocol, asyncio.BufferedProtocol):
-                    buf = self._protocol.get_buffer(-1)  # type: ignore[arg-type]
-                    if not len(buf):
-                        break
-
-                    data = await _pyodideSockRecv(self._sock_fd, len(buf))
-                    if self._closing:
-                        break
-
-                    nbytes = len(data)
-                    if nbytes == 0:
-                        self._protocol.buffer_updated(0)
-                        if not self._closing:
-                            self._closing = True
-                            self._loop.call_soon(self._call_connection_lost, None)
-                        break
-
-                    buf[:nbytes] = bytes(data)
-                    self._protocol.buffer_updated(nbytes)
-                else:
-                    data = await _pyodideSockRecv(self._sock_fd, 65536)
-                    if self._closing:
-                        break
-
-                    nbytes = len(data)
-                    if nbytes == 0:
-                        self._protocol.eof_received()  # type: ignore[union-attr]
-                        if not self._closing:
-                            self._closing = True
-                            self._loop.call_soon(self._call_connection_lost, None)
-                        break
-
-                    self._protocol.data_received(bytes(data))  # type: ignore[union-attr]
-
-        except asyncio.CancelledError:
-            raise
-        except Exception as exc:
-            self._force_close(exc)
-
-    def _force_close(self, exc: BaseException | None) -> None:
-        if self._closed:
-            return
-        if not self._closing:
-            self._closing = True
-        self._stop_reading()
-        self._loop.call_soon(self._call_connection_lost, exc)
-
-    # ------------------------------------------------------------------
-    # WriteTransport
-    # ------------------------------------------------------------------
-
-    def set_write_buffer_limits(
-        self, high: int | None = None, low: int | None = None
-    ) -> None:
-        # Writes are synchronous so buffer limits are not meaningful,
-        # but we accept them silently (pymongo calls this).
-        pass
-
-    def get_write_buffer_size(self) -> int:
-        return 0  # writes are synchronous
-
-    def write(self, data: bytes | bytearray | memoryview) -> None:
-        if self._closing or self._closed:
-            return
-        if not data:
-            return
-        try:
-            from js import _pyodideSockSend
-
-            _pyodideSockSend(self._sock_fd, data)
-        except Exception as exc:
-            self._force_close(exc)
-
-    def write_eof(self) -> None:
-        # Not supported — MongoDB protocol doesn't use half-close.
-        pass
-
-    def can_write_eof(self) -> bool:
-        return False
-
-
 class WebLoop(asyncio.AbstractEventLoop):
     """A custom event loop for use in Pyodide.
 
@@ -1088,6 +870,9 @@ class WebLoop(asyncio.AbstractEventLoop):
         sock.setblocking(False)
         protocol = protocol_factory()
         waiter = self.create_future()
+
+        from pyodide._nodesock_transport import NodeSocketTransport
+
         transport = NodeSocketTransport(self, sock, protocol, waiter)
 
         try:
@@ -1138,24 +923,21 @@ class WebLoop(asyncio.AbstractEventLoop):
     # Low-level socket operations methods
     #
     # sock_connect, sock_recv, sock_recv_into, and sock_sendall delegate to
-    # JS-level async helpers exposed by NodeSockFS (via globalThis). These
-    # helpers call the NodeSockFS async methods directly and return JS Promises
-    # that Python can await without triggering JSPI WASM suspension — which
-    # would corrupt the Python thread state in an asyncio callback context.
-    #
-    # sock_sendall uses run_in_executor because the underlying sendmsg is
-    # synchronous (no JSPI involved).
+    # JS-level async helpers exposed by NodeSockFS (via pyodide_js._api).
+    # These helpers call the NodeSockFS async methods directly and return JS
+    # Promises that Python can await without triggering JSPI WASM suspension
+    # — which would corrupt the Python thread state in an asyncio context.
     #
 
     async def sock_recv(self, sock, nbytes):
         """Receive up to *nbytes* from the socket."""
         try:
-            from js import _pyodideSockRecv
+            from pyodide_js._api import _nodeSockRecv
         except ImportError:
             raise NotImplementedError(
                 "sock_recv() requires Node.js socket support (loadPyodide with withNodeSocket: true)."
             )
-        result = await _pyodideSockRecv(sock.fileno(), nbytes)
+        result = await _nodeSockRecv(sock.fileno(), nbytes)
         return bytes(result)
 
     async def sock_recv_into(self, sock, buf):
@@ -1180,12 +962,12 @@ class WebLoop(asyncio.AbstractEventLoop):
     async def sock_sendall(self, sock, data):
         """Send all *data* to the socket."""
         try:
-            from js import _pyodideSockSend
+            from pyodide_js._api import _nodeSockSend
         except ImportError:
             raise NotImplementedError(
                 "sock_sendall() requires Node.js socket support (loadPyodide with withNodeSocket: true)."
             )
-        _pyodideSockSend(sock.fileno(), data)
+        _nodeSockSend(sock.fileno(), data)
 
     async def sock_sendto(self, sock, data, address):
         """Send a datagram to address (unsupported on WebLoop)."""
@@ -1196,13 +978,13 @@ class WebLoop(asyncio.AbstractEventLoop):
     async def sock_connect(self, sock, address):
         """Connect the socket to a remote *address*."""
         try:
-            from js import _pyodideSockConnect
+            from pyodide_js._api import _nodeSockConnect
         except ImportError:
             raise NotImplementedError(
                 "sock_connect() requires Node.js socket support (loadPyodide with withNodeSocket: true)."
             )
         host, port = address
-        await _pyodideSockConnect(sock.fileno(), host, port)
+        await _nodeSockConnect(sock.fileno(), host, port)
 
     async def sock_accept(self, sock):
         """Accept a connection (unsupported on WebLoop)."""

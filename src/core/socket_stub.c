@@ -1,7 +1,7 @@
 #include "emscripten.h"
 #include "stdio.h"
 
-// Bind original poll syscall to syscall_poll_orig().
+// Bind original setsockopt syscall to syscall_setsockopt_orig().
 int
 syscall_setsockopt_orig(int sockfd,
                         int level,
