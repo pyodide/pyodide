@@ -80,7 +80,7 @@ def test_socket_connect(selenium_nodesock):
             s.connect(("localhost", {PORT}))
 
             # Send data
-            s.sendall({TEST_MESSAGE})
+            s.sendall({TEST_MESSAGE!r})
 
             # Receive response
             response = s.recv(1024)
