@@ -4,6 +4,9 @@ package:
   top-level:
     - pymongo
     - gridfs
+  # TODO(before merge): move to pyodide-recipes
+  tag:
+    - core
 source:
   url: https://files.pythonhosted.org/packages/source/p/pymongo/pymongo-4.16.0.tar.gz
   sha256: 8ba8405065f6e258a6f872fe62d797a28f383a12178c7153c01ed04e845c600c
