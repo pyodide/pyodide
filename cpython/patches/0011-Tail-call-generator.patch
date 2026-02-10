@@ -1,0 +1,942 @@
+From 7460aa10184fc1cd4d09ac044324e00d0536988b Mon Sep 17 00:00:00 2001
+From: Dan Carney <dcarney@cloudflare.com>
+Date: Mon, 9 Feb 2026 14:02:35 +0000
+Subject: [PATCH] Tail call generator
+
+---
+ Python/ceval_macros.h                     |   8 +-
+ Python/opcode_targets.h                   | 784 +++++++++++++++++++++-
+ Tools/cases_generator/target_generator.py |  93 +++
+ 3 files changed, 882 insertions(+), 3 deletions(-)
+
+diff --git a/Python/ceval_macros.h b/Python/ceval_macros.h
+index 4a878d6dff4..e26b76dbf23 100644
+--- a/Python/ceval_macros.h
++++ b/Python/ceval_macros.h
+@@ -80,7 +80,7 @@
+ 
+ #if Py_TAIL_CALL_INTERP
+ #   if defined(__clang__) || defined(__GNUC__)
+-#       if !_Py__has_attribute(preserve_none) || !_Py__has_attribute(musttail)
++#       if !_Py__has_attribute(musttail)
+ #           error "This compiler does not have support for efficient tail calling."
+ #       endif
+ #   elif defined(_MSC_VER)
+@@ -89,13 +89,17 @@
+ 
+     // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
+ #   define Py_MUSTTAIL [[clang::musttail]]
++#ifdef __EMSCRIPTEN__
++#   define Py_PRESERVE_NONE_CC
++#else
+ #   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
++#endif
+     Py_PRESERVE_NONE_CC typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
+ 
+ #   define TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_##op(TAIL_CALL_PARAMS)
+ #   define DISPATCH_GOTO() \
+         do { \
+-            Py_MUSTTAIL return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS); \
++            Py_MUSTTAIL return tail_jump_table_2(TAIL_CALL_ARGS); \
+         } while (0)
+ #   define JUMP_TO_LABEL(name) \
+         do { \
+diff --git a/Python/opcode_targets.h b/Python/opcode_targets.h
+index 8af445d7d6a..16f73bc567d 100644
+--- a/Python/opcode_targets.h
++++ b/Python/opcode_targets.h
+@@ -763,4 +763,786 @@ static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {
+     [232] = _TAIL_CALL_UNKNOWN_OPCODE,
+     [233] = _TAIL_CALL_UNKNOWN_OPCODE,
+ };
+-#endif /* Py_TAIL_CALL_INTERP */
++
++
++[[clang::noinline]] Py_PRESERVE_NONE_CC PyObject * tail_jump_table_1(TAIL_CALL_PARAMS) {
++    _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)};
++    uint8_t opcode = word.op.code;
++    extern py_tail_call_funcptr INSTRUCTION_TABLE[256];
++    Py_MUSTTAIL return INSTRUCTION_TABLE[opcode](TAIL_CALL_ARGS);
++}
++
++    
++
++[[clang::noinline]] Py_PRESERVE_NONE_CC PyObject * tail_jump_table_2(TAIL_CALL_PARAMS) {
++    _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)};
++    uint8_t opcode = word.op.code;
++    Py_PRESERVE_NONE_CC PyObject* (*x)(TAIL_CALL_PARAMS);
++    switch(opcode) {
++            case 0: x = &_TAIL_CALL_CACHE; break;
++        case 1: x = &_TAIL_CALL_BINARY_SLICE; break;
++        case 2: x = &_TAIL_CALL_BUILD_TEMPLATE; break;
++        case 3: x = &_TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE; break;
++        case 4: x = &_TAIL_CALL_CALL_FUNCTION_EX; break;
++        case 5: x = &_TAIL_CALL_CHECK_EG_MATCH; break;
++        case 6: x = &_TAIL_CALL_CHECK_EXC_MATCH; break;
++        case 7: x = &_TAIL_CALL_CLEANUP_THROW; break;
++        case 8: x = &_TAIL_CALL_DELETE_SUBSCR; break;
++        case 9: x = &_TAIL_CALL_END_FOR; break;
++        case 10: x = &_TAIL_CALL_END_SEND; break;
++        case 11: x = &_TAIL_CALL_EXIT_INIT_CHECK; break;
++        case 12: x = &_TAIL_CALL_FORMAT_SIMPLE; break;
++        case 13: x = &_TAIL_CALL_FORMAT_WITH_SPEC; break;
++        case 14: x = &_TAIL_CALL_GET_AITER; break;
++        case 15: x = &_TAIL_CALL_GET_ANEXT; break;
++        case 16: x = &_TAIL_CALL_GET_ITER; break;
++        case 17: x = &_TAIL_CALL_RESERVED; break;
++        case 18: x = &_TAIL_CALL_GET_LEN; break;
++        case 19: x = &_TAIL_CALL_GET_YIELD_FROM_ITER; break;
++        case 20: x = &_TAIL_CALL_INTERPRETER_EXIT; break;
++        case 21: x = &_TAIL_CALL_LOAD_BUILD_CLASS; break;
++        case 22: x = &_TAIL_CALL_LOAD_LOCALS; break;
++        case 23: x = &_TAIL_CALL_MAKE_FUNCTION; break;
++        case 24: x = &_TAIL_CALL_MATCH_KEYS; break;
++        case 25: x = &_TAIL_CALL_MATCH_MAPPING; break;
++        case 26: x = &_TAIL_CALL_MATCH_SEQUENCE; break;
++        case 27: x = &_TAIL_CALL_NOP; break;
++        case 28: x = &_TAIL_CALL_NOT_TAKEN; break;
++        case 29: x = &_TAIL_CALL_POP_EXCEPT; break;
++        case 30: x = &_TAIL_CALL_POP_ITER; break;
++        case 31: x = &_TAIL_CALL_POP_TOP; break;
++        case 32: x = &_TAIL_CALL_PUSH_EXC_INFO; break;
++        case 33: x = &_TAIL_CALL_PUSH_NULL; break;
++        case 34: x = &_TAIL_CALL_RETURN_GENERATOR; break;
++        case 35: x = &_TAIL_CALL_RETURN_VALUE; break;
++        case 36: x = &_TAIL_CALL_SETUP_ANNOTATIONS; break;
++        case 37: x = &_TAIL_CALL_STORE_SLICE; break;
++        case 38: x = &_TAIL_CALL_STORE_SUBSCR; break;
++        case 39: x = &_TAIL_CALL_TO_BOOL; break;
++        case 40: x = &_TAIL_CALL_UNARY_INVERT; break;
++        case 41: x = &_TAIL_CALL_UNARY_NEGATIVE; break;
++        case 42: x = &_TAIL_CALL_UNARY_NOT; break;
++        case 43: x = &_TAIL_CALL_WITH_EXCEPT_START; break;
++        case 44: x = &_TAIL_CALL_BINARY_OP; break;
++        case 45: x = &_TAIL_CALL_BUILD_INTERPOLATION; break;
++        case 46: x = &_TAIL_CALL_BUILD_LIST; break;
++        case 47: x = &_TAIL_CALL_BUILD_MAP; break;
++        case 48: x = &_TAIL_CALL_BUILD_SET; break;
++        case 49: x = &_TAIL_CALL_BUILD_SLICE; break;
++        case 50: x = &_TAIL_CALL_BUILD_STRING; break;
++        case 51: x = &_TAIL_CALL_BUILD_TUPLE; break;
++        case 52: x = &_TAIL_CALL_CALL; break;
++        case 53: x = &_TAIL_CALL_CALL_INTRINSIC_1; break;
++        case 54: x = &_TAIL_CALL_CALL_INTRINSIC_2; break;
++        case 55: x = &_TAIL_CALL_CALL_KW; break;
++        case 56: x = &_TAIL_CALL_COMPARE_OP; break;
++        case 57: x = &_TAIL_CALL_CONTAINS_OP; break;
++        case 58: x = &_TAIL_CALL_CONVERT_VALUE; break;
++        case 59: x = &_TAIL_CALL_COPY; break;
++        case 60: x = &_TAIL_CALL_COPY_FREE_VARS; break;
++        case 61: x = &_TAIL_CALL_DELETE_ATTR; break;
++        case 62: x = &_TAIL_CALL_DELETE_DEREF; break;
++        case 63: x = &_TAIL_CALL_DELETE_FAST; break;
++        case 64: x = &_TAIL_CALL_DELETE_GLOBAL; break;
++        case 65: x = &_TAIL_CALL_DELETE_NAME; break;
++        case 66: x = &_TAIL_CALL_DICT_MERGE; break;
++        case 67: x = &_TAIL_CALL_DICT_UPDATE; break;
++        case 68: x = &_TAIL_CALL_END_ASYNC_FOR; break;
++        case 69: x = &_TAIL_CALL_EXTENDED_ARG; break;
++        case 70: x = &_TAIL_CALL_FOR_ITER; break;
++        case 71: x = &_TAIL_CALL_GET_AWAITABLE; break;
++        case 72: x = &_TAIL_CALL_IMPORT_FROM; break;
++        case 73: x = &_TAIL_CALL_IMPORT_NAME; break;
++        case 74: x = &_TAIL_CALL_IS_OP; break;
++        case 75: x = &_TAIL_CALL_JUMP_BACKWARD; break;
++        case 76: x = &_TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT; break;
++        case 77: x = &_TAIL_CALL_JUMP_FORWARD; break;
++        case 78: x = &_TAIL_CALL_LIST_APPEND; break;
++        case 79: x = &_TAIL_CALL_LIST_EXTEND; break;
++        case 80: x = &_TAIL_CALL_LOAD_ATTR; break;
++        case 81: x = &_TAIL_CALL_LOAD_COMMON_CONSTANT; break;
++        case 82: x = &_TAIL_CALL_LOAD_CONST; break;
++        case 83: x = &_TAIL_CALL_LOAD_DEREF; break;
++        case 84: x = &_TAIL_CALL_LOAD_FAST; break;
++        case 85: x = &_TAIL_CALL_LOAD_FAST_AND_CLEAR; break;
++        case 86: x = &_TAIL_CALL_LOAD_FAST_BORROW; break;
++        case 87: x = &_TAIL_CALL_LOAD_FAST_BORROW_LOAD_FAST_BORROW; break;
++        case 88: x = &_TAIL_CALL_LOAD_FAST_CHECK; break;
++        case 89: x = &_TAIL_CALL_LOAD_FAST_LOAD_FAST; break;
++        case 90: x = &_TAIL_CALL_LOAD_FROM_DICT_OR_DEREF; break;
++        case 91: x = &_TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS; break;
++        case 92: x = &_TAIL_CALL_LOAD_GLOBAL; break;
++        case 93: x = &_TAIL_CALL_LOAD_NAME; break;
++        case 94: x = &_TAIL_CALL_LOAD_SMALL_INT; break;
++        case 95: x = &_TAIL_CALL_LOAD_SPECIAL; break;
++        case 96: x = &_TAIL_CALL_LOAD_SUPER_ATTR; break;
++        case 97: x = &_TAIL_CALL_MAKE_CELL; break;
++        case 98: x = &_TAIL_CALL_MAP_ADD; break;
++        case 99: x = &_TAIL_CALL_MATCH_CLASS; break;
++        case 100: x = &_TAIL_CALL_POP_JUMP_IF_FALSE; break;
++        case 101: x = &_TAIL_CALL_POP_JUMP_IF_NONE; break;
++        case 102: x = &_TAIL_CALL_POP_JUMP_IF_NOT_NONE; break;
++        case 103: x = &_TAIL_CALL_POP_JUMP_IF_TRUE; break;
++        case 104: x = &_TAIL_CALL_RAISE_VARARGS; break;
++        case 105: x = &_TAIL_CALL_RERAISE; break;
++        case 106: x = &_TAIL_CALL_SEND; break;
++        case 107: x = &_TAIL_CALL_SET_ADD; break;
++        case 108: x = &_TAIL_CALL_SET_FUNCTION_ATTRIBUTE; break;
++        case 109: x = &_TAIL_CALL_SET_UPDATE; break;
++        case 110: x = &_TAIL_CALL_STORE_ATTR; break;
++        case 111: x = &_TAIL_CALL_STORE_DEREF; break;
++        case 112: x = &_TAIL_CALL_STORE_FAST; break;
++        case 113: x = &_TAIL_CALL_STORE_FAST_LOAD_FAST; break;
++        case 114: x = &_TAIL_CALL_STORE_FAST_STORE_FAST; break;
++        case 115: x = &_TAIL_CALL_STORE_GLOBAL; break;
++        case 116: x = &_TAIL_CALL_STORE_NAME; break;
++        case 117: x = &_TAIL_CALL_SWAP; break;
++        case 118: x = &_TAIL_CALL_UNPACK_EX; break;
++        case 119: x = &_TAIL_CALL_UNPACK_SEQUENCE; break;
++        case 120: x = &_TAIL_CALL_YIELD_VALUE; break;
++        case 121: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 122: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 123: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 124: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 125: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 126: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 127: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 128: x = &_TAIL_CALL_RESUME; break;
++        case 129: x = &_TAIL_CALL_BINARY_OP_ADD_FLOAT; break;
++        case 130: x = &_TAIL_CALL_BINARY_OP_ADD_INT; break;
++        case 131: x = &_TAIL_CALL_BINARY_OP_ADD_UNICODE; break;
++        case 132: x = &_TAIL_CALL_BINARY_OP_EXTEND; break;
++        case 133: x = &_TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT; break;
++        case 134: x = &_TAIL_CALL_BINARY_OP_MULTIPLY_INT; break;
++        case 135: x = &_TAIL_CALL_BINARY_OP_SUBSCR_DICT; break;
++        case 136: x = &_TAIL_CALL_BINARY_OP_SUBSCR_GETITEM; break;
++        case 137: x = &_TAIL_CALL_BINARY_OP_SUBSCR_LIST_INT; break;
++        case 138: x = &_TAIL_CALL_BINARY_OP_SUBSCR_LIST_SLICE; break;
++        case 139: x = &_TAIL_CALL_BINARY_OP_SUBSCR_STR_INT; break;
++        case 140: x = &_TAIL_CALL_BINARY_OP_SUBSCR_TUPLE_INT; break;
++        case 141: x = &_TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT; break;
++        case 142: x = &_TAIL_CALL_BINARY_OP_SUBTRACT_INT; break;
++        case 143: x = &_TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT; break;
++        case 144: x = &_TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS; break;
++        case 145: x = &_TAIL_CALL_CALL_BOUND_METHOD_GENERAL; break;
++        case 146: x = &_TAIL_CALL_CALL_BUILTIN_CLASS; break;
++        case 147: x = &_TAIL_CALL_CALL_BUILTIN_FAST; break;
++        case 148: x = &_TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS; break;
++        case 149: x = &_TAIL_CALL_CALL_BUILTIN_O; break;
++        case 150: x = &_TAIL_CALL_CALL_ISINSTANCE; break;
++        case 151: x = &_TAIL_CALL_CALL_KW_BOUND_METHOD; break;
++        case 152: x = &_TAIL_CALL_CALL_KW_NON_PY; break;
++        case 153: x = &_TAIL_CALL_CALL_KW_PY; break;
++        case 154: x = &_TAIL_CALL_CALL_LEN; break;
++        case 155: x = &_TAIL_CALL_CALL_LIST_APPEND; break;
++        case 156: x = &_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST; break;
++        case 157: x = &_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS; break;
++        case 158: x = &_TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS; break;
++        case 159: x = &_TAIL_CALL_CALL_METHOD_DESCRIPTOR_O; break;
++        case 160: x = &_TAIL_CALL_CALL_NON_PY_GENERAL; break;
++        case 161: x = &_TAIL_CALL_CALL_PY_EXACT_ARGS; break;
++        case 162: x = &_TAIL_CALL_CALL_PY_GENERAL; break;
++        case 163: x = &_TAIL_CALL_CALL_STR_1; break;
++        case 164: x = &_TAIL_CALL_CALL_TUPLE_1; break;
++        case 165: x = &_TAIL_CALL_CALL_TYPE_1; break;
++        case 166: x = &_TAIL_CALL_COMPARE_OP_FLOAT; break;
++        case 167: x = &_TAIL_CALL_COMPARE_OP_INT; break;
++        case 168: x = &_TAIL_CALL_COMPARE_OP_STR; break;
++        case 169: x = &_TAIL_CALL_CONTAINS_OP_DICT; break;
++        case 170: x = &_TAIL_CALL_CONTAINS_OP_SET; break;
++        case 171: x = &_TAIL_CALL_FOR_ITER_GEN; break;
++        case 172: x = &_TAIL_CALL_FOR_ITER_LIST; break;
++        case 173: x = &_TAIL_CALL_FOR_ITER_RANGE; break;
++        case 174: x = &_TAIL_CALL_FOR_ITER_TUPLE; break;
++        case 175: x = &_TAIL_CALL_JUMP_BACKWARD_JIT; break;
++        case 176: x = &_TAIL_CALL_JUMP_BACKWARD_NO_JIT; break;
++        case 177: x = &_TAIL_CALL_LOAD_ATTR_CLASS; break;
++        case 178: x = &_TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_CHECK; break;
++        case 179: x = &_TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN; break;
++        case 180: x = &_TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE; break;
++        case 181: x = &_TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT; break;
++        case 182: x = &_TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT; break;
++        case 183: x = &_TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES; break;
++        case 184: x = &_TAIL_CALL_LOAD_ATTR_MODULE; break;
++        case 185: x = &_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT; break;
++        case 186: x = &_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES; break;
++        case 187: x = &_TAIL_CALL_LOAD_ATTR_PROPERTY; break;
++        case 188: x = &_TAIL_CALL_LOAD_ATTR_SLOT; break;
++        case 189: x = &_TAIL_CALL_LOAD_ATTR_WITH_HINT; break;
++        case 190: x = &_TAIL_CALL_LOAD_CONST_IMMORTAL; break;
++        case 191: x = &_TAIL_CALL_LOAD_CONST_MORTAL; break;
++        case 192: x = &_TAIL_CALL_LOAD_GLOBAL_BUILTIN; break;
++        case 193: x = &_TAIL_CALL_LOAD_GLOBAL_MODULE; break;
++        case 194: x = &_TAIL_CALL_LOAD_SUPER_ATTR_ATTR; break;
++        case 195: x = &_TAIL_CALL_LOAD_SUPER_ATTR_METHOD; break;
++        case 196: x = &_TAIL_CALL_RESUME_CHECK; break;
++        case 197: x = &_TAIL_CALL_SEND_GEN; break;
++        case 198: x = &_TAIL_CALL_STORE_ATTR_INSTANCE_VALUE; break;
++        case 199: x = &_TAIL_CALL_STORE_ATTR_SLOT; break;
++        case 200: x = &_TAIL_CALL_STORE_ATTR_WITH_HINT; break;
++        case 201: x = &_TAIL_CALL_STORE_SUBSCR_DICT; break;
++        case 202: x = &_TAIL_CALL_STORE_SUBSCR_LIST_INT; break;
++        case 203: x = &_TAIL_CALL_TO_BOOL_ALWAYS_TRUE; break;
++        case 204: x = &_TAIL_CALL_TO_BOOL_BOOL; break;
++        case 205: x = &_TAIL_CALL_TO_BOOL_INT; break;
++        case 206: x = &_TAIL_CALL_TO_BOOL_LIST; break;
++        case 207: x = &_TAIL_CALL_TO_BOOL_NONE; break;
++        case 208: x = &_TAIL_CALL_TO_BOOL_STR; break;
++        case 209: x = &_TAIL_CALL_UNPACK_SEQUENCE_LIST; break;
++        case 210: x = &_TAIL_CALL_UNPACK_SEQUENCE_TUPLE; break;
++        case 211: x = &_TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE; break;
++        case 212: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 213: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 214: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 215: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 216: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 217: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 218: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 219: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 220: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 221: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 222: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 223: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 224: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 225: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 226: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 227: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 228: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 229: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 230: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 231: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 232: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 233: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;
++        case 234: x = &_TAIL_CALL_INSTRUMENTED_END_FOR; break;
++        case 235: x = &_TAIL_CALL_INSTRUMENTED_POP_ITER; break;
++        case 236: x = &_TAIL_CALL_INSTRUMENTED_END_SEND; break;
++        case 237: x = &_TAIL_CALL_INSTRUMENTED_FOR_ITER; break;
++        case 238: x = &_TAIL_CALL_INSTRUMENTED_INSTRUCTION; break;
++        case 239: x = &_TAIL_CALL_INSTRUMENTED_JUMP_FORWARD; break;
++        case 240: x = &_TAIL_CALL_INSTRUMENTED_NOT_TAKEN; break;
++        case 241: x = &_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE; break;
++        case 242: x = &_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE; break;
++        case 243: x = &_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE; break;
++        case 244: x = &_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NONE; break;
++        case 245: x = &_TAIL_CALL_INSTRUMENTED_RESUME; break;
++        case 246: x = &_TAIL_CALL_INSTRUMENTED_RETURN_VALUE; break;
++        case 247: x = &_TAIL_CALL_INSTRUMENTED_YIELD_VALUE; break;
++        case 248: x = &_TAIL_CALL_INSTRUMENTED_END_ASYNC_FOR; break;
++        case 249: x = &_TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR; break;
++        case 250: x = &_TAIL_CALL_INSTRUMENTED_CALL; break;
++        case 251: x = &_TAIL_CALL_INSTRUMENTED_CALL_KW; break;
++        case 252: x = &_TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX; break;
++        case 253: x = &_TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD; break;
++        case 254: x = &_TAIL_CALL_INSTRUMENTED_LINE; break;
++        case 255: x = &_TAIL_CALL_ENTER_EXECUTOR; break;
++
++    }
++    Py_MUSTTAIL return x(TAIL_CALL_ARGS);
++}
++
++    
++
++[[clang::noinline]] Py_PRESERVE_NONE_CC PyObject * tail_jump_table_3(TAIL_CALL_PARAMS) {
++    _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)};
++    uint8_t opcode = word.op.code;
++    switch(opcode) {
++           case 0: Py_MUSTTAIL return _TAIL_CALL_CACHE(TAIL_CALL_ARGS);
++       case 1: Py_MUSTTAIL return _TAIL_CALL_BINARY_SLICE(TAIL_CALL_ARGS);
++       case 2: Py_MUSTTAIL return _TAIL_CALL_BUILD_TEMPLATE(TAIL_CALL_ARGS);
++       case 3: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(TAIL_CALL_ARGS);
++       case 4: Py_MUSTTAIL return _TAIL_CALL_CALL_FUNCTION_EX(TAIL_CALL_ARGS);
++       case 5: Py_MUSTTAIL return _TAIL_CALL_CHECK_EG_MATCH(TAIL_CALL_ARGS);
++       case 6: Py_MUSTTAIL return _TAIL_CALL_CHECK_EXC_MATCH(TAIL_CALL_ARGS);
++       case 7: Py_MUSTTAIL return _TAIL_CALL_CLEANUP_THROW(TAIL_CALL_ARGS);
++       case 8: Py_MUSTTAIL return _TAIL_CALL_DELETE_SUBSCR(TAIL_CALL_ARGS);
++       case 9: Py_MUSTTAIL return _TAIL_CALL_END_FOR(TAIL_CALL_ARGS);
++       case 10: Py_MUSTTAIL return _TAIL_CALL_END_SEND(TAIL_CALL_ARGS);
++       case 11: Py_MUSTTAIL return _TAIL_CALL_EXIT_INIT_CHECK(TAIL_CALL_ARGS);
++       case 12: Py_MUSTTAIL return _TAIL_CALL_FORMAT_SIMPLE(TAIL_CALL_ARGS);
++       case 13: Py_MUSTTAIL return _TAIL_CALL_FORMAT_WITH_SPEC(TAIL_CALL_ARGS);
++       case 14: Py_MUSTTAIL return _TAIL_CALL_GET_AITER(TAIL_CALL_ARGS);
++       case 15: Py_MUSTTAIL return _TAIL_CALL_GET_ANEXT(TAIL_CALL_ARGS);
++       case 16: Py_MUSTTAIL return _TAIL_CALL_GET_ITER(TAIL_CALL_ARGS);
++       case 17: Py_MUSTTAIL return _TAIL_CALL_RESERVED(TAIL_CALL_ARGS);
++       case 18: Py_MUSTTAIL return _TAIL_CALL_GET_LEN(TAIL_CALL_ARGS);
++       case 19: Py_MUSTTAIL return _TAIL_CALL_GET_YIELD_FROM_ITER(TAIL_CALL_ARGS);
++       case 20: Py_MUSTTAIL return _TAIL_CALL_INTERPRETER_EXIT(TAIL_CALL_ARGS);
++       case 21: Py_MUSTTAIL return _TAIL_CALL_LOAD_BUILD_CLASS(TAIL_CALL_ARGS);
++       case 22: Py_MUSTTAIL return _TAIL_CALL_LOAD_LOCALS(TAIL_CALL_ARGS);
++       case 23: Py_MUSTTAIL return _TAIL_CALL_MAKE_FUNCTION(TAIL_CALL_ARGS);
++       case 24: Py_MUSTTAIL return _TAIL_CALL_MATCH_KEYS(TAIL_CALL_ARGS);
++       case 25: Py_MUSTTAIL return _TAIL_CALL_MATCH_MAPPING(TAIL_CALL_ARGS);
++       case 26: Py_MUSTTAIL return _TAIL_CALL_MATCH_SEQUENCE(TAIL_CALL_ARGS);
++       case 27: Py_MUSTTAIL return _TAIL_CALL_NOP(TAIL_CALL_ARGS);
++       case 28: Py_MUSTTAIL return _TAIL_CALL_NOT_TAKEN(TAIL_CALL_ARGS);
++       case 29: Py_MUSTTAIL return _TAIL_CALL_POP_EXCEPT(TAIL_CALL_ARGS);
++       case 30: Py_MUSTTAIL return _TAIL_CALL_POP_ITER(TAIL_CALL_ARGS);
++       case 31: Py_MUSTTAIL return _TAIL_CALL_POP_TOP(TAIL_CALL_ARGS);
++       case 32: Py_MUSTTAIL return _TAIL_CALL_PUSH_EXC_INFO(TAIL_CALL_ARGS);
++       case 33: Py_MUSTTAIL return _TAIL_CALL_PUSH_NULL(TAIL_CALL_ARGS);
++       case 34: Py_MUSTTAIL return _TAIL_CALL_RETURN_GENERATOR(TAIL_CALL_ARGS);
++       case 35: Py_MUSTTAIL return _TAIL_CALL_RETURN_VALUE(TAIL_CALL_ARGS);
++       case 36: Py_MUSTTAIL return _TAIL_CALL_SETUP_ANNOTATIONS(TAIL_CALL_ARGS);
++       case 37: Py_MUSTTAIL return _TAIL_CALL_STORE_SLICE(TAIL_CALL_ARGS);
++       case 38: Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR(TAIL_CALL_ARGS);
++       case 39: Py_MUSTTAIL return _TAIL_CALL_TO_BOOL(TAIL_CALL_ARGS);
++       case 40: Py_MUSTTAIL return _TAIL_CALL_UNARY_INVERT(TAIL_CALL_ARGS);
++       case 41: Py_MUSTTAIL return _TAIL_CALL_UNARY_NEGATIVE(TAIL_CALL_ARGS);
++       case 42: Py_MUSTTAIL return _TAIL_CALL_UNARY_NOT(TAIL_CALL_ARGS);
++       case 43: Py_MUSTTAIL return _TAIL_CALL_WITH_EXCEPT_START(TAIL_CALL_ARGS);
++       case 44: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(TAIL_CALL_ARGS);
++       case 45: Py_MUSTTAIL return _TAIL_CALL_BUILD_INTERPOLATION(TAIL_CALL_ARGS);
++       case 46: Py_MUSTTAIL return _TAIL_CALL_BUILD_LIST(TAIL_CALL_ARGS);
++       case 47: Py_MUSTTAIL return _TAIL_CALL_BUILD_MAP(TAIL_CALL_ARGS);
++       case 48: Py_MUSTTAIL return _TAIL_CALL_BUILD_SET(TAIL_CALL_ARGS);
++       case 49: Py_MUSTTAIL return _TAIL_CALL_BUILD_SLICE(TAIL_CALL_ARGS);
++       case 50: Py_MUSTTAIL return _TAIL_CALL_BUILD_STRING(TAIL_CALL_ARGS);
++       case 51: Py_MUSTTAIL return _TAIL_CALL_BUILD_TUPLE(TAIL_CALL_ARGS);
++       case 52: Py_MUSTTAIL return _TAIL_CALL_CALL(TAIL_CALL_ARGS);
++       case 53: Py_MUSTTAIL return _TAIL_CALL_CALL_INTRINSIC_1(TAIL_CALL_ARGS);
++       case 54: Py_MUSTTAIL return _TAIL_CALL_CALL_INTRINSIC_2(TAIL_CALL_ARGS);
++       case 55: Py_MUSTTAIL return _TAIL_CALL_CALL_KW(TAIL_CALL_ARGS);
++       case 56: Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(TAIL_CALL_ARGS);
++       case 57: Py_MUSTTAIL return _TAIL_CALL_CONTAINS_OP(TAIL_CALL_ARGS);
++       case 58: Py_MUSTTAIL return _TAIL_CALL_CONVERT_VALUE(TAIL_CALL_ARGS);
++       case 59: Py_MUSTTAIL return _TAIL_CALL_COPY(TAIL_CALL_ARGS);
++       case 60: Py_MUSTTAIL return _TAIL_CALL_COPY_FREE_VARS(TAIL_CALL_ARGS);
++       case 61: Py_MUSTTAIL return _TAIL_CALL_DELETE_ATTR(TAIL_CALL_ARGS);
++       case 62: Py_MUSTTAIL return _TAIL_CALL_DELETE_DEREF(TAIL_CALL_ARGS);
++       case 63: Py_MUSTTAIL return _TAIL_CALL_DELETE_FAST(TAIL_CALL_ARGS);
++       case 64: Py_MUSTTAIL return _TAIL_CALL_DELETE_GLOBAL(TAIL_CALL_ARGS);
++       case 65: Py_MUSTTAIL return _TAIL_CALL_DELETE_NAME(TAIL_CALL_ARGS);
++       case 66: Py_MUSTTAIL return _TAIL_CALL_DICT_MERGE(TAIL_CALL_ARGS);
++       case 67: Py_MUSTTAIL return _TAIL_CALL_DICT_UPDATE(TAIL_CALL_ARGS);
++       case 68: Py_MUSTTAIL return _TAIL_CALL_END_ASYNC_FOR(TAIL_CALL_ARGS);
++       case 69: Py_MUSTTAIL return _TAIL_CALL_EXTENDED_ARG(TAIL_CALL_ARGS);
++       case 70: Py_MUSTTAIL return _TAIL_CALL_FOR_ITER(TAIL_CALL_ARGS);
++       case 71: Py_MUSTTAIL return _TAIL_CALL_GET_AWAITABLE(TAIL_CALL_ARGS);
++       case 72: Py_MUSTTAIL return _TAIL_CALL_IMPORT_FROM(TAIL_CALL_ARGS);
++       case 73: Py_MUSTTAIL return _TAIL_CALL_IMPORT_NAME(TAIL_CALL_ARGS);
++       case 74: Py_MUSTTAIL return _TAIL_CALL_IS_OP(TAIL_CALL_ARGS);
++       case 75: Py_MUSTTAIL return _TAIL_CALL_JUMP_BACKWARD(TAIL_CALL_ARGS);
++       case 76: Py_MUSTTAIL return _TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT(TAIL_CALL_ARGS);
++       case 77: Py_MUSTTAIL return _TAIL_CALL_JUMP_FORWARD(TAIL_CALL_ARGS);
++       case 78: Py_MUSTTAIL return _TAIL_CALL_LIST_APPEND(TAIL_CALL_ARGS);
++       case 79: Py_MUSTTAIL return _TAIL_CALL_LIST_EXTEND(TAIL_CALL_ARGS);
++       case 80: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(TAIL_CALL_ARGS);
++       case 81: Py_MUSTTAIL return _TAIL_CALL_LOAD_COMMON_CONSTANT(TAIL_CALL_ARGS);
++       case 82: Py_MUSTTAIL return _TAIL_CALL_LOAD_CONST(TAIL_CALL_ARGS);
++       case 83: Py_MUSTTAIL return _TAIL_CALL_LOAD_DEREF(TAIL_CALL_ARGS);
++       case 84: Py_MUSTTAIL return _TAIL_CALL_LOAD_FAST(TAIL_CALL_ARGS);
++       case 85: Py_MUSTTAIL return _TAIL_CALL_LOAD_FAST_AND_CLEAR(TAIL_CALL_ARGS);
++       case 86: Py_MUSTTAIL return _TAIL_CALL_LOAD_FAST_BORROW(TAIL_CALL_ARGS);
++       case 87: Py_MUSTTAIL return _TAIL_CALL_LOAD_FAST_BORROW_LOAD_FAST_BORROW(TAIL_CALL_ARGS);
++       case 88: Py_MUSTTAIL return _TAIL_CALL_LOAD_FAST_CHECK(TAIL_CALL_ARGS);
++       case 89: Py_MUSTTAIL return _TAIL_CALL_LOAD_FAST_LOAD_FAST(TAIL_CALL_ARGS);
++       case 90: Py_MUSTTAIL return _TAIL_CALL_LOAD_FROM_DICT_OR_DEREF(TAIL_CALL_ARGS);
++       case 91: Py_MUSTTAIL return _TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS(TAIL_CALL_ARGS);
++       case 92: Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(TAIL_CALL_ARGS);
++       case 93: Py_MUSTTAIL return _TAIL_CALL_LOAD_NAME(TAIL_CALL_ARGS);
++       case 94: Py_MUSTTAIL return _TAIL_CALL_LOAD_SMALL_INT(TAIL_CALL_ARGS);
++       case 95: Py_MUSTTAIL return _TAIL_CALL_LOAD_SPECIAL(TAIL_CALL_ARGS);
++       case 96: Py_MUSTTAIL return _TAIL_CALL_LOAD_SUPER_ATTR(TAIL_CALL_ARGS);
++       case 97: Py_MUSTTAIL return _TAIL_CALL_MAKE_CELL(TAIL_CALL_ARGS);
++       case 98: Py_MUSTTAIL return _TAIL_CALL_MAP_ADD(TAIL_CALL_ARGS);
++       case 99: Py_MUSTTAIL return _TAIL_CALL_MATCH_CLASS(TAIL_CALL_ARGS);
++       case 100: Py_MUSTTAIL return _TAIL_CALL_POP_JUMP_IF_FALSE(TAIL_CALL_ARGS);
++       case 101: Py_MUSTTAIL return _TAIL_CALL_POP_JUMP_IF_NONE(TAIL_CALL_ARGS);
++       case 102: Py_MUSTTAIL return _TAIL_CALL_POP_JUMP_IF_NOT_NONE(TAIL_CALL_ARGS);
++       case 103: Py_MUSTTAIL return _TAIL_CALL_POP_JUMP_IF_TRUE(TAIL_CALL_ARGS);
++       case 104: Py_MUSTTAIL return _TAIL_CALL_RAISE_VARARGS(TAIL_CALL_ARGS);
++       case 105: Py_MUSTTAIL return _TAIL_CALL_RERAISE(TAIL_CALL_ARGS);
++       case 106: Py_MUSTTAIL return _TAIL_CALL_SEND(TAIL_CALL_ARGS);
++       case 107: Py_MUSTTAIL return _TAIL_CALL_SET_ADD(TAIL_CALL_ARGS);
++       case 108: Py_MUSTTAIL return _TAIL_CALL_SET_FUNCTION_ATTRIBUTE(TAIL_CALL_ARGS);
++       case 109: Py_MUSTTAIL return _TAIL_CALL_SET_UPDATE(TAIL_CALL_ARGS);
++       case 110: Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(TAIL_CALL_ARGS);
++       case 111: Py_MUSTTAIL return _TAIL_CALL_STORE_DEREF(TAIL_CALL_ARGS);
++       case 112: Py_MUSTTAIL return _TAIL_CALL_STORE_FAST(TAIL_CALL_ARGS);
++       case 113: Py_MUSTTAIL return _TAIL_CALL_STORE_FAST_LOAD_FAST(TAIL_CALL_ARGS);
++       case 114: Py_MUSTTAIL return _TAIL_CALL_STORE_FAST_STORE_FAST(TAIL_CALL_ARGS);
++       case 115: Py_MUSTTAIL return _TAIL_CALL_STORE_GLOBAL(TAIL_CALL_ARGS);
++       case 116: Py_MUSTTAIL return _TAIL_CALL_STORE_NAME(TAIL_CALL_ARGS);
++       case 117: Py_MUSTTAIL return _TAIL_CALL_SWAP(TAIL_CALL_ARGS);
++       case 118: Py_MUSTTAIL return _TAIL_CALL_UNPACK_EX(TAIL_CALL_ARGS);
++       case 119: Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(TAIL_CALL_ARGS);
++       case 120: Py_MUSTTAIL return _TAIL_CALL_YIELD_VALUE(TAIL_CALL_ARGS);
++       case 121: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 122: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 123: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 124: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 125: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 126: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 127: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 128: Py_MUSTTAIL return _TAIL_CALL_RESUME(TAIL_CALL_ARGS);
++       case 129: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_ADD_FLOAT(TAIL_CALL_ARGS);
++       case 130: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_ADD_INT(TAIL_CALL_ARGS);
++       case 131: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_ADD_UNICODE(TAIL_CALL_ARGS);
++       case 132: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_EXTEND(TAIL_CALL_ARGS);
++       case 133: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(TAIL_CALL_ARGS);
++       case 134: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_MULTIPLY_INT(TAIL_CALL_ARGS);
++       case 135: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBSCR_DICT(TAIL_CALL_ARGS);
++       case 136: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBSCR_GETITEM(TAIL_CALL_ARGS);
++       case 137: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBSCR_LIST_INT(TAIL_CALL_ARGS);
++       case 138: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBSCR_LIST_SLICE(TAIL_CALL_ARGS);
++       case 139: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBSCR_STR_INT(TAIL_CALL_ARGS);
++       case 140: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBSCR_TUPLE_INT(TAIL_CALL_ARGS);
++       case 141: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(TAIL_CALL_ARGS);
++       case 142: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBTRACT_INT(TAIL_CALL_ARGS);
++       case 143: Py_MUSTTAIL return _TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(TAIL_CALL_ARGS);
++       case 144: Py_MUSTTAIL return _TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(TAIL_CALL_ARGS);
++       case 145: Py_MUSTTAIL return _TAIL_CALL_CALL_BOUND_METHOD_GENERAL(TAIL_CALL_ARGS);
++       case 146: Py_MUSTTAIL return _TAIL_CALL_CALL_BUILTIN_CLASS(TAIL_CALL_ARGS);
++       case 147: Py_MUSTTAIL return _TAIL_CALL_CALL_BUILTIN_FAST(TAIL_CALL_ARGS);
++       case 148: Py_MUSTTAIL return _TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(TAIL_CALL_ARGS);
++       case 149: Py_MUSTTAIL return _TAIL_CALL_CALL_BUILTIN_O(TAIL_CALL_ARGS);
++       case 150: Py_MUSTTAIL return _TAIL_CALL_CALL_ISINSTANCE(TAIL_CALL_ARGS);
++       case 151: Py_MUSTTAIL return _TAIL_CALL_CALL_KW_BOUND_METHOD(TAIL_CALL_ARGS);
++       case 152: Py_MUSTTAIL return _TAIL_CALL_CALL_KW_NON_PY(TAIL_CALL_ARGS);
++       case 153: Py_MUSTTAIL return _TAIL_CALL_CALL_KW_PY(TAIL_CALL_ARGS);
++       case 154: Py_MUSTTAIL return _TAIL_CALL_CALL_LEN(TAIL_CALL_ARGS);
++       case 155: Py_MUSTTAIL return _TAIL_CALL_CALL_LIST_APPEND(TAIL_CALL_ARGS);
++       case 156: Py_MUSTTAIL return _TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(TAIL_CALL_ARGS);
++       case 157: Py_MUSTTAIL return _TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(TAIL_CALL_ARGS);
++       case 158: Py_MUSTTAIL return _TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(TAIL_CALL_ARGS);
++       case 159: Py_MUSTTAIL return _TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(TAIL_CALL_ARGS);
++       case 160: Py_MUSTTAIL return _TAIL_CALL_CALL_NON_PY_GENERAL(TAIL_CALL_ARGS);
++       case 161: Py_MUSTTAIL return _TAIL_CALL_CALL_PY_EXACT_ARGS(TAIL_CALL_ARGS);
++       case 162: Py_MUSTTAIL return _TAIL_CALL_CALL_PY_GENERAL(TAIL_CALL_ARGS);
++       case 163: Py_MUSTTAIL return _TAIL_CALL_CALL_STR_1(TAIL_CALL_ARGS);
++       case 164: Py_MUSTTAIL return _TAIL_CALL_CALL_TUPLE_1(TAIL_CALL_ARGS);
++       case 165: Py_MUSTTAIL return _TAIL_CALL_CALL_TYPE_1(TAIL_CALL_ARGS);
++       case 166: Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP_FLOAT(TAIL_CALL_ARGS);
++       case 167: Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP_INT(TAIL_CALL_ARGS);
++       case 168: Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP_STR(TAIL_CALL_ARGS);
++       case 169: Py_MUSTTAIL return _TAIL_CALL_CONTAINS_OP_DICT(TAIL_CALL_ARGS);
++       case 170: Py_MUSTTAIL return _TAIL_CALL_CONTAINS_OP_SET(TAIL_CALL_ARGS);
++       case 171: Py_MUSTTAIL return _TAIL_CALL_FOR_ITER_GEN(TAIL_CALL_ARGS);
++       case 172: Py_MUSTTAIL return _TAIL_CALL_FOR_ITER_LIST(TAIL_CALL_ARGS);
++       case 173: Py_MUSTTAIL return _TAIL_CALL_FOR_ITER_RANGE(TAIL_CALL_ARGS);
++       case 174: Py_MUSTTAIL return _TAIL_CALL_FOR_ITER_TUPLE(TAIL_CALL_ARGS);
++       case 175: Py_MUSTTAIL return _TAIL_CALL_JUMP_BACKWARD_JIT(TAIL_CALL_ARGS);
++       case 176: Py_MUSTTAIL return _TAIL_CALL_JUMP_BACKWARD_NO_JIT(TAIL_CALL_ARGS);
++       case 177: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_CLASS(TAIL_CALL_ARGS);
++       case 178: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_CHECK(TAIL_CALL_ARGS);
++       case 179: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN(TAIL_CALL_ARGS);
++       case 180: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(TAIL_CALL_ARGS);
++       case 181: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(TAIL_CALL_ARGS);
++       case 182: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(TAIL_CALL_ARGS);
++       case 183: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(TAIL_CALL_ARGS);
++       case 184: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_MODULE(TAIL_CALL_ARGS);
++       case 185: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(TAIL_CALL_ARGS);
++       case 186: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES(TAIL_CALL_ARGS);
++       case 187: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_PROPERTY(TAIL_CALL_ARGS);
++       case 188: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_SLOT(TAIL_CALL_ARGS);
++       case 189: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_ARGS);
++       case 190: Py_MUSTTAIL return _TAIL_CALL_LOAD_CONST_IMMORTAL(TAIL_CALL_ARGS);
++       case 191: Py_MUSTTAIL return _TAIL_CALL_LOAD_CONST_MORTAL(TAIL_CALL_ARGS);
++       case 192: Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL_BUILTIN(TAIL_CALL_ARGS);
++       case 193: Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL_MODULE(TAIL_CALL_ARGS);
++       case 194: Py_MUSTTAIL return _TAIL_CALL_LOAD_SUPER_ATTR_ATTR(TAIL_CALL_ARGS);
++       case 195: Py_MUSTTAIL return _TAIL_CALL_LOAD_SUPER_ATTR_METHOD(TAIL_CALL_ARGS);
++       case 196: Py_MUSTTAIL return _TAIL_CALL_RESUME_CHECK(TAIL_CALL_ARGS);
++       case 197: Py_MUSTTAIL return _TAIL_CALL_SEND_GEN(TAIL_CALL_ARGS);
++       case 198: Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(TAIL_CALL_ARGS);
++       case 199: Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR_SLOT(TAIL_CALL_ARGS);
++       case 200: Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR_WITH_HINT(TAIL_CALL_ARGS);
++       case 201: Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR_DICT(TAIL_CALL_ARGS);
++       case 202: Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR_LIST_INT(TAIL_CALL_ARGS);
++       case 203: Py_MUSTTAIL return _TAIL_CALL_TO_BOOL_ALWAYS_TRUE(TAIL_CALL_ARGS);
++       case 204: Py_MUSTTAIL return _TAIL_CALL_TO_BOOL_BOOL(TAIL_CALL_ARGS);
++       case 205: Py_MUSTTAIL return _TAIL_CALL_TO_BOOL_INT(TAIL_CALL_ARGS);
++       case 206: Py_MUSTTAIL return _TAIL_CALL_TO_BOOL_LIST(TAIL_CALL_ARGS);
++       case 207: Py_MUSTTAIL return _TAIL_CALL_TO_BOOL_NONE(TAIL_CALL_ARGS);
++       case 208: Py_MUSTTAIL return _TAIL_CALL_TO_BOOL_STR(TAIL_CALL_ARGS);
++       case 209: Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE_LIST(TAIL_CALL_ARGS);
++       case 210: Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE_TUPLE(TAIL_CALL_ARGS);
++       case 211: Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(TAIL_CALL_ARGS);
++       case 212: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 213: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 214: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 215: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 216: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 217: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 218: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 219: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 220: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 221: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 222: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 223: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 224: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 225: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 226: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 227: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 228: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 229: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 230: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 231: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 232: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 233: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++       case 234: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_END_FOR(TAIL_CALL_ARGS);
++       case 235: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_POP_ITER(TAIL_CALL_ARGS);
++       case 236: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_END_SEND(TAIL_CALL_ARGS);
++       case 237: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_FOR_ITER(TAIL_CALL_ARGS);
++       case 238: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_INSTRUCTION(TAIL_CALL_ARGS);
++       case 239: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(TAIL_CALL_ARGS);
++       case 240: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_NOT_TAKEN(TAIL_CALL_ARGS);
++       case 241: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(TAIL_CALL_ARGS);
++       case 242: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(TAIL_CALL_ARGS);
++       case 243: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(TAIL_CALL_ARGS);
++       case 244: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NONE(TAIL_CALL_ARGS);
++       case 245: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_RESUME(TAIL_CALL_ARGS);
++       case 246: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_RETURN_VALUE(TAIL_CALL_ARGS);
++       case 247: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_YIELD_VALUE(TAIL_CALL_ARGS);
++       case 248: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_END_ASYNC_FOR(TAIL_CALL_ARGS);
++       case 249: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(TAIL_CALL_ARGS);
++       case 250: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_CALL(TAIL_CALL_ARGS);
++       case 251: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_CALL_KW(TAIL_CALL_ARGS);
++       case 252: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(TAIL_CALL_ARGS);
++       case 253: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(TAIL_CALL_ARGS);
++       case 254: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_LINE(TAIL_CALL_ARGS);
++       case 255: Py_MUSTTAIL return _TAIL_CALL_ENTER_EXECUTOR(TAIL_CALL_ARGS);
++
++    }
++}
++
++     
++
++[[clang::noinline]] Py_PRESERVE_NONE_CC PyObject * tail_jump_table_4(TAIL_CALL_PARAMS) {
++    _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)};
++    uint8_t opcode = word.op.code;
++    switch(opcode) {
++           case 0: Py_MUSTTAIL return _TAIL_CALL_CACHE(TAIL_CALL_ARGS);
++       case 1: Py_MUSTTAIL return _TAIL_CALL_BINARY_SLICE(TAIL_CALL_ARGS);
++       case 2: Py_MUSTTAIL return _TAIL_CALL_BUILD_TEMPLATE(TAIL_CALL_ARGS);
++       case 3: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(TAIL_CALL_ARGS);
++       case 4: Py_MUSTTAIL return _TAIL_CALL_CALL_FUNCTION_EX(TAIL_CALL_ARGS);
++       case 5: Py_MUSTTAIL return _TAIL_CALL_CHECK_EG_MATCH(TAIL_CALL_ARGS);
++       case 6: Py_MUSTTAIL return _TAIL_CALL_CHECK_EXC_MATCH(TAIL_CALL_ARGS);
++       case 7: Py_MUSTTAIL return _TAIL_CALL_CLEANUP_THROW(TAIL_CALL_ARGS);
++       case 8: Py_MUSTTAIL return _TAIL_CALL_DELETE_SUBSCR(TAIL_CALL_ARGS);
++       case 9: Py_MUSTTAIL return _TAIL_CALL_END_FOR(TAIL_CALL_ARGS);
++       case 10: Py_MUSTTAIL return _TAIL_CALL_END_SEND(TAIL_CALL_ARGS);
++       case 11: Py_MUSTTAIL return _TAIL_CALL_EXIT_INIT_CHECK(TAIL_CALL_ARGS);
++       case 12: Py_MUSTTAIL return _TAIL_CALL_FORMAT_SIMPLE(TAIL_CALL_ARGS);
++       case 13: Py_MUSTTAIL return _TAIL_CALL_FORMAT_WITH_SPEC(TAIL_CALL_ARGS);
++       case 14: Py_MUSTTAIL return _TAIL_CALL_GET_AITER(TAIL_CALL_ARGS);
++       case 15: Py_MUSTTAIL return _TAIL_CALL_GET_ANEXT(TAIL_CALL_ARGS);
++       case 16: Py_MUSTTAIL return _TAIL_CALL_GET_ITER(TAIL_CALL_ARGS);
++       case 17: Py_MUSTTAIL return _TAIL_CALL_RESERVED(TAIL_CALL_ARGS);
++       case 18: Py_MUSTTAIL return _TAIL_CALL_GET_LEN(TAIL_CALL_ARGS);
++       case 19: Py_MUSTTAIL return _TAIL_CALL_GET_YIELD_FROM_ITER(TAIL_CALL_ARGS);
++       case 20: Py_MUSTTAIL return _TAIL_CALL_INTERPRETER_EXIT(TAIL_CALL_ARGS);
++       case 21: Py_MUSTTAIL return _TAIL_CALL_LOAD_BUILD_CLASS(TAIL_CALL_ARGS);
++       case 22: Py_MUSTTAIL return _TAIL_CALL_LOAD_LOCALS(TAIL_CALL_ARGS);
++       case 23: Py_MUSTTAIL return _TAIL_CALL_MAKE_FUNCTION(TAIL_CALL_ARGS);
++       case 24: Py_MUSTTAIL return _TAIL_CALL_MATCH_KEYS(TAIL_CALL_ARGS);
++       case 25: Py_MUSTTAIL return _TAIL_CALL_MATCH_MAPPING(TAIL_CALL_ARGS);
++       case 26: Py_MUSTTAIL return _TAIL_CALL_MATCH_SEQUENCE(TAIL_CALL_ARGS);
++       case 27: Py_MUSTTAIL return _TAIL_CALL_NOP(TAIL_CALL_ARGS);
++       case 28: Py_MUSTTAIL return _TAIL_CALL_NOT_TAKEN(TAIL_CALL_ARGS);
++       case 29: Py_MUSTTAIL return _TAIL_CALL_POP_EXCEPT(TAIL_CALL_ARGS);
++       case 30: Py_MUSTTAIL return _TAIL_CALL_POP_ITER(TAIL_CALL_ARGS);
++       case 31: Py_MUSTTAIL return _TAIL_CALL_POP_TOP(TAIL_CALL_ARGS);
++       case 32: Py_MUSTTAIL return _TAIL_CALL_PUSH_EXC_INFO(TAIL_CALL_ARGS);
++       case 33: Py_MUSTTAIL return _TAIL_CALL_PUSH_NULL(TAIL_CALL_ARGS);
++       case 34: Py_MUSTTAIL return _TAIL_CALL_RETURN_GENERATOR(TAIL_CALL_ARGS);
++       case 35: Py_MUSTTAIL return _TAIL_CALL_RETURN_VALUE(TAIL_CALL_ARGS);
++       case 36: Py_MUSTTAIL return _TAIL_CALL_SETUP_ANNOTATIONS(TAIL_CALL_ARGS);
++       case 37: Py_MUSTTAIL return _TAIL_CALL_STORE_SLICE(TAIL_CALL_ARGS);
++       case 38: Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR(TAIL_CALL_ARGS);
++       case 39: Py_MUSTTAIL return _TAIL_CALL_TO_BOOL(TAIL_CALL_ARGS);
++       case 40: Py_MUSTTAIL return _TAIL_CALL_UNARY_INVERT(TAIL_CALL_ARGS);
++       case 41: Py_MUSTTAIL return _TAIL_CALL_UNARY_NEGATIVE(TAIL_CALL_ARGS);
++       case 42: Py_MUSTTAIL return _TAIL_CALL_UNARY_NOT(TAIL_CALL_ARGS);
++       case 43: Py_MUSTTAIL return _TAIL_CALL_WITH_EXCEPT_START(TAIL_CALL_ARGS);
++       case 44: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(TAIL_CALL_ARGS);
++       case 45: Py_MUSTTAIL return _TAIL_CALL_BUILD_INTERPOLATION(TAIL_CALL_ARGS);
++       case 46: Py_MUSTTAIL return _TAIL_CALL_BUILD_LIST(TAIL_CALL_ARGS);
++       case 47: Py_MUSTTAIL return _TAIL_CALL_BUILD_MAP(TAIL_CALL_ARGS);
++       case 48: Py_MUSTTAIL return _TAIL_CALL_BUILD_SET(TAIL_CALL_ARGS);
++       case 49: Py_MUSTTAIL return _TAIL_CALL_BUILD_SLICE(TAIL_CALL_ARGS);
++       case 50: Py_MUSTTAIL return _TAIL_CALL_BUILD_STRING(TAIL_CALL_ARGS);
++       case 51: Py_MUSTTAIL return _TAIL_CALL_BUILD_TUPLE(TAIL_CALL_ARGS);
++       case 52: Py_MUSTTAIL return _TAIL_CALL_CALL(TAIL_CALL_ARGS);
++       case 53: Py_MUSTTAIL return _TAIL_CALL_CALL_INTRINSIC_1(TAIL_CALL_ARGS);
++       case 54: Py_MUSTTAIL return _TAIL_CALL_CALL_INTRINSIC_2(TAIL_CALL_ARGS);
++       case 55: Py_MUSTTAIL return _TAIL_CALL_CALL_KW(TAIL_CALL_ARGS);
++       case 56: Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(TAIL_CALL_ARGS);
++       case 57: Py_MUSTTAIL return _TAIL_CALL_CONTAINS_OP(TAIL_CALL_ARGS);
++       case 58: Py_MUSTTAIL return _TAIL_CALL_CONVERT_VALUE(TAIL_CALL_ARGS);
++       case 59: Py_MUSTTAIL return _TAIL_CALL_COPY(TAIL_CALL_ARGS);
++       case 60: Py_MUSTTAIL return _TAIL_CALL_COPY_FREE_VARS(TAIL_CALL_ARGS);
++       case 61: Py_MUSTTAIL return _TAIL_CALL_DELETE_ATTR(TAIL_CALL_ARGS);
++       case 62: Py_MUSTTAIL return _TAIL_CALL_DELETE_DEREF(TAIL_CALL_ARGS);
++       case 63: Py_MUSTTAIL return _TAIL_CALL_DELETE_FAST(TAIL_CALL_ARGS);
++       case 64: Py_MUSTTAIL return _TAIL_CALL_DELETE_GLOBAL(TAIL_CALL_ARGS);
++       case 65: Py_MUSTTAIL return _TAIL_CALL_DELETE_NAME(TAIL_CALL_ARGS);
++       case 66: Py_MUSTTAIL return _TAIL_CALL_DICT_MERGE(TAIL_CALL_ARGS);
++       case 67: Py_MUSTTAIL return _TAIL_CALL_DICT_UPDATE(TAIL_CALL_ARGS);
++       case 68: Py_MUSTTAIL return _TAIL_CALL_END_ASYNC_FOR(TAIL_CALL_ARGS);
++       case 69: Py_MUSTTAIL return _TAIL_CALL_EXTENDED_ARG(TAIL_CALL_ARGS);
++       case 70: Py_MUSTTAIL return _TAIL_CALL_FOR_ITER(TAIL_CALL_ARGS);
++       case 71: Py_MUSTTAIL return _TAIL_CALL_GET_AWAITABLE(TAIL_CALL_ARGS);
++       case 72: Py_MUSTTAIL return _TAIL_CALL_IMPORT_FROM(TAIL_CALL_ARGS);
++       case 73: Py_MUSTTAIL return _TAIL_CALL_IMPORT_NAME(TAIL_CALL_ARGS);
++       case 74: Py_MUSTTAIL return _TAIL_CALL_IS_OP(TAIL_CALL_ARGS);
++       case 75: Py_MUSTTAIL return _TAIL_CALL_JUMP_BACKWARD(TAIL_CALL_ARGS);
++       case 76: Py_MUSTTAIL return _TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT(TAIL_CALL_ARGS);
++       case 77: Py_MUSTTAIL return _TAIL_CALL_JUMP_FORWARD(TAIL_CALL_ARGS);
++       case 78: Py_MUSTTAIL return _TAIL_CALL_LIST_APPEND(TAIL_CALL_ARGS);
++       case 79: Py_MUSTTAIL return _TAIL_CALL_LIST_EXTEND(TAIL_CALL_ARGS);
++       case 80: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(TAIL_CALL_ARGS);
++       case 81: Py_MUSTTAIL return _TAIL_CALL_LOAD_COMMON_CONSTANT(TAIL_CALL_ARGS);
++       case 82: Py_MUSTTAIL return _TAIL_CALL_LOAD_CONST(TAIL_CALL_ARGS);
++       case 83: Py_MUSTTAIL return _TAIL_CALL_LOAD_DEREF(TAIL_CALL_ARGS);
++       case 84: Py_MUSTTAIL return _TAIL_CALL_LOAD_FAST(TAIL_CALL_ARGS);
++       case 85: Py_MUSTTAIL return _TAIL_CALL_LOAD_FAST_AND_CLEAR(TAIL_CALL_ARGS);
++       case 86: Py_MUSTTAIL return _TAIL_CALL_LOAD_FAST_BORROW(TAIL_CALL_ARGS);
++       case 87: Py_MUSTTAIL return _TAIL_CALL_LOAD_FAST_BORROW_LOAD_FAST_BORROW(TAIL_CALL_ARGS);
++       case 88: Py_MUSTTAIL return _TAIL_CALL_LOAD_FAST_CHECK(TAIL_CALL_ARGS);
++       case 89: Py_MUSTTAIL return _TAIL_CALL_LOAD_FAST_LOAD_FAST(TAIL_CALL_ARGS);
++       case 90: Py_MUSTTAIL return _TAIL_CALL_LOAD_FROM_DICT_OR_DEREF(TAIL_CALL_ARGS);
++       case 91: Py_MUSTTAIL return _TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS(TAIL_CALL_ARGS);
++       case 92: Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(TAIL_CALL_ARGS);
++       case 93: Py_MUSTTAIL return _TAIL_CALL_LOAD_NAME(TAIL_CALL_ARGS);
++       case 94: Py_MUSTTAIL return _TAIL_CALL_LOAD_SMALL_INT(TAIL_CALL_ARGS);
++       case 95: Py_MUSTTAIL return _TAIL_CALL_LOAD_SPECIAL(TAIL_CALL_ARGS);
++       case 96: Py_MUSTTAIL return _TAIL_CALL_LOAD_SUPER_ATTR(TAIL_CALL_ARGS);
++       case 97: Py_MUSTTAIL return _TAIL_CALL_MAKE_CELL(TAIL_CALL_ARGS);
++       case 98: Py_MUSTTAIL return _TAIL_CALL_MAP_ADD(TAIL_CALL_ARGS);
++       case 99: Py_MUSTTAIL return _TAIL_CALL_MATCH_CLASS(TAIL_CALL_ARGS);
++       case 100: Py_MUSTTAIL return _TAIL_CALL_POP_JUMP_IF_FALSE(TAIL_CALL_ARGS);
++       case 101: Py_MUSTTAIL return _TAIL_CALL_POP_JUMP_IF_NONE(TAIL_CALL_ARGS);
++       case 102: Py_MUSTTAIL return _TAIL_CALL_POP_JUMP_IF_NOT_NONE(TAIL_CALL_ARGS);
++       case 103: Py_MUSTTAIL return _TAIL_CALL_POP_JUMP_IF_TRUE(TAIL_CALL_ARGS);
++       case 104: Py_MUSTTAIL return _TAIL_CALL_RAISE_VARARGS(TAIL_CALL_ARGS);
++       case 105: Py_MUSTTAIL return _TAIL_CALL_RERAISE(TAIL_CALL_ARGS);
++       case 106: Py_MUSTTAIL return _TAIL_CALL_SEND(TAIL_CALL_ARGS);
++       case 107: Py_MUSTTAIL return _TAIL_CALL_SET_ADD(TAIL_CALL_ARGS);
++       case 108: Py_MUSTTAIL return _TAIL_CALL_SET_FUNCTION_ATTRIBUTE(TAIL_CALL_ARGS);
++       case 109: Py_MUSTTAIL return _TAIL_CALL_SET_UPDATE(TAIL_CALL_ARGS);
++       case 110: Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(TAIL_CALL_ARGS);
++       case 111: Py_MUSTTAIL return _TAIL_CALL_STORE_DEREF(TAIL_CALL_ARGS);
++       case 112: Py_MUSTTAIL return _TAIL_CALL_STORE_FAST(TAIL_CALL_ARGS);
++       case 113: Py_MUSTTAIL return _TAIL_CALL_STORE_FAST_LOAD_FAST(TAIL_CALL_ARGS);
++       case 114: Py_MUSTTAIL return _TAIL_CALL_STORE_FAST_STORE_FAST(TAIL_CALL_ARGS);
++       case 115: Py_MUSTTAIL return _TAIL_CALL_STORE_GLOBAL(TAIL_CALL_ARGS);
++       case 116: Py_MUSTTAIL return _TAIL_CALL_STORE_NAME(TAIL_CALL_ARGS);
++       case 117: Py_MUSTTAIL return _TAIL_CALL_SWAP(TAIL_CALL_ARGS);
++       case 118: Py_MUSTTAIL return _TAIL_CALL_UNPACK_EX(TAIL_CALL_ARGS);
++       case 119: Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(TAIL_CALL_ARGS);
++       case 120: Py_MUSTTAIL return _TAIL_CALL_YIELD_VALUE(TAIL_CALL_ARGS);
++       case 128: Py_MUSTTAIL return _TAIL_CALL_RESUME(TAIL_CALL_ARGS);
++       case 129: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_ADD_FLOAT(TAIL_CALL_ARGS);
++       case 130: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_ADD_INT(TAIL_CALL_ARGS);
++       case 131: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_ADD_UNICODE(TAIL_CALL_ARGS);
++       case 132: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_EXTEND(TAIL_CALL_ARGS);
++       case 133: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(TAIL_CALL_ARGS);
++       case 134: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_MULTIPLY_INT(TAIL_CALL_ARGS);
++       case 135: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBSCR_DICT(TAIL_CALL_ARGS);
++       case 136: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBSCR_GETITEM(TAIL_CALL_ARGS);
++       case 137: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBSCR_LIST_INT(TAIL_CALL_ARGS);
++       case 138: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBSCR_LIST_SLICE(TAIL_CALL_ARGS);
++       case 139: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBSCR_STR_INT(TAIL_CALL_ARGS);
++       case 140: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBSCR_TUPLE_INT(TAIL_CALL_ARGS);
++       case 141: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(TAIL_CALL_ARGS);
++       case 142: Py_MUSTTAIL return _TAIL_CALL_BINARY_OP_SUBTRACT_INT(TAIL_CALL_ARGS);
++       case 143: Py_MUSTTAIL return _TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(TAIL_CALL_ARGS);
++       case 144: Py_MUSTTAIL return _TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(TAIL_CALL_ARGS);
++       case 145: Py_MUSTTAIL return _TAIL_CALL_CALL_BOUND_METHOD_GENERAL(TAIL_CALL_ARGS);
++       case 146: Py_MUSTTAIL return _TAIL_CALL_CALL_BUILTIN_CLASS(TAIL_CALL_ARGS);
++       case 147: Py_MUSTTAIL return _TAIL_CALL_CALL_BUILTIN_FAST(TAIL_CALL_ARGS);
++       case 148: Py_MUSTTAIL return _TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(TAIL_CALL_ARGS);
++       case 149: Py_MUSTTAIL return _TAIL_CALL_CALL_BUILTIN_O(TAIL_CALL_ARGS);
++       case 150: Py_MUSTTAIL return _TAIL_CALL_CALL_ISINSTANCE(TAIL_CALL_ARGS);
++       case 151: Py_MUSTTAIL return _TAIL_CALL_CALL_KW_BOUND_METHOD(TAIL_CALL_ARGS);
++       case 152: Py_MUSTTAIL return _TAIL_CALL_CALL_KW_NON_PY(TAIL_CALL_ARGS);
++       case 153: Py_MUSTTAIL return _TAIL_CALL_CALL_KW_PY(TAIL_CALL_ARGS);
++       case 154: Py_MUSTTAIL return _TAIL_CALL_CALL_LEN(TAIL_CALL_ARGS);
++       case 155: Py_MUSTTAIL return _TAIL_CALL_CALL_LIST_APPEND(TAIL_CALL_ARGS);
++       case 156: Py_MUSTTAIL return _TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(TAIL_CALL_ARGS);
++       case 157: Py_MUSTTAIL return _TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(TAIL_CALL_ARGS);
++       case 158: Py_MUSTTAIL return _TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(TAIL_CALL_ARGS);
++       case 159: Py_MUSTTAIL return _TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(TAIL_CALL_ARGS);
++       case 160: Py_MUSTTAIL return _TAIL_CALL_CALL_NON_PY_GENERAL(TAIL_CALL_ARGS);
++       case 161: Py_MUSTTAIL return _TAIL_CALL_CALL_PY_EXACT_ARGS(TAIL_CALL_ARGS);
++       case 162: Py_MUSTTAIL return _TAIL_CALL_CALL_PY_GENERAL(TAIL_CALL_ARGS);
++       case 163: Py_MUSTTAIL return _TAIL_CALL_CALL_STR_1(TAIL_CALL_ARGS);
++       case 164: Py_MUSTTAIL return _TAIL_CALL_CALL_TUPLE_1(TAIL_CALL_ARGS);
++       case 165: Py_MUSTTAIL return _TAIL_CALL_CALL_TYPE_1(TAIL_CALL_ARGS);
++       case 166: Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP_FLOAT(TAIL_CALL_ARGS);
++       case 167: Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP_INT(TAIL_CALL_ARGS);
++       case 168: Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP_STR(TAIL_CALL_ARGS);
++       case 169: Py_MUSTTAIL return _TAIL_CALL_CONTAINS_OP_DICT(TAIL_CALL_ARGS);
++       case 170: Py_MUSTTAIL return _TAIL_CALL_CONTAINS_OP_SET(TAIL_CALL_ARGS);
++       case 171: Py_MUSTTAIL return _TAIL_CALL_FOR_ITER_GEN(TAIL_CALL_ARGS);
++       case 172: Py_MUSTTAIL return _TAIL_CALL_FOR_ITER_LIST(TAIL_CALL_ARGS);
++       case 173: Py_MUSTTAIL return _TAIL_CALL_FOR_ITER_RANGE(TAIL_CALL_ARGS);
++       case 174: Py_MUSTTAIL return _TAIL_CALL_FOR_ITER_TUPLE(TAIL_CALL_ARGS);
++       case 175: Py_MUSTTAIL return _TAIL_CALL_JUMP_BACKWARD_JIT(TAIL_CALL_ARGS);
++       case 176: Py_MUSTTAIL return _TAIL_CALL_JUMP_BACKWARD_NO_JIT(TAIL_CALL_ARGS);
++       case 177: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_CLASS(TAIL_CALL_ARGS);
++       case 178: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_CHECK(TAIL_CALL_ARGS);
++       case 179: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN(TAIL_CALL_ARGS);
++       case 180: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(TAIL_CALL_ARGS);
++       case 181: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(TAIL_CALL_ARGS);
++       case 182: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(TAIL_CALL_ARGS);
++       case 183: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(TAIL_CALL_ARGS);
++       case 184: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_MODULE(TAIL_CALL_ARGS);
++       case 185: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(TAIL_CALL_ARGS);
++       case 186: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES(TAIL_CALL_ARGS);
++       case 187: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_PROPERTY(TAIL_CALL_ARGS);
++       case 188: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_SLOT(TAIL_CALL_ARGS);
++       case 189: Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_ARGS);
++       case 190: Py_MUSTTAIL return _TAIL_CALL_LOAD_CONST_IMMORTAL(TAIL_CALL_ARGS);
++       case 191: Py_MUSTTAIL return _TAIL_CALL_LOAD_CONST_MORTAL(TAIL_CALL_ARGS);
++       case 192: Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL_BUILTIN(TAIL_CALL_ARGS);
++       case 193: Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL_MODULE(TAIL_CALL_ARGS);
++       case 194: Py_MUSTTAIL return _TAIL_CALL_LOAD_SUPER_ATTR_ATTR(TAIL_CALL_ARGS);
++       case 195: Py_MUSTTAIL return _TAIL_CALL_LOAD_SUPER_ATTR_METHOD(TAIL_CALL_ARGS);
++       case 196: Py_MUSTTAIL return _TAIL_CALL_RESUME_CHECK(TAIL_CALL_ARGS);
++       case 197: Py_MUSTTAIL return _TAIL_CALL_SEND_GEN(TAIL_CALL_ARGS);
++       case 198: Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(TAIL_CALL_ARGS);
++       case 199: Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR_SLOT(TAIL_CALL_ARGS);
++       case 200: Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR_WITH_HINT(TAIL_CALL_ARGS);
++       case 201: Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR_DICT(TAIL_CALL_ARGS);
++       case 202: Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR_LIST_INT(TAIL_CALL_ARGS);
++       case 203: Py_MUSTTAIL return _TAIL_CALL_TO_BOOL_ALWAYS_TRUE(TAIL_CALL_ARGS);
++       case 204: Py_MUSTTAIL return _TAIL_CALL_TO_BOOL_BOOL(TAIL_CALL_ARGS);
++       case 205: Py_MUSTTAIL return _TAIL_CALL_TO_BOOL_INT(TAIL_CALL_ARGS);
++       case 206: Py_MUSTTAIL return _TAIL_CALL_TO_BOOL_LIST(TAIL_CALL_ARGS);
++       case 207: Py_MUSTTAIL return _TAIL_CALL_TO_BOOL_NONE(TAIL_CALL_ARGS);
++       case 208: Py_MUSTTAIL return _TAIL_CALL_TO_BOOL_STR(TAIL_CALL_ARGS);
++       case 209: Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE_LIST(TAIL_CALL_ARGS);
++       case 210: Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE_TUPLE(TAIL_CALL_ARGS);
++       case 211: Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(TAIL_CALL_ARGS);
++       case 234: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_END_FOR(TAIL_CALL_ARGS);
++       case 235: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_POP_ITER(TAIL_CALL_ARGS);
++       case 236: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_END_SEND(TAIL_CALL_ARGS);
++       case 237: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_FOR_ITER(TAIL_CALL_ARGS);
++       case 238: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_INSTRUCTION(TAIL_CALL_ARGS);
++       case 239: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(TAIL_CALL_ARGS);
++       case 240: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_NOT_TAKEN(TAIL_CALL_ARGS);
++       case 241: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(TAIL_CALL_ARGS);
++       case 242: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(TAIL_CALL_ARGS);
++       case 243: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(TAIL_CALL_ARGS);
++       case 244: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NONE(TAIL_CALL_ARGS);
++       case 245: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_RESUME(TAIL_CALL_ARGS);
++       case 246: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_RETURN_VALUE(TAIL_CALL_ARGS);
++       case 247: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_YIELD_VALUE(TAIL_CALL_ARGS);
++       case 248: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_END_ASYNC_FOR(TAIL_CALL_ARGS);
++       case 249: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(TAIL_CALL_ARGS);
++       case 250: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_CALL(TAIL_CALL_ARGS);
++       case 251: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_CALL_KW(TAIL_CALL_ARGS);
++       case 252: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(TAIL_CALL_ARGS);
++       case 253: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(TAIL_CALL_ARGS);
++       case 254: Py_MUSTTAIL return _TAIL_CALL_INSTRUMENTED_LINE(TAIL_CALL_ARGS);
++       case 255: Py_MUSTTAIL return _TAIL_CALL_ENTER_EXECUTOR(TAIL_CALL_ARGS);
++
++        default:
++            Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++    }
++}
++
++     #endif /* Py_TAIL_CALL_INTERP */
+diff --git a/Tools/cases_generator/target_generator.py b/Tools/cases_generator/target_generator.py
+index ca151ff640a..a25f888c64b 100644
+--- a/Tools/cases_generator/target_generator.py
++++ b/Tools/cases_generator/target_generator.py
+@@ -68,6 +68,99 @@ def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
+         if rest not in named_values:
+             out.emit(f"[{rest}] = _TAIL_CALL_UNKNOWN_OPCODE,\n")
+     out.emit("};\n")
++
++
++    # to test various version of this, i'm generating different dispatch functions
++    # only the fastest should be used in the end
++    out.emit('''
++
++[[clang::noinline]] Py_PRESERVE_NONE_CC PyObject * tail_jump_table_1(TAIL_CALL_PARAMS) {
++    _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)};
++    uint8_t opcode = word.op.code;
++    extern py_tail_call_funcptr INSTRUCTION_TABLE[256];
++    Py_MUSTTAIL return INSTRUCTION_TABLE[opcode](TAIL_CALL_ARGS);
++}
++
++    ''')
++
++    name_map = {v: k for k, v in analysis.opmap.items()}
++
++    code = '''
++
++[[clang::noinline]] Py_PRESERVE_NONE_CC PyObject * tail_jump_table_2(TAIL_CALL_PARAMS) {
++    _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)};
++    uint8_t opcode = word.op.code;
++    Py_PRESERVE_NONE_CC PyObject* (*x)(TAIL_CALL_PARAMS);
++    switch(opcode) {
++    '''
++    
++    for rest in range(256):
++        if rest not in name_map:
++            code += f"        case {rest}: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;\n"
++        else:
++            name = name_map[rest]
++            code += f"        case {rest}: x = &_TAIL_CALL_{name}; break;\n"
++
++    code += ('''
++    }
++    Py_MUSTTAIL return x(TAIL_CALL_ARGS);
++}
++
++    ''')
++
++    out.emit(code)
++
++    code = '''
++
++[[clang::noinline]] Py_PRESERVE_NONE_CC PyObject * tail_jump_table_3(TAIL_CALL_PARAMS) {
++    _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)};
++    uint8_t opcode = word.op.code;
++    switch(opcode) {
++    '''
++    
++    for rest in range(256):
++        if rest not in name_map:
++            code += f"       case {rest}: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);\n"
++        else:
++            name = name_map[rest]
++            code += f"       case {rest}: Py_MUSTTAIL return _TAIL_CALL_{name}(TAIL_CALL_ARGS);\n"
++
++    code += ('''
++    }
++}
++
++     ''')
++
++    out.emit(code)
++
++
++    code = '''
++
++[[clang::noinline]] Py_PRESERVE_NONE_CC PyObject * tail_jump_table_4(TAIL_CALL_PARAMS) {
++    _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)};
++    uint8_t opcode = word.op.code;
++    switch(opcode) {
++    '''
++    
++    for rest in range(256):
++        if rest not in name_map:
++            continue
++        else:
++            name = name_map[rest]
++            code += f"       case {rest}: Py_MUSTTAIL return _TAIL_CALL_{name}(TAIL_CALL_ARGS);\n"
++
++    code += ('''
++        default:
++            Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++    }
++}
++
++     ''')
++
++    out.emit(code)
++
++
++
+     outfile.write("#endif /* Py_TAIL_CALL_INTERP */\n")
+ 
+ arg_parser = argparse.ArgumentParser(
+-- 
+2.39.5
+
