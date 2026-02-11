@@ -99,24 +99,26 @@ def test_code_runner():
     assert CodeRunner("1+1").compile().run() == 2
     assert CodeRunner("1+1\n1+1").compile().run() == 2
     assert CodeRunner("x + 7").compile().run({"x": 3}) == 10
-    cr = CodeRunner("x + 7")
 
-    # Ast transform
+    # Use constants > 255 so they are stored in co_consts rather than loaded
+    # via LOAD_SMALL_INT (Python 3.14+ loads ints 0-255 directly via opcode).
+    cr = CodeRunner("x + 700")
+
+    # Ast transform: change "x + 700" to "x * 300 + 700"
     import ast
 
     l = cr.ast.body[0].value.left  # type: ignore[attr-defined]
     cr.ast.body[0].value.left = ast.BinOp(  # type: ignore[attr-defined]
-        left=l, op=ast.Mult(), right=ast.Constant(value=2)
+        left=l, op=ast.Mult(), right=ast.Constant(value=300)
     )
-    assert cr.compile().run({"x": 3}) == 13
+    assert cr.compile().run({"x": 3}) == 1600
 
-    # FIXME: It looks like we originally wanted to modify the code object to 3*x + 5, but the bytecode
-    #        syntax seems to have changed in Python 3.14, so this test was broken and commented out.
-    # Code transform
-    # assert cr.code
-    # cr.code = cr.code.replace(co_consts=(0, 3, 5, None))
-
-    assert cr.run({"x": 4}) == 15
+    # Code transform: change "x * 300 + 700" to "x * 400 + 500"
+    assert cr.code
+    co_consts = cr.code.co_consts
+    new_consts = tuple({300: 400, 700: 500}.get(c, c) for c in co_consts)
+    cr.code = cr.code.replace(co_consts=new_consts)
+    assert cr.run({"x": 4}) == 2100
 
 
 def test_code_runner_mode():
