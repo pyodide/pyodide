@@ -3,7 +3,7 @@ include ../Makefile.envs
 
 ROOT=$(abspath .)
 
-PYTHON_CFLAGS=$(CFLAGS_BASE) -DPY_CALL_TRAMPOLINE -mtail-call
+PYTHON_CFLAGS=$(CFLAGS_BASE) -DPY_CALL_TRAMPOLINE
 
 PYBUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)
 PYINSTALL=$(CPYTHONINSTALL)
@@ -187,7 +187,6 @@ $(PYINSTALL)/lib/libsqlite3.a:
 			--enable-static \
 			--disable-static-shell \
 			--disable-dependency-tracking \
-			--with-tail-call-interp \
 			--prefix=$(SQLITE3BUILD)/dist \
 		&& emmake make libsqlite3.la \
 		&& emmake make install-libLTLIBRARIES install-includeHEADERS \
@@ -222,7 +221,6 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 			  --disable-ipv6 \
 			  --enable-big-digits=30 \
 			  --enable-optimizations \
-			  --with-tail-call-interp \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(PYBUILD)/config.guess) \
 			  --prefix=$(PYINSTALL)  \

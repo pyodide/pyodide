@@ -21,9 +21,7 @@
 // - Python 3.14:
 //   asyncio state (running loop and task) is now stored directly
 //   in _PyThreadStateImpl fields (asyncio_running_loop, asyncio_running_task)
-//   instead of in a global dictionary. This means that when we create a new
-//   PyThreadState for stack switching, we must explicitly set both the loop AND
-//   the task on the new thread state.
+//   instead of in a global dictionary.
 
 int pystate_keepalive;
 
