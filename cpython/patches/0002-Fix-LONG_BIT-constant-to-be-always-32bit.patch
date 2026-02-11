@@ -1,7 +1,7 @@
 From 9c76fbcd5e3654541d5c6303e1ca180425ba158c Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Fri, 12 Jan 2024 00:52:57 +0900
-Subject: [PATCH 03/10] Fix LONG_BIT constant to be always 32bit
+Subject: [PATCH 02/06] Fix LONG_BIT constant to be always 32bit
 
 Starting from Emscripten 3.1.50, there is an issue where LONG_BIT is
 calculated to 64 for some reason. This is very strange because LONG_MAX
