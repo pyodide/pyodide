@@ -66,7 +66,7 @@ async function main() {
     `);
 
     await pyodide.runPythonAsync(
-      "import micropip; micropip.install(['pytest', 'hypothesis', 'pooch', 'lzma'])",
+      "import micropip; micropip.install(['pytest', 'hypothesis', 'pooch'])",
     );
     let pytest = pyodide.pyimport("pytest");
     let args = process.argv.slice(2);
