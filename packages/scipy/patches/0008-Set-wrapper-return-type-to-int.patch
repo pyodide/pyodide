@@ -1,7 +1,7 @@
 From b5d05197de084ab3cab52241f163bae7519b6027 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 31 Jul 2024 11:48:12 +0200
-Subject: [PATCH 13/19] Set wrapper return type to int
+Subject: [PATCH 08/12] Set wrapper return type to int
 
 ---
  scipy/linalg/_generate_pyx.py | 2 +-
