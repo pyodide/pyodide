@@ -1,7 +1,6 @@
 package:
   name: scipy
-  version: 1.14.1
-  pinned: true
+  version: 1.17.0
   tag:
     - min-scipy-stack
     - cross-build
@@ -19,31 +18,25 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/62/11/4d44a1f274e002784e4dbdb81e0ea96d2de2d1045b2132d5af62cc31fd28/scipy-1.14.1.tar.gz
-  sha256: 5a275584e726026a5699459aa72f828a610821006228e841b94275c4a7c08417
+  url: https://files.pythonhosted.org/packages/source/s/scipy/scipy-1.17.0.tar.gz
+  sha256: 2591060c8e648d8b96439e111ac41fd8342fdeff1876be2e19dea3fe8930454e
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
-    - patches/0002-int-to-string.patch
-    - patches/0003-gemm_-no-const.patch
-    - patches/0004-make-int-return-values.patch
-    - patches/0005-Fix-fitpack.patch
-    - patches/0006-Fix-gees-calls.patch
-    - patches/0007-MAINT-linalg-Remove-id_dist-Fortran-files.patch
-    - patches/0008-Mark-mvndst-functions-recursive.patch
-    - patches/0009-Make-sreorth-recursive.patch
-    - patches/0010-Link-openblas-with-modules-that-require-f2c.patch
-    - patches/0011-Remove-fpchec-inline-if-then-endif-constructs.patch # remove with SciPy v1.15.0
-    - patches/0012-Remove-chla_transtype.patch
-    - patches/0013-Set-wrapper-return-type-to-int.patch
-    - patches/0014-Skip-svd_gesdd-test.patch # remove with SciPy v1.15.0
-    - patches/0015-Remove-f2py-generators.patch
-    - patches/0016-Make-sf_error_state_lib-a-static-library.patch
-    - patches/0017-Remove-test-modules-that-fail-to-build.patch
-    - patches/0018-Fix-lapack-larfg-function-signature.patch
-    - patches/0019-Explicitly-convert-return-value-of-SUPERLU_MALLOC.patch
+    - patches/0002-gemm_-no-const.patch
+    - patches/0003-make-int-return-values.patch
+    - patches/0004-Fix-fitpack.patch
+    - patches/0005-Fix-gees-calls.patch
+    - patches/0006-Link-openblas-with-modules-that-require-f2c.patch
+    - patches/0007-Remove-chla_transtype.patch
+    - patches/0008-Set-wrapper-return-type-to-int.patch
+    - patches/0009-Remove-f2py-generators.patch
+    - patches/0010-Explicitly-convert-return-value-of-SUPERLU_MALLOC.patch
+    - patches/0011-Change-nc-type-from-int64_t-to-Py_ssize_t.patch  # drop after scipy 1.18
+    - patches/0012-MAINT-linalg-Remove-dummy-argument-from-larf-wrapper.patch  # drop after scipy 1.18
 
 build:
+  vendor-sharedlib: true
   # NumPy 2.1 disabled visibility for symbols outside of extension modules
   # by default, so this breaks SciPy tests from modules that use f2py to
   # build because they rely on the visibility of symbols in NumPy. This flag
@@ -63,6 +56,7 @@ build:
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
     -fwasm-exceptions
+
 
   # Exclude tests via Meson's install tags functionality.
   unvendor-tests: true
@@ -100,7 +94,21 @@ build:
     sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
     sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
     sed -i 's/void/int/g' scipy/linalg/cython_lapack_signatures.txt
+    sed -i 's/^void BLAS_FUNC/int BLAS_FUNC/g' scipy/linalg/src/_common_array_utils.hh
+
+    # Change fortran functions called in C code to return int instead of void
+    # This adhoc regex checks function names ending with _ such as `void zgetrs_(`
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/linalg/_common_array_utils.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/linalg/_matfuncs_expm.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/sparse/linalg/_propack/PROPACK/src/include/blaslapack_declarations.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/sparse/linalg/_eigen/arpack/arnaud/src/blaslapack_declarations.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/integrate/src/blaslapack_declarations.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/optimize/__lbfgsb.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/optimize/__nnls.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/optimize/__slsqp.h
+
     sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
+    sed -i 's/void BLAS_FUNC/int BLAS_FUNC/g' scipy/interpolate/src/__fitpack.h
 
     sed -i 's/extern void/extern int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
     sed -i 's/PUBLIC void/PUBLIC int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
@@ -142,13 +150,11 @@ requirements:
     - libboost
   run:
     - numpy
-    - libopenblas
   executable:
     - gfortran
   constraint:
     # Getting: Error: Dynamic linking error: cannot resolve symbol pow_di
     - meson < 1.10
-
 test:
   imports:
     - scipy
