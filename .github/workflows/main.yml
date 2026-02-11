@@ -247,6 +247,32 @@ jobs:
           runner: ${{ matrix.runner }}
           browser: ${{ matrix.browser }}
 
+      - name: Safari pre-test cleanup
+        if: matrix.browser == 'safari'
+        shell: bash -l {0}
+        run: |
+          # Kill any stale Safari/safaridriver processes
+          pkill -9 Safari 2>/dev/null || true
+          pkill -9 safaridriver 2>/dev/null || true
+          sleep 3
+
+          # Verify safaridriver can start and respond
+          safaridriver --port 14444 &
+          DRIVER_PID=$!
+
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:14444/status > /dev/null 2>&1; then
+              echo "✓ SafariDriver responding"
+              kill $DRIVER_PID 2>/dev/null || true
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "✗ SafariDriver failed to respond"
+          kill $DRIVER_PID 2>/dev/null || true
+          exit 1
+
       - name: run core tests
         env:
           BROWSER: ${{ matrix.browser }}
@@ -255,7 +281,7 @@ jobs:
         run: |
           ls -lh
           ls -lh dist/
-          tools/pytest_wrapper.py src packages/micropip/ tools/ \
+          tools/pytest_wrapper.py src \
             -v \
             -k "not webworker" \
             --runtime="${BROWSER}-no-host" \
@@ -344,9 +370,10 @@ jobs:
           COMMIT_MSG=$(git log --no-merges -1 --oneline)
 
           # The scipy tests will be triggered on push or on pull_request when the commit
-          # message contains "[scipy]"
+          # message contains "[scipy]" or when the PR has `scipy` label
           if [[ "$GITHUB_EVENT_NAME" == push ||
-                "$COMMIT_MSG" =~ \[scipy\] ]]; then
+                "$COMMIT_MSG" =~ \[scipy\] ||
+                "${{ contains(github.event.pull_request.labels.*.name, 'scipy') }}" == "true" ]]; then
               echo "trigger=true" >> "$GITHUB_OUTPUT"
           fi
 

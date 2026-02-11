@@ -7,7 +7,7 @@ This page documents the Pyodide Command Line Interface (CLI) interface. In addit
 - `pyodide pack`, defined in [pyodide-pack](https://github.com/pyodide/pyodide-pack) is a package bundler for Pyodide
 
 ```{eval-rst}
-.. click:: pyodide_cli.app:typer_click_object
+.. click:: pyodide_cli.app:click_object
    :prog: pyodide
    :nested: full
 ```

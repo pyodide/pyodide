@@ -1,7 +1,7 @@
 From 6a800412b14b5ab905721abe9a509a5e4f44ecef Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Tue, 20 Jan 2026 15:22:19 +0900
-Subject: [PATCH 19/19] Explicitly convert return value of SUPERLU_MALLOC
+Subject: [PATCH 10/12] Explicitly convert return value of SUPERLU_MALLOC
 
 Fixes incompatible pointer type errors like:
 

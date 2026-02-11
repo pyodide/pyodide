@@ -8,10 +8,7 @@ export PYTHON_ARCHIVE_SHA256=b8d79530e3b7c96a5cb2d40d431ddb512af4a563e863728d871
 export SED ?= sed
 
 export RUST_TOOLCHAIN ?= nightly-2025-12-10
-# I'm not really sure what this explicit -Z link-native-libraries=yes is for,
-# `rustc -Z help` shows that `link-native-libraries=yes` is the default. But it
-# seems to be necessary...
-export RUSTFLAGS = -C link-arg=-sSIDE_MODULE=2 -Z link-native-libraries=yes
+export RUSTFLAGS = -C link-arg=-sSIDE_MODULE=2
 
 # URL to the prebuilt packages
 export PYODIDE_PREBUILT_PACKAGES_BASE=https://github.com/pyodide/pyodide-recipes/releases/download/0.29-20260116
@@ -82,8 +79,6 @@ export PYZIP_EXCLUDE_FILES=\
 	turtle.py \
 	turtledemo/ \
 	test/ \
-	sqlite3/ \
-	lzma.py \
 	_pydecimal.py \
 	pydoc_data/
 
@@ -136,7 +131,7 @@ export CFLAGS_BASE=\
 	$(DBGFLAGS) \
 	-fPIC \
 	-fwasm-exceptions \
-	-sSUPPORT_LONGJMP \
+	-sSUPPORT_LONGJMP=wasm \
 	$(EXTRA_CFLAGS)
 
 
@@ -147,7 +142,7 @@ export LDFLAGS_BASE=\
 	-L$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
 	-s WASM_BIGINT \
 	-fwasm-exceptions \
-	-sSUPPORT_LONGJMP \
+	-sSUPPORT_LONGJMP=wasm \
 	$(EXTRA_LDFLAGS) \
 
 export CXXFLAGS_BASE=
@@ -181,6 +176,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 	-lffi \
+	-llzma \
+	-lsqlite3 \
 	-lstdc++ \
 	-lidbfs.js \
 	-lnodefs.js \
@@ -296,6 +293,8 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 		-lffi \
 		-lhiwire \
+		-llzma \
+		-lsqlite3 \
 		-lidbfs.js \
 		-lnodefs.js \
     -lproxyfs.js

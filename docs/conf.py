@@ -35,6 +35,10 @@ def ignore_typevars():
     )
     nitpick_ignore.extend(("js:func", typevar) for typevar in JS_TYPEVARS_TO_IGNORE)
 
+    # sphinx_autodoc_typehints renders X | Y union syntax as typing.Union internally,
+    # but intersphinx cannot resolve typing.Union as a py:data reference.
+    nitpick_ignore.append(("py:data", "typing.Union"))
+
 
 ignore_typevars()
 
