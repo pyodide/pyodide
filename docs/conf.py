@@ -17,7 +17,7 @@ panels_add_bootstrap_css = False
 
 project = "Pyodide"
 author = "Pyodide contributors"
-copyright = "2019-2024, Pyodide contributors and Mozilla"
+copyright = "2019-2026, Pyodide contributors and Mozilla"
 
 suppress_warnings = ["config.cache"]
 nitpicky = True
