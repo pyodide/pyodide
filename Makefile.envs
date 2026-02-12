@@ -66,12 +66,16 @@ export PYODIDE_ZIP_COMPRESSION_LEVEL?=6
 export PIP_CONSTRAINT=$(PYODIDE_ROOT)/tools/constraints.txt
 
 # List of modules to exclude from the zipped standard library
-export PYZIP_EXCLUDE_FILES=\
+export =\
+	export PYZIP_EXCLUDE_FILES=\
 	ensurepip/ \
 	venv/ \
 	lib2to3/ \
 	_osx_support.py \
 	_aix_support.py \
+	_android_support.py \
+	_ios_support.py \
+	_apple_support.py \
 	curses/ \
 	dbm/ \
 	idlelib/ \
@@ -81,6 +85,7 @@ export PYZIP_EXCLUDE_FILES=\
 	test/ \
 	_pydecimal.py \
 	pydoc_data/
+
 
 # List of modules that we replace with a stub in the zipped standard library
 export PYZIP_JS_STUBS=\
