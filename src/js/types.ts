@@ -278,7 +278,10 @@ export interface EmscriptenModule {
   stringToNewUTF8(x: string): number;
   stringToUTF8OnStack: (str: string) => number;
   HEAP8: Uint8Array;
+  HEAPU8: Uint8Array;
   HEAPU32: Uint32Array;
+  SOCKFS: any;
+  getSocketAddress: (addr: number, addrlen: number) => any;
   getExceptionMessage(e: number): [string, string];
   exitCode: number | undefined;
   ExitStatus: { new (exitCode: number): Error };
@@ -543,6 +546,9 @@ export interface API {
   ) => PyodideAPI;
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
+  _nodeSockConnect: (fd: number, host: string, port: number) => Promise<void>;
+  _nodeSockRecv: (fd: number, nbytes: number) => Promise<Uint8Array>;
+  _nodeSockSend: (fd: number, data: any) => number;
   version: string;
   abiVersion: string;
   pyVersionTuple: [number, number, number];
