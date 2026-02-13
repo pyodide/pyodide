@@ -1,9 +1,9 @@
-export PYVERSION ?= 3.13.2
+export PYVERSION ?= 3.14.2
 export PYODIDE_EMSCRIPTEN_VERSION ?= 5.0.0
 export PYODIDE_VERSION ?= 0.30.0.dev0
-export PYODIDE_ABI_VERSION ?= 2025_0
+export PYODIDE_ABI_VERSION ?= 2026_0
 
-export PYTHON_ARCHIVE_SHA256=b8d79530e3b7c96a5cb2d40d431ddb512af4a563e863728d8713039aa50203f9
+export PYTHON_ARCHIVE_SHA256=c609e078adab90e2c6bacb6afafacd5eaf60cd94cf670f1e159565725fcd448d
 
 export SED ?= sed
 
@@ -80,7 +80,9 @@ export PYZIP_EXCLUDE_FILES=\
 	turtledemo/ \
 	test/ \
 	_pydecimal.py \
-	pydoc_data/
+	pydoc_data/ \
+  _sysconfig_vars__emscripten_wasm32-emscripten.json \
+  build-details.json
 
 # List of modules that we replace with a stub in the zipped standard library
 export PYZIP_JS_STUBS=\
@@ -153,6 +155,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s ENVIRONMENT=web,webview,worker,node,shell \
 	-s MAIN_MODULE=1 \
 	-s MODULARIZE=1 \
+	-s RELOCATABLE=1 \
 	-s LZ4=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
@@ -242,7 +245,6 @@ EXPORTS=_main \
    ,_PyObject_Size \
    ,_PyRun_SimpleString \
    ,__PyRuntime \
-   ,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET \
    ,_PySet_Add \
    ,_PySet_New \
    ,__PyTraceback_Add \
@@ -297,7 +299,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lsqlite3 \
 		-lidbfs.js \
 		-lnodefs.js \
-    -lproxyfs.js
+		-lproxyfs.js
 
 endif
 

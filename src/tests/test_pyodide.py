@@ -99,21 +99,26 @@ def test_code_runner():
     assert CodeRunner("1+1").compile().run() == 2
     assert CodeRunner("1+1\n1+1").compile().run() == 2
     assert CodeRunner("x + 7").compile().run({"x": 3}) == 10
-    cr = CodeRunner("x + 7")
 
-    # Ast transform
+    # Use constants > 255 so they are stored in co_consts rather than loaded
+    # via LOAD_SMALL_INT (Python 3.14+ loads ints 0-255 directly via opcode).
+    cr = CodeRunner("x + 700")
+
+    # Ast transform: change "x + 700" to "x * 300 + 700"
     import ast
 
     l = cr.ast.body[0].value.left  # type: ignore[attr-defined]
     cr.ast.body[0].value.left = ast.BinOp(  # type: ignore[attr-defined]
-        left=l, op=ast.Mult(), right=ast.Constant(value=2)
+        left=l, op=ast.Mult(), right=ast.Constant(value=300)
     )
-    assert cr.compile().run({"x": 3}) == 13
+    assert cr.compile().run({"x": 3}) == 1600
 
-    # Code transform
+    # Code transform: change "x * 300 + 700" to "x * 400 + 500"
     assert cr.code
-    cr.code = cr.code.replace(co_consts=(0, 3, 5, None))
-    assert cr.run({"x": 4}) == 17
+    co_consts = cr.code.co_consts
+    new_consts = tuple({300: 400, 700: 500}.get(c, c) for c in co_consts)
+    cr.code = cr.code.replace(co_consts=new_consts)
+    assert cr.run({"x": 4}) == 2100
 
 
 def test_code_runner_mode():
@@ -814,13 +819,13 @@ def test_create_once_callable(selenium):
             destroyed = True
 
     f = Square()
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     proxy = create_once_callable(f)
-    assert sys.getrefcount(f) == 3
+    assert sys.getrefcount(f) == 2
 
     call7 = run_js("(f) => f(7)")
     assert call7(proxy) == 49
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     with raises(JsException, match="can only be called once"):
         call7(proxy)
     del f
@@ -860,20 +865,20 @@ def test_create_proxy(selenium):
     f = Test()
     import sys
 
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     proxy = create_proxy(f)
-    assert sys.getrefcount(f) == 3
+    assert sys.getrefcount(f) == 2
     assert proxy() == 7
     testAddListener(proxy)
-    assert sys.getrefcount(f) == 3
-    assert testCallListener() == 7
-    assert sys.getrefcount(f) == 3
-    assert testCallListener() == 7
-    assert sys.getrefcount(f) == 3
-    assert testRemoveListener(proxy)
-    assert sys.getrefcount(f) == 3
-    proxy.destroy()
     assert sys.getrefcount(f) == 2
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 2
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 2
+    assert testRemoveListener(proxy)
+    assert sys.getrefcount(f) == 2
+    proxy.destroy()
+    assert sys.getrefcount(f) == 1
     destroyed = False
     del f
     assert destroyed
@@ -2067,17 +2072,17 @@ def test_hiwire_invalid_ref(selenium):
             }
             """
         )
-    msg = "hiwire_{} on invalid reference 77. This is most likely due to use after free. It may also be due to memory corruption."
+    msg = "hiwire_{} on invalid reference 12345. This is most likely due to use after free. It may also be due to memory corruption."
     with pytest.raises(JsException, match=msg.format("get")):
-        _hiwire_get(77)
+        _hiwire_get(12345)
     assert _api.fail_test
     _api.fail_test = False
     with pytest.raises(JsException, match=msg.format("incref")):
-        _hiwire_incref(77)
+        _hiwire_incref(12345)
     assert _api.fail_test
     _api.fail_test = False
     with pytest.raises(JsException, match=msg.format("decref")):
-        _hiwire_decref(77)
+        _hiwire_decref(12345)
     assert _api.fail_test
     _api.fail_test = False
 
