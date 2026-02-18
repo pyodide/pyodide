@@ -47,6 +47,7 @@ export async function getJsvErrorImport(): Promise<JsvErrorInstance<Symbol>> {
   const error_marker = Symbol("error marker");
   return {
     Jsv_GetError_import: () => error_marker,
-    JsvError_Check: (val: any): val is typeof error_marker => val === error_marker,
+    JsvError_Check: (val: any): val is typeof error_marker =>
+      val === error_marker,
   };
 }

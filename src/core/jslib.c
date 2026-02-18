@@ -36,8 +36,7 @@ Jsv_GetError(void)
   return Jsv_GetError_import();
 }
 
-int
-JsvError_Check(JsVal);
+int JsvError_Check(JsVal);
 
 EM_JS_NUM(int, jslib_init_js, (void), {
   JS_INIT_CONSTS();

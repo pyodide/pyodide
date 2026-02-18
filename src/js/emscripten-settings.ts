@@ -215,7 +215,8 @@ function getInstantiateWasmFunc(
     ) => void,
   ) {
     (async function () {
-      const {Jsv_GetError_import, JsvError_Check} = await jsvErrorImportPromise;
+      const { Jsv_GetError_import, JsvError_Check } =
+        await jsvErrorImportPromise;
       imports.env.Jsv_GetError_import = Jsv_GetError_import;
       imports.env.JsvError_Check = JsvError_Check;
       try {
