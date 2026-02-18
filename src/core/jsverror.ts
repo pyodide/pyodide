@@ -1,9 +1,9 @@
-// @ts-ignore Can't find sentinel.wasm or it's corresponding type declarations
-import sentinelWasm from "./sentinel.wasm";
+// @ts-ignore Can't find jsverror.wasm or it's corresponding type declarations
+import jsverrorWasm from "./jsverror.wasm";
 
-declare const sentinelWasm: Uint8Array;
+declare const jsverrorWasm: Uint8Array;
 
-const sentinelInstancePromise: Promise<WebAssembly.Instance | undefined> =
+const jsvErrorInstancePromise: Promise<WebAssembly.Instance | undefined> =
   (async function () {
     // Starting with iOS 18.3.1, WebKit on iOS has an issue with the garbage
     // collector that breaks the call trampoline. See #130418 and
@@ -21,7 +21,7 @@ const sentinelInstancePromise: Promise<WebAssembly.Instance | undefined> =
       return undefined;
     }
     try {
-      const module = await WebAssembly.compile(sentinelWasm);
+      const module = await WebAssembly.compile(jsverrorWasm);
       return await WebAssembly.instantiate(module);
     } catch (e) {
       if (e instanceof WebAssembly.CompileError) {
@@ -31,22 +31,22 @@ const sentinelInstancePromise: Promise<WebAssembly.Instance | undefined> =
     }
   })();
 
-type SentinelInstance<T> = {
-  create_sentinel: () => T;
-  is_sentinel: (val: any) => val is T;
+type JsvErrorInstance<T> = {
+  Jsv_GetError_import: () => T;
+  JsvError_Check: (val: any) => val is T;
 };
 
 /**
  * @private
  */
-export async function getSentinelImport(): Promise<SentinelInstance<Symbol>> {
-  const sentinelInstance = await sentinelInstancePromise;
-  if (sentinelInstance) {
-    return sentinelInstance.exports as SentinelInstance<Symbol>;
+export async function getJsvErrorImport(): Promise<JsvErrorInstance<Symbol>> {
+  const jsvErrorInstance = await jsvErrorInstancePromise;
+  if (jsvErrorInstance) {
+    return jsvErrorInstance.exports as JsvErrorInstance<Symbol>;
   }
   const error_marker = Symbol("error marker");
   return {
-    create_sentinel: () => error_marker,
-    is_sentinel: (val: any): val is typeof error_marker => val === error_marker,
+    Jsv_GetError_import: () => error_marker,
+    JsvError_Check: (val: any): val is typeof error_marker => val === error_marker,
   };
 }
