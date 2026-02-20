@@ -146,8 +146,8 @@ class NodeSocketTransport(asyncio.Transport):
         try:
             while not self._paused and not self._closing:
                 if isinstance(self._protocol, asyncio.BufferedProtocol):
-                    buf = self._protocol.get_buffer(-1)
-                    if not len(buf):
+                    buf = memoryview(self._protocol.get_buffer(-1))
+                    if not buf:
                         break
 
                     data = await _nodeSock.recv(self._sock_fd, len(buf))
