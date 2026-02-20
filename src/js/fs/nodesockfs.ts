@@ -42,6 +42,8 @@ interface NodeSock {
   saddr?: string;
   sport?: number;
   sock_ops: any;
+  /** Written by EM_JS in socket_stub.c via setsockopt/getsockopt */
+  sockOpts?: Record<number, number>;
 }
 
 export function initializeNodeSockFS(): PreRunFunc[] {

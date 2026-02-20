@@ -785,3 +785,164 @@ response.decode()
         )
 
     assert result == f"Received {DATA_SIZE} bytes"
+
+
+# ---------------------------------------------------------------------------
+# setsockopt / getsockopt tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skip_refcount_check
+@only_node
+def test_socket_setsockopt_tcp_nodelay(selenium_nodesock):
+    def handler(conn, _addr):
+        conn.recv(1024)
+        conn.sendall(b"OK")
+
+    with tcp_server(handler) as (host, port):
+        result = selenium_nodesock.run_js(
+            f"""
+            return await pyodide.runPythonAsync(`
+                import socket
+
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect(("{host}", {port}))
+
+                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                val = s.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
+
+                s.sendall(b"test")
+                s.recv(1024)
+                s.close()
+                val
+            `);
+            """
+        )
+
+    assert result == 1
+
+
+@pytest.mark.skip_refcount_check
+@only_node
+def test_socket_setsockopt_so_keepalive(selenium_nodesock):
+    def handler(conn, _addr):
+        conn.recv(1024)
+        conn.sendall(b"OK")
+
+    with tcp_server(handler) as (host, port):
+        result = selenium_nodesock.run_js(
+            f"""
+            return await pyodide.runPythonAsync(`
+                import socket
+
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect(("{host}", {port}))
+
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                val = s.getsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE)
+
+                s.sendall(b"test")
+                s.recv(1024)
+                s.close()
+                val
+            `);
+            """
+        )
+
+    assert result == 1
+
+
+@pytest.mark.skip_refcount_check
+@only_node
+def test_socket_setsockopt_tcp_nodelay_roundtrip(selenium_nodesock):
+    def handler(conn, _addr):
+        conn.recv(1024)
+        conn.sendall(b"OK")
+
+    with tcp_server(handler) as (host, port):
+        result = selenium_nodesock.run_js(
+            f"""
+            return await pyodide.runPythonAsync(`
+                import socket
+
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect(("{host}", {port}))
+
+                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                val_on = s.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
+
+                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 0)
+                val_off = s.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
+
+                s.sendall(b"test")
+                s.recv(1024)
+                s.close()
+                (val_on, val_off)
+            `);
+            """
+        )
+
+    assert result == [1, 0]
+
+
+@pytest.mark.skip_refcount_check
+@only_node
+def test_socket_getsockopt_unset_returns_zero(selenium_nodesock):
+    def handler(conn, _addr):
+        conn.recv(1024)
+        conn.sendall(b"OK")
+
+    with tcp_server(handler) as (host, port):
+        result = selenium_nodesock.run_js(
+            f"""
+            return await pyodide.runPythonAsync(`
+                import socket
+
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect(("{host}", {port}))
+
+                val = s.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
+
+                s.sendall(b"test")
+                s.recv(1024)
+                s.close()
+                val
+            `);
+            """
+        )
+
+    assert result == 0
+
+
+@pytest.mark.skip_refcount_check
+@only_node
+def test_socket_setsockopt_unsupported_succeeds(selenium_nodesock):
+    def handler(conn, _addr):
+        conn.recv(1024)
+        conn.sendall(b"OK")
+
+    with tcp_server(handler) as (host, port):
+        result = selenium_nodesock.run_js(
+            f"""
+            return await pyodide.runPythonAsync(`
+                import socket
+
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect(("{host}", {port}))
+
+                SO_REUSEADDR = 2
+                try:
+                    s.setsockopt(socket.SOL_SOCKET, SO_REUSEADDR, 1)
+                    ok = True
+                except OSError:
+                    ok = False
+
+                s.sendall(b"test")
+                s.recv(1024)
+                s.close()
+                ok
+            `);
+            """
+        )
+
+    assert result is True
