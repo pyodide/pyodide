@@ -26,7 +26,7 @@ from .docs_argspec import docs_argspec
 # appropriately.
 
 # Sphinx uses __name__ to determine the paths and such. It looks better for it
-# to refer to e.g., `pyodide.JsProxy` than `_pyodide._core_docs.JsProxy`.
+# to refer to e.g., `pyodide.ffi.JsProxy` than `_pyodide._core_docs.JsProxy`.
 #
 # Use an empty name for the module of the type variables to prevent long
 # qualified names for the type variables from appearing in the docs.
@@ -227,6 +227,10 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         over the object and counts how many :js:func:`~Reflect.ownKeys` it has).
         If you need to compute the length in O(1) time, use a real
         :js:class:`Map` instead.
+
+        .. deprecated:: 0.29.0
+
+            Use :py:meth:`JsProxy.as_py_json` instead.
 
         Parameters
         ----------
@@ -961,7 +965,7 @@ class JsCallableDoubleProxy(
 class JsArray(JsIterable[T], Generic[T], MutableSequence[T], metaclass=_ABCMeta):
     """A JsProxy of an :js:class:`Array`, :js:class:`NodeList`, or :js:class:`TypedArray`"""
 
-    _js_type_flags = ["IS_ARRAY", "IS_NODE_LIST", "IS_TYPEDARRAY"]
+    _js_type_flags = ["IS_ARRAY", "IS_ARRAY_LIKE", "IS_TYPEDARRAY"]
 
     @overload
     def __getitem__(self, idx: int) -> T: ...
@@ -1422,10 +1426,10 @@ class ToJsConverter(Protocol):
 
     def __call__(
         self,
-        /,
         value: Any,
         converter: Callable[[Any], JsProxy],
         cache: Callable[[Any, JsProxy], None],
+        /,
     ) -> JsProxy: ...
 
 
@@ -1518,9 +1522,9 @@ def to_js(
         (JavaScript) pairs [key, value]. It is expected to return the desired
         result of the dict conversion. Some suggested values for this argument:
 
-          * ``js.Map.new`` -- similar to the default behavior
+          * ``js.Object.fromEntries`` -- similar to the default behavior
+          * ``js.Map.new`` -- convert to a map
           * ``js.Array.from`` -- convert to an array of entries
-          * ``js.Object.fromEntries`` -- convert to a JavaScript object
 
     default_converter:
         If present will be invoked whenever Pyodide does not have some built in
@@ -1543,40 +1547,32 @@ def to_js(
 
     Examples
     --------
-    >>> from js import Object, Map, Array # doctest: +SKIP
-    >>> from pyodide.ffi import to_js # doctest: +SKIP
-    >>> js_object = to_js({'age': 20, 'name': 'john'}) # doctest: +SKIP
-    >>> js_object # doctest: +SKIP
-    [object Map]
-    >>> js_object.keys(), js_object.values() # doctest: +SKIP
-    KeysView([object Map]) ValuesView([object Map]) # doctest: +SKIP
-    >>> [(k, v) for k, v in zip(js_object.keys(), js_object.values())] # doctest: +SKIP
-    [('age', 20), ('name', 'john')]
-
-    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Object.fromEntries) # doctest: +SKIP
-    >>> js_object.age == 20 # doctest: +SKIP
-    True
-    >>> js_object.name == 'john' # doctest: +SKIP
-    True
-    >>> js_object # doctest: +SKIP
+    >>> from js import Object, Map, Array # doctest: +RUN_IN_PYODIDE
+    >>> from pyodide.ffi import to_js
+    >>> js_object = to_js({'age': 20, 'name': 'john'})
+    >>> js_object
     [object Object]
-    >>> js_object.hasOwnProperty("age") # doctest: +SKIP
+    >>> js_object.age == 20
     True
-    >>> js_object.hasOwnProperty("height") # doctest: +SKIP
+    >>> js_object.name == 'john'
+    True
+    >>> js_object.hasOwnProperty("age")
+    True
+    >>> js_object.hasOwnProperty("height")
     False
 
-    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Array.from_) # doctest: +SKIP
-    >>> [item for item in js_object] # doctest: +SKIP
+    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Array.from_) # doctest: +RUN_IN_PYODIDE
+    >>> [item for item in js_object]
     [age,20, name,john]
-    >>> js_object.toString() # doctest: +SKIP
-    age,20,name,john
+    >>> js_object.toString()
+    'age,20,name,john'
 
-    >>> class Bird: pass # doctest: +SKIP
-    >>> converter = lambda value, convert, cache: Object.new(size=1, color='red') if isinstance(value, Bird) else None # doctest: +SKIP
-    >>> js_nest = to_js([Bird(), Bird()], default_converter=converter) # doctest: +SKIP
-    >>> [bird for bird in js_nest] # doctest: +SKIP
+    >>> class Bird: pass # doctest: +RUN_IN_PYODIDE
+    >>> converter = lambda value, convert, cache: Object.new(size=1, color='red') if isinstance(value, Bird) else None
+    >>> js_nest = to_js([Bird(), Bird()], default_converter=converter)
+    >>> [bird for bird in js_nest]
     [[object Object], [object Object]]
-    >>> [(bird.size, bird.color) for bird in js_nest] # doctest: +SKIP
+    >>> [(bird.size, bird.color) for bird in js_nest]
     [(1, 'red'), (1, 'red')]
 
     Here are some examples demonstrating the usage of the ``default_converter``
@@ -1717,10 +1713,6 @@ def can_run_sync() -> bool:
     raise NotImplementedError
 
 
-__name__ = _save_name
-del _save_name
-
-
 class JsNull:
     """The type of the Python representation of the JavaScript null object"""
 
@@ -1738,6 +1730,76 @@ class JsNull:
 
 #: The Python representation of the JavaScript null object.
 jsnull: JsNull = object.__new__(JsNull)
+from json import encoder
+
+encoder._JSNULL = jsnull  # type:ignore[attr-defined]
+
+
+def _int_to_bigint(x):
+    if isinstance(x, int):
+        return JsBigInt(x)
+    return x
+
+
+class JsBigInt(int):
+    """The Python representation of a bigint.
+
+    This is a subclass of ``int`` that behaves in all ways like a normal int
+    except that it is converted to a bigint instead of a number when converted
+    to JavaScript.
+
+    All standard binary and unary operations are supported. When used with
+    ``+``, ``-``, ``*``, ``&``, ``|``, or ``^`` a normal ``int`` is returned if
+    either operand is an int. If both operands are a ``JsBigInt`` then a
+    ``JsBigInt`` will be returned.
+
+    When used with ``//``, ``<<``, ``>>``, ``**``, or ``%``, the type of the
+    return value depends only on the left operand, so if the left operand is a
+    ``JsBigInt``, a ``JsBigInt`` is returned whereas if the left operand is an
+    ``int`` an ``int`` is returned.
+    """
+
+    def __abs__(self) -> "JsBigInt":
+        return JsBigInt(int.__abs__(self))
+
+    def __add__(self, other: int) -> int:
+        return _int_to_bigint(int.__add__(self, other))
+
+    def __and__(self, other: int) -> int:
+        return _int_to_bigint(int.__and__(self, other))
+
+    def __floordiv__(self, other: int) -> "JsBigInt":
+        return _int_to_bigint(int.__floordiv__(self, other))
+
+    def __invert__(self) -> "JsBigInt":
+        return JsBigInt(int.__invert__(self))
+
+    def __lshift__(self, other: int) -> "JsBigInt":
+        return _int_to_bigint(int.__lshift__(self, other))
+
+    def __mod__(self, other: int) -> "JsBigInt":
+        return _int_to_bigint(int.__mod__(self, other))
+
+    def __neg__(self) -> "JsBigInt":
+        return JsBigInt(int.__neg__(self))
+
+    def __or__(self, other: int) -> int:
+        return _int_to_bigint(int.__or__(self, other))
+
+    def __pow__(self, other: int, modulus: int | None = None) -> "JsBigInt":  # type: ignore[override]
+        return _int_to_bigint(int.__pow__(self, other, modulus))
+
+    def __pos__(self) -> "JsBigInt":
+        return JsBigInt(int.__pos__(self))
+
+    def __rshift__(self, other: int) -> "JsBigInt":
+        return _int_to_bigint(int.__rshift__(self, other))
+
+    def __sub__(self, other: int) -> int:
+        return _int_to_bigint(int.__sub__(self, other))
+
+    def __xor__(self, other: int) -> int:
+        return _int_to_bigint(int.__xor__(self, other))
 
 
 __all__ = [
@@ -1773,4 +1835,8 @@ __all__ = [
     "to_js",
     "JsNull",
     "jsnull",
+    "JsBigInt",
 ]
+
+__name__ = _save_name
+del _save_name

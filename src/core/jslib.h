@@ -65,13 +65,19 @@ JsRef_toVal(JsRef ref);
 // ==================== Primitive Conversions ====================
 
 JsVal
+JsvBigInt_fromInt(int x);
+
+JsVal
 JsvNum_fromInt(int x);
 
 JsVal
 JsvNum_fromDouble(double x);
 
 JsVal
-JsvNum_fromDigits(const unsigned int* digits, size_t ndigits);
+JsvBigInt_fromDigits(const unsigned int* digits, size_t ndigits);
+
+JsVal
+Jsv_BigIntToNum(JsVal x);
 
 bool
 Jsv_to_bool(JsVal x);

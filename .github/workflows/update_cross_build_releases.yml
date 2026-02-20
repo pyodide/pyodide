@@ -19,12 +19,12 @@ jobs:
       # Note: we check out the main branch so that the cross-build metadata
       # file is always updated on top of the latest state of the repository.
       - name: Checkout main branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
           ref: main
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: 3.13
 
@@ -40,7 +40,7 @@ jobs:
           python update_cross_build_releases.py "${{ env.version }}"
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: Update cross-build metadata file for version ${{ env.version }} [skip ci]
@@ -51,7 +51,6 @@ jobs:
           branch: update-cross-build-metadata-${{ env.version }}
           base: main
           branch-suffix: timestamp
-          draft: true
 
       - name: Create an issue if the update fails
         if: failure() || steps.update_cross_build_metadata.outcome == 'failure'

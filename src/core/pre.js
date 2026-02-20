@@ -2,7 +2,7 @@ const API = Module.API;
 const Hiwire = {};
 const Tests = {};
 API.tests = Tests;
-API.version = "0.29.0.dev0";
+API.version = "0.30.0.dev0";
 // This version should be equal to the one in the Makefile.envs
 // TODO: Pass this value dynamically from outside.
 API.abiVersion = "2025_0";
@@ -109,4 +109,37 @@ function wasmFunctionType(wasm_func) {
     return WebAssembly.Function.type(wasm_func);
   }
   return wasm_func.type();
+}
+
+// biome-ignore format: Keep list compact
+const pythonReservedWords = new Set(
+  [
+    "False",  "await", "else",     "import", "pass",   "None",    "break",
+    "except", "in",    "raise",    "True",   "class",  "finally", "is",
+    "return", "and",   "continue", "for",    "lambda", "try",     "as",
+    "def",    "from",  "nonlocal", "while",  "assert", "del",     "global",
+    "not",    "with",  "async",    "elif",   "if",     "or",      "yield",
+  ],
+);
+
+function isReservedWord(word) {
+  return pythonReservedWords.has(word);
+}
+
+function normalizeReservedWords(word) {
+  // clang-format off
+  // 1. if word is not a reserved word followed by 0 or more underscores, return
+  //    it unchanged.
+  const noTrailing_ = word.replace(/_*$/, "");
+  if (!isReservedWord(noTrailing_)) {
+    return word;
+  }
+  // 2. If there is at least one trailing underscore, return the word with a
+  //    single underscore removed.
+  if (noTrailing_ !== word) {
+    return word.slice(0, -1);
+  }
+  // 3. If the word is exactly a reserved word, return it unchanged
+  return word;
+  // clang-format on
 }

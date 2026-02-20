@@ -17,12 +17,192 @@ myst:
 
 ## Unreleased
 
-- {{ Fix }} Fixed a bug which preloading packages through `packages: [...]` parameter of `loadPyodide()` did not work
-  when the `lockfileURL` was set to a custom URL.
+- {{ Breaking }} The `ssl` module is now a stub implementation bundled with
+  Pyodide instead of being dynamically loaded with OpenSSL. This means the `ssl`
+  module is available immediately without loading additional packages, but
+  OpenSSL-dependent features (actual SSL/TLS connections, certificate validation,
+  etc.) are not available. Code that only imports `ssl` for constants, types, or
+  `SSLContext` configuration will continue to work. Code that attempts actual
+  SSL operations will raise `NotImplementedError`. Note that socket operations
+  using `ssl` never worked in Pyodide even before this change.
+  This change saves us more than 3MB (uncompressed) of space when using `ssl` module.
+  {pr}`6044`
+
+- {{ Breaking }} We do not provide hash functions in hashlib that are provided by OpenSSL.
+  Previously, this was available by running `pyodide.loadPackage('hashlib')` before importing
+  hashlib. Now, we do not provide hash functions coming from OpenSSL.
+  {pr}`6044`
+
+- {{ Enhancement }} A JavaScript object is now treated as an array-like object
+  if it has a `length` property and is iterable. Every JsProxy of an array-like
+  object now implements subscripting.
+  {pr}`5991`
+
+- {{ Enhancement }} It is now possible to slice-subscript a JsProxy of an
+  array-like object.
+  {pr}`6019`
+
+- {{ Enhancement }} `PyProxy` now has a `[Symbol.dispose]` method.
+  {pr}`6003`
+
+- {{ Enhancement }} A `JsProxy` of an object with a `[Symbol.dispose]` method is
+  now a context manager. A `JsProxy` of an object with a `[Symbol.asyncDispose]`
+  method is now an async context manager.
+  {pr}`6007` {pr}`6014`
+
+- {{ Enhancement }} `PyBufferView` (the return value of `PyProxy.getBuffer()`)
+  now has a `[Symbol.dispose]` method.
+  {pr}`6003`
+
+- {{ Enhancement }} Added `pyodide.ffi.JsBigInt` which is a subtype of `int`.
+  Now bigint will be translated to Python as a `JsBigInt` and `JsBigInt` will be
+  translated to bigint. In particular, this makes bigint round trip. Now Python
+  integers greater than 2**53 will round trip to a `JsBigInt`. Since `JsBigInt`
+  supports all operations supported by `int`, this change should cause very
+  limited backwards incompatibility.
+  {pr}`6022`
+
+## Version 0.29.3
+
+- {{ Enhancement }} Improved support for Windows platform in the `python` CLI entrypoint.
+  {pr}`6087`
+
+## Version 0.29.2
+
+- {{ Enhancement }} Improved support for Windows platform in the `python` CLI entrypoint.
+  {pr}`6059` {pr}`6058`
+
+- {{ Fix }} Added missing `timeout=None` parameter to
+  `pyodide.webloop.WebLoop.shutdown_default_executor()`.
+  {pr}`6050`
+
+- {{ Enhancement }} New packages added:
+  - Bottleneck (1.6.0)
+  - Cartopy (0.25.0) (Disabled in 0.28, re-enabled)
+  - geopandas (1.1.1) (Disabled in 0.28, re-enabled)
+  - google-crc32c (1.8.0)
+  - healpy (1.19.0)
+  - ml_dtypes (0.5.4)
+  - pyarrow (22.0.0) (Disabled in 0.28, re-enabled)
+  - pycdfpp (0.8.5)
+  - pyproj (3.7.2) (Disabled in 0.28, re-enabled)
+  - pyrodigal (3.7.0)
+  - typing-inspection (0.4.2)
+
+## Version 0.29.1
+
+- {{ Enhancement }} Improved support for Windows/MacOS platform in the `python` CLI entrypoint.
+  {pr}`6018` {pr}`6012` {pr}`6026` {pr}`6034` {pr}`6025`
+
+## Version 0.29.0
+
+- {{ Feature }} Added `pyxhr`, a synchronous HTTP client using XMLHttpRequest
+  that provides a requests-like API for making synchronous HTTP requests in
+  browser environments. This includes `XHRResponse` class and support for all
+  common HTTP methods (GET, POST, PUT, DELETE, HEAD, PATCH, OPTIONS).
+  {pr}`5841`
+
+- {{ Feature }} `pyfetch` now works when passed a JS Request object instead of a
+  url. {pr}`5866`
+
+- {{ Breaking }} The default behavior of `toJs()`/`to_js` was changed to convert
+  dictionaries to JavaScript objects. To opt into the old behavior, pass
+  `toJsLiteralMap: true` to `loadPyodide()`. This is deprecated.
+  {pr}`5912`
+
+- {{ Breaking }} Deprecated `JsProxy.as_object_map()`. It will be removed in Pyodide
+  0.31.0. Use `JsProxy.as_js_json()` instead.
+  {pr}`5899`
+
+- {{ Fix }} Fixed a bug where a weird object was used as `this` when there is no
+  relevant `this`. See {issue}`5929`.
+  {pr}`5937`
+
+### Packages
+
+- {{ Enhancement }} New packages added:
+  - bilby.cython (0.5.3)
+  - fastapi (0.116.1)
+  - highspy (1.11.0)
+  - jsonpatch (1.33)
+  - jsonpointer (3.0.0)
+  - pylimer-tools (0.3.11)
+  - python-calamine (0.4.0)
+  - starlette (0.47.2)
+  - vrplib (2.0.1)
+
+## Version 0.28.3
+
+_September 22, 2025_
+
+- {{ Fix }} In 0.28.2 we accidentally disabled a performance optimization that
+  makes the foreign function interface about 5% slower. {pr}`5890`
+
+- {{ Enhancement }} Added ``get_debug``/``set_debug`` methods to webloop. These
+  are methods on ``AbstractEventLoop``. There are currently no differences in
+  behavior when debug mode is set on the event loop. {pr}`5886`
+
+- {{ Enhancement }} The typescript types for `pyodide.FS` are now slightly more
+  complete. {pr}`5863`
+
+## Version 0.28.2
+
+_August 19, 2025_
+
+- {{ Fix }} Fixed a bug where package download and caching did not work in Node.js
+  which was introduced in 0.28.1.
+  {pr}`5824`
+
+- {{ Enhancement }} Improve error message when a dynamic library fails to load.
+  {pr}`5840`
+
+- {{ Fix }} In 0.28.1 we accidentally removed the `PyodideInterface` type
+  export. We added it back. {pr}`5827`
+
+## Version 0.28.1
+
+_August 04, 2025_
+
+### General
+
+- {{ Update }} Upgraded `micropip` to 0.10.1 {pr}`5739`
+
+- {{ Fix }} The python CLI is now included in the `pyodide-core` release
+  artifact. {pr}`5747`
+
+### Python API
+
+- {{ Fix }} Fixed cancelled futures causing a traceback to be printed.
+  {pr}`5784`
+
+- {{ Enhancement }} `json.dumps()` now encodes `jsnull` as `null`. {pr}`5804`
+
+### JavaScript API
+
+- {{ Fix }} Fixed a bug where preloading packages using the `packages` parameter
+  of `loadPyodide()` did not work when `lockfileURL` was set to a custom URL.
   {pr}`5737`
 
-- {{ Fix }} Fixed a bug in Node.js which providing a relative path to `lockFileURL` parameter of `loadPyodide()` did not work.
+- {{ Fix }} Fixed a bug in Node.js which providing a relative path to
+  `lockFileURL` parameter of `loadPyodide()` did not work.
   {pr}`5750`
+
+- {{ Enhancement }} Added `lockfileContents` and `packageBaseURL` options to
+  `loadPyodide`. This allows providing a lock file as a `Promise` for the
+  contents rather than a URL. If `lockfileContents` is provided, then
+  `packageBaseURL` must also be provided in order to resolve relative paths in
+  the lockfile.
+  {pr}`5764`
+
+- {{ Enhancement }} Update typescript types to include `FS.unmount()`.
+  {pr}`5788`
+
+### Packages
+
+- {{ Enhancement }} New packages added:
+  - audioop-lts (0.2.1)
+  - cobs (1.2.1)
+  - PyMuPDF (1.26.3)
 
 ## Version 0.28.0
 
@@ -45,18 +225,17 @@ _July 4, 2025_
   compile time and link time.
   {pr}`5320`
 
-- {{ Fix }} Fixed a regression in 0.27.1 which caused Pyodide to crash on iPad + Safari. {pr}`5695`
+- {{ Fix }} Fixed a regression in 0.27.1 which caused Pyodide to crash on iPad +
+  Safari. {pr}`5695`
 
-- {{ Enhancement }} Enable WebGL 2 (-sMAX_WEBGL_VERSION=2).
-  WebGL 1 is still available but must be required explicitly
-  (for example, by using OpenGL ES 2.0)
-  {pr}`5708`
+- {{ Enhancement }} Enable WebGL 2 (-sMAX_WEBGL_VERSION=2). WebGL 1 is still
+  available but must be required explicitly (for example, by using OpenGL ES
+  2.0) {pr}`5708`
 
 ### Python API
 
 - {{ Enhancement }} `time.sleep()` will now stack switch if possible. This
-  allows other events on the event loop to be processed during the
-  sleep.
+  allows other events on the event loop to be processed during the sleep.
   {pr}`5686`
 
 - {{ Enhancement }} Added `JsProxy.to_weakref()` as a helper method equivalent
@@ -67,19 +246,18 @@ _July 4, 2025_
 
 ### JavaScript API
 
-- {{ Breaking }} When `lockfileURL` is given to `loadPyodide`, the
-  base URL for the packages is now calculated from the lockfile URL, not from
-  the `indexURL`.
+- {{ Breaking }} When `lockfileURL` is given to `loadPyodide`, the base URL for
+  the packages is now calculated from the lockfile URL, not from the `indexURL`.
   {pr}`5652`
+
 - {{ Enhancement }} Added support for custom fetchers to `pyfetch`. {pr}`5653`
 
 - {{ Enhancement }} Property access on a `PyProxy` of a dictionary will now fall
   back to `__getitem__()` if there is no attribute of the given name.
   {pr}`5674`
 
-- {{ Fix }} Fixes a bug that `pyodide.loadPackage` not respecting `messageCallback` and `errorCallback` options
-  in some cases.
-  {pr}`5692`
+- {{ Fix }} Fixes a bug where `pyodide.loadPackage()` did not respect
+  `messageCallback` and `errorCallback` options in some cases. {pr}`5692`
 
 - {{ Breaking }} JavaScript `null` is now converted to `pyodide.ffi.jsnull` and
   not to `None`. If you want to opt into the old behavior you can pass

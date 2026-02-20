@@ -46,28 +46,30 @@
 #include "structmember.h"
 
 // clang-format off
-#define IS_ITERABLE        (1 << 0)
-#define IS_ITERATOR        (1 << 1)
-#define HAS_LENGTH         (1 << 2)
-#define HAS_GET            (1 << 3)
-#define HAS_SET            (1 << 4)
-#define HAS_HAS            (1 << 5)
-#define HAS_INCLUDES       (1 << 6)
-#define IS_AWAITABLE       (1 << 7)
-#define IS_BUFFER          (1 << 8)
-#define IS_CALLABLE        (1 << 9)
-#define IS_ARRAY           (1 << 10)
-#define IS_NODE_LIST       (1 << 11)
-#define IS_TYPEDARRAY      (1 << 12)
-#define IS_DOUBLE_PROXY    (1 << 13)
-#define IS_OBJECT_MAP      (1 << 14)
-#define IS_ASYNC_ITERABLE  (1 << 15)
-#define IS_GENERATOR       (1 << 16)
-#define IS_ASYNC_GENERATOR (1 << 17)
-#define IS_ASYNC_ITERATOR  (1 << 18)
-#define IS_ERROR           (1 << 19)
-#define IS_PY_JSON_DICT    (1 << 20)
-#define IS_PY_JSON_SEQUENCE (1 << 21)
+#define IS_ITERABLE         (1 << 0)
+#define IS_ITERATOR         (1 << 1)
+#define HAS_LENGTH          (1 << 2)
+#define HAS_GET             (1 << 3)
+#define HAS_SET             (1 << 4)
+#define HAS_HAS             (1 << 5)
+#define HAS_INCLUDES        (1 << 6)
+#define HAS_DISPOSE         (1 << 7)
+#define HAS_ASYNC_DISPOSE   (1 << 8)
+#define IS_AWAITABLE        (1 << 9)
+#define IS_BUFFER           (1 << 10)
+#define IS_CALLABLE         (1 << 11)
+#define IS_ARRAY            (1 << 12)
+#define IS_ARRAY_LIKE       (1 << 13)
+#define IS_TYPEDARRAY       (1 << 14)
+#define IS_DOUBLE_PROXY     (1 << 15)
+#define IS_OBJECT_MAP       (1 << 16)
+#define IS_ASYNC_ITERABLE   (1 << 17)
+#define IS_GENERATOR        (1 << 18)
+#define IS_ASYNC_GENERATOR  (1 << 19)
+#define IS_ASYNC_ITERATOR   (1 << 20)
+#define IS_ERROR            (1 << 21)
+#define IS_PY_JSON_DICT     (1 << 22)
+#define IS_PY_JSON_SEQUENCE (1 << 23)
 // clang-format on
 
 _Py_IDENTIFIER(get_event_loop);
@@ -275,7 +277,7 @@ js2python_as_py_json(JsVal jsval)
 }
 
 #define INCLUDE_OBJMAP_METHODS(flags)                                          \
-  !((flags) & (IS_ARRAY | IS_TYPEDARRAY | IS_NODE_LIST | IS_BUFFER |           \
+  !((flags) & (IS_ARRAY | IS_TYPEDARRAY | IS_ARRAY_LIKE | IS_BUFFER |          \
                IS_DOUBLE_PROXY | IS_ITERATOR | IS_CALLABLE | IS_ERROR))
 
 static int
@@ -393,41 +395,6 @@ JsProxy_js_id(PyObject* self, void* _unused)
 finally:
   return result;
 }
-
-EM_JS(bool, isReservedWord, (int word), {
-  if (!Module.pythonReservedWords) {
-    Module.pythonReservedWords = new Set([
-      "False",  "await", "else",     "import", "pass",   "None",    "break",
-      "except", "in",    "raise",    "True",   "class",  "finally", "is",
-      "return", "and",   "continue", "for",    "lambda", "try",     "as",
-      "def",    "from",  "nonlocal", "while",  "assert", "del",     "global",
-      "not",    "with",  "async",    "elif",   "if",     "or",      "yield",
-    ]);
-  }
-  return Module.pythonReservedWords.has(word);
-})
-
-/**
- * action: a javascript string, one of get, set, or delete. For error reporting.
- * word: a javascript string, the property being accessed
- */
-EM_JS(int, normalizeReservedWords, (int word), {
-  // clang-format off
-  // 1. if word is not a reserved word followed by 0 or more underscores, return
-  //    it unchanged.
-  const noTrailing_ = word.replace(/_*$/, "");
-  if (!isReservedWord(noTrailing_)) {
-    return word;
-  }
-  // 2. If there is at least one trailing underscore, return the word with a
-  //    single underscore removed.
-  if (noTrailing_ !== word) {
-    return word.slice(0, -1);
-  }
-  // 3. If the word is exactly a reserved word, return it unchanged
-  return word;
-  // clang-format on
-});
 
 EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
   const jskey = normalizeReservedWords(UTF8ToString(ptrkey));
@@ -649,7 +616,8 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
     pyresult =
       JsProxy_create_with_this(jsresult, JsProxy_VAL(self), attr_sig, false);
   } else if (attr_sig) {
-    pyresult = JsProxy_create_with_this(jsresult, JS_ERROR, attr_sig, false);
+    pyresult =
+      JsProxy_create_with_this(jsresult, Jsv_undefined, attr_sig, false);
   } else {
     pyresult = js2python(jsresult);
   }
@@ -1698,22 +1666,6 @@ JsTypedArray_subscript(PyObject* o, PyObject* item)
 }
 
 /**
- * __getitem__ for proxies of HTMLCollection or NodeList, controlled by
- * IS_NODE_LIST
- */
-static PyObject*
-JsNodeList_subscript(PyObject* o, PyObject* item)
-{
-  if (PySlice_Check(item)) {
-    PyErr_SetString(
-      PyExc_NotImplementedError,
-      "Slice subscripting isn't implemented for HTMLCollection or NodeList");
-    return NULL;
-  }
-  return JsArray_subscript(o, item);
-}
-
-/**
  * __setitem__ and __delitem__ for proxies of Js Arrays, controlled by IS_ARRAY
  */
 static int
@@ -1959,6 +1911,9 @@ finally:
 
 EM_JS_VAL(JsVal, JsArray_repeat_js, (JsVal o, Py_ssize_t count), {
   // clang-format off
+  if (!Array.isArray(o)) {
+    o = Array.from(o);
+  }
   return Array.from({ length : count }, () => o).flat();
   // clang-format on
 })
@@ -2133,7 +2088,7 @@ JsArray_index_js,
       return i;
     }
   }
-  return -1;
+  return -2;
 })
 // clang-format on
 
@@ -2183,7 +2138,7 @@ JsArray_index_helper(PyObject* self,
     goto error;
   } else {
     int result = JsArray_index_js(JsProxy_VAL(self), jsvalue, start, stop);
-    if (result == -1) {
+    if (result == -2) {
       goto error;
     }
     return result;
@@ -2444,6 +2399,104 @@ JsProxy_has(JsProxy* self, PyObject* obj)
 finally:
   return result;
 }
+
+static PyObject*
+JsProxy_enter(JsProxy* self, PyObject* Py_UNUSED(ignored))
+{
+  return Py_NewRef(self);
+}
+
+static PyMethodDef JsProxy_enter_MethodDef = { "__enter__",
+                                               (PyCFunction)JsProxy_enter,
+                                               METH_NOARGS };
+
+// clang-format off
+EM_JS_NUM(int, JsProxy_exit_js, (JsVal obj), {
+  obj[Symbol.dispose]();
+});
+// clang-format on
+
+static PyObject*
+JsProxy_exit(JsProxy* self, PyObject* const* args, Py_ssize_t nargs)
+{
+  if (!_PyArg_CheckPositional("__exit__", nargs, 0, 3)) {
+    return NULL;
+  }
+
+  if (JsProxy_exit_js(JsProxy_VAL(self)) == -1) {
+    return NULL;
+  }
+
+  Py_RETURN_NONE;
+}
+
+static PyMethodDef JsProxy_exit_MethodDef = { "__exit__",
+                                              (PyCFunction)JsProxy_exit,
+                                              METH_FASTCALL };
+
+// clang-format off
+EM_JS_VAL(JsVal, JsProxy_aexit_js, (JsVal obj), {
+  return obj[Symbol.asyncDispose]();
+});
+// clang-format on
+
+static PyObject*
+JsProxy_aenter(JsProxy* self, PyObject* Py_UNUSED(ignored))
+{
+  bool success = false;
+  PyObject* loop = NULL;
+  PyObject* result = NULL;
+  PyObject* status = NULL;
+
+  loop = _PyObject_CallMethodIdNoArgs(asyncio_mod, &PyId_get_event_loop);
+  FAIL_IF_NULL(loop);
+
+  result = _PyObject_CallMethodIdNoArgs(loop, &PyId_create_future);
+  FAIL_IF_NULL(result);
+
+  status =
+    _PyObject_CallMethodIdOneArg(result, &PyId_set_result, (PyObject*)self);
+  FAIL_IF_NULL(status);
+
+  success = true;
+finally:
+  Py_CLEAR(loop);
+  Py_CLEAR(status);
+  if (!success) {
+    Py_CLEAR(result);
+  }
+
+  return result;
+}
+
+static PyMethodDef JsProxy_aenter_MethodDef = { "__aenter__",
+                                                (PyCFunction)JsProxy_aenter,
+                                                METH_NOARGS };
+
+static PyObject*
+JsProxy_aexit(JsProxy* self, PyObject* const* args, Py_ssize_t nargs)
+{
+  if (!_PyArg_CheckPositional("__aexit__", nargs, 0, 3)) {
+    return NULL;
+  }
+  PyObject* result = NULL;
+
+  // We have to return an awaitable here but [Symbol.asyncDispose]() does not.
+  // Conveniently, wrap_promise() calls Promise.resolve() on the argument, so it
+  // works in both cases.
+  JsVal jsresult = JsProxy_aexit_js(JsProxy_VAL(self));
+  FAIL_IF_JS_ERROR(jsresult);
+
+  result = wrap_promise(jsresult, Jsv_null, NULL);
+  FAIL_IF_NULL(result);
+
+finally:
+  return result;
+}
+
+static PyMethodDef JsProxy_aexit_MethodDef = { "__aexit__",
+                                               (PyCFunction)JsProxy_aexit,
+                                               METH_FASTCALL };
 
 EM_JS_VAL(JsVal, JsMap_GetIter_js, (JsVal obj), {
   let result;
@@ -3056,6 +3109,18 @@ JsProxy_as_object_map(PyObject* self,
                       Py_ssize_t nargs,
                       PyObject* kwnames)
 {
+  static bool warned = false;
+  if (!warned) {
+    warned = true;
+    // Use RuntimeWarning not DeprecationWarning because DeprecationWarning is
+    // hidden by default and therefore useless.
+    if (PyErr_WarnEx(
+          PyExc_RuntimeWarning,
+          "JsProxy.as_object_map() is deprecated. Use as_py_json() instead.",
+          1) == -1) {
+      return NULL;
+    }
+  }
   static const char* const _keywords[] = { "hereditary", 0 };
   static struct _PyArg_Parser _parser = {
     .format = "|$p:as_object_map",
@@ -3087,7 +3152,7 @@ static PyObject*
 JsProxy_as_py_json(PyObject* self, PyObject* _unused)
 {
   int flags = JsProxy_getflags(self);
-  if (flags & (IS_ARRAY | IS_NODE_LIST)) {
+  if (flags & (IS_ARRAY | IS_ARRAY_LIKE)) {
     flags |= IS_PY_JSON_SEQUENCE;
   } else {
     flags |= IS_PY_JSON_DICT;
@@ -4063,6 +4128,14 @@ JsProxy_create_subtype(int flags)
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_sq_contains, .pfunc = (void*)JsProxy_has };
   }
+  if (flags & HAS_DISPOSE) {
+    methods[cur_method++] = JsProxy_enter_MethodDef;
+    methods[cur_method++] = JsProxy_exit_MethodDef;
+  }
+  if (flags & HAS_ASYNC_DISPOSE) {
+    methods[cur_method++] = JsProxy_aenter_MethodDef;
+    methods[cur_method++] = JsProxy_aexit_MethodDef;
+  }
 skip_container_slots:
 
   if (flags & IS_AWAITABLE) {
@@ -4090,7 +4163,7 @@ skip_container_slots:
     };
   }
   if (flags & IS_ARRAY) {
-    // If the object is an array (or a HTMLCollection or NodeList), then we want
+    // If the object is an array (or an array like), then we want
     // subscripting `proxy[idx]` to go to `jsobj[idx]` instead of
     // `jsobj.get(idx)`. Hopefully anyone else who defines a custom array object
     // will subclass Array.
@@ -4145,15 +4218,17 @@ skip_container_slots:
     methods[cur_method++] = JsArray_reversed_MethodDef;
     methods[cur_method++] = JsArray_reverse_MethodDef;
   }
-  if (flags & IS_NODE_LIST) {
+  if (flags & IS_ARRAY_LIKE) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
-                                       .pfunc = (void*)JsNodeList_subscript };
+                                       .pfunc = (void*)JsArray_subscript };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_sq_length, .pfunc = (void*)JsProxy_length };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsArray_sq_item };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_sq_concat, .pfunc = (void*)JsArray_sq_concat };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_repeat, .pfunc = (void*)JsArray_sq_repeat };
     methods[cur_method++] = JsArray_reversed_MethodDef;
   }
   if (flags & IS_BUFFER) {
@@ -4173,7 +4248,7 @@ skip_container_slots:
     methods[cur_method++] = JsProxy_as_object_map_MethodDef;
     methods[cur_method++] = JsProxy_as_py_json_MethodDef;
   }
-  if (flags & (IS_ARRAY | IS_NODE_LIST)) {
+  if (flags & (IS_ARRAY | IS_ARRAY_LIKE)) {
     methods[cur_method++] = JsProxy_as_py_json_MethodDef;
   }
   if (flags & IS_ERROR) {
@@ -4279,7 +4354,7 @@ skip_container_slots:
   PyObject* abc = NULL;
   if (flags & (IS_ARRAY | IS_TYPEDARRAY)) {
     abc = MutableSequence;
-  } else if (flags & IS_NODE_LIST) {
+  } else if (flags & IS_ARRAY_LIKE) {
     abc = Sequence;
   } else if (mutable_mapping) {
     abc = MutableMapping;
@@ -4344,9 +4419,9 @@ finally:
 #define SET_FLAG_IF_HAS_METHOD(flag, meth)                                     \
   SET_FLAG_IF(flag, hasMethod(obj, meth))
 
+// clang-format off
 EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
   let type_flags = 0;
-  // clang-format off
   if (API.isPyProxy(obj) && !pyproxyIsAlive(obj)) {
     return 0;
   }
@@ -4359,13 +4434,15 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
   function safeBool(cb) {
     try {
       return cb();
-    } catch(e) {
+    } catch (e) {
       return false;
     }
   }
   const isBufferView = safeBool(() => ArrayBuffer.isView(obj));
   const isArray = safeBool(() => Array.isArray(obj));
   const constructorName = safeBool(() => obj.constructor.name) || "";
+  const hasLength =
+    isArray || (hasProperty(obj, "length") && typeof obj !== "function");
 
   // If we somehow set more than one of IS_CALLABLE, IS_BUFFER, and IS_ERROR,
   // we'll run into trouble. I think that for this to happen, someone would have
@@ -4375,24 +4452,40 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
   SET_FLAG_IF_HAS_METHOD(IS_AWAITABLE, "then");
   SET_FLAG_IF_HAS_METHOD(IS_ITERABLE, Symbol.iterator);
   SET_FLAG_IF_HAS_METHOD(IS_ASYNC_ITERABLE, Symbol.asyncIterator);
-  SET_FLAG_IF(IS_ITERATOR, hasMethod(obj, "next") && (hasMethod(obj, Symbol.iterator) || !hasMethod(obj, Symbol.asyncIterator)));
-  SET_FLAG_IF(IS_ASYNC_ITERATOR, hasMethod(obj, "next") && (!hasMethod(obj, Symbol.iterator) || hasMethod(obj, Symbol.asyncIterator)));
-  SET_FLAG_IF(HAS_LENGTH,
-    (hasProperty(obj, "size")) ||
-    (hasProperty(obj, "length") && typeof obj !== "function"));
+  SET_FLAG_IF(
+    IS_ITERATOR,
+    hasMethod(obj, "next") &&
+      (hasMethod(obj, Symbol.iterator) || !hasMethod(obj, Symbol.asyncIterator))
+  );
+  SET_FLAG_IF(
+    IS_ASYNC_ITERATOR,
+    hasMethod(obj, "next") &&
+      (!hasMethod(obj, Symbol.iterator) || hasMethod(obj, Symbol.asyncIterator))
+  );
+  SET_FLAG_IF(HAS_LENGTH, hasLength || hasProperty(obj, "size"));
   SET_FLAG_IF_HAS_METHOD(HAS_GET, "get");
   SET_FLAG_IF_HAS_METHOD(HAS_SET, "set");
   SET_FLAG_IF_HAS_METHOD(HAS_HAS, "has");
   SET_FLAG_IF_HAS_METHOD(HAS_INCLUDES, "includes");
-  SET_FLAG_IF(IS_BUFFER,
-              (isBufferView || (typeTag === '[object ArrayBuffer]')) && !(type_flags & IS_CALLABLE));
+  if (Symbol.asyncDispose) {
+    SET_FLAG_IF_HAS_METHOD(HAS_DISPOSE, Symbol.dispose);
+    SET_FLAG_IF_HAS_METHOD(HAS_ASYNC_DISPOSE, Symbol.asyncDispose);
+  }
+  SET_FLAG_IF(
+    IS_BUFFER,
+    (isBufferView || typeTag === "[object ArrayBuffer]") &&
+      !(type_flags & IS_CALLABLE)
+  );
   SET_FLAG_IF(IS_DOUBLE_PROXY, API.isPyProxy(obj));
   SET_FLAG_IF(IS_ARRAY, isArray);
-  SET_FLAG_IF(IS_NODE_LIST,
-              typeTag === "[object HTMLCollection]" ||
-              typeTag === "[object NodeList]");
-  SET_FLAG_IF(IS_TYPEDARRAY,
-              isBufferView && typeTag !== '[object DataView]');
+  SET_FLAG_IF(IS_TYPEDARRAY, isBufferView && typeTag !== "[object DataView]");
+  SET_FLAG_IF(
+    IS_ARRAY_LIKE,
+    !isArray &&
+      hasLength &&
+      type_flags & IS_ITERABLE &&
+      !(type_flags & (IS_ITERATOR | IS_TYPEDARRAY))
+  );
   SET_FLAG_IF(IS_GENERATOR, typeTag === "[object Generator]");
   SET_FLAG_IF(IS_ASYNC_GENERATOR, typeTag === "[object AsyncGenerator]");
 
@@ -4408,26 +4501,24 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
    * Firefox respects this and has DOMException.stack. But Safari and Chrome do
    * not. Hence the special check here for DOMException.
    */
-  SET_FLAG_IF(IS_ERROR,
-    (
-      hasProperty(obj, "name")
-      && hasProperty(obj, "message")
-      && (
-        hasProperty(obj, "stack")
-        || constructorName === "DOMException"
-      )
-    ) && !(type_flags & (IS_CALLABLE | IS_BUFFER)));
+  SET_FLAG_IF(
+    IS_ERROR,
+    hasProperty(obj, "name") &&
+      hasProperty(obj, "message") &&
+      (hasProperty(obj, "stack") || constructorName === "DOMException") &&
+      !(type_flags & (IS_CALLABLE | IS_BUFFER))
+  );
 
-  if (is_py_json && (type_flags & (IS_ARRAY | IS_NODE_LIST | IS_ITERATOR))) {
+  if (is_py_json && type_flags & (IS_ARRAY | IS_ARRAY_LIKE | IS_ITERATOR)) {
     // tagging IS_PY_JSON_SEQUENCE on IS_ITERATOR is a bit of a hack
     type_flags |= IS_PY_JSON_SEQUENCE;
   }
   if (is_py_json && INCLUDE_OBJMAP_METHODS(type_flags)) {
     type_flags |= IS_PY_JSON_DICT;
   }
-  // clang-format on
   return type_flags;
 });
+// clang-format on
 #undef SET_FLAG_IF
 
 ////////////////////////////////////////////////////////////
@@ -4508,7 +4599,7 @@ JsProxy_create_with_this(JsVal object,
 EMSCRIPTEN_KEEPALIVE PyObject*
 JsProxy_create(JsVal object)
 {
-  return JsProxy_create_with_this(object, JS_ERROR, NULL, false);
+  return JsProxy_create_with_this(object, Jsv_undefined, NULL, false);
 }
 
 PyObject*
@@ -4519,7 +4610,7 @@ JsProxy_create_objmap(JsVal object, int flags)
   if ((flags & OBJMAP_HEREDITARY) && INCLUDE_OBJMAP_METHODS(typeflags)) {
     typeflags |= IS_OBJECT_MAP;
   }
-  return JsProxy_create_with_type(typeflags, object, JS_ERROR, NULL);
+  return JsProxy_create_with_type(typeflags, object, Jsv_undefined, NULL);
 }
 
 EMSCRIPTEN_KEEPALIVE bool
@@ -4775,11 +4866,12 @@ jsproxy_init(PyObject* core_module)
   AddFlag(HAS_SET);
   AddFlag(HAS_HAS);
   AddFlag(HAS_INCLUDES);
+  AddFlag(HAS_DISPOSE);
   AddFlag(IS_AWAITABLE);
   AddFlag(IS_BUFFER);
   AddFlag(IS_CALLABLE);
   AddFlag(IS_ARRAY);
-  AddFlag(IS_NODE_LIST);
+  AddFlag(IS_ARRAY_LIKE);
   AddFlag(IS_TYPEDARRAY);
   AddFlag(IS_DOUBLE_PROXY);
   AddFlag(IS_OBJECT_MAP);

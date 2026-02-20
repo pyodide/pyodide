@@ -5,7 +5,7 @@ Pyodide may be used in a web browser or a backend JavaScript environment.
 ## Web browsers
 
 To use Pyodide in a web page you need to load `pyodide.js` and initialize
-Pyodide with {js:func}`~globalThis.loadPyodide`.
+Pyodide with {js:func}`~exports.loadPyodide`.
 
 ```html-pyodide
 <!doctype html>
@@ -129,4 +129,5 @@ undefined
    webworker.md
    service-worker.md
    working-with-bundlers.md
+   cli.md
 ```

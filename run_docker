@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-PYODIDE_IMAGE_REPO="pyodide"
-PYODIDE_IMAGE_TAG="20250311-chrome134-firefox136-py313"
-DEFAULT_PYODIDE_DOCKER_IMAGE="${PYODIDE_IMAGE_REPO}/pyodide-env:${PYODIDE_IMAGE_TAG}"
+DEFAULT_PYODIDE_DOCKER_IMAGE="pyodide/pyodide-env:20260120-chrome145-firefox146-py313"
 DEFAULT_PYODIDE_SYSTEM_PORT="none"
 DOCKER_COMMAND="/bin/bash"
 DOCKER_INTERACTIVE="--interactive"
@@ -42,7 +40,6 @@ Options:
                               If set to 'none', docker instance will not bind to any port.
   --non-interactive           Run docker without the --interactive flag.
                               Useful for running in headless mode on CI server.
-  --root                      Run as root user inside the container
 
 Prerequisites:
   Docker has to be set up on your system.
@@ -76,10 +73,6 @@ do
       ;;
       --non-interactive)
         DOCKER_INTERACTIVE="--interactive=false"
-        shift
-      ;;
-      --root)
-        USER_FLAG=()
         shift
       ;;
       -*)
@@ -123,11 +116,16 @@ useradd\
   --gid '$USER_GID'\
   --comment '$USER_COMMENT_FIELD'\
   --shell '$USER_INTERPRETER'\
-  --groups sudo\
   $USER_NAME\
 ;
-echo 'export PATH=\$PATH:$USER_HOME/.local/bin' >> /etc/profile;
-echo '%sudo ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers ;
+echo "$USER_NAME:pyodide" | chpasswd;
+echo 'export PATH=\$PATH:$USER_HOME/.local/bin:/usr/local/go/bin' >> /etc/profile;
+echo 'export RUSTUP_HOME=$USER_HOME/.rustup' >> /etc/profile;
+echo 'export CARGO_HOME=$USER_HOME/.cargo' >> /etc/profile;
+echo '$USER_NAME ALL=(ALL:ALL) ALL' >> /etc/sudoers ;
+if [ -S /var/run/docker.sock ]; then
+  chmod 666 /var/run/docker.sock
+fi
 echo '$HEALTHCHECK_MESSAGE';
 tail -f /dev/null
 EOF
@@ -136,7 +134,9 @@ CONTAINER=$(\
   docker run \
     "${PORT_CONFIGURATION_LINE[@]}" \
     -d --rm \
+    --platform linux/amd64 \
     -v "$PWD":/src \
+    -v /var/run/docker.sock:/var/run/docker.sock \
     --user root \
     --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \

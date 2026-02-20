@@ -1,19 +1,17 @@
 export PYVERSION ?= 3.13.2
 export PYODIDE_EMSCRIPTEN_VERSION ?= 4.0.9
-export PYODIDE_VERSION ?= 0.29.0.dev0
+export PYODIDE_VERSION ?= 0.30.0.dev0
 export PYODIDE_ABI_VERSION ?= 2025_0
 
 export PYTHON_ARCHIVE_SHA256=b8d79530e3b7c96a5cb2d40d431ddb512af4a563e863728d8713039aa50203f9
 
-export RUST_TOOLCHAIN ?= nightly-2025-02-01
-export RUST_EMSCRIPTEN_TARGET_URL ?= https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot/releases/download/emcc-${PYODIDE_EMSCRIPTEN_VERSION}_${RUST_TOOLCHAIN}/emcc-${PYODIDE_EMSCRIPTEN_VERSION}_${RUST_TOOLCHAIN}.tar.bz2
-# I'm not really sure what this explicit -Z link-native-libraries=yes is for,
-# `rustc -Z help` shows that `link-native-libraries=yes` is the default. But it
-# seems to be necessary...
-export RUSTFLAGS = -C link-arg=-sSIDE_MODULE=2 -Z link-native-libraries=yes -Z emscripten-wasm-eh
+export SED ?= sed
+
+export RUST_TOOLCHAIN ?= nightly-2025-12-10
+export RUSTFLAGS = -C link-arg=-sSIDE_MODULE=2
 
 # URL to the prebuilt packages
-export PYODIDE_PREBUILT_PACKAGES_BASE=https://github.com/pyodide/pyodide-recipes/releases/download/0.28-20250705
+export PYODIDE_PREBUILT_PACKAGES_BASE=https://github.com/pyodide/pyodide-recipes/releases/download/0.29-20260116
 export PYODIDE_PREBUILT_PACKAGES_URL=$(PYODIDE_PREBUILT_PACKAGES_BASE)/packages.tar.gz
 export PYODIDE_PREBUILT_PACKAGES_LOCKFILE=$(PYODIDE_PREBUILT_PACKAGES_BASE)/pyodide-lock.json
 export ENABLE_PREBUILT_PACKAGES ?= 0
@@ -81,15 +79,14 @@ export PYZIP_EXCLUDE_FILES=\
 	turtle.py \
 	turtledemo/ \
 	test/ \
-	sqlite3/ \
-	ssl.py \
-	lzma.py \
 	_pydecimal.py \
 	pydoc_data/
 
 # List of modules that we replace with a stub in the zipped standard library
 export PYZIP_JS_STUBS=\
-	webbrowser.py
+	webbrowser.py \
+	ssl.py \
+	_ssl.py
 
 export PYCOMPILE_EXCLUDE_FILES=\
 	RobotRaconteur- \
@@ -134,7 +131,7 @@ export CFLAGS_BASE=\
 	$(DBGFLAGS) \
 	-fPIC \
 	-fwasm-exceptions \
-	-sSUPPORT_LONGJMP \
+	-sSUPPORT_LONGJMP=wasm \
 	$(EXTRA_CFLAGS)
 
 
@@ -145,7 +142,7 @@ export LDFLAGS_BASE=\
 	-L$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
 	-s WASM_BIGINT \
 	-fwasm-exceptions \
-	-sSUPPORT_LONGJMP \
+	-sSUPPORT_LONGJMP=wasm \
 	$(EXTRA_LDFLAGS) \
 
 export CXXFLAGS_BASE=
@@ -180,6 +177,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 	-lffi \
+	-llzma \
+	-lsqlite3 \
 	-lstdc++ \
 	-lidbfs.js \
 	-lnodefs.js \
@@ -295,8 +294,11 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 		-lffi \
 		-lhiwire \
+		-llzma \
+		-lsqlite3 \
 		-lidbfs.js \
 		-lnodefs.js \
+    -lproxyfs.js
 
 endif
 

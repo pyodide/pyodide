@@ -2,7 +2,7 @@ PYODIDE_ROOT=$(abspath .)
 
 include Makefile.envs
 
-.PHONY=check
+.PHONY: check check-emcc
 
 CC=emcc
 CXX=em++
@@ -21,13 +21,14 @@ all-but-packages: \
 	$(CPYTHONINSTALL)/.installed-pyodide \
 	dist/pyodide.asm.js \
 	dist/pyodide.js \
-	 \
 	dist/package.json \
 	dist/python \
+	dist/python.bat \
 	dist/python_cli_entry.mjs \
 	dist/python_stdlib.zip \
 	dist/test.html \
 	dist/console.html \
+	dist/console-v2.html \
 	dist/module_test.html \
 
 
@@ -65,10 +66,10 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 
 # Don't use ccache here because it does not support #embed properly.
 # https://github.com/ccache/ccache/discussions/1366
-src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat
+src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat emsdk/emsdk/.complete
 	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
-src/core/sentinel.wasm: src/core/sentinel.wat
+src/core/sentinel.wasm: src/core/sentinel.wat emsdk/emsdk/.complete
 	./emsdk/emsdk/upstream/bin/wasm-as $< -o $@ -all
 
 src/core/libpyodide.a: \
@@ -89,8 +90,8 @@ src/core/libpyodide.a: \
 	src/core/stack_switching/pystate.o \
 	src/core/stack_switching/suspenders.o \
 	src/core/print.o
-	emar rcs src/core/libpyodide.a $(filter %.o,$^)
 
+	emar rcs src/core/libpyodide.a $(filter %.o,$^)
 
 $(CPYTHONINSTALL)/include/pyodide/.installed: src/core/*.h
 	mkdir -p $(@D)
@@ -104,14 +105,14 @@ $(CPYTHONINSTALL)/lib/libpyodide.a: src/core/libpyodide.a
 $(CPYTHONINSTALL)/.installed-pyodide: $(CPYTHONINSTALL)/include/pyodide/.installed $(CPYTHONINSTALL)/lib/libpyodide.a
 	touch $@
 
-
 dist/pyodide.asm.js: \
+	dist \
 	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB) \
 	$(CPYTHONINSTALL)/.installed-pyodide
+
 	@date +"[%F %T] Building pyodide.asm.js..."
-	[ -d dist ] || mkdir dist
    # TODO(ryanking13): Link libgl to a side module not to the main module.
    # For unknown reason, a side module cannot see symbols when libGL is linked to it.
 	embuilder build libgl
@@ -125,23 +126,22 @@ dist/pyodide.asm.js: \
    # There are 4821 of these and they have VERY VERY long names.
    # To show some stats on the symbols you can use the following:
    # cat dist/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
-	sed -i -E 's/var __Z[^;]*;//g' dist/pyodide.asm.js
-	sed -i '1i "use strict";' dist/pyodide.asm.js
+	$(SED) -i -E 's/var __Z[^;]*;//g' dist/pyodide.asm.js
+	$(SED) -i '1i "use strict";' dist/pyodide.asm.js
 	# Remove last 7 lines of pyodide.asm.js, see issue #2282
 	# Hopefully we will remove this after emscripten fixes it, upstream issue
 	# emscripten-core/emscripten#16518
 	# Sed nonsense from https://stackoverflow.com/a/13383331
-	sed -i -n -e :a -e '1,7!{P;N;D;};N;ba' dist/pyodide.asm.js
+	$(SED) -i -n -e :a -e '1,7!{P;N;D;};N;ba' dist/pyodide.asm.js
 	echo "globalThis._createPyodideModule = _createPyodideModule;" >> dist/pyodide.asm.js
 
 	@date +"[%F %T] done building pyodide.asm.js."
-
 
 env:
 	env
 
 
-node_modules/.installed : src/js/package.json src/js/package-lock.json
+node_modules/.installed: src/js/package.json src/js/package-lock.json
 	cd src/js && npm ci
 	ln -sfn src/js/node_modules/ node_modules
 	touch $@
@@ -157,6 +157,8 @@ src/js/generated/_pyodide.out.js:            \
 	cd src/js && npm run build-inner && cd -
 
 dist/pyodide.js:                             \
+		dist/pyodide.asm.js            		 \
+		src/js/generated/_pyodide.out.js  	 \
 		src/js/pyodide.ts                    \
 		src/js/compat.ts                     \
 		src/js/emscripten-settings.ts        \
@@ -164,17 +166,17 @@ dist/pyodide.js:                             \
 		src/core/sentinel.wasm
 	cd src/js && npm run build
 
-src/core/stack_switching/stack_switching.out.js : src/core/stack_switching/*.mjs
+src/core/stack_switching/stack_switching.out.js: src/core/stack_switching/*.mjs node_modules/.installed
 	node src/core/stack_switching/esbuild.config.mjs
 
-dist/package.json : src/js/package.json
+dist/package.json: src/js/package.json dist
 	cp $< $@
 
 .PHONY: npm-link
 npm-link: dist/package.json
 	cd src/test-js && npm ci && npm link ../../dist
 
-dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/generated/pyproxy.ts node_modules/.installed
+dist/pyodide.d.ts dist/pyodide/ffi.d.ts: dist/pyodide.js src/js/*.ts src/js/generated/pyproxy.ts node_modules/.installed
 	npx dts-bundle-generator src/js/{pyodide,ffi}.ts --export-referenced-types false --project src/js/tsconfig.json
 	mv src/js/{pyodide,ffi}.d.ts dist
 	python3 tools/fixup-type-definitions.py dist/pyodide.d.ts
@@ -183,7 +185,7 @@ dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/generated/pyproxy.ts
 
 define preprocess-js
 
-src/js/generated/$1: src/core/$1 src/core/pyproxy.c src/core/*.h
+src/js/generated/$1: $(CPYTHONLIB) src/core/$1 src/core/pyproxy.c src/core/*.h
 	# We can't input a js/ts file directly because CC will be unhappy about the file
 	# extension. Instead cat it and have CC read from stdin.
 	# -E : Only apply prepreocessor
@@ -203,9 +205,9 @@ src/js/generated/$1: src/core/$1 src/core/pyproxy.c src/core/*.h
 	echo "// This file is generated by applying the C preprocessor to src/core/$1" >> $$@
 	echo "// Do not edit it directly!" >> $$@
 	cat src/core/$1 | \
-		sed '/^\/\/\s*pyodide-skip/,/^\/\/\s*end-pyodide-skip/d' | \
+		$(SED) '/^\/\/\s*pyodide-skip/,/^\/\/\s*end-pyodide-skip/d' | \
 		$(CC) -E -C -P -imacros src/core/pyproxy.c $(MAIN_MODULE_CFLAGS) - | \
-		sed 's/^#pragma clang.*//g' \
+		$(SED) 's/^#pragma clang.*//g' \
 		>> $$@
 endef
 
@@ -223,30 +225,51 @@ pyodide_build .pyodide_build_installed:
 # Recursive wildcard
 rwildcard=$(wildcard $1) $(foreach d,$1,$(call rwildcard,$(addsuffix /$(notdir $d),$(wildcard $(dir $d)*))))
 
-dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB) .pyodide_build_installed
-	pyodide create-zipfile $(CPYTHONLIB) src/py --exclude "$(PYZIP_EXCLUDE_FILES)" --stub "$(PYZIP_JS_STUBS)" --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
+dist:
+	[ -d dist ] || mkdir dist
 
-dist/test.html: src/templates/test.html
+dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB)
+	./tools/create_zipfile.py $(CPYTHONLIB) src/py --exclude "$(PYZIP_EXCLUDE_FILES)" --stub "$(PYZIP_JS_STUBS)" --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
+
+dist/test.html: src/templates/test.html dist
 	cp $< $@
 
-dist/makesnap.mjs: src/templates/makesnap.mjs
+dist/makesnap.mjs: src/templates/makesnap.mjs dist
 	cp $< $@
 
 dist/snapshot.bin: all-but-packages dist/pyodide-lock.json dist/makesnap.mjs
 	cd dist && node --experimental-wasm-stack-switching makesnap.mjs
 
-
-dist/module_test.html: src/templates/module_test.html
+dist/module_test.html: src/templates/module_test.html dist
 	cp $< $@
 
-dist/python: src/templates/python
+dist/python: src/templates/python dist
 	cp $< $@
 
-dist/python_cli_entry.mjs: src/templates/python_cli_entry.mjs
+dist/python.bat: src/templates/python.bat dist
 	cp $< $@
 
-.PHONY: dist/console.html
-dist/console.html: src/templates/console.html
+dist/python.exe: src/templates/python_exe.go dist
+	@if command -v go >/dev/null 2>&1; then \
+		cd src/templates && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o ../../dist/python.exe -ldflags='-s -w' python_exe.go && \
+		echo "Successfully built python.exe"; \
+	elif [ -n "$$CI" ]; then \
+		echo "ERROR: Go not found in CI environment" >&2; \
+		exit 1; \
+	else \
+		echo "WARNING: Go not found. Skipping python.exe build."; \
+	fi
+
+dist/python_cli_entry.mjs: src/templates/python_cli_entry.mjs dist
+	cp $< $@
+
+
+.PHONY: dist/console.html dist/console-v2.html
+dist/console.html: src/templates/console.html dist
+	cp $< $@
+	$(SED) -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
+
+dist/console-v2.html: src/templates/console-v2.html dist
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
@@ -275,7 +298,7 @@ benchmark: all
 
 
 clean:
-	rm -fr dist/*
+	rm -fr dist
 	rm -fr node_modules
 	find src -name '*.o' -delete
 	find src -name '*.wasm' -delete
@@ -283,6 +306,7 @@ clean:
 	find src -name '*.out.*' -delete
 	rm -fr src/js/generated
 	make -C packages clean
+	rm -f .pyodide_build_installed
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
 
 clean-python: clean
@@ -295,14 +319,12 @@ clean-all: clean
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
-
 $(CPYTHONLIB): emsdk/emsdk/.complete
 	@date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	@date +"[%F %T] done building cpython..."
 
-
-dist/pyodide-lock.json: .pyodide_build_installed
+dist/pyodide-lock.json: $(CPYTHONLIB) .pyodide_build_installed
 	@date +"[%F %T] Building packages..."
 	make -C packages
 	@date +"[%F %T] done building packages..."
@@ -312,7 +334,6 @@ emsdk/emsdk/.complete:
 	@date +"[%F %T] Building emsdk..."
 	make -C emsdk
 	@date +"[%F %T] done building emsdk."
-
 
 rust:
 	echo -e '\033[0;31m[WARNING] The target `make rust` is only for development and we do not guarantee that it will work or be maintained.\033[0m'
@@ -324,12 +345,10 @@ rust:
 check:
 	@./tools/dependency-check.sh
 
-
 check-emcc: emsdk/emsdk/.complete
 	@python3 tools/check_ccache.py
 
-
-debug :
+debug:
 	EXTRA_CFLAGS+=" -D DEBUG_F" \
 	make
 

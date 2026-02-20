@@ -15,7 +15,10 @@ API.getExpectedKeys = function () {
   ];
 };
 
+// Symbol used in our serializer to get the access list
 const getAccessorList = Symbol("getAccessorList");
+// Symbol used to unwrap receivers
+const getObject = Symbol("getObject");
 /**
  * @private
  */
@@ -27,6 +30,9 @@ export function makeGlobalsProxy(
     get(target, prop, receiver) {
       if (prop === getAccessorList) {
         return accessorList;
+      }
+      if (prop === getObject) {
+        return target;
       }
       // @ts-ignore
       const orig = Reflect.get(...arguments);
@@ -45,6 +51,12 @@ export function makeGlobalsProxy(
       }
       return makeGlobalsProxy(orig, [...accessorList, prop]);
     },
+    apply(target, thisArg, argumentList) {
+      // If thisArg is a GlobalsProxy it may break APIs that expect the receiver
+      // to be unmodified. Unwrap any GlobalsProxy before making the call.
+      thisArg = thisArg?.[getObject] ?? thisArg;
+      return Reflect.apply(target, thisArg, argumentList);
+    },
     getPrototypeOf() {
       // @ts-ignore
       return makeGlobalsProxy(Reflect.getPrototypeOf(...arguments), [
@@ -55,7 +67,12 @@ export function makeGlobalsProxy(
   });
 }
 
-type SerializedHiwireValue = { path: string[] } | { serialized: any } | null;
+type SerializedHiwireValue =
+  | { path: string[] }
+  | { serialized: any }
+  | { API: true }
+  | { abortSignalAny: true }
+  | null;
 
 /**
  * @hidden
@@ -150,9 +167,20 @@ API.serializeHiwireState = function (
       hiwireKeys.push(value);
       continue;
     }
-    const path = value[getAccessorList];
+    let path;
+    try {
+      path = value[getAccessorList];
+    } catch (e) {}
     if (path) {
       hiwireKeys.push({ path });
+      continue;
+    }
+    if (value === API) {
+      hiwireKeys.push({ API: true });
+      continue;
+    }
+    if (value === API.abortSignalAny) {
+      hiwireKeys.push({ abortSignalAny: true });
       continue;
     }
     if (serializer) {
@@ -314,6 +342,10 @@ export function syncUpSnapshotLoad2(
       x = e;
     } else if ("path" in e) {
       x = e.path.reduce((x, y) => x[y], jsglobals) || null;
+    } else if ("abortSignalAny" in e) {
+      x = API.abortSignalAny;
+    } else if ("API" in e) {
+      x = API;
     } else {
       if (!deserializer) {
         throw new Error(

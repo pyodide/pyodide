@@ -9,21 +9,20 @@ from pytest_pyodide import run_in_pyodide
 from pytest_pyodide.hypothesis import std_hypothesis_settings
 
 
+@run_in_pyodide
 def test_jsproxy_dir(selenium):
-    result = selenium.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
         self.a = { x : 2, y : "9" };
         self.b = function(){};
-        let pyresult = pyodide.runPython(`
-            from js import a
-            from js import b
-            [dir(a), dir(b)]
-        `);
-        let result = pyresult.toJs();
-        pyresult.destroy();
-        return result;
         """
     )
+
+    from js import a, b  # type: ignore[attr-defined]
+
+    result = [dir(a), dir(b)]
     jsproxy_items = {
         "__bool__",
         "__class__",
@@ -45,7 +44,8 @@ def test_jsproxy_dir(selenium):
     assert set1.issuperset(jsproxy_items)
     assert set1.issuperset(callable_items)
     assert set1.isdisjoint(a_items)
-    selenium.run_js(
+
+    run_js(
         """
         self.a = [0,1,2,3,4,5,6,7,8,9];
         a[27] = 0;
@@ -53,35 +53,35 @@ def test_jsproxy_dir(selenium):
         a["/"] = 0;
         a.abcd = 0;
         a.α = 0;
-
-        pyodide.runPython(`
-            from js import a
-            d = dir(a)
-            assert '0' not in d
-            assert '9' not in d
-            assert '27' not in d
-            assert ':' in d
-            assert '/' in d
-            assert 'abcd' in d
-            assert 'α' in d
-        `);
         """
     )
 
+    from js import a  # type: ignore[attr-defined]
 
+    d = dir(a)
+    assert "0" not in d
+    assert "9" not in d
+    assert "27" not in d
+    assert ":" in d
+    assert "/" in d
+    assert "abcd" in d
+    assert "α" in d
+
+
+@run_in_pyodide
 def test_jsproxy_getattr(selenium):
-    assert selenium.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
-            self.a = { x : 2, y : "9", typeof : 7 };
-            let pyresult = pyodide.runPython(`
-                from js import a
-                [ a.x, a.y, a.typeof ]
-            `);
-            let result = pyresult.toJs();
-            pyresult.destroy();
-            return result;
-            """
-    ) == [2, "9", "object"]
+        self.a = { x : 2, y : "9", typeof : 7 };
+        """
+    )
+
+    from js import a  # type: ignore[attr-defined]
+
+    result = [a.x, a.y, a.typeof]
+    assert result == [2, "9", "object"]
 
 
 @run_in_pyodide
@@ -173,21 +173,22 @@ def test_jsproxy_imagedata(selenium):
     assert ImageData.typeof == "function"
 
 
+@run_in_pyodide
 def test_jsproxy_function(selenium):
-    selenium.run_js("self.square = function (x) { return x*x; };")
-    assert (
-        selenium.run(
-            """
-            from js import square
-            square(2)
-            """
-        )
-        == 4
-    )
+    from pyodide.code import run_js
+
+    run_js("self.square = function (x) { return x*x; };")
+
+    from js import square  # type: ignore[attr-defined]
+
+    assert square(2) == 4
 
 
+@run_in_pyodide
 def test_jsproxy_class(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
         class Point {
           constructor(x, y) {
@@ -198,16 +199,11 @@ def test_jsproxy_class(selenium):
         self.TEST = new Point(42, 43);
         """
     )
-    assert (
-        selenium.run(
-            """
-            from js import TEST
-            del TEST.y
-            hasattr(TEST, 'y')
-            """
-        )
-        is False
-    )
+
+    from js import TEST  # type: ignore[attr-defined]
+
+    del TEST.y
+    assert hasattr(TEST, "y") is False
 
 
 @run_in_pyodide
@@ -231,8 +227,11 @@ def test_jsproxy_map(selenium):
     assert dict(TEST.object_entries()) == {"foo": "bar", "baz": "bap"}
 
 
+@run_in_pyodide
 def test_jsproxy_iter(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
         function makeIterator(array) {
           let nextIndex = 0;
@@ -246,37 +245,42 @@ def test_jsproxy_iter(selenium):
         }
         self.ITER = makeIterator([1, 2, 3]);"""
     )
-    selenium.run("from js import ITER")
-    assert selenium.run("list(ITER)") == [1, 2, 3]
+
+    from js import ITER  # type: ignore[attr-defined]
+
+    assert list(ITER) == [1, 2, 3]
 
 
+@run_in_pyodide
 def test_jsproxy_implicit_iter(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
         self.ITER = [1, 2, 3];
         """
     )
-    selenium.run("from js import ITER, Object")
-    assert selenium.run("list(ITER)") == [1, 2, 3]
-    assert selenium.run("list(ITER.values())") == [1, 2, 3]
-    assert selenium.run("list(Object.values(ITER))") == [1, 2, 3]
+
+    from js import ITER, Object  # type: ignore[attr-defined]
+
+    assert list(ITER) == [1, 2, 3]
+    assert list(ITER.values()) == [1, 2, 3]
+    assert list(Object.values(ITER)) == [1, 2, 3]  # type: ignore[attr-defined]
 
 
+@run_in_pyodide
 def test_jsproxy_call1(selenium):
-    assert selenium.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
-            self.f = function(){ return arguments.length; };
-            let pyresult = pyodide.runPython(
-                `
-                from js import f
-                [f(*range(n)) for n in range(10)]
-                `
-            );
-            let result = pyresult.toJs();
-            pyresult.destroy();
-            return result;
-            """
-    ) == list(range(10))
+        self.f = function(){ return arguments.length; };
+        """
+    )
+
+    from js import f  # type: ignore[attr-defined]
+
+    assert [f(*range(n)) for n in range(10)] == list(range(10))
 
 
 @run_in_pyodide
@@ -287,73 +291,74 @@ def test_jsproxy_call2(selenium):
     assert [f(*range(n)) for n in range(10)] == list(range(10))
 
 
+@run_in_pyodide
 def test_jsproxy_call_kwargs(selenium):
-    assert selenium.run_js(
-        """
-            self.kwarg_function = ({ a = 1, b = 1 }) => {
-                return [a, b];
-            };
-            return pyodide.runPython(
-                `
-                from js import kwarg_function
-                kwarg_function(b = 2, a = 10)
-                `
-            );
-            """
-    ) == [10, 2]
+    from pyodide.code import run_js
 
-
-@pytest.mark.xfail
-def test_jsproxy_call_meth_py(selenium):
-    assert selenium.run_js(
+    run_js(
         """
-        self.a = {};
-        return pyodide.runPython(
-            `
-            from js import a
-            def f(self):
-                return self
-            a.f = f
-            a.f() == a
-            `
-        );
+        self.kwarg_function = ({ a = 1, b = 1 }) => {
+            return [a, b];
+        };
         """
     )
 
+    from js import kwarg_function  # type: ignore[attr-defined]
 
+    assert kwarg_function(b=2, a=10).to_py() == [10, 2]
+
+
+@pytest.mark.xfail
+@run_in_pyodide
+def test_jsproxy_call_meth_py(selenium):
+    from pyodide.code import run_js
+
+    run_js("self.a = {};")
+
+    from js import a  # type: ignore[attr-defined]
+
+    def f(self):
+        return self
+
+    a.f = f
+    assert a.f() == a
+
+
+@run_in_pyodide
 def test_jsproxy_call_meth_js(selenium):
-    assert selenium.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
         self.a = {};
         function f(){return this;}
         a.f = f;
-        return pyodide.runPython(
-            `
-            from js import a
-            a.f() == a
-            `
-        );
         """
     )
 
+    from js import a  # type: ignore[attr-defined]
 
+    assert a.f() == a
+
+
+@run_in_pyodide
 def test_jsproxy_call_meth_js_kwargs(selenium):
-    assert selenium.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
         self.a = {};
         function f({ x = 1, y = 1 }){
             return [this, x, y];
         }
         a.f = f;
-        return pyodide.runPython(
-            `
-            from js import a
-            [r0, r1, r2] = a.f(y=10, x=2)
-            r0 == a and r1 == 2 and r2 == 10
-            `
-        );
         """
     )
+
+    from js import a  # type: ignore[attr-defined]
+
+    [r0, r1, r2] = a.f(y=10, x=2)
+    assert r0 == a and r1 == 2 and r2 == 10
 
 
 def test_call_pyproxy_destroy_args(selenium):
@@ -611,9 +616,11 @@ def test_window_isnt_super_weird_anymore(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
+@run_in_pyodide
 def test_mount_object(selenium_standalone):
-    selenium = selenium_standalone
-    result = selenium.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
         function x1(){
             return "x1";
@@ -628,58 +635,60 @@ def test_mount_object(selenium_standalone):
         let b = { x : x2, y, u : 3, t : 7};
         pyodide.registerJsModule("a", a);
         pyodide.registerJsModule("b", b);
-        let result_proxy = pyodide.runPython(`
-            from a import x
-            from b import x as x2
-            result = [x(), x2()]
-            import a
-            import b
-            result += [a.s, dir(a), dir(b)]
-            result
-        `);
-        let result = result_proxy.toJs()
-        result_proxy.destroy();
-        return result;
         """
     )
+
+    from a import x  # noqa: E402
+    from b import x as x2  # noqa: E402
+
+    result = [x(), x2()]
+    import a  # noqa: E402
+    import b  # noqa: E402
+
+    result += [a.s, dir(a), dir(b)]
+
     assert result[:3] == ["x1", "x2", 3]
     assert {x for x in result[3] if len(x) == 1} == {"x", "y", "s", "t"}
     assert {x for x in result[4] if len(x) == 1} == {"x", "y", "u", "t"}
-    selenium.run_js(
+
+    run_js(
         """
         pyodide.unregisterJsModule("a");
         pyodide.unregisterJsModule("b");
         """
     )
-    selenium.run(
-        """
-        import sys
-        del sys.modules["a"]
-        del sys.modules["b"]
-        """
-    )
+
+    import sys
+
+    del sys.modules["a"]
+    del sys.modules["b"]
 
 
+@run_in_pyodide(packages=["pytest"])
 def test_unregister_jsmodule(selenium):
-    selenium.run_js(
+    import pytest
+
+    from pyodide.code import run_js
+
+    run_js(
         """
         let a = new Map(Object.entries({ s : 7 }));
         let b = new Map(Object.entries({ t : 3 }));
         pyodide.registerJsModule("a", a);
         pyodide.registerJsModule("a", b);
         pyodide.unregisterJsModule("a");
-        await pyodide.runPythonAsync(`
-            from unittest import TestCase
-            raises = TestCase().assertRaises
-            with raises(ImportError):
-                import a
-        `);
         """
     )
 
+    with pytest.raises(ImportError):
+        import a  # noqa: F401
 
+
+@run_in_pyodide
 def test_unregister_jsmodule_error(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
         try {
             pyodide.unregisterJsModule("doesnotexist");
@@ -745,31 +754,35 @@ def test_jsmod_import_star2(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
+@run_in_pyodide
 def test_nested_import(selenium_standalone):
-    selenium = selenium_standalone
-    assert (
-        selenium.run_js(
-            """
-            self.a = { b : { c : { d : 2 } } };
-            return pyodide.runPython("from js.a.b import c; c.d");
-            """
-        )
-        == 2
-    )
-    selenium.run(
+    import sys
+
+    from pyodide.code import run_js
+
+    run_js(
         """
-        import sys
-        del sys.modules["js.a"]
-        del sys.modules["js.a.b"]
+        self.a = { b : { c : { d : 2 } } };
         """
     )
+
+    from js.a.b import c  # noqa: E402
+
+    assert c.d == 2
+
+    del sys.modules["js.a"]
+    del sys.modules["js.a.b"]
 
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
+@run_in_pyodide
 def test_register_jsmodule_docs_example(selenium_standalone):
-    selenium = selenium_standalone
-    selenium.run_js(
+    import sys
+
+    from pyodide.code import run_js
+
+    run_js(
         """
         let my_module = {
         f : function(x){
@@ -789,36 +802,33 @@ def test_register_jsmodule_docs_example(selenium_standalone):
         pyodide.registerJsModule("my_js_module", my_module);
         """
     )
-    selenium.run(
-        """
-        import my_js_module
-        from my_js_module.submodule import h, c
-        assert my_js_module.f(7) == 50
-        assert h(9) == 80
-        assert c == 2
-        import sys
-        del sys.modules["my_js_module"]
-        del sys.modules["my_js_module.submodule"]
-        """
-    )
+
+    import my_js_module  # noqa: E402
+    from my_js_module.submodule import c, h  # noqa: E402
+
+    assert my_js_module.f(7) == 50
+    assert h(9) == 80
+    assert c == 2
+
+    del sys.modules["my_js_module"]
+    del sys.modules["my_js_module.submodule"]
 
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
+@run_in_pyodide
 def test_register_non_extendable_jsmodule(selenium_standalone):
-    selenium_standalone.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
         pyodide.registerJsModule("x", Object.preventExtensions({aaa: 2, bbb: 7}))
         """
     )
 
-    @run_in_pyodide
-    def check_import_star(selenium):
-        a = {}  # type:ignore[var-annotated]
-        exec("from x import *", a)
-        assert set(a).issuperset({"aaa", "bbb"})
-
-    check_import_star(selenium_standalone)
+    a = {}  # type:ignore[var-annotated]
+    exec("from x import *", a)
+    assert set(a).issuperset({"aaa", "bbb"})
 
 
 @run_in_pyodide
@@ -831,48 +841,46 @@ def test_object_entries_keys_values(selenium):
     assert x.object_values().to_py() == [2, 3, 4]
 
 
+@run_in_pyodide
 def test_mixins_feature_presence(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    def test_object(obj, keys_expected):
+        for [key, expected_val] in keys_expected.object_entries():
+            assert hasattr(obj, key) == expected_val
+
+    run_js(
         """
-        let fields = [
-            [{ [Symbol.iterator](){} }, "__iter__"],
-            [{ next(){} }, "__next__", "__iter__"],
-            [{ length : 1 }, "__len__"],
-            [{ get(){} }, "__getitem__"],
-            [{ set(){} }, "__setitem__", "__delitem__"],
-            [{ has(){} }, "__contains__"],
-            [{ then(){} }, "__await__"]
-        ];
+        (test_object) => {
+            let fields = [
+                [{ [Symbol.iterator](){} }, "__iter__"],
+                [{ next(){} }, "__next__", "__iter__"],
+                [{ length : 1 }, "__len__"],
+                [{ get(){} }, "__getitem__"],
+                [{ set(){} }, "__setitem__", "__delitem__"],
+                [{ has(){} }, "__contains__"],
+                [{ then(){} }, "__await__"]
+            ];
 
-        let test_object = pyodide.runPython(`
-            from js import console
-            def test_object(obj, keys_expected):
-                for [key, expected_val] in keys_expected.object_entries():
-                    actual_val = hasattr(obj, key)
-                    if actual_val != expected_val:
-                        console.log(obj)
-                        console.log(key)
-                        console.log(actual_val)
-                        assert False
-            test_object
-        `);
-
-        for(let flags = 0; flags < (1 << fields.length); flags ++){
-            let o = {};
-            let keys_expected = {};
-            for(let [idx, [obj, ...keys]] of fields.entries()){
-                if(flags & (1<<idx)){
-                    Object.assign(o, obj);
+            for(let flags = 0; flags < (1 << fields.length); flags ++){
+                let o = {};
+                let keys_expected = {};
+                for(let [idx, [obj, ...keys]] of fields.entries()){
+                    if(flags & (1<<idx)){
+                        Object.assign(o, obj);
+                    }
+                    for(let key of keys){
+                        keys_expected[key] = keys_expected[key] || !!(flags & (1<<idx));
+                    }
                 }
-                for(let key of keys){
-                    keys_expected[key] = keys_expected[key] || !!(flags & (1<<idx));
+                if (keys_expected["__len__"] && keys_expected["__iter__"] && !keys_expected["__next__"]) {
+                    keys_expected["__getitem__"] = true;
                 }
+                test_object(o, keys_expected);
             }
-            test_object(o, keys_expected);
         }
-        test_object.destroy();
         """
-    )
+    )(test_object)
 
 
 def test_mixins_calls(selenium):
@@ -1324,11 +1332,9 @@ def test_very_large_length(selenium, n):
     with raises:
         len(o)
 
-    # 1. Set toStringTag to NodeList to force JsProxy to feature detect this object
-    # as an array
-    # 2. Return a very large length
-    # 3. JsProxy_subscript_array should successfully handle this and propagate the error.
-    a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
+    # Return a very large length. JsProxy_subscript_array should successfully
+    # handle this and propagate the error.
+    a = run_js(f"({{[Symbol.iterator](){{}}, length: {n}}})")
     with raises:
         a[-1]
 
@@ -1350,11 +1356,9 @@ def test_negative_length(selenium, n):
     with raises:
         len(o)
 
-    # 1. Set toStringTag to NodeList to force JsProxy to feature detect this object
-    # as an array
-    # 2. Return a negative length
-    # 3. JsProxy_subscript_array should successfully handle this and propagate the error.
-    a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
+    # Return a negative length. JsProxy_subscript_array should successfully
+    # handle this and propagate the error.
+    a = run_js(f"({{[Symbol.iterator](){{}}, length: {n}}})")
     with raises:
         a[-1]
 
@@ -1603,12 +1607,34 @@ def test_html_array(selenium):
         del x[0]
 
 
+@run_in_pyodide
+def test_array_like_sequence_iteration_fail(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    l = run_js("({[Symbol.iterator](){}, length: 5})")
+    match = r"TypeError.*[Ii]terator"
+    with pytest.raises(JsException, match=match):
+        l + [1, 2, 3]
+
+    with pytest.raises(JsException, match=match):
+        l * 2
+
+    with pytest.raises(JsException, match=match):
+        l += [1, 2, 3]
+
+    with pytest.raises(JsException, match=match):
+        l *= 2
+
+
 @pytest.mark.parametrize(
     "sequence_converter",
     [
         "(x) => x",
         "(x) => new Uint8Array(x)",
-        "(x) => Object.create({[Symbol.toStringTag] : 'NodeList'}, Object.getOwnPropertyDescriptors(x))",
+        "(x) => Object.create({[Symbol.iterator]: Array.prototype[Symbol.iterator]}, Object.getOwnPropertyDescriptors(x))",
     ],
 )
 @pytest.mark.requires_dynamic_linking
@@ -1620,7 +1646,8 @@ def test_array_sequence_methods(selenium, sequence_converter):
     from pyodide.code import run_js
     from pyodide.ffi import to_js
 
-    x = to_js([77, 65, 23])
+    pyl = [77, 65, 23]
+    x = to_js(pyl)
     l = run_js(sequence_converter)(x)
     from ctypes import c_bool, c_ssize_t, py_object, pythonapi
 
@@ -1636,7 +1663,7 @@ def test_array_sequence_methods(selenium, sequence_converter):
     assert pythonapi.PySequence_Length(l) == 3
     assert pythonapi.PySequence_GetItem(l, 0) == 77
 
-    node_list = "NodeList" in str(l)
+    node_list = "Object" in str(l)
     typed_array = ArrayBuffer.isView(l)
     is_mutable = not node_list
     supports_del = not (node_list or typed_array)
@@ -1644,8 +1671,11 @@ def test_array_sequence_methods(selenium, sequence_converter):
     if typed_array:
         with raises(TypeError, match=r"unsupported operand type\(s\) for \+"):
             l + [4, 5, 6]
+        with raises(TypeError, match=r"unsupported operand type\(s\) for \*"):
+            l * 2
     else:
-        assert (l + [4, 5, 6]).to_py() == [77, 65, 23, 4, 5, 6]
+        assert (l + [4, 5, 6]).to_py() == pyl + [4, 5, 6]
+        assert (l * 2).to_py() == pyl * 2
 
     if is_mutable:
         pythonapi.PySequence_SetItem(l, 1, 29)
@@ -1663,6 +1693,15 @@ def test_array_sequence_methods(selenium, sequence_converter):
         with raises(TypeError, match="does ?n[o']t support item deletion"):
             pythonapi.PySequence_DelItem(l, 1)
         assert list(l) == [77, 65, 23]
+
+    # Test slicing
+    if not typed_array:
+        pyl = [77, 65, 23, 1, 9, 2, 7, -1, 73, 5, 3, 4, 11]
+        x = to_js(pyl)
+        l = run_js(sequence_converter)(x)
+        assert list(l[:]) == pyl
+        assert list(l[3:7]) == pyl[3:7]
+        assert list(l[::2]) == pyl[::2]
 
 
 @run_in_pyodide
@@ -2925,3 +2964,121 @@ def test_bind_self_reference(selenium):
     assert a.a._sig == A
     assert a.a.a._sig == A
     assert a.f()._sig == A
+
+
+@run_in_pyodide
+def test_jsproxy_no_error_this(selenium):
+    from pyodide.code import run_js
+
+    # thisArg should be null and not JS_ERROR
+    test = run_js(
+        """
+        () => new Proxy(() => 1, {
+            apply(target, thisArg, argumentsList) {
+                return thisArg === undefined;
+            }
+        })
+        """
+    )
+    assert test()()
+
+
+@pytest.mark.xfail_browsers(safari="Symbol.dispose not supported in Safari")
+@run_in_pyodide
+def test_jsproxy_context_manager(selenium):
+    from pyodide.code import run_js
+
+    f = run_js(
+        """
+        (function f() {
+            return {
+                x: 9,
+                closed: false,
+                [Symbol.dispose] () {
+                    this.closed = true;
+                }
+            };
+        })
+        """
+    )
+    with f() as o:
+        assert o.x == 9
+        assert not o.closed
+    assert o.closed
+
+    try:
+        with f() as o:
+            assert o.x == 9
+            assert not o.closed
+            raise Exception("oops")
+    except Exception:
+        pass
+    assert o.closed
+
+
+@pytest.mark.xfail_browsers(safari="Symbol.asyncDispose not supported in Safari")
+@run_in_pyodide
+async def test_jsproxy_async_context_manager(selenium):
+    from pyodide.code import run_js
+
+    f = run_js(
+        """
+        (function f() {
+            return {
+                x: 9,
+                closed: false,
+                async [Symbol.asyncDispose] () {
+                    await sleep(100);
+                    this.closed = true;
+                }
+            };
+        })
+        """
+    )
+    async with f() as o:
+        assert o.x == 9
+        assert not o.closed
+    assert o.closed
+
+    try:
+        async with f() as o:
+            assert o.x == 9
+            assert not o.closed
+            raise Exception("oops")
+    except Exception:
+        pass
+    assert o.closed
+
+
+@pytest.mark.xfail_browsers(safari="Symbol.asyncDispose not supported in Safari")
+@run_in_pyodide
+async def test_jsproxy_async_dispose_returns_synchronously(selenium):
+    from pyodide.code import run_js
+
+    # Make sure it works even when asyncDispose returns synchronously.
+    f = run_js(
+        """
+        (function f() {
+            return {
+                x: 9,
+                closed: false,
+                [Symbol.asyncDispose] () {
+                    this.closed = true;
+                }
+            };
+        })
+        """
+    )
+    async with f() as o:
+        assert o.x == 9
+        assert not o.closed
+    assert o.closed
+
+    try:
+        async with f() as o:
+            assert o.x == 9
+            assert not o.closed
+            raise Exception("oops")
+    except Exception:
+        pass
+    assert o.closed

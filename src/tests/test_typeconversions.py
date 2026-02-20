@@ -236,7 +236,7 @@ def test_nan_conversions(selenium):
 
 @given(n=st.integers())
 @std_hypothesis_settings
-def test_bigint_conversions(selenium_module_scope, n):
+def test_bigint_conversions1(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
         h = hex(n)
         selenium.run_js(f"self.h = {h!r};")
@@ -254,11 +254,15 @@ def test_bigint_conversions(selenium_module_scope, n):
             }
             pyodide.runPython(`
                 from js import n, h
+                from pyodide.ffi import JsBigInt
+
+                assert isinstance(n, JsBigInt)
                 n2 = int(h, 16)
                 assert n == n2
             `);
             let n2 = pyodide.globals.get("n2");
             let n3 = Number(n2);
+            let n4 = pyodide.globals.get("n");
             if(Number.isSafeInteger(n3)){
                 assert(() => typeof n2 === "number");
                 assert(() => n2 === Number(n));
@@ -266,6 +270,8 @@ def test_bigint_conversions(selenium_module_scope, n):
                 assert(() => typeof n2 === "bigint");
                 assert(() => n2 === n);
             }
+            assert(() => typeof n4 === "bigint");
+            assert(() => n4 === n);
             """
         )
 
@@ -277,7 +283,7 @@ def test_bigint_conversions(selenium_module_scope, n):
     )
 )
 @std_hypothesis_settings
-def test_big_int_conversions2(selenium_module_scope, n):
+def test_bigint_conversions2(selenium_module_scope, n):
     @run_in_pyodide
     def main(selenium, s):
         import json
@@ -309,12 +315,13 @@ def test_big_int_conversions2(selenium_module_scope, n):
     exp=st.integers(min_value=1, max_value=10),
 )
 @std_hypothesis_settings
-def test_big_int_conversions3(selenium_module_scope, n, exp):
+def test_bigint_conversions3(selenium_module_scope, n, exp):
     @run_in_pyodide
     def main(selenium, s):
         import json
 
         from pyodide.code import run_js
+        from pyodide.ffi import JsBigInt
 
         x_py = json.loads(s)
         x_js = run_js(
@@ -328,6 +335,13 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
             """
         )(x_py)
         assert x1 == x2
+
+        x_py_rt = run_js("(x) => x")(x_py)
+        assert x_py_rt == x_py
+        if x_py > 2**53:
+            assert isinstance(x_py_rt, JsBigInt)
+        else:
+            assert isinstance(x_py_rt, int)
 
         check = run_js(
             """
@@ -509,11 +523,11 @@ def test_python2js4(selenium):
                 (proxy) => {
                     let typename = proxy.type;
                     let x = proxy.toJs();
-                    return [proxy.type, x.constructor.name, x.get(42)];
+                    return [proxy.type, x.constructor.name, x[42]];
                 }
                 """
         )({42: 64})
-    ) == ["dict", "LiteralMap", 64]
+    ) == ["dict", "Object", 64]
 
 
 @run_in_pyodide
@@ -808,6 +822,19 @@ def test_js2python_null(selenium):
     assert run_js("new Map([['a', null]])")["a"] is jsnull
     assert run_js("[null, null, null]").to_py() == [jsnull, jsnull, jsnull]
     assert run_js("new Map([['a', null]])").to_py() == {"a": jsnull}
+
+
+@run_in_pyodide
+def test_json_dumps_null(selenium):
+    import json
+
+    from pyodide.ffi import jsnull
+
+    assert json.dumps(jsnull) == "null"
+    assert (
+        json.dumps([jsnull, jsnull, {jsnull: 1, 1: jsnull}])
+        == '[null, null, {"null": 1, "1": null}]'
+    )
 
 
 @run_in_pyodide
@@ -1144,9 +1171,11 @@ def test_tojs2(selenium):
 
     assert run_js("(o) => Array.isArray(o.toJs())")(o)
     serialized = run_js("(o) => JSON.stringify(o.toJs())")(o)
-    assert json.loads(serialized) == [[1, 2], [3, 4], [5, 6], {"a": 1}]
-    serialized = run_js("(o) => JSON.stringify(Array.from(o.toJs()[3].entries()))")(o)
-    assert json.loads(serialized) == [["a", 1], [2, 3], [4, 9]]
+    assert json.loads(serialized) == [[1, 2], [3, 4], [5, 6], {"a": 1, "2": 3, "4": 9}]
+    serialized = run_js(
+        "(o) => JSON.stringify(Array.from(Object.entries(o.toJs()[3])))"
+    )(o)
+    assert sorted(json.loads(serialized)) == [["2", 3], ["4", 9], ["a", 1]]
 
 
 def test_tojs4(selenium):
@@ -1185,47 +1214,56 @@ def test_tojs5(selenium):
     )
 
 
+@run_in_pyodide
 def test_tojs6(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    a = [1, 2, 3, 4, 5]
+    b = [a, a, a, a, a]
+    respy = [b, b, b, b, b]
+
+    run_js(
         """
-        let respy = pyodide.runPython(`
-            a = [1, 2, 3, 4, 5]
-            b = [a, a, a, a, a]
-            [b, b, b, b, b]
-        `);
-        let total_refs = pyodide._module._hiwire_num_refs();
-        let res = respy.toJs();
-        let new_total_refs = pyodide._module._hiwire_num_refs();
-        respy.destroy();
-        assert(() => total_refs === new_total_refs);
-        assert(() => res[0] === res[1]);
-        assert(() => res[0][0] === res[1][1]);
-        assert(() => res[4][0] === res[1][4]);
+        (respy) => {
+            let total_refs = pyodide._module._hiwire_num_refs();
+            let res = respy.toJs();
+            let new_total_refs = pyodide._module._hiwire_num_refs();
+            assert(() => total_refs === new_total_refs);
+            assert(() => res[0] === res[1]);
+            assert(() => res[0][0] === res[1][1]);
+            assert(() => res[4][0] === res[1][4]);
+        }
         """
-    )
+    )(respy)
 
 
+@run_in_pyodide
 def test_tojs7(selenium):
-    selenium.run_js(
+    from typing import Any
+
+    from pyodide.code import run_js
+
+    # Create complex recursive structure with mixed types
+    a: list[Any] = [["b"]]
+    b: list[Any] = [1, 2, 3, a[0]]
+    a[0].append(b)
+    a.append(b)
+    respy = a
+
+    run_js(
         """
-        let respy = pyodide.runPython(`
-            a = [["b"]]
-            b = [1,2,3, a[0]]
-            a[0].append(b)
-            a.append(b)
-            a
-        `);
-        let total_refs = pyodide._module._hiwire_num_refs();
-        let res = respy.toJs();
-        let new_total_refs = pyodide._module._hiwire_num_refs();
-        respy.destroy();
-        assert(() => total_refs === new_total_refs);
-        assert(() => res[0][0] === "b");
-        assert(() => res[1][2] === 3);
-        assert(() => res[1][3] === res[0]);
-        assert(() => res[0][1] === res[1]);
+        (respy) => {
+            let total_refs = pyodide._module._hiwire_num_refs();
+            let res = respy.toJs();
+            let new_total_refs = pyodide._module._hiwire_num_refs();
+            assert(() => total_refs === new_total_refs);
+            assert(() => res[0][0] === "b");
+            assert(() => res[1][2] === 3);
+            assert(() => res[1][3] === res[0]);
+            assert(() => res[0][1] === res[1]);
+        }
         """
-    )
+    )(respy)
 
 
 @pytest.mark.skip_pyproxy_check
@@ -1243,38 +1281,32 @@ def test_tojs8(selenium):
         to_js({(2, 2)})
 
 
+@run_in_pyodide
 def test_tojs9(selenium):
-    assert set(
-        selenium.run_js(
-            """
-            return Array.from(pyodide.runPython(`
-                from pyodide.ffi import to_js
-                to_js({ 1, "1" })
-            `).values())
-            """
-        )
-    ) == {1, "1"}
+    import pytest
 
-    assert dict(
-        selenium.run_js(
-            """
-            return Array.from(pyodide.runPython(`
-                from pyodide.ffi import to_js
-                to_js({ 1 : 7, "1" : 9 })
-            `).entries())
-            """
-        )
-    ) == {1: 7, "1": 9}
+    from pyodide.code import run_js
+    from pyodide.ffi import ConversionError, to_js
+
+    result1 = to_js({1, "1"})
+    assert set(run_js("(x) => Array.from(x.values())")(result1)) == {1, "1"}
+
+    msg = "Key collision when converting Python dictionary to JavaScript. Key: '1'"
+    with pytest.raises(ConversionError, match=msg):
+        to_js({1: 7, "1": 9})
 
 
-def test_tojs_literalmap(selenium):
+def test_tojs_literalmap(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
     selenium.run_js(
         """
+        let pyodide = await loadPyodide({toJsLiteralMap: true});
         const res = pyodide.runPython(`
             from pyodide.ffi import to_js
-            to_js({ "a" : 6, "b" : 10, 6 : 9, "get": 77, True: 90})
-        `);
 
+            res = to_js({"a": 6, "b": 10, 6: 9, "get": 77, True: 90})
+            res
+        `);
         assert(() => res.constructor.name === "LiteralMap");
         assert(() => "a" in res);
         assert(() => "b" in res);
@@ -1392,6 +1424,9 @@ def test_to_py4(selenium, obj, msg):
 
     with pytest.raises((ConversionError, JsException), match=msg):
         a.to_py()
+
+    with pytest.raises((ConversionError, JsException), match=msg):
+        a = run_js(f"pyodide.toPy(new {obj})")
 
 
 @run_in_pyodide
@@ -2191,3 +2226,246 @@ def test_js_callable_not_function(selenium):
         """
     )
     assert list(o.nonFuncCallable(1, 2, 3)) == [o, 1, 2, 3]
+
+
+@run_in_pyodide
+def test_js_bigint(selenium):
+    from pytest import raises
+
+    from pyodide.ffi import JsBigInt
+
+    m1 = JsBigInt(-1)
+    p1 = JsBigInt(1)
+    p13 = JsBigInt(13)
+    p21 = JsBigInt(21)
+    p31 = JsBigInt(31)
+
+    # Unary ops
+    # abs
+    assert isinstance(abs(m1), JsBigInt)
+    assert isinstance(abs(p1), JsBigInt)
+    assert m1 == -1
+    assert abs(m1) == 1
+    assert abs(p1) == 1
+
+    # plus
+    assert isinstance(+m1, JsBigInt)
+    assert +m1 == m1
+    assert +m1 == -1
+
+    # minus
+    assert isinstance(-m1, JsBigInt)
+    assert -m1 == p1
+    assert -m1 == 1
+
+    # invert
+    assert isinstance(~p21, JsBigInt)
+    assert ~p21 == ~21
+
+    # Binary ops
+    # comparison
+    assert m1 < p1
+    assert -1 < p1
+    assert 0.8 < p1
+    assert p1 < 2
+    assert p1 < 2.1
+
+    assert m1 <= p1
+    assert -1 <= p1
+    assert 0.8 <= p1
+    assert p1 <= 2
+    assert p1 <= 2.1
+    assert not (m1 > p1)
+    assert p1 == 1.0
+
+    # plus
+    assert isinstance(m1 + p1, JsBigInt)
+    assert isinstance((-1) + p1, int)
+    assert isinstance(m1 + 1, int)
+    assert m1 + p1 == 0
+    assert (-1) + p1 == 0
+    assert m1 + 1 == 0
+
+    assert isinstance(m1 + 0.3, float)
+    assert isinstance(0.3 + m1, float)
+    assert m1 + 0.3 == (-1) + 0.3
+    assert 0.3 + m1 == 0.3 + (-1)
+
+    # minus
+    assert isinstance(m1 - p1, JsBigInt)
+    assert isinstance((-1) - p1, int)
+    assert isinstance(m1 - 1, int)
+    assert m1 - p1 == -2
+    assert (-1) - p1 == -2
+    assert m1 - 1 == -2
+
+    assert isinstance(m1 - 0.3, float)
+    assert isinstance(0.3 - m1, float)
+    assert m1 - 0.3 == (-1) - 0.3
+    assert 0.3 - m1 == 0.3 - (-1)
+
+    # bitwise and
+    assert isinstance(p13 & p21, JsBigInt)
+    assert isinstance(p13 & 21, int)
+    assert isinstance(13 & p21, int)
+    assert p13 & p21 == 5
+    assert p13 & 21 == 5
+    assert 13 & p21 == 5
+
+    with raises(TypeError, match="'JsBigInt' and 'float'"):
+        p13 & 0.2  # type: ignore[operator]
+
+    with raises(TypeError, match="'float' and 'JsBigInt'"):
+        0.2 & p13  # type: ignore[operator]
+
+    # bitwise or
+    assert isinstance(p21 | p13, JsBigInt)
+    assert isinstance(p21 | 13, int)
+    assert isinstance(21 | p13, int)
+    assert p21 | p13 == 29
+    assert p21 | 13 == 29
+    assert 21 | p13 == 29
+
+    with raises(TypeError, match="'JsBigInt' and 'float'"):
+        p13 | 0.2  # type: ignore[operator]
+
+    with raises(TypeError, match="'float' and 'JsBigInt'"):
+        0.2 | p13  # type: ignore[operator]
+
+    # bitwise xor
+    assert isinstance(p21 ^ p13, JsBigInt)
+    assert isinstance(p21 ^ 13, int)
+    assert isinstance(21 ^ p13, int)
+    assert p21 ^ p13 == 24
+    assert p21 ^ 13 == 24
+    assert 21 ^ p13 == 24
+
+    with raises(TypeError, match="'JsBigInt' and 'float'"):
+        p13 ^ 0.2  # type: ignore[operator]
+
+    with raises(TypeError, match="'float' and 'JsBigInt'"):
+        0.2 ^ p13  # type: ignore[operator]
+
+    # left shift
+    assert isinstance(p21 << p13, JsBigInt)
+    assert isinstance(p21 << 13, JsBigInt)
+    assert isinstance(21 << p13, int)
+    assert p21 << p13 == 21 << 13
+    assert p21 << 13 == 21 << 13
+    assert 21 << p13 == 21 << 13
+
+    with raises(TypeError, match="'JsBigInt' and 'float'"):
+        p13 << 0.2  # type: ignore[operator]
+
+    with raises(TypeError, match="'float' and 'JsBigInt'"):
+        0.2 << p13  # type: ignore[operator]
+
+    # right shift
+    assert isinstance(p21 >> p13, JsBigInt)
+    assert isinstance(p21 >> 13, JsBigInt)
+    assert isinstance(21 >> p13, int)
+    assert p21 >> p13 == 21 >> 13
+    assert p21 >> 13 == 21 >> 13
+    assert 21 >> p13 == 21 >> 13
+
+    with raises(TypeError, match="'JsBigInt' and 'float'"):
+        p13 >> 0.2  # type: ignore[operator]
+
+    with raises(TypeError, match="'float' and 'JsBigInt'"):
+        0.2 >> p13  # type: ignore[operator]
+
+    # floor division
+    assert isinstance(p21 // p13, JsBigInt)
+    assert isinstance(21 // p13, int)
+    assert isinstance(p21 // 13, JsBigInt)
+    assert p21 // p13 == 1
+    assert 21 // p13 == 1
+    assert p21 // 13 == 1
+
+    # Surprisingly, 21 // 1.2 is a float even though floordiv always returns an
+    # int.
+    assert isinstance(p21 // 1.2, float)
+    assert p21 // 1.2 == 21 // 1.2
+
+    assert isinstance(29.7 // p13, float)
+    assert 29.7 // p13 == 29.7 // 13
+
+    # Division
+    assert isinstance(p21 / p13, float)
+    assert isinstance(p21 / 13, float)
+    assert isinstance(21 / p13, float)
+    assert p21 / p13 == 21 / 13
+    assert p21 / 13 == 21 / 13
+    assert 21 / p13 == 21 / 13
+
+    assert isinstance(p21 / 1.2, float)
+    assert p21 / 1.2 == 21 / 1.2
+
+    assert isinstance(29.7 / p13, float)
+    assert 29.7 / p13 == 29.7 / 13
+
+    # Modulus
+    assert isinstance(p21 % p13, JsBigInt)
+    assert isinstance(21 % p13, int)
+    assert isinstance(p21 % 13, JsBigInt)
+    assert p21 % p13 == 8
+    assert 21 % p13 == 8
+    assert p21 % 13 == 8
+
+    assert isinstance(p21 % 0.57, float)
+    assert p21 % 0.57 == 21 % 0.57
+
+    assert isinstance(49.3 % p21, float)
+    assert 49.3 % p21 == 49.3 % 21
+
+    # Power
+    assert isinstance(p21**p13, JsBigInt)
+    assert isinstance(p21**13, JsBigInt)
+    assert isinstance(21**p13, int)
+    assert p21**p13 == 21**13
+    assert p21**13 == 21**13
+    assert 21**p13 == 21**13
+
+    assert isinstance(p21**m1, float)
+    assert isinstance(p21**-1, float)
+    assert isinstance(21**m1, float)
+    assert p21**m1 == 21**-1
+    assert p21**-1 == 21**-1
+    assert 21**m1 == 21**-1
+
+    assert isinstance(1.9**p21, float)
+    assert 1.9**p21 == 1.9**21
+    assert isinstance(p21**1.9, float)
+    assert p21**1.9 == 21**1.9
+
+    # Ternary power
+    assert isinstance(pow(p21, m1, p31), JsBigInt)
+    assert isinstance(pow(p21, m1, 31), JsBigInt)
+    assert isinstance(pow(p21, -1, p31), JsBigInt)
+    assert isinstance(pow(p21, -1, 31), JsBigInt)
+
+    assert isinstance(pow(21, m1, p31), int)
+    assert isinstance(pow(21, m1, 31), int)
+    assert isinstance(pow(21, -1, p31), int)
+
+    assert pow(p21, m1, p31) == pow(21, -1, 31)
+    assert pow(p21, m1, 31) == pow(21, -1, 31)
+    assert pow(p21, -1, p31) == pow(21, -1, 31)
+    assert pow(p21, -1, 31) == pow(21, -1, 31)
+    assert pow(21, m1, p31) == pow(21, -1, 31)
+    assert pow(21, m1, 31) == pow(21, -1, 31)
+    assert pow(21, -1, p31) == pow(21, -1, 31)
+
+    msg = r"pow\(\) 3rd argument not allowed unless all arguments are integers"
+    with raises(TypeError, match=msg):
+        pow(p21, 0.5, p31)  # type:ignore[misc]
+
+
+@run_in_pyodide
+def test_js_bigint_construct_typed_array(selenium):
+    from js import BigInt64Array
+    from pyodide.ffi import JsBigInt
+
+    # Without JsBigInt we can't construct a BigInt64Array
+    a = BigInt64Array.new([JsBigInt(x) for x in range(1, 10, 2)])
+    assert list(a) == list(range(1, 10, 2))

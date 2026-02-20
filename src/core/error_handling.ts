@@ -55,12 +55,10 @@ class CppException extends Error {
     super(msg);
     this.ty = ty;
   }
-}
-Object.defineProperty(CppException.prototype, "name", {
-  get() {
+  get name() {
     return `${this.constructor.name} ${this.ty}`;
-  },
-});
+  }
+}
 
 const WasmException = (WebAssembly as any).Exception;
 const isWasmException = (e: any) => e instanceof WasmException;
@@ -178,19 +176,19 @@ API.maybe_fatal_error = function (e: any) {
 let stderr_chars: number[] = [];
 API.capture_stderr = function () {
   stderr_chars = [];
-  FS.createDevice("/dev", "capture_stderr", null, (e: number) =>
+  Module.FS.createDevice("/dev", "capture_stderr", null, (e: number) =>
     stderr_chars.push(e),
   );
-  FS.closeStream(2 /* stderr */);
+  Module.FS.closeStream(2 /* stderr */);
   // open takes the lowest available file descriptor. Since 0 and 1 are occupied by stdin and stdout it takes 2.
-  FS.open("/dev/capture_stderr", 1 /* O_WRONLY */);
+  Module.FS.open("/dev/capture_stderr", 1 /* O_WRONLY */);
 };
 
 API.restore_stderr = function () {
-  FS.closeStream(2 /* stderr */);
-  FS.unlink("/dev/capture_stderr");
+  Module.FS.closeStream(2 /* stderr */);
+  Module.FS.unlink("/dev/capture_stderr");
   // open takes the lowest available file descriptor. Since 0 and 1 are occupied by stdin and stdout it takes 2.
-  FS.open("/dev/stderr", 1 /* O_WRONLY */);
+  Module.FS.open("/dev/stderr", 1 /* O_WRONLY */);
   return UTF8ArrayToString(new Uint8Array(stderr_chars));
 };
 
@@ -353,6 +351,7 @@ export class _PropagatePythonError extends Error {
     );
   }
 }
+Module._PropagatePythonError = _PropagatePythonError as any;
 function setName(errClass: any) {
   Object.defineProperty(errClass.prototype, "name", {
     value: errClass.name,

@@ -11,8 +11,6 @@ from pathlib import Path
 from typing import Any
 from unittest import mock
 
-import micropip
-
 panels_add_bootstrap_css = False
 
 # -- Project information -----------------------------------------------------
@@ -36,6 +34,10 @@ def ignore_typevars():
         for typevar in PY_TYPEVARS_TO_IGNORE
     )
     nitpick_ignore.extend(("js:func", typevar) for typevar in JS_TYPEVARS_TO_IGNORE)
+
+    # sphinx_autodoc_typehints renders X | Y union syntax as typing.Union internally,
+    # but intersphinx cannot resolve typing.Union as a py:data reference.
+    nitpick_ignore.append(("py:data", "typing.Union"))
 
 
 ignore_typevars()
@@ -80,10 +82,9 @@ versionwarning_message = (
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
 
-micropip_version = micropip.__version__
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3.13", None),
-    "micropip": (f"https://micropip.pyodide.org/en/v{micropip_version}/", None),
+    "micropip": ("https://micropip.pyodide.org/en/stable/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
 }
 
@@ -239,7 +240,7 @@ def write_console_html(app):
     os.makedirs(app.outdir, exist_ok=True)
     os.makedirs("../dist", exist_ok=True)
     res = subprocess.check_output(
-        ["make", "-C", "..", "dist/console.html"],
+        ["make", "-C", "..", "dist/console.html", "dist/console-v2.html"],
         env=env,
         stderr=subprocess.STDOUT,
         encoding="utf-8",
@@ -250,21 +251,34 @@ def write_console_html(app):
     console_html_lines = (
         Path("../dist/console.html").read_text().splitlines(keepends=True)
     )
-    for idx, line in enumerate(list(console_html_lines)):
-        if "</style>" in line:
-            # insert the analytics script after the end of the inline CSS block
-            console_html_lines.insert(
-                idx,
-                "<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{\"token\": \"4405a86c36a84efca5dbde1b25edd153\"}'></script>\n",
-            )
-            break
-    else:
-        raise ValueError("Could not find a CSS block in the <head> section")
+    console_v2_html_lines = (
+        Path("../dist/console-v2.html").read_text().splitlines(keepends=True)
+    )
+
+    def insert_analytics_script(html_lines):
+        for idx, line in enumerate(list(html_lines)):
+            if "</style>" in line:
+                # insert the analytics script after the end of the inline CSS block
+                html_lines.insert(
+                    idx + 1,
+                    "    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{\"token\": \"4405a86c36a84efca5dbde1b25edd153\"}'></script>\n",
+                )
+                break
+        else:
+            raise ValueError("Could not find a CSS block in the <head> section")
+
+    insert_analytics_script(console_html_lines)
+    insert_analytics_script(console_v2_html_lines)
+
     output_path = Path(app.outdir) / "console.html"
     output_path.write_text("".join(console_html_lines))
 
+    v2_output_path = Path(app.outdir) / "console-v2.html"
+    v2_output_path.write_text("".join(console_v2_html_lines))
+
     def remove_console_html():
         Path("../dist/console.html").unlink(missing_ok=True)
+        Path("../dist/console-v2.html").unlink(missing_ok=True)
 
     atexit.register(remove_console_html)
 
@@ -342,7 +356,7 @@ def global_replace(app, docname, source):
 always_document_param_types = True
 
 
-def typehints_formatter(annotation, config):
+def typehints_formatter(annotation, config):  # noqa: PLR0911
     """Adjust the rendering of various types that sphinx_autodoc_typehints mishandles"""
     from sphinx_autodoc_typehints import (
         get_annotation_class_name,
@@ -363,20 +377,28 @@ def typehints_formatter(annotation, config):
     if full_name == "ast.Module":
         return "`Module <https://docs.python.org/3/library/ast.html#module-ast>`_"
     # TODO: perhaps a more consistent way to handle JS xrefs / type annotations?
-    if full_name == "pyodide.http.AbortController":
+    if full_name == "pyodide.http._pyfetch.AbortController":
         return ":js:class:`AbortController`"
-    if full_name == "pyodide.http.AbortSignal":
+    if full_name == "pyodide.http._pyfetch.AbortSignal":
         return ":js:class:`AbortSignal`"
+    if full_name == "pyodide.http._pyfetch.Request":
+        return ":js:class:`Request`"
     return None
 
 
 def setup(app):
+    FILES_TO_IGNORE = ["playwright.config.ts"]
+
     sys.path = extra_sys_path_dirs + sys.path
     app.add_config_value("global_replacements", {}, True)
     app.add_config_value("CDN_URL", "", True)
     files = []
     for dir in ["core", "js"]:
-        files += [str(x) for x in (Path("../src") / dir).glob("*.ts")]
+        files += [
+            str(x)
+            for x in (Path("../src") / dir).glob("*.ts")
+            if x.name not in FILES_TO_IGNORE
+        ]
     app.config.js_source_path = files
     app.connect("source-read", global_replace)
 

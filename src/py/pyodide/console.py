@@ -47,11 +47,11 @@ class _Stream(TextIOBase):
         self._errors = errors
 
     @property
-    def encoding(self):
+    def encoding(self):  # type: ignore[override]
         return self._encoding
 
     @property
-    def errors(self):
+    def errors(self):  # type: ignore[override]
         return self._errors
 
     @property
@@ -236,7 +236,21 @@ COMPLETE: ConsoleFutureStatus = "complete"
 
 
 class ConsoleFuture(Future[Any]):
-    """A future with extra fields used as the return value for :py:class:`Console` apis."""
+    # TODO: Figure out proper SKIPIF syntax for Firefox and Safari
+    """
+    A future with extra fields used as the return value for :py:class:`Console` APIs.
+
+    Example:
+
+        >>> from pyodide.console import Console # doctest: +SKIP
+        >>> console = Console() # doctest: +SKIP
+        >>> future = console.push("print('Hello, World!')") # doctest: +SKIP
+        >>> print(future.syntax_check) # doctest: +SKIP
+        complete # doctest: +SKIP
+        >>> import asyncio # doctest: +SKIP
+        >>> result = asyncio.run(future) # doctest: +SKIP
+        Hello, World! # doctest: +SKIP
+    """
 
     syntax_check: ConsoleFutureStatus
     """
@@ -577,7 +591,20 @@ class Console:
 
 
 class PyodideConsole(Console):
-    """A subclass of :py:class:`Console` that uses :js:func:`pyodide.loadPackagesFromImports` before running the code."""
+    # TODO: Figure out proper SKIPIF syntax for Firefox and Safari
+    """
+    A subclass of :py:class:`Console` that uses :js:func:`pyodide.loadPackagesFromImports`
+    before running the code.
+
+    Example:
+
+        >>> from pyodide.console import PyodideConsole # doctest: +SKIP
+        >>> console = PyodideConsole() # doctest: +SKIP
+        >>> # This will automatically load numpy before execution
+        >>> future = console.push("import numpy as np; print(np.array([1, 2, 3]))") # doctest: +SKIP
+        >>> print(future.syntax_check) # doctest: +SKIP
+        complete # doctest: +SKIP
+    """
 
     async def runcode(self, source: str, code: CodeRunner) -> ConsoleFuture:
         """Execute a code object.

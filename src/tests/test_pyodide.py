@@ -9,7 +9,6 @@ from typing import Any
 
 import pytest
 from pytest_pyodide import run_in_pyodide
-from pytest_pyodide.server import spawn_web_server
 
 from conftest import DIST_PATH, PYODIDE_ROOT, strip_assertions_stderr
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
@@ -278,12 +277,9 @@ def test_relaxed_call():
     def f4(a, /, *args, b=7):
         return [a, args, b]
 
-    with pytest.raises(
-        TypeError,
-        match=re.escape(
-            "test_relaxed_call.<locals>.f4() missing 1 required positional argument: 'a'"
-        ),
-    ):
+    # Since Python 3.13.3, the TypeError message for missing positional-only arguments has changed.
+    # See: https://github.com/python/cpython/pull/130192
+    with pytest.raises(TypeError, match=r"missing .* argument: 'a'"):
         relaxed_call(f4, a=2, b=7)
 
     def f5(a, *args, b=7, **kwargs):
@@ -343,12 +339,7 @@ def test_relaxed_wrap():
     def f4(a, /, *args, b=7):
         return [a, args, b]
 
-    with pytest.raises(
-        TypeError,
-        match=re.escape(
-            "test_relaxed_wrap.<locals>.f4() missing 1 required positional argument: 'a'"
-        ),
-    ):
+    with pytest.raises(TypeError, match=r"missing .* argument: 'a'"):
         f4(a=2, b=7)
 
     @relaxed_wrap
@@ -914,7 +905,7 @@ def test_create_proxy_roundtrip(selenium):
     assert o.f.unwrap() is f
     o.f.destroy()
     o.f = create_proxy(f, roundtrip=False)
-    assert o.f is f  # type: ignore[comparison-overlap]
+    assert o.f is f
     run_js("(o) => { o.f.destroy(); }")(o)
 
 
@@ -1035,6 +1026,8 @@ def test_fatal_error(selenium_standalone):
     import re
 
     def strip_stack_trace(x):
+        # Remove ANSI color codes
+        x = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", x)
         x = re.sub("\n.*site-packages.*", "", x)
         x = re.sub("/lib/python.*/", "", x)
         x = re.sub("/lib/python.*/", "", x)
@@ -1484,7 +1477,7 @@ def test_module_not_found_note(selenium_standalone):
     from _pyodide._importhook import add_note_to_module_not_found_error
     from pyodide.code import run_js
 
-    unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
+    unvendored_stdlibs = ["test"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
     lockfile_packages = [
         "micropip",
@@ -1533,13 +1526,6 @@ def test_module_not_found_note(selenium_standalone):
         add_note_to_module_not_found_error(e.value)
         assert getattr(e.value, "__notes__", None) is None
 
-    with pytest.raises(ModuleNotFoundError) as e:
-        importlib.import_module("_hashlib")
-    add_note_to_module_not_found_error(e.value)
-    add_note_to_module_not_found_error(e.value)
-    assert 'loadPackage("hashlib")' in e.value.__notes__[0]
-    assert len(e.value.__notes__) == 1
-
 
 @run_in_pyodide
 def test_importhook_called_from_pytest(selenium):
@@ -1560,6 +1546,111 @@ def test_importhook_called_from_pytest(selenium):
 
     # Assertion: This should not raise KeyError.
     _import_module_using_spec("a.b")
+
+
+@run_in_pyodide
+def test_windows_to_linux_path_finder(selenium):
+    from pathlib import Path
+
+    from _pyodide._importhook import WindowsToLinuxPathFinder
+
+    # not using tempfile for readability
+    tmp_dir = Path("/tmp/my/temporary/directory/for/testing")
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    module_file = tmp_dir / "test_module.py"
+
+    # should not exist yet
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["C:\\my\\temporary\\directory\\for\\testing"]
+    )
+    assert spec is None
+
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["C://my//temporary//directory//for//testing"]
+    )
+    assert spec is None
+
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["/tmp/my/temporary/directory/for/testing"]
+    )
+    assert spec is None
+
+    module_file.write_text("TEST_VALUE = 123")
+
+    # now it should be found
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["C:\\tmp\\my\\temporary\\directory\\for\\testing"]
+    )
+    assert spec is not None
+
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["C://tmp//my//temporary//directory//for//testing"]
+    )
+    assert spec is not None
+
+    # This finder should not care about non-Windows paths
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["/tmp/my/temporary/directory/for/testing"]
+    )
+    assert spec is None
+
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "non_existent_module", ["C:\\tmp\\my\\temporary\\directory\\for\\testing"]
+    )
+    assert spec is None
+
+    # cleanup
+    module_file.unlink()
+    tmp_dir.rmdir()
+
+
+@run_in_pyodide
+def test_windows_to_linux_path_finder_edge_cases(selenium):
+    """Test edge cases for WindowsToLinuxPathFinder."""
+    from _pyodide._importhook import WindowsToLinuxPathFinder
+
+    # Empty path list
+    spec = WindowsToLinuxPathFinder.find_spec("test_module", [])
+    assert spec is None
+
+    # None path (should use sys.path, but all conversions might fail)
+    spec = WindowsToLinuxPathFinder.find_spec("test_module", None)
+    assert spec is None
+
+    # zipimport path
+    spec = WindowsToLinuxPathFinder.find_spec("test_module", ["my_whl.whl"])
+    assert spec is None
+
+
+@run_in_pyodide
+def test_windows_to_linux_path_import(selenium_standalone):
+    import sys
+    from importlib import invalidate_caches
+    from pathlib import Path
+
+    tmp_dir = Path("/tmp/my/temporary/directory/for/testing/import")
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    module_file = tmp_dir / "test_module.py"
+
+    sys.path.append("C:\\tmp\\my\\temporary\\directory\\for\\testing\\import")
+    invalidate_caches()
+
+    try:
+        import test_module
+
+        raise AssertionError("Module should not be found yet")
+    except ModuleNotFoundError:
+        pass
+
+    module_file.write_text("TEST_VALUE = 456")
+
+    import test_module
+
+    assert test_module.TEST_VALUE == 456
+
+    # cleanup
+    module_file.unlink()
+    tmp_dir.rmdir()
 
 
 def test_args(selenium_standalone_noload):
@@ -1738,7 +1829,7 @@ def test_csp(selenium_standalone_noload):
 
 
 @pytest.mark.xfail_browsers(node="static import test is browser-only")
-def test_static_import(selenium_standalone_noload, tmp_path):
+def test_static_import(selenium_standalone_noload, tmp_path, httpserver):
     selenium = selenium_standalone_noload
 
     # copy dist to tmp_path to perform file changes safely
@@ -1757,21 +1848,71 @@ def test_static_import(selenium_standalone_noload, tmp_path):
         PYODIDE_ROOT / "src/templates/module_static_import_test.html"
     ).read_text()
     test_html = test_html.replace("./pyodide.asm.js", f"./{hiding_dir}/pyodide.asm.js")
-    (tmp_path / "module_static_import_test.html").write_text(test_html)
+    test_html_content = test_html.encode()
 
-    with spawn_web_server(tmp_path) as web_server:
-        server_hostname, server_port, _ = web_server
-        base_url = f"http://{server_hostname}:{server_port}/"
-        selenium.goto(f"{base_url}/module_static_import_test.html")
-        selenium.javascript_setup()
-        selenium.load_pyodide()
-        selenium.run_js(
-            """
-            pyodide.runPython(`
-                print('Static import works')
-            `);
-            """
-        )
+    # Setup httpserver to serve all necessary files
+    httpserver.expect_oneshot_request(
+        "/module_static_import_test.html"
+    ).respond_with_data(
+        test_html_content,
+        content_type="text/html",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+
+    # Serve the moved pyodide.asm.js file
+    pyodide_asm_data = (tmp_path / hiding_dir / "pyodide.asm.js").read_bytes()
+    httpserver.expect_oneshot_request(
+        f"/{hiding_dir}/pyodide.asm.js"
+    ).respond_with_data(
+        pyodide_asm_data,
+        content_type="application/javascript",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+
+    # Serve other necessary pyodide files
+    for file_name in [
+        "pyodide.js",
+        "pyodide.mjs",
+        "pyodide-lock.json",
+        "python_stdlib.zip",
+        "pyodide.asm.wasm",
+    ]:
+        file_path = tmp_path / file_name
+        if file_path.exists():
+            file_data = file_path.read_bytes()
+            content_type = (
+                "application/javascript"
+                if file_name.endswith((".js", ".mjs"))
+                else (
+                    "application/json"
+                    if file_name.endswith(".json")
+                    else "application/zip"
+                    if file_name.endswith(".zip")
+                    else "application/wasm"
+                    if file_name.endswith(".wasm")
+                    else "application/octet-stream"
+                )
+            )
+            httpserver.expect_request(f"/{file_name}").respond_with_data(
+                file_data,
+                content_type=content_type,
+                headers={"Access-Control-Allow-Origin": "*"},
+                status=200,
+            )
+
+    url = httpserver.url_for("/module_static_import_test.html")
+    selenium.goto(url)
+    selenium.javascript_setup()
+    selenium.load_pyodide()
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            print('Static import works')
+        `);
+        """
+    )
 
 
 def test_python_error(selenium):
