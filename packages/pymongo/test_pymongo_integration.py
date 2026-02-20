@@ -110,7 +110,7 @@ def _load_pymongo(selenium_nodesock):
 
 
 @pytest.mark.skip_refcount_check
-@pytest.mark.mongodb
+@pytest.mark.db
 @only_node
 def test_mongodb_crud(selenium_nodesock, mongodb_test_db):
     cfg = mongodb_test_db
@@ -167,7 +167,7 @@ def test_mongodb_crud(selenium_nodesock, mongodb_test_db):
 
 
 @pytest.mark.skip_refcount_check
-@pytest.mark.mongodb
+@pytest.mark.db
 @only_node
 def test_mongodb_bulk_operations(selenium_nodesock, mongodb_test_db):
     cfg = mongodb_test_db
@@ -225,7 +225,7 @@ def test_mongodb_bulk_operations(selenium_nodesock, mongodb_test_db):
 
 
 @pytest.mark.skip_refcount_check
-@pytest.mark.mongodb
+@pytest.mark.db
 @only_node
 def test_mongodb_aggregation(selenium_nodesock, mongodb_test_db):
     cfg = mongodb_test_db
@@ -272,7 +272,7 @@ def test_mongodb_aggregation(selenium_nodesock, mongodb_test_db):
 
 
 @pytest.mark.skip_refcount_check
-@pytest.mark.mongodb
+@pytest.mark.db
 @only_node
 def test_mongodb_indexing(selenium_nodesock, mongodb_test_db):
     cfg = mongodb_test_db

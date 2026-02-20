@@ -494,7 +494,7 @@ def tls_server(handler, *, timeout=5.0, expect_client_error=False):
     with open(certfile) as f:
         ca_pem = f.read()
 
-    server_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    server_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)  # type: ignore[attr-defined]
     server_ctx.load_cert_chain(certfile, keyfile)
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -598,48 +598,6 @@ ca_pem = base64.b64decode("{ca_b64}").decode()
 ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 ctx.check_hostname = False
 ctx.load_verify_locations(cadata=ca_pem)
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("{host}", {port}))
-ss = ctx.wrap_socket(s, server_hostname="localhost")
-
-{python_body}
-        `);
-        """
-    )
-    return selenium.run_js(
-        f"""
-        globalThis._testCaPem = `{ca_pem_escaped}`;
-        return await pyodide.runPythonAsync(`
-import socket
-import ssl
-from js import _testCaPem
-
-ca_pem = str(_testCaPem)
-
-ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-ctx.check_hostname = False
-ctx.load_verify_locations(cadata=ca_pem)
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("{host}", {port}))
-ss = ctx.wrap_socket(s, server_hostname="localhost")
-
-{python_body}
-        `);
-        """
-    )
-    return selenium.run_js(
-        f"""
-        globalThis._testCaPem = `{ca_pem_escaped}`;
-        return await pyodide.runPythonAsync(`
-import socket
-import ssl
-from pyodide_js import _testCaPem
-
-ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-ctx.check_hostname = False
-ctx.load_verify_locations(cadata=_testCaPem.to_py())
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect(("{host}", {port}))

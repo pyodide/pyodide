@@ -121,7 +121,7 @@ def mysql_test_db(mysql_admin_config):
 
 
 @pytest.mark.skip_refcount_check
-@pytest.mark.mysql
+@pytest.mark.db
 @only_node
 def test_mysql_pymysql_features(selenium_nodesock, mysql_test_db):
     cfg = mysql_test_db

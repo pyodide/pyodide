@@ -350,7 +350,7 @@ jobs:
             ./tools/cmdline_runner_test/run
           fi
 
-  test-mysql-integration:
+  test-db-integration:
     runs-on: ubuntu-latest
     needs: [build-core, get_python_version]
     services:
@@ -363,6 +363,19 @@ jobs:
           MYSQL_ROOT_HOST: "%"
         options: >-
           --health-cmd="mysqladmin ping -prootpw --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+      postgres:
+        image: postgres:16
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_HOST_AUTH_METHOD: md5
+          POSTGRES_INITDB_ARGS: "--auth-host=md5"
+        options: >-
+          --health-cmd="pg_isready -U postgres"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=20
@@ -392,24 +405,29 @@ jobs:
           set -e -x
           mkdir -p test-results
           python -m pip install -r requirements.txt
-          python -m pip install pymysql cryptography
+          python -m pip install pymysql cryptography pg8000
           make npm-link
 
-      - name: Run MySQL integration test (node)
+      - name: Run database integration tests (node)
         shell: bash -l {0}
         env:
           MYSQL_HOST: 127.0.0.1
           MYSQL_PORT: "3306"
           MYSQL_ROOT_USER: root
           MYSQL_ROOT_PASSWORD: rootpw
+          POSTGRES_HOST: 127.0.0.1
+          POSTGRES_PORT: "5432"
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test
         run: |
           source pyodide_env.sh
           tools/pytest_wrapper.py \
-            --junitxml=test-results/mysql_integration.xml \
+            --junitxml=test-results/db_integration.xml \
             --verbose \
             --runtime=node-no-host \
-            -m mysql \
-            src/tests/test_mysql_pymysql.py
+            -m db \
+            src/tests/test_mysql_pymysql.py \
+            src/tests/test_postgresql_pg8000.py
 
   test-scipy-trigger:
     name: test-scipy-trigger
