@@ -234,6 +234,8 @@ export type FSStreamOpsGen<T> = {
 interface PyodideFSType {
   filesystems: any;
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
+  createNode(parent: any, name: string, mode: number, dev: number): any;
+  createStream(stream: any, fd?: number): any;
 }
 
 /**
@@ -278,7 +280,10 @@ export interface EmscriptenModule {
   stringToNewUTF8(x: string): number;
   stringToUTF8OnStack: (str: string) => number;
   HEAP8: Uint8Array;
+  HEAPU8: Uint8Array;
   HEAPU32: Uint32Array;
+  SOCKFS: any;
+  getSocketAddress: (addr: number, addrlen: number) => any;
   getExceptionMessage(e: number): [string, string];
   exitCode: number | undefined;
   ExitStatus: { new (exitCode: number): Error };
@@ -543,6 +548,24 @@ export interface API {
   ) => PyodideAPI;
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
+  _nodeSock: {
+    connect: (fd: number, host: string, port: number) => Promise<void>;
+    recv: (fd: number, nbytes: number) => Promise<Uint8Array>;
+    send: (fd: number, data: any) => number;
+    upgradeTLS: (
+      fd: number,
+      servername: string,
+      rejectUnauthorized: boolean,
+      ca?: string,
+      cert?: string,
+      key?: string,
+    ) => Promise<number>;
+    connectTLS: (fd: number, host: string, port: number) => Promise<void>;
+    getPeerCert: (fd: number) => any;
+    getCipher: (
+      fd: number,
+    ) => { name: string; standardName: string; version: string } | null;
+  };
   version: string;
   abiVersion: string;
   pyVersionTuple: [number, number, number];

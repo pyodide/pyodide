@@ -780,22 +780,128 @@ class WebLoop(asyncio.AbstractEventLoop):
     #
 
     async def getaddrinfo(self, host, port, *, family=0, type=0, proto=0, flags=0):
-        """Asynchronous version of socket.getaddrinfo() (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "getaddrinfo() is not available in browser environments due to restricted raw network access."
+        """Asynchronous version of socket.getaddrinfo()."""
+        import socket
+
+        return await self.run_in_executor(
+            None, socket.getaddrinfo, host, port, family, type, proto, flags
         )
 
     async def getnameinfo(self, sockaddr, flags=0):
-        """Asynchronous version of socket.getnameinfo() (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "getnameinfo() is not available in browser environments due to restricted raw network access."
-        )
+        """Asynchronous version of socket.getnameinfo()."""
+        import socket
 
-    async def create_connection(self, protocol_factory, host=None, port=None, **kwargs):
-        """Open a streaming transport connection to a given address (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "create_connection() is not available in browser environments due to restricted raw socket access."
-        )
+        return await self.run_in_executor(None, socket.getnameinfo, sockaddr, flags)
+
+    async def create_connection(  # noqa: PLR0913
+        self,
+        protocol_factory,
+        host=None,
+        port=None,
+        *,
+        ssl=None,
+        family=0,
+        proto=0,
+        flags=0,
+        sock=None,
+        local_addr=None,
+        server_hostname=None,
+        ssl_handshake_timeout=None,
+        ssl_shutdown_timeout=None,
+        happy_eyeballs_delay=None,
+        interleave=None,
+    ):
+        """Open a streaming transport connection to a given address.
+
+        Supports two modes:
+        * ``sock=<connected socket>`` — wraps an already-connected socket
+          in a Transport + Protocol pair.
+        * ``host``/``port`` — creates a new socket, connects, and wraps it.
+
+        Supports SSL/TLS via the ``ssl`` parameter.
+        """
+        import socket
+
+        if host is not None or port is not None:
+            if sock is not None:
+                raise ValueError(
+                    "host/port and sock can not be specified at the same time"
+                )
+            # Resolve and connect a new socket.
+            infos = await self.getaddrinfo(
+                host,
+                port,
+                family=family,
+                type=socket.SOCK_STREAM,
+                proto=proto,
+                flags=flags,
+            )
+            if not infos:
+                raise OSError("getaddrinfo() returned empty list")
+
+            exceptions: list[Exception] = []
+            for af, socktype, sproto, _canonname, sa in infos:
+                try:
+                    sock = socket.socket(af, socktype, sproto)
+                    sock.setblocking(False)
+                    await self.sock_connect(sock, sa)
+                    break
+                except OSError as exc:
+                    if sock is not None:
+                        sock.close()
+                        sock = None
+                    exceptions.append(exc)
+            else:
+                if exceptions:
+                    raise exceptions[-1]
+                raise OSError("getaddrinfo() returned empty list")
+
+        if sock is None:
+            raise ValueError("host and port was not specified and no sock specified")
+
+        if sock.type != socket.SOCK_STREAM:
+            raise ValueError(f"A Stream Socket was expected, got {sock!r}")
+
+        sock.setblocking(False)
+
+        if ssl is not None:
+            try:
+                from pyodide_js._api import _nodeSock
+            except ImportError:
+                raise RuntimeError("SSL support not available") from None
+
+            reject_unauthorized = True
+            ca_data = cert_data = key_data = None
+            if hasattr(ssl, "verify_mode"):
+                reject_unauthorized = ssl.verify_mode != 0  # CERT_NONE = 0
+                ca_data = getattr(ssl, "_ca_data", None)
+                cert_data = getattr(ssl, "_certfile_data", None)
+                key_data = getattr(ssl, "_keyfile_data", None)
+
+            sni_hostname = server_hostname or host or ""
+            await _nodeSock.upgradeTLS(
+                sock.fileno(),
+                sni_hostname,
+                reject_unauthorized,
+                ca_data,
+                cert_data,
+                key_data,
+            )
+
+        protocol = protocol_factory()
+        waiter = self.create_future()
+
+        from pyodide._nodesock_transport import NodeSocketTransport
+
+        transport = NodeSocketTransport(self, sock, protocol, waiter)
+
+        try:
+            await waiter
+        except BaseException:
+            transport.close()
+            raise
+
+        return transport, protocol
 
     async def create_server(self, protocol_factory, host=None, port=None, **kwargs):
         """Create a TCP server (unsupported on WebLoop)."""
@@ -834,20 +940,32 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
 
     #
-    # Low-level socket operations methods — not available in browser environments
+    # Low-level socket operations methods
+    #
+    # sock_connect, sock_recv, sock_recv_into, and sock_sendall delegate to
+    # JS-level async helpers exposed by NodeSockFS (via pyodide_js._api).
+    # These helpers call the NodeSockFS async methods directly and return JS
+    # Promises that Python can await without triggering JSPI WASM suspension
+    # — which would corrupt the Python thread state in an asyncio context.
     #
 
     async def sock_recv(self, sock, nbytes):
-        """Receive up to nbytes (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "sock_recv() is not available in browser environments due to restricted raw socket access."
-        )
+        """Receive up to *nbytes* from the socket."""
+        try:
+            from pyodide_js._api import _nodeSock
+        except ImportError:
+            raise NotImplementedError(
+                "sock_recv() is not available in browser environments due to restricted raw socket access."
+            ) from None
+        result = await _nodeSock.recv(sock.fileno(), nbytes)
+        return bytes(result)
 
     async def sock_recv_into(self, sock, buf):
-        """Receive into buf (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "sock_recv_into() is not available in browser environments due to restricted raw socket access."
-        )
+        """Receive data from the socket into *buf*."""
+        data = await self.sock_recv(sock, len(buf))
+        n = len(data)
+        buf[:n] = data
+        return n
 
     async def sock_recvfrom(self, sock, bufsize):
         """Receive a datagram up to bufsize (unsupported on WebLoop)."""
@@ -862,10 +980,14 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
 
     async def sock_sendall(self, sock, data):
-        """Send all data to the socket (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "sock_sendall() is not available in browser environments due to restricted raw socket access."
-        )
+        """Send all *data* to the socket."""
+        try:
+            from pyodide_js._api import _nodeSock
+        except ImportError:
+            raise NotImplementedError(
+                "sock_sendall() is not available in browser environments due to restricted raw socket access."
+            ) from None
+        _nodeSock.send(sock.fileno(), data)
 
     async def sock_sendto(self, sock, data, address):
         """Send a datagram to address (unsupported on WebLoop)."""
@@ -874,10 +996,15 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
 
     async def sock_connect(self, sock, address):
-        """Connect the socket to a remote address (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "sock_connect() is not available in browser environments due to restricted raw socket access."
-        )
+        """Connect the socket to a remote *address*."""
+        try:
+            from pyodide_js._api import _nodeSock
+        except ImportError:
+            raise NotImplementedError(
+                "sock_connect() is not available in browser environments due to restricted raw socket access."
+            ) from None
+        host, port = address
+        await _nodeSock.connect(sock.fileno(), host, port)
 
     async def sock_accept(self, sock):
         """Accept a connection (unsupported on WebLoop)."""
