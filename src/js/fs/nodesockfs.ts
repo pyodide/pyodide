@@ -1,6 +1,13 @@
 /**
  * NodeSockFS — Node.js native socket filesystem replacing Emscripten's SOCKFS.
- * Uses WinterCG Sockets API as transport, with JSPI for async syscall suspension.
+ * Uses WinterCG Sockets API as transport.
+ *
+ * Two I/O paths exist:
+ *  1. JSPI syscalls (emscripten-settings.ts) — sync Python (socket.connect/recv/send)
+ *     suspends the WASM stack via WebAssembly.Suspending, awaits the async op, resumes.
+ *  2. api._nodeSock helpers (below) — asyncio Python (WebLoop.sock_connect/recv/sendall)
+ *     calls these directly as JS Promises without WASM suspension, avoiding thread
+ *     state corruption inside the event loop.
  */
 
 import type { PyodideModule, PreRunFunc, FSType, API } from "../types";
@@ -113,9 +120,9 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       return mask;
     },
 
-    ioctl(_sock: NodeSock, request: number, _arg: any): number {
+    ioctl(sock: NodeSock, request: number, _arg: any): number {
       if (request === FIONREAD) {
-        return 0;
+        return sock.leftover ? sock.leftover.length : 0;
       }
       return 0;
     },
