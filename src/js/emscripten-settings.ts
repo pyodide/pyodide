@@ -202,6 +202,7 @@ function getFileSystemInitializationFuncs(
   return hooks;
 }
 
+// FIXME:
 // Global pyodide module used in wrapSocketSyscallsWithJSPI
 // Unlike other functions, functioned wrapped with WebAssembly.suspending in wrapSocketSyscallsWithJSPI
 // cannot reference the global `Module` object (don't fully understand why)
@@ -249,7 +250,6 @@ function wrapSocketSyscallsWithJSPI(imports: {
     return;
   }
 
-  // Store original syscalls
   const origConnect = env.__syscall_connect;
   const origRecvfrom = env.__syscall_recvfrom;
 
@@ -323,9 +323,10 @@ function wrapSocketSyscallsWithJSPI(imports: {
       addrlen: number,
     ): Promise<number> => {
       if (!_pyodideModuleforJSPI) {
-        console.debug(
-          "[JSPI:__syscall_recvfrom] Module not found, falling back to original",
-        );
+        DEBUG &&
+          console.debug(
+            "[JSPI:__syscall_recvfrom] Module not found, falling back to original",
+          );
         return origRecvfrom(fd, buf, len, flags, addr, addrlen);
       }
 

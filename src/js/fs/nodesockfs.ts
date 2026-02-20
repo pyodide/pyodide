@@ -1,25 +1,9 @@
 /**
- * NodeSockFS - A Node.js native socket filesystem for Emscripten/Pyodide
- *
- * This replaces Emscripten's WebSocket-based SOCKFS with native Node.js sockets,
- * using the WinterCG Sockets API (`connect()`) as the transport layer.
- *
- * Currently implements TCP client sockets (SOCK_STREAM + connect) with optional
- * TLS support via the Sockets API's `secureTransport` / `startTls()`.
- *
- * JSPI Integration:
- * This module provides async methods (connectAsync, recvmsgAsync) that are called
- * by the wrapped syscalls in emscripten-settings.ts when JSPI is available.
- * The syscalls are wrapped with WebAssembly.Suspending before instantiation,
- * allowing them to suspend the WebAssembly stack while waiting for async operations.
- *
- * Data Reception:
- * Uses the WinterCG Socket's ReadableStream via a reader, with a leftover buffer
- * for partial reads. This replaces the previous event-based `recvBuffer` approach
- * and provides automatic backpressure through Web Streams.
+ * NodeSockFS — Node.js native socket filesystem replacing Emscripten's SOCKFS.
+ * Uses WinterCG Sockets API as transport, with JSPI for async syscall suspension.
  */
 
-import type { PyodideModule, PreRunFunc } from "../types";
+import type { PyodideModule, PreRunFunc, FSType, API } from "../types";
 import { RUNTIME_ENV } from "../environments";
 import { setPyodideModuleforJSPI } from "../emscripten-settings";
 import {
@@ -29,7 +13,6 @@ import {
 } from "./wintercg-sockets";
 import type { SocketOptions } from "./wintercg-sockets";
 
-// Internal socket structure that mirrors Emscripten's sock structure
 interface NodeSock {
   family: number;
   type: number;
@@ -46,12 +29,12 @@ interface NodeSock {
   connecting: boolean;
   /** Whether the socket has been upgraded to TLS */
   tls: boolean;
-  stream?: any; // The FS stream
-  daddr?: string; // Destination address
-  dport?: number; // Destination port
-  saddr?: string; // Source address (for bind)
-  sport?: number; // Source port (for bind)
-  sock_ops: any; // Socket operations
+  stream?: any;
+  daddr?: string;
+  dport?: number;
+  saddr?: string;
+  sport?: number;
+  sock_ops: any;
 }
 
 export function initializeNodeSockFS(): PreRunFunc[] {
@@ -76,15 +59,12 @@ export function initializeNodeSockFS(): PreRunFunc[] {
 }
 
 async function _initializeNodeSockFS(module: PyodideModule) {
-  const FS: any = module.FS;
-  const ERRNO_CODES: any = module.ERRNO_CODES;
-  // Grab the API object from the module — the global `API` isn't available yet
-  // during pre-run hooks; it's set later by Emscripten.
-  const api: any = (module as any).API;
+  const FS = module.FS;
+  const api = module.API;
+  const ERRNO_CODES = module.ERRNO_CODES;
 
   setPyodideModuleforJSPI(module);
 
-  // Initialize WinterCG Sockets API (loads node:net, node:tls, node:stream)
   await initWinterCGSockets();
 
   DEBUG && console.debug(`[NodeSockFS] Initializing...`);
@@ -93,7 +73,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       `[NodeSockFS] Module.jspiSupported: ${(module as any).jspiSupported}`,
     );
 
-  // POSIX constants
   const AF_INET = 2;
   const SOCK_STREAM = 1;
   const SOCK_DGRAM = 2;
@@ -104,11 +83,12 @@ async function _initializeNodeSockFS(module: PyodideModule) {
   const O_RDWR = 0o2;
   const DIR_MODE = 16384 | 0o777;
 
-  // Poll event flags
   const POLLIN = 0x001;
   const POLLOUT = 0x004;
   const POLLHUP = 0x010;
   const POLLRDNORM = 0x040;
+
+  const FIONREAD = 0x541b;
 
   const tcp_sock_ops = {
     poll(sock: NodeSock): number {
@@ -134,7 +114,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     },
 
     ioctl(_sock: NodeSock, request: number, _arg: any): number {
-      const FIONREAD = 0x541b;
       if (request === FIONREAD) {
         return 0;
       }
@@ -386,7 +365,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     },
   };
 
-  // Stream operations - these are called via stream.stream_ops.method(stream, ...)
   const stream_ops = {
     poll(stream: any): number {
       const sock = stream.node.sock as NodeSock;
@@ -500,10 +478,10 @@ async function _initializeNodeSockFS(module: PyodideModule) {
      */
     getSocket(fd: number): NodeSock | null {
       const stream = FS.getStream(fd);
-      if (!stream || !FS.isSocket(stream.node.mode)) {
+      if (!stream || !FS.isSocket((stream as any).node.mode)) {
         return null;
       }
-      return stream.node.sock as NodeSock;
+      return (stream as any).node.sock as NodeSock;
     },
   };
 

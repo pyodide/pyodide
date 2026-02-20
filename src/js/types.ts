@@ -234,6 +234,8 @@ export type FSStreamOpsGen<T> = {
 interface PyodideFSType {
   filesystems: any;
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
+  createNode(parent: any, name: string, mode: number, dev: number): any;
+  createStream(stream: any, fd?: number): any;
 }
 
 /**
@@ -556,7 +558,7 @@ export interface API {
     ca?: string,
     cert?: string,
     key?: string,
-  ) => Promise<void>;
+  ) => Promise<number>;
   _nodeSockConnectTLS: (
     fd: number,
     host: string,

@@ -17,10 +17,6 @@
 import type { Duplex } from "node:stream";
 import type { ReadableStream, WritableStream } from "node:stream/web";
 
-// ---------------------------------------------------------------------------
-// Types (from @arrowood.dev/socket/src/types.ts)
-// ---------------------------------------------------------------------------
-
 export interface SocketOptions {
   /**
    * Specifies whether or not to use TLS when creating the TCP socket.
@@ -49,10 +45,6 @@ export interface SocketInfo {
   localAddress?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Type guard (from @arrowood.dev/socket/src/is-socket-address.ts)
-// ---------------------------------------------------------------------------
-
 function isSocketAddress(address: unknown): address is SocketAddress {
   return (
     typeof address === "object" &&
@@ -61,10 +53,6 @@ function isSocketAddress(address: unknown): address is SocketAddress {
     Object.hasOwn(address, "port")
   );
 }
-
-// ---------------------------------------------------------------------------
-// Lazily-loaded Node.js modules
-// ---------------------------------------------------------------------------
 
 let _net: typeof import("node:net") | null = null;
 let _tls: typeof import("node:tls") | null = null;
@@ -112,19 +100,11 @@ function getDuplexToWeb() {
   return _duplexToWeb;
 }
 
-// ---------------------------------------------------------------------------
-// SocketError
-// ---------------------------------------------------------------------------
-
 export class SocketError extends TypeError {
   constructor(message: string) {
     super(`SocketError: ${message}`);
   }
 }
-
-// ---------------------------------------------------------------------------
-// connect()
-// ---------------------------------------------------------------------------
 
 export function connect(
   address: SocketAddress | string,
@@ -139,10 +119,6 @@ export function connect(
   }
   return new Socket(address, options);
 }
-
-// ---------------------------------------------------------------------------
-// Socket
-// ---------------------------------------------------------------------------
 
 export class Socket {
   readable: ReadableStream<unknown>;

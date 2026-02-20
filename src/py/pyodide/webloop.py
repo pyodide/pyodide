@@ -814,12 +814,12 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         Supports two modes:
         * ``sock=<connected socket>`` — wraps an already-connected socket
-          in a Transport + Protocol pair (used by pymongo).
+          in a Transport + Protocol pair.
         * ``host``/``port`` — creates a new socket, connects, and wraps it.
 
         Supports SSL/TLS via the ``ssl`` parameter.
         """
-        import socket as socket_mod
+        import socket
 
         if host is not None or port is not None:
             if sock is not None:
@@ -831,7 +831,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                 host,
                 port,
                 family=family,
-                type=socket_mod.SOCK_STREAM,
+                type=socket.SOCK_STREAM,
                 proto=proto,
                 flags=flags,
             )
@@ -841,7 +841,7 @@ class WebLoop(asyncio.AbstractEventLoop):
             exceptions: list[Exception] = []
             for af, socktype, sproto, canonname, sa in infos:
                 try:
-                    sock = socket_mod.socket(af, socktype, sproto)
+                    sock = socket.socket(af, socktype, sproto)
                     sock.setblocking(False)
                     await self.sock_connect(sock, sa)
                     break
@@ -858,13 +858,16 @@ class WebLoop(asyncio.AbstractEventLoop):
         if sock is None:
             raise ValueError("host and port was not specified and no sock specified")
 
-        if sock.type != socket_mod.SOCK_STREAM:
+        if sock.type != socket.SOCK_STREAM:
             raise ValueError(f"A Stream Socket was expected, got {sock!r}")
 
         sock.setblocking(False)
 
         if ssl is not None:
-            from pyodide_js._api import _nodeSockUpgradeTLS
+            try:
+                from pyodide_js._api import _nodeSockUpgradeTLS
+            except ImportError:
+                raise RuntimeError("SSL support not available")
 
             reject_unauthorized = True
             ca_data = cert_data = key_data = None
