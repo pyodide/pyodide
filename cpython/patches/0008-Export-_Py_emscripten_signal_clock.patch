@@ -1,0 +1,26 @@
+From 3416cd2d272444404c4842500957f72d62ce8346 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Fri, 20 Feb 2026 17:02:46 +0100
+Subject: [PATCH 8/8] Export _Py_emscripten_signal_clock
+
+Needed by signal handling in Cloudflare's JS runtime
+---
+ Python/emscripten_signal.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Python/emscripten_signal.c b/Python/emscripten_signal.c
+index 561b5b73cd6..81fd8da9fba 100644
+--- a/Python/emscripten_signal.c
++++ b/Python/emscripten_signal.c
+@@ -39,7 +39,7 @@ _Py_CheckEmscriptenSignals(void)
+ }
+ 
+ #define PY_EMSCRIPTEN_SIGNAL_INTERVAL 50
+-int _Py_emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
++EMSCRIPTEN_KEEPALIVE int _Py_emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
+ 
+ void
+ _Py_CheckEmscriptenSignalsPeriodically(void)
+-- 
+2.34.1
+
