@@ -46,7 +46,7 @@ finally:
 }
 
 void
-restoreAsyncioState(AsyncioState as)
+cleanAsyncioState(AsyncioState as)
 {
   Py_CLEAR(as.loop);
 }
@@ -91,7 +91,7 @@ captureThreadState()
 EMSCRIPTEN_KEEPALIVE void
 restoreThreadState(ThreadState* state)
 {
-  restoreAsyncioState(state->as);
+  cleanAsyncioState(state->as);
   PyThreadState* res = PyThreadState_Swap(state->ts);
   if (threadstate_freelist_len == THREADSTATE_MAX_FREELIST) {
     PyThreadState_Delete(res);
