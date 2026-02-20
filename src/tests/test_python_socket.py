@@ -463,4 +463,3 @@ def test_socket_create_multiple(selenium_nodesock):
         )
 
     assert result == f"Server{port1}:Hello1-Server{port2}:Hello2"
-
