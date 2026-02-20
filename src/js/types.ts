@@ -548,26 +548,24 @@ export interface API {
   ) => PyodideAPI;
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
-  _nodeSockConnect: (fd: number, host: string, port: number) => Promise<void>;
-  _nodeSockRecv: (fd: number, nbytes: number) => Promise<Uint8Array>;
-  _nodeSockSend: (fd: number, data: any) => number;
-  _nodeSockUpgradeTLS: (
-    fd: number,
-    servername: string,
-    rejectUnauthorized: boolean,
-    ca?: string,
-    cert?: string,
-    key?: string,
-  ) => Promise<number>;
-  _nodeSockConnectTLS: (
-    fd: number,
-    host: string,
-    port: number,
-  ) => Promise<void>;
-  _nodeSockGetPeerCert: (fd: number) => any;
-  _nodeSockGetCipher: (
-    fd: number,
-  ) => { name: string; standardName: string; version: string } | null;
+  _nodeSock: {
+    connect: (fd: number, host: string, port: number) => Promise<void>;
+    recv: (fd: number, nbytes: number) => Promise<Uint8Array>;
+    send: (fd: number, data: any) => number;
+    upgradeTLS: (
+      fd: number,
+      servername: string,
+      rejectUnauthorized: boolean,
+      ca?: string,
+      cert?: string,
+      key?: string,
+    ) => Promise<number>;
+    connectTLS: (fd: number, host: string, port: number) => Promise<void>;
+    getPeerCert: (fd: number) => any;
+    getCipher: (
+      fd: number,
+    ) => { name: string; standardName: string; version: string } | null;
+  };
   version: string;
   abiVersion: string;
   pyVersionTuple: [number, number, number];

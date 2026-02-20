@@ -759,11 +759,11 @@ class SSLSocket(socket):
         if binary_form:
             return b""
         try:
-            from pyodide_js._api import _nodeSockGetPeerCert
+            from pyodide_js._api import _nodeSock
         except ImportError:
             return {}
 
-        cert = _nodeSockGetPeerCert(self.fileno())
+        cert = _nodeSock.getPeerCert(self.fileno())
         if cert is None:
             return {}
         result = cert.to_py() if hasattr(cert, "to_py") else cert
@@ -790,11 +790,11 @@ class SSLSocket(socket):
 
     def cipher(self):
         try:
-            from pyodide_js._api import _nodeSockGetCipher
+            from pyodide_js._api import _nodeSock
         except ImportError:
             return None
 
-        info = _nodeSockGetCipher(self.fileno())
+        info = _nodeSock.getCipher(self.fileno())
         if info is None:
             return None
         return (info.name, info.standardName, info.version)
@@ -858,7 +858,7 @@ class SSLSocket(socket):
 
     def do_handshake(self, block=False):
         try:
-            from pyodide_js._api import _nodeSockUpgradeTLS
+            from pyodide_js._api import _nodeSock
         except ImportError:
             raise NotImplementedError(
                 "TLS handshake requires Node.js socket support "
@@ -868,7 +868,7 @@ class SSLSocket(socket):
 
         ctx = self._context
         result = run_sync(
-            _nodeSockUpgradeTLS(
+            _nodeSock.upgradeTLS(
                 self.fileno(),
                 self._server_hostname or "",
                 ctx.verify_mode != CERT_NONE,
@@ -894,11 +894,11 @@ class SSLSocket(socket):
 
     def version(self):
         try:
-            from pyodide_js._api import _nodeSockGetCipher
+            from pyodide_js._api import _nodeSock
         except ImportError:
             return None
 
-        info = _nodeSockGetCipher(self.fileno())
+        info = _nodeSock.getCipher(self.fileno())
         if info is None:
             return None
         return info.version

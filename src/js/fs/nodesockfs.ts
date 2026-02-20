@@ -497,125 +497,116 @@ async function _initializeNodeSockFS(module: PyodideModule) {
   module.SOCKFS.createSocket = NodeSockFS.createSocket;
   module.SOCKFS.getSocket = NodeSockFS.getSocket;
 
-  api._nodeSockConnect = async (
-    fd: number,
-    host: string,
-    port: number,
-  ): Promise<void> => {
-    const sock = NodeSockFS.getSocket(fd);
-    if (!sock) {
-      throw new FS.ErrnoError(ERRNO_CODES.EBADF);
-    }
-    const result = await tcp_sock_ops.connectAsync(sock, host, port);
-    if (result < 0) {
-      throw new FS.ErrnoError(-result);
-    }
-  };
+  api._nodeSock = {
+    async connect(fd: number, host: string, port: number): Promise<void> {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock) {
+        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+      }
+      const result = await tcp_sock_ops.connectAsync(sock, host, port);
+      if (result < 0) {
+        throw new FS.ErrnoError(-result);
+      }
+    },
 
-  api._nodeSockRecv = async (
-    fd: number,
-    nbytes: number,
-  ): Promise<Uint8Array> => {
-    const sock = NodeSockFS.getSocket(fd);
-    if (!sock) {
-      throw new FS.ErrnoError(ERRNO_CODES.EBADF);
-    }
-    const result = await tcp_sock_ops.recvmsgAsync(sock, nbytes);
-    if (result === null) {
-      return new Uint8Array(0);
-    }
-    return result.buffer;
-  };
+    async recv(fd: number, nbytes: number): Promise<Uint8Array> {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock) {
+        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+      }
+      const result = await tcp_sock_ops.recvmsgAsync(sock, nbytes);
+      if (result === null) {
+        return new Uint8Array(0);
+      }
+      return result.buffer;
+    },
 
-  api._nodeSockSend = (fd: number, data: any): number => {
-    const sock = NodeSockFS.getSocket(fd);
-    if (!sock) {
-      throw new FS.ErrnoError(ERRNO_CODES.EBADF);
-    }
-    let buf: Uint8Array;
-    if (data instanceof Uint8Array) {
-      buf = data;
-    } else if (data.toJs) {
-      buf = data.toJs();
-      data.destroy();
-    } else {
-      buf = new Uint8Array(data);
-    }
-    return tcp_sock_ops.sendmsg(sock, buf, 0, buf.length);
-  };
+    send(fd: number, data: any): number {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock) {
+        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+      }
+      let buf: Uint8Array;
+      if (data instanceof Uint8Array) {
+        buf = data;
+      } else if (data.toJs) {
+        buf = data.toJs();
+        data.destroy();
+      } else {
+        buf = new Uint8Array(data);
+      }
+      return tcp_sock_ops.sendmsg(sock, buf, 0, buf.length);
+    },
 
-  api._nodeSockUpgradeTLS = async (
-    fd: number,
-    servername: string,
-    rejectUnauthorized: boolean,
-    ca?: string,
-    cert?: string,
-    key?: string,
-  ): Promise<number> => {
-    const sock = NodeSockFS.getSocket(fd);
-    if (!sock) {
-      return -ERRNO_CODES.EBADF;
-    }
-    return await tcp_sock_ops.upgradeTLSAsync(sock, {
-      servername,
-      rejectUnauthorized,
-      ca,
-      cert,
-      key,
-    });
-  };
+    async upgradeTLS(
+      fd: number,
+      servername: string,
+      rejectUnauthorized: boolean,
+      ca?: string,
+      cert?: string,
+      key?: string,
+    ): Promise<number> {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock) {
+        return -ERRNO_CODES.EBADF;
+      }
+      return await tcp_sock_ops.upgradeTLSAsync(sock, {
+        servername,
+        rejectUnauthorized,
+        ca,
+        cert,
+        key,
+      });
+    },
 
-  api._nodeSockConnectTLS = async (
-    fd: number,
-    host: string,
-    port: number,
-  ): Promise<void> => {
-    const sock = NodeSockFS.getSocket(fd);
-    if (!sock) {
-      throw new FS.ErrnoError(ERRNO_CODES.EBADF);
-    }
-    const result = await tcp_sock_ops.connectAsync(sock, host, port, {
-      secureTransport: "on",
-    });
-    if (result < 0) {
-      throw new FS.ErrnoError(-result);
-    }
-  };
+    async connectTLS(fd: number, host: string, port: number): Promise<void> {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock) {
+        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+      }
+      const result = await tcp_sock_ops.connectAsync(sock, host, port, {
+        secureTransport: "on",
+      });
+      if (result < 0) {
+        throw new FS.ErrnoError(-result);
+      }
+    },
 
-  api._nodeSockGetPeerCert = (fd: number): any => {
-    const sock = NodeSockFS.getSocket(fd);
-    if (!sock || !sock.wcgSocket) {
-      throw new FS.ErrnoError(ERRNO_CODES.EBADF);
-    }
-    const innerSocket = sock.wcgSocket.innerSocket;
-    if (!("getPeerCertificate" in innerSocket)) {
+    getPeerCert(fd: number): any {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock || !sock.wcgSocket) {
+        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+      }
+      const innerSocket = sock.wcgSocket.innerSocket;
+      if (!("getPeerCertificate" in innerSocket)) {
+        return null;
+      }
+      const raw = (innerSocket as any).getPeerCertificate();
+      if (!raw || !raw.subject) return null;
+      const fmt = (dn: Record<string, string>) =>
+        Object.entries(dn || {}).map(([k, v]) => [k, v]);
+      return {
+        subject: fmt(raw.subject),
+        issuer: fmt(raw.issuer),
+        serialNumber: raw.serialNumber || "",
+        valid_from: raw.valid_from || "",
+        valid_to: raw.valid_to || "",
+      };
+    },
+
+    getCipher(
+      fd: number,
+    ): { name: string; standardName: string; version: string } | null {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock || !sock.wcgSocket) {
+        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+      }
+      const innerSocket = sock.wcgSocket.innerSocket;
+      if ("getCipher" in innerSocket) {
+        return (innerSocket as any).getCipher();
+      }
       return null;
-    }
-    const raw = (innerSocket as any).getPeerCertificate();
-    if (!raw || !raw.subject) return null;
-    const fmt = (dn: Record<string, string>) =>
-      Object.entries(dn || {}).map(([k, v]) => [k, v]);
-    return {
-      subject: fmt(raw.subject),
-      issuer: fmt(raw.issuer),
-      serialNumber: raw.serialNumber || "",
-      valid_from: raw.valid_from || "",
-      valid_to: raw.valid_to || "",
-    };
-  };
-
-  api._nodeSockGetCipher = (
-    fd: number,
-  ): { name: string; standardName: string; version: string } | null => {
-    const sock = NodeSockFS.getSocket(fd);
-    if (!sock || !sock.wcgSocket) {
-      throw new FS.ErrnoError(ERRNO_CODES.EBADF);
-    }
-    const innerSocket = sock.wcgSocket.innerSocket;
-    if ("getCipher" in innerSocket) {
-      return (innerSocket as any).getCipher();
-    }
-    return null;
+    },
   };
 
   return NodeSockFS;

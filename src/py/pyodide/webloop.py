@@ -793,7 +793,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         return await self.run_in_executor(None, socket.getnameinfo, sockaddr, flags)
 
-    async def create_connection(
+    async def create_connection(  # noqa: PLR0913
         self,
         protocol_factory,
         host=None,
@@ -807,6 +807,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         local_addr=None,
         server_hostname=None,
         ssl_handshake_timeout=None,
+        ssl_shutdown_timeout=None,
         happy_eyeballs_delay=None,
         interleave=None,
     ):
@@ -839,7 +840,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                 raise OSError("getaddrinfo() returned empty list")
 
             exceptions: list[Exception] = []
-            for af, socktype, sproto, canonname, sa in infos:
+            for af, socktype, sproto, _canonname, sa in infos:
                 try:
                     sock = socket.socket(af, socktype, sproto)
                     sock.setblocking(False)
@@ -865,9 +866,9 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         if ssl is not None:
             try:
-                from pyodide_js._api import _nodeSockUpgradeTLS
+                from pyodide_js._api import _nodeSock
             except ImportError:
-                raise RuntimeError("SSL support not available")
+                raise RuntimeError("SSL support not available") from None
 
             reject_unauthorized = True
             ca_data = cert_data = key_data = None
@@ -878,7 +879,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                 key_data = getattr(ssl, "_keyfile_data", None)
 
             sni_hostname = server_hostname or host or ""
-            await _nodeSockUpgradeTLS(
+            await _nodeSock.upgradeTLS(
                 sock.fileno(),
                 sni_hostname,
                 reject_unauthorized,
@@ -951,12 +952,12 @@ class WebLoop(asyncio.AbstractEventLoop):
     async def sock_recv(self, sock, nbytes):
         """Receive up to *nbytes* from the socket."""
         try:
-            from pyodide_js._api import _nodeSockRecv
+            from pyodide_js._api import _nodeSock
         except ImportError:
             raise NotImplementedError(
-                "sock_recv() requires Node.js socket support (loadPyodide with withNodeSocket: true)."
-            )
-        result = await _nodeSockRecv(sock.fileno(), nbytes)
+                "sock_recv() is not available in browser environments due to restricted raw socket access."
+            ) from None
+        result = await _nodeSock.recv(sock.fileno(), nbytes)
         return bytes(result)
 
     async def sock_recv_into(self, sock, buf):
@@ -981,12 +982,12 @@ class WebLoop(asyncio.AbstractEventLoop):
     async def sock_sendall(self, sock, data):
         """Send all *data* to the socket."""
         try:
-            from pyodide_js._api import _nodeSockSend
+            from pyodide_js._api import _nodeSock
         except ImportError:
             raise NotImplementedError(
-                "sock_sendall() requires Node.js socket support (loadPyodide with withNodeSocket: true)."
-            )
-        _nodeSockSend(sock.fileno(), data)
+                "sock_sendall() is not available in browser environments due to restricted raw socket access."
+            ) from None
+        _nodeSock.send(sock.fileno(), data)
 
     async def sock_sendto(self, sock, data, address):
         """Send a datagram to address (unsupported on WebLoop)."""
@@ -997,13 +998,13 @@ class WebLoop(asyncio.AbstractEventLoop):
     async def sock_connect(self, sock, address):
         """Connect the socket to a remote *address*."""
         try:
-            from pyodide_js._api import _nodeSockConnect
+            from pyodide_js._api import _nodeSock
         except ImportError:
             raise NotImplementedError(
-                "sock_connect() requires Node.js socket support (loadPyodide with withNodeSocket: true)."
-            )
+                "sock_connect() is not available in browser environments due to restricted raw socket access."
+            ) from None
         host, port = address
-        await _nodeSockConnect(sock.fileno(), host, port)
+        await _nodeSock.connect(sock.fileno(), host, port)
 
     async def sock_accept(self, sock):
         """Accept a connection (unsupported on WebLoop)."""

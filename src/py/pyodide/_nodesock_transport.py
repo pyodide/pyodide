@@ -5,8 +5,6 @@ This module is Node.js-specific and is imported lazily by
 connection is requested.
 """
 
-from __future__ import annotations
-
 import asyncio
 from typing import Any
 
@@ -14,7 +12,7 @@ from typing import Any
 class NodeSocketTransport(asyncio.Transport):
     """asyncio Transport backed by a NodeSockFS socket.
 
-    Uses the JS-level ``_nodeSockRecv`` / ``_nodeSockSend`` helpers so
+    Uses the JS-level ``_nodeSock.recv`` / ``_nodeSock.send`` helpers so
     that data flows through normal JS Promises rather than JSPI WASM stack
     suspension (which corrupts the Python thread state in an asyncio context).
 
@@ -41,13 +39,13 @@ class NodeSocketTransport(asyncio.Transport):
         self._paused = True  # start paused; resume_reading() will kick off reads
         self._read_task: asyncio.Task[None] | None = None
 
-        self._extra.setdefault("socket", sock)
+        self._extra.setdefault("socket", sock)  # type: ignore[attr-defined]
         try:
-            self._extra.setdefault("sockname", sock.getsockname())
+            self._extra.setdefault("sockname", sock.getsockname())  # type: ignore[attr-defined]
         except Exception:
             pass
         try:
-            self._extra.setdefault("peername", sock.getpeername())
+            self._extra.setdefault("peername", sock.getpeername())  # type: ignore[attr-defined]
         except Exception:
             pass
 
@@ -138,24 +136,21 @@ class NodeSocketTransport(asyncio.Transport):
 
     async def _read_loop(self) -> None:
         try:
-            from pyodide_js._api import _nodeSockRecv
+            from pyodide_js._api import _nodeSock
         except ImportError:
             self._force_close(
-                OSError("Node.js socket support not available (_nodeSockRecv)")
+                OSError("Node.js socket support not available (_nodeSock)")
             )
             return
 
         try:
             while not self._paused and not self._closing:
                 if isinstance(self._protocol, asyncio.BufferedProtocol):
-                    buf = self._protocol.get_buffer(-1)  # type: ignore[arg-type]
+                    buf = self._protocol.get_buffer(-1)
                     if not len(buf):
                         break
 
-                    data = await _nodeSockRecv(self._sock_fd, len(buf))
-                    if self._closing:
-                        break
-
+                    data = await _nodeSock.recv(self._sock_fd, len(buf))
                     nbytes = len(data)
                     if nbytes == 0:
                         self._protocol.buffer_updated(0)
@@ -167,19 +162,16 @@ class NodeSocketTransport(asyncio.Transport):
                     buf[:nbytes] = bytes(data)
                     self._protocol.buffer_updated(nbytes)
                 else:
-                    data = await _nodeSockRecv(self._sock_fd, 65536)
-                    if self._closing:
-                        break
-
+                    data = await _nodeSock.recv(self._sock_fd, 65536)
                     nbytes = len(data)
                     if nbytes == 0:
-                        self._protocol.eof_received()  # type: ignore[union-attr]
+                        self._protocol.eof_received()  # type: ignore[attr-defined]
                         if not self._closing:
                             self._closing = True
                             self._loop.call_soon(self._call_connection_lost, None)
                         break
 
-                    self._protocol.data_received(bytes(data))  # type: ignore[union-attr]
+                    self._protocol.data_received(bytes(data))  # type: ignore[attr-defined]
 
         except asyncio.CancelledError:
             raise
@@ -212,9 +204,9 @@ class NodeSocketTransport(asyncio.Transport):
         if not data:
             return
         try:
-            from pyodide_js._api import _nodeSockSend
+            from pyodide_js._api import _nodeSock
 
-            _nodeSockSend(self._sock_fd, data)
+            _nodeSock.send(self._sock_fd, data)
         except Exception as exc:
             self._force_close(exc)
 
