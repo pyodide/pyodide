@@ -4,7 +4,7 @@ import { PyodideConfigWithDefaults } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type PyodideModule, type FSType } from "./types";
-import { getSentinelImport } from "generated/sentinel";
+import { getJsvErrorImport } from "generated/jsverror";
 import { RUNTIME_ENV } from "./environments";
 
 /**
@@ -206,7 +206,7 @@ function getInstantiateWasmFunc(
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
-  const sentinelImportPromise = getSentinelImport();
+  const jsvErrorImportPromise = getJsvErrorImport();
   return function (
     imports: { [key: string]: { [key: string]: any } },
     successCallback: (
@@ -215,7 +215,10 @@ function getInstantiateWasmFunc(
     ) => void,
   ) {
     (async function () {
-      imports.sentinel = await sentinelImportPromise;
+      const { Jsv_GetError_import, JsvError_Check } =
+        await jsvErrorImportPromise;
+      imports.env.Jsv_GetError_import = Jsv_GetError_import;
+      imports.env.JsvError_Check = JsvError_Check;
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {
