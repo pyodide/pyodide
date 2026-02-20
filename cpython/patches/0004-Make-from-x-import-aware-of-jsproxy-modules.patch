@@ -1,18 +1,18 @@
-From 01a53bd90d3e11992489989a2db45e41bd9b1947 Mon Sep 17 00:00:00 2001
+From 4878c95d8d7f9f8d60e512aacf3e59037e336227 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 22 Feb 2025 13:18:18 +0100
-Subject: [PATCH 04/07] Make `from x import *` aware of jsproxy modules
+Subject: [PATCH 4/8] Make `from x import *` aware of jsproxy modules
 
 ---
  Python/intrinsics.c | 8 ++++++++
  1 file changed, 8 insertions(+)
 
 diff --git a/Python/intrinsics.c b/Python/intrinsics.c
-index a6b2c108b67..c44e329b1c7 100644
+index ff44ba0ee64..2921e702ea6 100644
 --- a/Python/intrinsics.c
 +++ b/Python/intrinsics.c
-@@ -35,6 +35,11 @@ print_expr(PyThreadState* tstate, PyObject *value)
-     return PyObject_CallOneArg(hook, value);
+@@ -36,6 +36,11 @@ print_expr(PyThreadState* Py_UNUSED(ignored), PyObject *value)
+     return res;
  }
  
 +int __attribute__((weak))
@@ -23,7 +23,7 @@ index a6b2c108b67..c44e329b1c7 100644
  static int
  import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
  {
-@@ -45,6 +50,9 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
+@@ -46,6 +51,9 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
      if (PyObject_GetOptionalAttr(v, &_Py_ID(__all__), &all) < 0) {
          return -1; /* Unexpected error */
      }
