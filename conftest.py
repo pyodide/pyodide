@@ -207,17 +207,6 @@ def pytest_collection_modifyitems(config, items):
                 )
                 continue
 
-        if item.get_closest_marker("db"):
-            # Skip db tests if mark not explicitly included
-            markexpr = config.getoption("-m", default="")
-            if "db" not in markexpr:
-                item.add_marker(
-                    pytest.mark.skip(
-                        reason="db test skipped (use '-m db' to run)"
-                    )
-                )
-                continue
-
         maybe_skip_test(item, delayed=True)
 
 
