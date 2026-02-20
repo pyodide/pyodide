@@ -535,11 +535,12 @@ def tls_server(handler, *, timeout=5.0, expect_client_error=False):
 
 
 def _generate_self_signed_cert(certfile, keyfile):
+    import datetime
+
     from cryptography import x509
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import rsa
     from cryptography.x509.oid import NameOID
-    import datetime
 
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
@@ -554,9 +555,9 @@ def _generate_self_signed_cert(certfile, keyfile):
         .issuer_name(issuer)
         .public_key(key.public_key())
         .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.datetime.now(datetime.timezone.utc))
+        .not_valid_before(datetime.datetime.now(datetime.UTC))
         .not_valid_after(
-            datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=365)
+            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=365)
         )
         .add_extension(
             x509.SubjectAlternativeName(
@@ -793,7 +794,7 @@ result
             """
         )
 
-    assert result != "no_error", f"Expected TLS rejection, but got no error"
+    assert result != "no_error", "Expected TLS rejection, but got no error"
 
 
 @pytest.mark.skip_refcount_check

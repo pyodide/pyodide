@@ -68,7 +68,12 @@ function isSocketAddress(address: unknown): address is SocketAddress {
 
 let _net: typeof import("node:net") | null = null;
 let _tls: typeof import("node:tls") | null = null;
-let _duplexToWeb: ((duplex: Duplex) => { readable: ReadableStream<unknown>; writable: WritableStream<unknown> }) | null = null;
+let _duplexToWeb:
+  | ((duplex: Duplex) => {
+      readable: ReadableStream<unknown>;
+      writable: WritableStream<unknown>;
+    })
+  | null = null;
 
 /**
  * Must be called once before using `connect()`.  Dynamically loads `node:net`,

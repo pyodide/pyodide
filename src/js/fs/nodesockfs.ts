@@ -242,10 +242,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       sock: NodeSock,
       length: number,
     ): Promise<{ bytesRead: number; buffer: Uint8Array } | null> {
-      DEBUG &&
-        console.debug(
-          `[NodeSockFS:recvmsgAsync] requested=${length}`,
-        );
+      DEBUG && console.debug(`[NodeSockFS:recvmsgAsync] requested=${length}`);
 
       if (sock.leftover && sock.leftover.length > 0) {
         const bytesRead = Math.min(length, sock.leftover.length);
@@ -280,7 +277,10 @@ async function _initializeNodeSockFS(module: PyodideModule) {
           }
 
           sock.leftover = chunk.subarray(length);
-          return { bytesRead: length, buffer: new Uint8Array(chunk.subarray(0, length)) };
+          return {
+            bytesRead: length,
+            buffer: new Uint8Array(chunk.subarray(0, length)),
+          };
         },
         () => null,
       );
