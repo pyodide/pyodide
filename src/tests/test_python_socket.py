@@ -484,12 +484,12 @@ def tls_server(handler, *, timeout=5.0, expect_client_error=False):
     If *expect_client_error* is True, server-side TLS errors (e.g. the client
     aborting the handshake) are silently ignored.
     """
-    certdir = os.path.join(os.path.dirname(__file__), "test_data")
-    certfile = os.path.join(certdir, "tls_cert.pem")
-    keyfile = os.path.join(certdir, "tls_key.pem")
+    import tempfile
 
-    if not os.path.exists(certfile):
-        _generate_self_signed_cert(certfile, keyfile)
+    tmpdir = tempfile.mkdtemp()
+    certfile = os.path.join(tmpdir, "tls_cert.pem")
+    keyfile = os.path.join(tmpdir, "tls_key.pem")
+    _generate_self_signed_cert(certfile, keyfile)
 
     with open(certfile) as f:
         ca_pem = f.read()
