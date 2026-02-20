@@ -1,7 +1,7 @@
 From 01a53bd90d3e11992489989a2db45e41bd9b1947 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 22 Feb 2025 13:18:18 +0100
-Subject: [PATCH 06/10] Make `from x import *` aware of jsproxy modules
+Subject: [PATCH 04/07] Make `from x import *` aware of jsproxy modules
 
 ---
  Python/intrinsics.c | 8 ++++++++

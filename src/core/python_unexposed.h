@@ -70,14 +70,8 @@ _PyGen_SetStopIterationValue(PyObject*);
 int
 _PyGen_FetchStopIterationValue(PyObject**);
 
-Py_hash_t
-_Py_HashBytes(const void*, Py_ssize_t);
-
 PyObject*
 _PyObject_NextNotImplemented(PyObject*);
 
 int
 _PySet_Update(PyObject* set, PyObject* iterable);
-
-extern int
-_PyUnicode_EQ(PyObject*, PyObject*);

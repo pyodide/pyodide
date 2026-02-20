@@ -40,28 +40,30 @@
 - test_abc
 - test_abstract_numbers
 - test_android
+- test_annotationlib
 - test_apple
 - test_argparse:
     xfail: slow, times out
     skip:
       # These have extra newlines
-      - "*usage*"
-      - "*help*"
+    - '*usage*'
+    - '*help*'
         # Doesn't work with zipimporter stdlib
-      - test_argparse_module_encoding
+    - test_argparse_module_encoding
 - test_array
 - test_asdl_parser
 - test_ast.test_ast:
-    skip:
-      - "*_recursion_*"
+    xfail: tries to read stdlib directory, not compatible with zipimport
 - test_asyncgen
 - test_asyncio.test_base_events
 - test_asyncio.test_buffered_proto
 - test_asyncio.test_context
 - test_asyncio.test_eager_task_factory
 - test_asyncio.test_events
+- test_asyncio.test_free_threading
 - test_asyncio.test_futures
 - test_asyncio.test_futures2
+- test_asyncio.test_graph
 - test_asyncio.test_locks
 - test_asyncio.test_pep492
 - test_asyncio.test_proactor_events
@@ -81,6 +83,7 @@
 - test_asyncio.test_tasks
 - test_asyncio.test_threads
 - test_asyncio.test_timeouts
+- test_asyncio.test_tools
 - test_asyncio.test_transports
 - test_asyncio.test_unix_events
 - test_asyncio.test_waitfor
@@ -100,27 +103,33 @@
 - test_bool
 - test_buffer
 - test_bufio
+- test_build_details
 - test_builtin
 - test_bytes
 - test_bz2:
     skip:
-      - testThreading
+    - testThreading
 - test_c_locale_coercion
 - test_calendar
 - test_call:
     skip:
-      - test_super_deep # stack overflow
+    - test_super_deep   # stack overflow
 - test_capi.test_abstract
 - test_capi.test_bytearray
 - test_capi.test_bytes
 - test_capi.test_codecs
 - test_capi.test_complex
+- test_capi.test_config
 - test_capi.test_dict
+# We removed FS.createAsyncInputDevice in our patch
+# - test_capi.test_emscripten
 - test_capi.test_eval
 - test_capi.test_eval_code_ex
 - test_capi.test_exceptions
 - test_capi.test_file
 - test_capi.test_float
+- test_capi.test_frame
+- test_capi.test_function
 - test_capi.test_getargs
 - test_capi.test_hash
 - test_capi.test_immortal
@@ -130,7 +139,7 @@
 - test_capi.test_mem
 - test_capi.test_misc:
     skip:
-      - "*subinterpreter*" # Should we disable _xxsubinterpreters in Setup.local?
+    - '*subinterpreter*'   # Should we disable _xxsubinterpreters in Setup.local?
 - test_capi.test_number
 - test_capi.test_object
 - test_capi.test_opt
@@ -141,12 +150,13 @@
 - test_capi.test_sys
 - test_capi.test_time
 - test_capi.test_tuple
+- test_capi.test_type
 - test_capi.test_unicode
 - test_capi.test_watchers
 - test_charmapcodec
 - test_class:
     skip:
-      - testSFBug532646 # Maximum call stack size exceeded
+    - testSFBug532646   # Maximum call stack size exceeded
 - test_clinic
 - test_cmath
 - test_cmd
@@ -173,8 +183,8 @@
 - test_compare
 - test_compile:
     skip:
-      - test_compiler_recursion_limit
-      - test_extended_arg
+    - test_compiler_recursion_limit
+    - test_extended_arg
 - test_compileall:
     xfail: slow, sometimes times out
 - test_compiler_assemble
@@ -184,6 +194,7 @@
 - test_concurrent_futures.test_deadlock
 - test_concurrent_futures.test_future
 - test_concurrent_futures.test_init
+- test_concurrent_futures.test_interpreter_pool
 - test_concurrent_futures.test_process_pool
 - test_concurrent_futures.test_shutdown
 - test_concurrent_futures.test_thread_pool
@@ -195,13 +206,14 @@
 - test_contextlib_async
 - test_copy:
     skip:
-      - test_deepcopy_reflexive_dict
-      - test_deepcopy_reflexive_list
-      - test_deepcopy_reflexive_tuple
+    - test_deepcopy_reflexive_dict
+    - test_deepcopy_reflexive_list
+    - test_deepcopy_reflexive_tuple
 - test_copyreg:
     xfail: dbm
 - test_coroutines
 - test_cprofile
+- test_crossinterp
 - test_csv
 - test_ctypes.test_aligned_structures
 - test_ctypes.test_anon
@@ -209,7 +221,7 @@
 - test_ctypes.test_arrays
 - test_ctypes.test_as_parameter:
     skip:
-      - test_recursive_as_param
+    - test_recursive_as_param
 - test_ctypes.test_bitfields
 - test_ctypes.test_buffers
 - test_ctypes.test_bytes
@@ -221,11 +233,13 @@
 - test_ctypes.test_checkretval
 - test_ctypes.test_delattr
 - test_ctypes.test_dlerror
+- test_ctypes.test_dllist
 - test_ctypes.test_errno
 - test_ctypes.test_find
 - test_ctypes.test_frombuffer
 - test_ctypes.test_funcptr
 - test_ctypes.test_functions
+- test_ctypes.test_generated_structs
 - test_ctypes.test_incomplete
 - test_ctypes.test_init
 - test_ctypes.test_internals
@@ -252,14 +266,14 @@
 - test_ctypes.test_stringptr
 - test_ctypes.test_strings
 - test_ctypes.test_struct_fields
+- test_ctypes.test_structunion
 - test_ctypes.test_structures:
     skip:
       # Bugs in libffi?
-      - test_array_in_struct
-      - test_issue18060*
+    - test_array_in_struct
+    - test_issue18060*
 - test_ctypes.test_unaligned_structures
 - test_ctypes.test_unicode
-- test_ctypes.test_unions
 - test_ctypes.test_values
 - test_ctypes.test_varsize_struct
 - test_ctypes.test_win32
@@ -283,19 +297,18 @@
 - test_deque
 - test_descr:
     skip:
-      - test_repr_as_str
-      - test_recursive_call
-      - test_slots_trash
+    - test_repr_as_str
+    - test_recursive_call
+    - test_slots_trash
 - test_descrtut
 - test_devpoll
 - test_dict:
     skip:
-      - test_repr_deep
-- test_dict_version
+    - test_repr_deep
 - test_dictcomps
 - test_dictviews:
     skip:
-      - test_deeply_nested_repr
+    - test_deeply_nested_repr
 - test_difflib
 - test_dis:
     xfail-safari: safaridriver unexpectedly exited
@@ -331,8 +344,8 @@
 - test_except_star
 - test_exception_group:
     skip:
-      - test_deep_split
-      - test_deep_subgroup
+    - test_deep_split
+    - test_deep_subgroup
 - test_exception_hierarchy
 - test_exception_variations
 - test_exceptions
@@ -347,7 +360,7 @@
 - test_fileio:
     skip:
       # stack overflow in v8
-      - "*Recursive*"
+    - '*Recursive*'
 - test_fileutils
 - test_finalization
 - test_float
@@ -358,29 +371,54 @@
 - test_fractions
 - test_frame:
     skip:
-      - test_repr_deep
+    - test_repr_deep
+- test_free_threading.test_bisect
+- test_free_threading.test_capi
 - test_free_threading.test_code
+- test_free_threading.test_cprofile
+- test_free_threading.test_csv
+- test_free_threading.test_dbm_gnu
 - test_free_threading.test_dict
+- test_free_threading.test_enumerate
+- test_free_threading.test_func_annotations
+- test_free_threading.test_functools
 - test_free_threading.test_gc
+- test_free_threading.test_grp
+- test_free_threading.test_heapq
+- test_free_threading.test_io
+- test_free_threading.test_iteration
+- test_free_threading.test_itertools_batched
 - test_free_threading.test_list
+- test_free_threading.test_methodcaller
+- test_free_threading.test_mmap
 - test_free_threading.test_monitoring
+- test_free_threading.test_races
+- test_free_threading.test_re
+- test_free_threading.test_resource
+- test_free_threading.test_reversed
+- test_free_threading.test_set
 - test_free_threading.test_slots
 - test_free_threading.test_str
 - test_free_threading.test_tokenize
 - test_free_threading.test_type
+- test_free_threading.test_uuid
+- test_free_threading.test_zip
 - test_frozen:
     skip:
       # frozen modules are disabled in runtime
-      - test_unfrozen_submodule_in_frozen_package
+    - test_unfrozen_submodule_in_frozen_package
 - test_fstring:
     xfail-chrome: slow, times out
 - test_ftplib
-- test_funcattrs
+- test_funcattrs:
+    skip:
+    # Relies on time.sleep that we patch
+    - test_builtin__self__
 - test_functools:
     skip:
-      - "*threaded*"
-      - test_recursive_pickle
-      - test_lru_recursion
+    - '*threaded*'
+    - test_recursive_pickle
+    - test_lru_recursion
 - test_future_stmt.test_future
 - test_future_stmt.test_future_flags
 - test_future_stmt.test_future_multiple_features
@@ -426,14 +464,14 @@
 - test_importlib.extension.test_case_sensitivity
 - test_importlib.extension.test_finder:
     skip:
-      - "*FinderTests.test_module"
+    - '*FinderTests.test_module'
 - test_importlib.extension.test_loader:
-    xfail: "TODO: why does it fail?"
+    xfail: 'TODO: why does it fail?'
 - test_importlib.extension.test_path_hook
 - test_importlib.frozen.test_finder:
     skip:
       # incompatible with wheel
-      - "*FindSpecTests*"
+    - '*FindSpecTests*'
 - test_importlib.frozen.test_loader
 - test_importlib.import_.test___loader__
 - test_importlib.import_.test___package__
@@ -451,7 +489,8 @@
 - test_importlib.resources.test_compatibilty_files
 - test_importlib.resources.test_contents
 - test_importlib.resources.test_custom
-- test_importlib.resources.test_files
+# Incompatible with zipimport
+# - test_importlib.resources.test_files
 - test_importlib.resources.test_functional
 - test_importlib.resources.test_open
 - test_importlib.resources.test_path
@@ -467,7 +506,7 @@
 - test_importlib.test_api:
     skip:
       # incompatible with zipimport
-      - test_reload_missing_loader
+    - test_reload_missing_loader
 - test_importlib.test_lazy
 - test_importlib.test_locks
 - test_importlib.test_namespace_pkgs
@@ -480,9 +519,9 @@
 - test_inspect.test_inspect:
     skip:
       # Incompatible with zipimported stdlib
-      - test_getsource_stdlib_collections_abc
+    - test_getsource_stdlib_collections_abc
       # no _pydecimal
-      - test_getsource_stdlib_decimal
+    - test_getsource_stdlib_decimal
 - test_int
 - test_int_literal
 - test_interpreters.test_api
@@ -492,13 +531,16 @@
 - test_interpreters.test_stress
 - test_io:
     skip:
-      - test_recursive_repr
+    - test_recursive_repr
+    # seeking out of 32-bit memory boundary
+    # RangeError: Array buffer allocation failed
+    - test_large_file_ops
 - test_ioctl
 - test_ipaddress
 - test_isinstance:
     skip:
-      - "*recursion*"
-      - "*infinite*"
+    - '*recursion*'
+    - '*infinite*'
 - test_iter
 - test_iterlen
 - test_itertools
@@ -515,8 +557,8 @@
 - test_json.test_pass3
 - test_json.test_recursion:
     skip:
-      - test_endless_recursion
-      - test_highly_nested_objects_*
+    - test_endless_recursion
+    - test_highly_nested_objects_*
 - test_json.test_scanstring
 - test_json.test_separators
 - test_json.test_speedups
@@ -525,17 +567,20 @@
 - test_keyword
 - test_keywordonlyarg
 - test_kqueue
-- test_largefile
+# out of 32-bit memory boundary
+# RangeError: Array buffer allocation failed
+# - test_largefile
 - test_launcher
 - test_linecache:
     skip:
       # incompatible with zipimport
-      - test_clearcache
-      - test_getline
-      - test_memoryerror
+    - test_clearcache
+    - test_getline
+    - test_memoryerror
+    - test_frozen
 - test_list:
     skip:
-      - test_repr_deep
+    - test_repr_deep
 - test_listcomps
 - test_lltrace
 - test_locale
@@ -545,13 +590,13 @@
 - test_lzma
 - test_mailbox:
     skip:
-      - test_mailbox
+    - test_mailbox
 - test_marshal:
     skip:
-      - test_recursion_limit
+    - test_recursion_limit
 - test_math:
     skip:
-      - test_fma_zero_result
+    - test_fma_zero_result
 - test_math_property
 - test_memoryio
 - test_memoryview
@@ -581,15 +626,16 @@
 - test_named_expressions
 - test_netrc
 - test_ntpath
+- test_nturl2path
 - test_numeric_tower
 - test_opcache:
     skip:
       # There seems to be a problem with tests that use
       # _testinternalcapi.get_object_dict_values
-      - test_dict_dematerialization
-      - test_dict_dematerialization_copy
-      - test_dict_dematerialization_pickle
-      - test_values_on_instance
+    - test_dict_dematerialization
+    - test_dict_dematerialization_copy
+    - test_dict_dematerialization_pickle
+    - test_values_on_instance
 - test_opcodes
 - test_openpty
 - test_operator
@@ -598,17 +644,24 @@
 - test_ordered_dict
 - test_os:
     skip:
-      - test_utime*
+    - test_utime*
+    # os.umask is not supported
+    - test_mode
 - test_osx_env
+- test_pathlib.test_copy
+- test_pathlib.test_join
+- test_pathlib.test_join_posix
+- test_pathlib.test_join_windows
 - test_pathlib.test_pathlib:
     skip:
       # Regression in Emscripten 4.0.7
-      - test_glob_dotdot
-- test_pathlib.test_pathlib_abc
+    - test_glob_dotdot
+- test_pathlib.test_read
+- test_pathlib.test_write
 - test_patma
 - test_pdb:
     skip:
-      - test_pdb_breakpoints_preserved_across_interactive_sessions
+    - test_pdb_breakpoints_preserved_across_interactive_sessions
 - test_peepholer
 - test_peg_generator.test_c_parser
 - test_peg_generator.test_first_sets
@@ -624,10 +677,13 @@
     xfail: dbm
 - test_pkg
 - test_pkgutil
-- test_platform
+- test_platform:
+    skip:
+    # emscripten version hard coded in the test file
+    - test_libc_ver
 - test_plistlib:
     skip:
-      - test_deep_nesting
+    - test_deep_nesting
 - test_poll
 - test_popen
 - test_poplib
@@ -650,13 +706,16 @@
 - test_pydoc.test_pydoc:
     xfail: Missing doc data
 - test_pyexpat
+- test_pyrepl.test_eventqueue
 - test_pyrepl.test_input
 - test_pyrepl.test_interact
 - test_pyrepl.test_keymap
-- test_pyrepl.test_pyrepl
+- test_pyrepl.test_pyrepl:
+    xfail: JSPI patches removed
 - test_pyrepl.test_reader
+- test_pyrepl.test_terminfo
 - test_pyrepl.test_unix_console
-- test_pyrepl.test_unix_eventqueue
+- test_pyrepl.test_utils
 - test_pyrepl.test_windows_console
 - test_queue
 - test_quopri
@@ -666,6 +725,7 @@
 - test_re
 - test_readline
 - test_regrtest
+- test_remote_pdb
 - test_repl
 - test_reprlib
 - test_resource
@@ -689,7 +749,7 @@
 - test_signal
 - test_site:
     skip:
-      - test_abs_paths_cached_None # "TypeError: unhashable type: 'pyodide.JsProxy'"
+    - test_abs_paths_cached_None   # "TypeError: unhashable type: 'pyodide.JsProxy'"
 - test_slice
 - test_smtplib
 - test_smtpnet
@@ -699,7 +759,11 @@
 - test_source_encoding
 - test_sqlite3.test_backup
 - test_sqlite3.test_cli
-- test_sqlite3.test_dbapi
+- test_sqlite3.test_dbapi:
+    skip:
+    # Undecodable filename doesn't work
+    - test_open_undecodable_uri
+    - test_open_with_undecodable_path
 - test_sqlite3.test_dump
 - test_sqlite3.test_factory
 - test_sqlite3.test_hooks
@@ -709,33 +773,35 @@
 - test_sqlite3.test_userfunctions
 - test_ssl:
     skip:
-      - BasicSocketTests  # socket not supported
-      - ThreadedTests  # no thread
-      - SimpleBackgroundTests  # "socket_helper.bind_port"
-      - TestPreHandshakeClose  # "socket_helper.bind_port"
-      - test_msg_callback_tls12  # "socket_helper.bind_port"
-      - test_context_custom_class  # SSLContext stub
-      - test_lib_reason  # No raise
-      - test_load_default_certs_env  # cannot load system certs
-      - test_get_ca_certs  # cannot load system certs
-      - test_load_verify_cadata # cannot load system certs
-      - test_load_verify_locations  # cannot load system certs
-      - test_load_cert_chain  # cannot load cert files
-      - test_msg_callback_deadlock_bpo43577  # no thread
-      - test_min_max_version  # cannot infer versions
-      - test_get_ciphers  # cannot infer ciphers
-      - test_ciphers  # cannot infer ciphers
-      - test_cert_store_stats  # cannot know cert store stats
-      - test_subclass  # socket not supported
-      - test_unwrap  # MemoryBIO stub
-      - test_bad_server_hostname  # socket not supported
+    - BasicSocketTests    # socket not supported
+    - ThreadedTests    # no thread
+    - SimpleBackgroundTests    # "socket_helper.bind_port"
+    - TestPreHandshakeClose    # "socket_helper.bind_port"
+    - test_msg_callback_tls12    # "socket_helper.bind_port"
+    - test_context_custom_class    # SSLContext stub
+    - test_lib_reason    # No raise
+    - test_load_default_certs_env    # cannot load system certs
+    - test_get_ca_certs    # cannot load system certs
+    - test_load_verify_cadata   # cannot load system certs
+    - test_load_verify_locations    # cannot load system certs
+    - test_load_cert_chain    # cannot load cert files
+    - test_msg_callback_deadlock_bpo43577    # no thread
+    - test_min_max_version    # cannot infer versions
+    - test_get_ciphers    # cannot infer ciphers
+    - test_ciphers    # cannot infer ciphers
+    - test_cert_store_stats    # cannot know cert store stats
+    - test_subclass    # socket not supported
+    - test_unwrap    # MemoryBIO stub
+    - test_bad_server_hostname    # socket not supported
+    - test_options  #
 - test_stable_abi_ctypes
 - test_startfile
 - test_stat
 - test_statistics
 - test_str
 - test_strftime
-- test_string
+- test_string.test_string
+- test_string.test_templatelib
 - test_string_literals
 - test_stringprep
 - test_strptime
@@ -748,13 +814,13 @@
 - test_super
 - test_support:
     skip:
-      - test_has_strftime_extensions
+    - test_has_strftime_extensions
 - test_symtable
 - test_syntax
 - test_sys:
     skip:
-      - test_excepthook # AttributeError: 'int' object has no attribute 'tb_frame'
-      - test_stdlib_dir # TypeError: expected str, bytes or os.PathLike object, not NoneType
+    - test_excepthook   # AttributeError: 'int' object has no attribute 'tb_frame'
+    - test_stdlib_dir   # TypeError: expected str, bytes or os.PathLike object, not NoneType
 - test_sys_setprofile
 - test_sys_settrace
 - test_sysconfig:
@@ -764,20 +830,26 @@
 - test_tarfile:
     timeout: 240
     skip_browsers:
-      node: "flaky (timeout)"
+      node: flaky (timeout)
+    skip:
+      # TODO: not compatible with our filesystem I guess?
+      - test_realpath_limit_attack
+      # os.umask not supported
+      - test_chmod_outside_dir
 - test_tcl
 - test_tempfile
 - test_termios
 - test_textwrap
 - test_thread
+- test_thread_local_bytecode
 - test_threadedtempfile
 - test_threading
 - test_threading_local
 - test_threadsignals
 - test_time:
     skip:
-      - test_pthread_getcpuclockid #  time.pthread_getcpuclockid(threading.get_ident()) fails
-      - test_process_time
+    - test_pthread_getcpuclockid   #  time.pthread_getcpuclockid(threading.get_ident()) fails
+    - test_process_time
 - test_timeit
 - test_timeout
 - test_tkinter.test_colorchooser
@@ -799,16 +871,18 @@
 - test_tools.test_i18n
 - test_tools.test_makefile
 - test_tools.test_makeunicodedata
+- test_tools.test_msgfmt
 - test_tools.test_reindent
 - test_tools.test_sundry
 - test_trace:
     skip:
-      - test_coverage_ignore # zipped stdlib
+    - test_coverage_ignore   # zipped stdlib
 - test_traceback:
     xfail-safari: safaridriver unexpectedly exited
-    xfail: "RangeError: Maximum call stack size exceeded TODO: why?"
+    xfail: 'RangeError: Maximum call stack size exceeded TODO: why?'
 - test_tracemalloc:
     xfail-safari: safaridriver unexpectedly exited
+- test_tstring
 - test_ttk.test_extensions
 - test_ttk.test_style
 - test_ttk.test_widgets
@@ -826,13 +900,17 @@
 - test_typing:
     skip:
       # stack overflow in v8
-      - "*recursion*"
+    - '*recursion*'
 - test_ucn
 - test_unary
 - test_unicode_file
 - test_unicode_file_functions
 - test_unicode_identifiers
 - test_unicodedata
+- test_unittest.namespace_test_pkg.bar.test_bar
+- test_unittest.namespace_test_pkg.noop.no2.test_no2
+- test_unittest.namespace_test_pkg.noop.test_noop
+- test_unittest.namespace_test_pkg.test_foo
 - test_unittest.test_assertions
 - test_unittest.test_async_case
 - test_unittest.test_break
@@ -861,11 +939,12 @@
 - test_urlparse
 - test_userdict:
     skip:
-      - test_repr_deep
+    - test_repr_deep
 - test_userlist:
     skip:
-      - test_repr_deep
-- test_userstring
+    - test_repr_deep
+- test_userstring:
+    xfail: FIXME works locally, timeouts in CI
 - test_utf8_mode
 - test_utf8source
 - test_uuid
@@ -888,10 +967,10 @@
 - test_xml_dom_xmlbuilder
 - test_xml_etree:
     skip:
-      - test_trashcan
+    - test_trashcan
 - test_xml_etree_c:
     skip:
-      - test_trashcan
+    - test_trashcan
 - test_xmlrpc
 - test_xxlimited
 - test_xxtestfuzz
@@ -899,10 +978,12 @@
 - test_zipapp
 - test_zipfile._path.test_complexity
 - test_zipfile._path.test_path
-- test_zipfile.test_core
+- test_zipfile.test_core:
+    timeout: 60
 - test_zipfile64
 - test_zipimport
 - test_zipimport_support
 - test_zlib
 - test_zoneinfo.test_zoneinfo
 - test_zoneinfo.test_zoneinfo_property
+- test_zstd
