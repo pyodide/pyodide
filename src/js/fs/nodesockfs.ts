@@ -1,20 +1,33 @@
 /**
  * NodeSockFS - A Node.js native socket filesystem for Emscripten/Pyodide
  *
- * This replaces Emscripten's WebSocket-based SOCKFS with native Node.js sockets.
- * Currently implements TCP client sockets only (SOCK_STREAM + connect).
+ * This replaces Emscripten's WebSocket-based SOCKFS with native Node.js sockets,
+ * using the WinterCG Sockets API (`connect()`) as the transport layer.
+ *
+ * Currently implements TCP client sockets (SOCK_STREAM + connect) with optional
+ * TLS support via the Sockets API's `secureTransport` / `startTls()`.
  *
  * JSPI Integration:
  * This module provides async methods (connectAsync, recvmsgAsync) that are called
  * by the wrapped syscalls in emscripten-settings.ts when JSPI is available.
  * The syscalls are wrapped with WebAssembly.Suspending before instantiation,
  * allowing them to suspend the WebAssembly stack while waiting for async operations.
+ *
+ * Data Reception:
+ * Uses the WinterCG Socket's ReadableStream via a reader, with a leftover buffer
+ * for partial reads. This replaces the previous event-based `recvBuffer` approach
+ * and provides automatic backpressure through Web Streams.
  */
 
 import type { PyodideModule, PreRunFunc } from "../types";
-import type { Socket } from "node:net";
 import { RUNTIME_ENV } from "../environments";
 import { setPyodideModuleforJSPI } from "../emscripten-settings";
+import {
+  init as initWinterCGSockets,
+  connect,
+  Socket as WinterCGSocket,
+} from "./wintercg-sockets";
+import type { SocketOptions } from "./wintercg-sockets";
 
 // Internal socket structure that mirrors Emscripten's sock structure
 interface NodeSock {
@@ -23,10 +36,16 @@ interface NodeSock {
   protocol: number;
   server: any;
   error: number | null;
-  nodeSocket: Socket | null;
-  recvBuffer: Buffer; // Buffer for incoming data
-  connected: boolean; // Connection state
-  connecting: boolean; // Whether connect is in progress
+  /** The WinterCG Socket wrapping the underlying net.Socket / tls.TLSSocket */
+  wcgSocket: WinterCGSocket | null;
+  /** ReadableStream reader for receiving data */
+  reader: ReadableStreamDefaultReader<Uint8Array> | null;
+  /** Leftover bytes from a previous read that were larger than requested */
+  leftover: Uint8Array | null;
+  connected: boolean;
+  connecting: boolean;
+  /** Whether the socket has been upgraded to TLS */
+  tls: boolean;
   stream?: any; // The FS stream
   daddr?: string; // Destination address
   dport?: number; // Destination port
@@ -65,8 +84,8 @@ async function _initializeNodeSockFS(module: PyodideModule) {
 
   setPyodideModuleforJSPI(module);
 
-  // @ts-ignore
-  const net = await import("node:net");
+  // Initialize WinterCG Sockets API (loads node:net, node:tls, node:stream)
+  await initWinterCGSockets();
 
   DEBUG && console.debug(`[NodeSockFS] Initializing...`);
   DEBUG &&
@@ -74,7 +93,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       `[NodeSockFS] Module.jspiSupported: ${(module as any).jspiSupported}`,
     );
 
-  // Constants matching Emscripten/POSIX definitions
+  // POSIX constants
   const AF_INET = 2;
   const SOCK_STREAM = 1;
   const SOCK_DGRAM = 2;
@@ -87,172 +106,119 @@ async function _initializeNodeSockFS(module: PyodideModule) {
 
   // Poll event flags
   const POLLIN = 0x001;
-  const POLLPRI = 0x002;
   const POLLOUT = 0x004;
-  const POLLERR = 0x008;
   const POLLHUP = 0x010;
-  const POLLNVAL = 0x020;
   const POLLRDNORM = 0x040;
-  const POLLWRNORM = 0x100;
 
-  // Socket operations - these are called via sock.sock_ops.method(sock, ...) inside the libsyscall
   const tcp_sock_ops = {
-    /**
-     * Poll the socket for readability/writability
-     */
     poll(sock: NodeSock): number {
       let mask = 0;
 
-      // Check if there's data to read
-      if (sock.recvBuffer.length > 0) {
+      if (
+        (sock.leftover && sock.leftover.length > 0) ||
+        (sock.wcgSocket?.innerSocket?.readableLength ?? 0) > 0
+      ) {
         mask |= POLLRDNORM | POLLIN;
       }
 
-      // Check if socket is writable (connected and not destroyed)
-      if (sock.connected && sock.nodeSocket && !sock.nodeSocket.destroyed) {
+      const innerSocket = sock.wcgSocket?.innerSocket;
+      if (sock.connected && innerSocket && !innerSocket.destroyed) {
         mask |= POLLOUT;
       }
 
-      // Check if socket is closed/closing
-      if (sock.nodeSocket?.destroyed) {
+      if (innerSocket?.destroyed) {
         mask |= POLLHUP;
       }
 
       return mask;
     },
 
-    /**
-     * Handle ioctl calls
-     */
-    ioctl(sock: NodeSock, request: number, _arg: any): number {
-      // FIONREAD (0x541B) - return number of bytes available to read
+    ioctl(_sock: NodeSock, request: number, _arg: any): number {
       const FIONREAD = 0x541b;
       if (request === FIONREAD) {
-        // Would need to write to arg, but for now just return 0
         return 0;
       }
       return 0;
     },
 
-    /**
-     * Close the socket
-     */
     close(sock: NodeSock): number {
-      if (sock.nodeSocket) {
-        sock.nodeSocket.destroy();
-        sock.nodeSocket = null;
+      if (sock.wcgSocket) {
+        if (sock.reader) {
+          sock.reader.releaseLock();
+          sock.reader = null;
+        }
+        sock.wcgSocket.close().catch(() => {});
+        sock.wcgSocket = null;
       }
+      sock.leftover = null;
       sock.connected = false;
       sock.connecting = false;
       return 0;
     },
 
-    /**
-     * Bind socket to address/port (not implemented for client-only PoC)
-     */
     bind(_sock: NodeSock, _addr: string, _port: number): void {
       throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
     },
 
-    /**
-     * Async version of connect - returns a Promise that resolves when connected.
-     * This is called by the C syscall override when JSPI is available.
-     */
-    connectAsync(sock: NodeSock, addr: string, port: number): Promise<number> {
+    connectAsync(
+      sock: NodeSock,
+      addr: string,
+      port: number,
+      options?: SocketOptions,
+    ): Promise<number> {
       DEBUG &&
         console.debug(
-          `[NodeSockFS:connectAsync] START - addr=${addr}, port=${port}`,
+          `[NodeSockFS:connectAsync] addr=${addr}, port=${port}, tls=${options?.secureTransport ?? "off"}`,
         );
 
-      // First do the synchronous setup
-      if (sock.nodeSocket) {
-        DEBUG &&
-          console.debug(
-            `[NodeSockFS:connectAsync] ERROR: Already connected (EISCONN)`,
-          );
+      if (sock.wcgSocket) {
         return Promise.resolve(-ERRNO_CODES.EISCONN);
       }
 
-      // Create new TCP socket
-      const socket = new net.Socket();
-      sock.nodeSocket = socket;
       sock.connecting = true;
       sock.daddr = addr;
       sock.dport = port;
 
-      // Handle incoming data
-      socket.on("data", (data: Buffer) => {
-        sock.recvBuffer = Buffer.concat([sock.recvBuffer, data]);
-        DEBUG &&
-          console.debug(
-            `[NodeSockFS:connectAsync:on-data] Received ${data.length} bytes`,
-          );
-      });
+      const wcgSocket = connect(
+        { hostname: addr, port },
+        {
+          secureTransport: options?.secureTransport ?? "off",
+          allowHalfOpen: true,
+        },
+      );
 
-      // Handle close
-      socket.on("close", (hadError: boolean) => {
-        sock.connected = false;
-        sock.connecting = false;
-        DEBUG &&
-          console.debug(
-            `[NodeSockFS:connectAsync:on-close] Connection closed, hadError=${hadError}`,
-          );
-      });
+      sock.wcgSocket = wcgSocket;
+      sock.tls = options?.secureTransport === "on";
 
-      // Return a promise that resolves when connected or rejects on error
-      return new Promise<number>((resolve) => {
-        const onConnect = () => {
+      return wcgSocket.opened
+        .then(() => {
           sock.connected = true;
           sock.connecting = false;
-          cleanup();
+          sock.reader =
+            wcgSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
           DEBUG &&
-            console.debug(`[NodeSockFS:connectAsync] Connection established!`);
-          resolve(0); // Success
-        };
-
-        const onError = (err: NodeJS.ErrnoException) => {
+            console.debug(`[NodeSockFS:connectAsync] Connection established`);
+          return 0;
+        })
+        .catch((err: unknown) => {
           sock.error = ERRNO_CODES.ECONNREFUSED;
           sock.connecting = false;
-          cleanup();
           DEBUG &&
             console.debug(
-              `[NodeSockFS:connectAsync] Connection error: ${err.message}`,
+              `[NodeSockFS:connectAsync] Error: ${err instanceof Error ? err.message : err}`,
             );
-          resolve(-ERRNO_CODES.ECONNREFUSED); // Return negative errno
-        };
-
-        const cleanup = () => {
-          socket.off("connect", onConnect);
-          socket.off("error", onError);
-        };
-
-        socket.once("connect", onConnect);
-        socket.once("error", onError);
-
-        // Initiate connection
-        DEBUG &&
-          console.debug(`[NodeSockFS:connectAsync] Initiating connection...`);
-        socket.connect(port, addr);
-      });
+          return -ERRNO_CODES.ECONNREFUSED;
+        });
     },
 
-    /**
-     * Listen for connections (not implemented for client-only PoC)
-     */
     listen(_sock: NodeSock, _backlog: number): void {
       throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
     },
 
-    /**
-     * Accept a connection (not implemented for client-only PoC)
-     */
     accept(_sock: NodeSock): never {
       throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
     },
 
-    /**
-     * Send data through the socket
-     */
     sendmsg(
       sock: NodeSock,
       buffer: Uint8Array,
@@ -261,128 +227,154 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       _addr?: string,
       _port?: number,
     ): number {
-      DEBUG && console.debug(`NodeSockFS: Sending data of length ${length}`);
+      DEBUG && console.debug(`[NodeSockFS:sendmsg] length=${length}`);
 
-      if (!sock.nodeSocket) {
-        DEBUG &&
-          console.debug(`[NodeSockFS:sendmsg] ERROR: Socket not connected`);
+      if (!sock.wcgSocket) {
         throw new FS.ErrnoError(ERRNO_CODES.ENOTCONN);
       }
 
-      // For TCP, we ignore addr/port as the socket is already connected
       const data = buffer.subarray(offset, offset + length);
-
-      // Write to the socket
-      // Note: Node.js write is async, but we return immediately like the original SOCKFS
-      sock.nodeSocket.write(data);
-
+      sock.wcgSocket.innerSocket.write(data);
       return length;
     },
 
-    /**
-     * Async version of recvmsg - returns a Promise that resolves with data.
-     * This is called by the C syscall override when JSPI is available.
-     * Returns: { bytesRead: number, buffer: Uint8Array } or null for EOF
-     */
     recvmsgAsync(
       sock: NodeSock,
       length: number,
     ): Promise<{ bytesRead: number; buffer: Uint8Array } | null> {
       DEBUG &&
         console.debug(
-          `[NodeSockFS:recvmsgAsync] START - requested length=${length}`,
-        );
-      DEBUG &&
-        console.debug(
-          `[NodeSockFS:recvmsgAsync] Current buffer size: ${sock.recvBuffer.length}`,
+          `[NodeSockFS:recvmsgAsync] requested=${length}`,
         );
 
-      // If data is already available, return immediately
-      if (sock.recvBuffer.length > 0) {
-        const bytesRead = Math.min(length, sock.recvBuffer.length);
-        const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
-        sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
+      if (sock.leftover && sock.leftover.length > 0) {
+        const bytesRead = Math.min(length, sock.leftover.length);
+        const data = sock.leftover.subarray(0, bytesRead);
+        sock.leftover =
+          bytesRead < sock.leftover.length
+            ? sock.leftover.subarray(bytesRead)
+            : null;
         DEBUG &&
           console.debug(
-            `[NodeSockFS:recvmsgAsync] Data available, returning ${bytesRead} bytes`,
+            `[NodeSockFS:recvmsgAsync] ${bytesRead} bytes from leftover`,
           );
-        return Promise.resolve({ bytesRead, buffer: data });
+        return Promise.resolve({ bytesRead, buffer: new Uint8Array(data) });
       }
 
-      // If socket is closed, return null (EOF)
-      if (!sock.nodeSocket || sock.nodeSocket.destroyed) {
-        DEBUG &&
-          console.debug(
-            `[NodeSockFS:recvmsgAsync] Socket closed, returning EOF`,
-          );
+      if (!sock.reader) {
         return Promise.resolve(null);
       }
 
-      // Wait for data to arrive
-      return new Promise((resolve) => {
-        const socket = sock.nodeSocket!;
-
-        const onData = () => {
-          cleanup();
-          // Now read the data
-          const bytesRead = Math.min(length, sock.recvBuffer.length);
-          const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
-          sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
-          DEBUG &&
-            console.debug(
-              `[NodeSockFS:recvmsgAsync] Data arrived, returning ${bytesRead} bytes`,
-            );
-          resolve({ bytesRead, buffer: data });
-        };
-
-        const onClose = () => {
-          cleanup();
-          // Check if any data arrived before close
-          if (sock.recvBuffer.length > 0) {
-            const bytesRead = Math.min(length, sock.recvBuffer.length);
-            const data = new Uint8Array(sock.recvBuffer.subarray(0, bytesRead));
-            sock.recvBuffer = sock.recvBuffer.subarray(bytesRead) as Buffer;
-            DEBUG &&
-              console.debug(
-                `[NodeSockFS:recvmsgAsync] Socket closed with data, returning ${bytesRead} bytes`,
-              );
-            resolve({ bytesRead, buffer: data });
-          } else {
-            DEBUG &&
-              console.debug(
-                `[NodeSockFS:recvmsgAsync] Socket closed, returning EOF`,
-              );
-            resolve(null);
+      return sock.reader.read().then(
+        ({ value, done }) => {
+          if (done || !value) {
+            DEBUG && console.debug(`[NodeSockFS:recvmsgAsync] EOF`);
+            return null;
           }
-        };
 
-        const onError = () => {
-          cleanup();
-          DEBUG &&
-            console.debug(
-              `[NodeSockFS:recvmsgAsync] Socket error, returning EOF`,
-            );
-          resolve(null);
-        };
+          const chunk =
+            value instanceof Uint8Array ? value : new Uint8Array(value as any);
 
-        const cleanup = () => {
-          socket.off("data", onData);
-          socket.off("close", onClose);
-          socket.off("error", onError);
-        };
+          if (chunk.length <= length) {
+            return { bytesRead: chunk.length, buffer: new Uint8Array(chunk) };
+          }
 
-        socket.once("data", onData);
-        socket.once("close", onClose);
-        socket.once("error", onError);
-        DEBUG && console.debug(`[NodeSockFS:recvmsgAsync] Waiting for data...`);
-      });
+          sock.leftover = chunk.subarray(length);
+          return { bytesRead: length, buffer: new Uint8Array(chunk.subarray(0, length)) };
+        },
+        () => null,
+      );
     },
 
-    /**
-     * Get socket name info (for getsockname/getpeername)
-     */
+    async upgradeTLSAsync(
+      sock: NodeSock,
+      options?: {
+        servername?: string;
+        rejectUnauthorized?: boolean;
+        ca?: string;
+        cert?: string;
+        key?: string;
+      },
+    ): Promise<number> {
+      DEBUG &&
+        console.debug(
+          `[NodeSockFS:upgradeTLSAsync] servername=${options?.servername}`,
+        );
+
+      if (!sock.wcgSocket) {
+        return -ERRNO_CODES.ENOTCONN;
+      }
+      if (sock.tls) {
+        return -ERRNO_CODES.EISCONN;
+      }
+
+      try {
+        // Guard against data loss: leftover bytes from TCP phase must be
+        // consumed before upgrading to TLS, since the TLS handshake replaces
+        // the readable stream entirely.
+        if (sock.leftover && sock.leftover.length > 0) {
+          console.warn(
+            `[NodeSockFS:upgradeTLSAsync] ${sock.leftover.length} leftover bytes will be lost during TLS upgrade`,
+          );
+        }
+
+        if (sock.reader) {
+          sock.reader.releaseLock();
+          sock.reader = null;
+        }
+
+        const tls = await import("node:tls");
+        const tlsSocket = tls.connect({
+          socket: sock.wcgSocket.innerSocket,
+          servername: options?.servername,
+          rejectUnauthorized: options?.rejectUnauthorized ?? true,
+          ca: options?.ca,
+          cert: options?.cert,
+          key: options?.key,
+        });
+
+        await new Promise<void>((resolve, reject) => {
+          const onSecure = () => {
+            cleanup();
+            resolve();
+          };
+          const onError = (err: Error) => {
+            cleanup();
+            reject(err);
+          };
+          const cleanup = () => {
+            tlsSocket.off("secureConnect", onSecure);
+            tlsSocket.off("error", onError);
+          };
+          tlsSocket.once("secureConnect", onSecure);
+          tlsSocket.once("error", onError);
+        });
+
+        const { Duplex } = await import("node:stream");
+        const { readable } = (Duplex as any).toWeb(tlsSocket) as {
+          readable: ReadableStream<Uint8Array>;
+        };
+
+        (sock.wcgSocket as any)._socket = tlsSocket;
+        (sock.wcgSocket as any).readable = readable;
+
+        sock.reader =
+          readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+        sock.tls = true;
+        sock.leftover = null;
+
+        DEBUG && console.debug(`[NodeSockFS:upgradeTLSAsync] Complete`);
+        return 0;
+      } catch (err: unknown) {
+        DEBUG &&
+          console.debug(
+            `[NodeSockFS:upgradeTLSAsync] Error: ${err instanceof Error ? err.message : err}`,
+          );
+        return -ERRNO_CODES.ECONNREFUSED;
+      }
+    },
+
     getname(sock: NodeSock, peer: boolean): { addr: string; port: number } {
-      DEBUG && console.debug(`NodeSockFS:getname - peer=${peer}`);
       if (peer) {
         if (!sock.daddr || !sock.dport) {
           throw new FS.ErrnoError(ERRNO_CODES.ENOTCONN);
@@ -468,17 +460,18 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         throw new FS.ErrnoError(ERRNO_CODES.EPROTONOSUPPORT);
       }
 
-      // Create internal socket structure
       const sock: NodeSock = {
         family,
         type,
         protocol,
         server: null,
         error: null,
-        nodeSocket: null,
-        recvBuffer: Buffer.alloc(0),
+        wcgSocket: null,
+        reader: null,
+        leftover: null,
         connected: false,
         connecting: false,
+        tls: false,
         sock_ops: tcp_sock_ops,
       };
 
@@ -571,6 +564,80 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       buf = new Uint8Array(data);
     }
     return tcp_sock_ops.sendmsg(sock, buf, 0, buf.length);
+  };
+
+  api._nodeSockUpgradeTLS = async (
+    fd: number,
+    servername: string,
+    rejectUnauthorized: boolean,
+    ca?: string,
+    cert?: string,
+    key?: string,
+  ): Promise<number> => {
+    const sock = NodeSockFS.getSocket(fd);
+    if (!sock) {
+      return -ERRNO_CODES.EBADF;
+    }
+    return await tcp_sock_ops.upgradeTLSAsync(sock, {
+      servername,
+      rejectUnauthorized,
+      ca,
+      cert,
+      key,
+    });
+  };
+
+  api._nodeSockConnectTLS = async (
+    fd: number,
+    host: string,
+    port: number,
+  ): Promise<void> => {
+    const sock = NodeSockFS.getSocket(fd);
+    if (!sock) {
+      throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+    }
+    const result = await tcp_sock_ops.connectAsync(sock, host, port, {
+      secureTransport: "on",
+    });
+    if (result < 0) {
+      throw new FS.ErrnoError(-result);
+    }
+  };
+
+  api._nodeSockGetPeerCert = (fd: number): any => {
+    const sock = NodeSockFS.getSocket(fd);
+    if (!sock || !sock.wcgSocket) {
+      throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+    }
+    const innerSocket = sock.wcgSocket.innerSocket;
+    if (!("getPeerCertificate" in innerSocket)) {
+      return null;
+    }
+    const raw = (innerSocket as any).getPeerCertificate();
+    if (!raw || !raw.subject) return null;
+    const fmt = (dn: Record<string, string>) =>
+      Object.entries(dn || {}).map(([k, v]) => [k, v]);
+    return {
+      subject: fmt(raw.subject),
+      issuer: fmt(raw.issuer),
+      serialNumber: raw.serialNumber || "",
+      valid_from: raw.valid_from || "",
+      valid_to: raw.valid_to || "",
+    };
+  };
+
+  api._nodeSockGetCipher = (
+    fd: number,
+  ): { name: string; standardName: string; version: string } | null => {
+    const sock = NodeSockFS.getSocket(fd);
+    if (!sock || !sock.wcgSocket) {
+      throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+    }
+    const innerSocket = sock.wcgSocket.innerSocket;
+    if ("getCipher" in innerSocket) {
+      return (innerSocket as any).getCipher();
+    }
+    return null;
   };
 
   return NodeSockFS;

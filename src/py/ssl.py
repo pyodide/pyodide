@@ -308,7 +308,15 @@ class SSLContext:
         server_hostname=None,
         session=None,
     ):
-        raise NotImplementedError("SSL is not supported in Pyodide")
+        return SSLSocket._create(
+            sock,
+            server_side=server_side,
+            do_handshake_on_connect=do_handshake_on_connect,
+            suppress_ragged_eofs=suppress_ragged_eofs,
+            server_hostname=server_hostname,
+            context=self,
+            session=session,
+        )
 
     def wrap_bio(
         self, incoming, outgoing, server_side=False, server_hostname=None, session=None
@@ -338,9 +346,19 @@ class SSLContext:
     def load_verify_locations(self, cafile=None, capath=None, cadata=None):
         if cafile is None and capath is None and cadata is None:
             raise TypeError("cafile, capath and cadata cannot be all omitted")
+        if cafile:
+            with open(cafile) as f:
+                self._ca_data = f.read()
+        elif cadata:
+            self._ca_data = cadata if isinstance(cadata, str) else cadata.decode()
 
     def load_cert_chain(self, certfile, keyfile=None, password=None):
-        pass
+        with open(certfile) as f:
+            self._certfile_data = f.read()
+        if keyfile:
+            with open(keyfile) as f:
+                self._keyfile_data = f.read()
+        self._key_password = password
 
     def set_default_verify_paths(self):
         pass
@@ -516,6 +534,7 @@ class SSLContext:
 
     def set_ecdh_curve(self, curve_name):
         pass
+
 
 def create_default_context(
     purpose=Purpose.SERVER_AUTH, *, cafile=None, capath=None, cadata=None
@@ -695,23 +714,65 @@ class SSLSocket(socket):
         context=None,
         session=None,
     ):
-        raise NotImplementedError("SSL is not supported in Pyodide")
+        import _socket
 
-    context = property(lambda self: None)
-    session = property(lambda self: None)
+        ssl_sock = cls.__new__(cls)
+
+        # Initialize the C-level _socket.socket with explicit family/type/proto
+        # to avoid getsockopt() auto-detection which fails on Emscripten's
+        # NodeSockFS file descriptors.
+        fd = sock.fileno()
+        _socket.socket.__init__(ssl_sock, sock.family, sock.type, sock.proto, fd)
+        ssl_sock._io_refs = 0
+        ssl_sock._closed = False
+
+        # Detach the original socket so it doesn't close the fd on __del__
+        sock.detach()
+
+        ssl_sock._sslobj = None
+        ssl_sock._context = context
+        ssl_sock._server_hostname = server_hostname
+        ssl_sock._server_side = server_side
+        ssl_sock._connected = True
+        ssl_sock._suppress_ragged_eofs = suppress_ragged_eofs
+        ssl_sock._session = session
+
+        if do_handshake_on_connect:
+            ssl_sock.do_handshake()
+        return ssl_sock
+
+    context = property(lambda self: getattr(self, "_context", None))
+    server_hostname = property(lambda self: getattr(self, "_server_hostname", None))
+    session = property(lambda self: getattr(self, "_session", None))
     session_reused = property(lambda self: None)
 
     def dup(self):
         raise NotImplementedError("Can't dup() %s instances" % self.__class__.__name__)
 
     def read(self, len=1024, buffer=None):
-        pass
+        return socket.recv(self, len)
 
     def write(self, data):
-        pass
+        return socket.send(self, data)
 
     def getpeercert(self, binary_form=False):
-        pass
+        if binary_form:
+            return b""
+        try:
+            from pyodide_js._api import _nodeSockGetPeerCert
+        except ImportError:
+            return {}
+
+        cert = _nodeSockGetPeerCert(self.fileno())
+        if cert is None:
+            return {}
+        result = cert.to_py() if hasattr(cert, "to_py") else cert
+        if isinstance(result, dict):
+            for key in ("subject", "issuer"):
+                val = result.get(key)
+                if isinstance(val, list):
+                    result[key] = tuple(tuple(pair) for pair in val)
+        return result
 
     def get_verified_chain(self):
         return []
@@ -728,7 +789,15 @@ class SSLSocket(socket):
         pass
 
     def cipher(self):
-        pass
+        try:
+            from pyodide_js._api import _nodeSockGetCipher
+        except ImportError:
+            return None
+
+        info = _nodeSockGetCipher(self.fileno())
+        if info is None:
+            return None
+        return (info.name, info.standardName, info.version)
 
     def shared_ciphers(self):
         pass
@@ -737,7 +806,7 @@ class SSLSocket(socket):
         pass
 
     def send(self, data, flags=0):
-        pass
+        return socket.send(self, data, flags)
 
     def sendto(self, data, flags_or_addr, addr=None):
         pass
@@ -748,16 +817,16 @@ class SSLSocket(socket):
         )
 
     def sendall(self, data, flags=0):
-        pass
+        return socket.sendall(self, data, flags)
 
     def sendfile(self, file, offset=0, count=None):
         pass
 
     def recv(self, buflen=1024, flags=0):
-        pass
+        return socket.recv(self, buflen, flags)
 
     def recv_into(self, buffer, nbytes=None, flags=0):
-        pass
+        return socket.recv_into(self, buffer, nbytes or len(buffer), flags)
 
     def recvfrom(self, buflen=1024, flags=0):
         pass
@@ -788,7 +857,28 @@ class SSLSocket(socket):
         pass
 
     def do_handshake(self, block=False):
-        pass
+        try:
+            from pyodide_js._api import _nodeSockUpgradeTLS
+        except ImportError:
+            raise NotImplementedError(
+                "TLS handshake requires Node.js socket support "
+                "(loadPyodide with withNodeSocket: true)."
+            )
+        from pyodide.ffi import run_sync
+
+        ctx = self._context
+        result = run_sync(
+            _nodeSockUpgradeTLS(
+                self.fileno(),
+                self._server_hostname or "",
+                ctx.verify_mode != CERT_NONE,
+                getattr(ctx, "_ca_data", None),
+                getattr(ctx, "_certfile_data", None),
+                getattr(ctx, "_keyfile_data", None),
+            )
+        )
+        if result < 0:
+            raise SSLError(1, f"[SSL] TLS handshake failed (errno={-result})")
 
     def connect(self, addr):
         pass
@@ -803,7 +893,15 @@ class SSLSocket(socket):
         pass
 
     def version(self):
-        pass
+        try:
+            from pyodide_js._api import _nodeSockGetCipher
+        except ImportError:
+            return None
+
+        info = _nodeSockGetCipher(self.fileno())
+        if info is None:
+            return None
+        return info.version
 
 
 SSLContext.sslsocket_class = SSLSocket

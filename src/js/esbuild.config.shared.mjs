@@ -52,6 +52,8 @@ export const config = ({
     "node:url",
     "node:vm",
     "node:net",
+    "node:tls",
+    "node:stream",
     "ws",
   ],
   define: { ...DEFINES, ...Object.fromEntries(toDefines(extraDefines ?? {})) },

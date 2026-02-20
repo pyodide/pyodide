@@ -817,15 +817,9 @@ class WebLoop(asyncio.AbstractEventLoop):
           in a Transport + Protocol pair (used by pymongo).
         * ``host``/``port`` — creates a new socket, connects, and wraps it.
 
-        SSL/TLS is not yet supported and will raise :exc:`NotImplementedError`.
+        Supports SSL/TLS via the ``ssl`` parameter.
         """
         import socket as socket_mod
-
-        if ssl is not None:
-            raise NotImplementedError(
-                "SSL/TLS in create_connection() is not yet supported in WebLoop. "
-                "Connect to MongoDB without TLS for now."
-            )
 
         if host is not None or port is not None:
             if sock is not None:
@@ -868,6 +862,28 @@ class WebLoop(asyncio.AbstractEventLoop):
             raise ValueError(f"A Stream Socket was expected, got {sock!r}")
 
         sock.setblocking(False)
+
+        if ssl is not None:
+            from pyodide_js._api import _nodeSockUpgradeTLS
+
+            reject_unauthorized = True
+            ca_data = cert_data = key_data = None
+            if hasattr(ssl, "verify_mode"):
+                reject_unauthorized = ssl.verify_mode != 0  # CERT_NONE = 0
+                ca_data = getattr(ssl, "_ca_data", None)
+                cert_data = getattr(ssl, "_certfile_data", None)
+                key_data = getattr(ssl, "_keyfile_data", None)
+
+            sni_hostname = server_hostname or host or ""
+            await _nodeSockUpgradeTLS(
+                sock.fileno(),
+                sni_hostname,
+                reject_unauthorized,
+                ca_data,
+                cert_data,
+                key_data,
+            )
+
         protocol = protocol_factory()
         waiter = self.create_future()
 
