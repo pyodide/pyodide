@@ -1,5 +1,6 @@
 import ErrorStackParser from "./vendor/stackframe/error-stack-parser";
 import { RUNTIME_ENV } from "./environments";
+import type { RuntimeEnv } from "./environments";
 import { Lockfile } from "./types";
 let nodeUrlMod: typeof import("node:url");
 let nodePath: typeof import("node:path");
@@ -214,31 +215,44 @@ export async function loadBinaryFile(
  */
 export let loadScript: (url: string) => Promise<void>;
 
-if (RUNTIME_ENV.IN_BROWSER_MAIN_THREAD) {
-  // browser
-  loadScript = async (url) => await import(/* webpackIgnore: true */ url);
-} else if (RUNTIME_ENV.IN_BROWSER_WEB_WORKER) {
-  // webworker
-  loadScript = async (url) => {
-    try {
-      // use importScripts in classic web worker
-      globalThis.importScripts(url);
-    } catch (e) {
-      // importScripts throws TypeError in a module type web worker, use import instead
-      if (e instanceof TypeError) {
-        await import(/* webpackIgnore: true */ url);
-      } else {
-        throw e;
+/** @private */
+export function getLoadScriptForRuntimeEnv(runtimeEnv: RuntimeEnv) {
+  if (runtimeEnv.IN_BROWSER_MAIN_THREAD) {
+    // browser
+    return async (url: string) => await import(/* webpackIgnore: true */ url);
+  }
+  if (runtimeEnv.IN_BROWSER_WEB_WORKER) {
+    // webworker
+    return async (url: string) => {
+      try {
+        // use importScripts in classic web worker
+        globalThis.importScripts(url);
+      } catch (e) {
+        // importScripts throws TypeError in a module type web worker, use import instead
+        if (e instanceof TypeError) {
+          await import(/* webpackIgnore: true */ url);
+        } else {
+          throw e;
+        }
       }
-    }
-  };
-} else if (RUNTIME_ENV.IN_NODE) {
-  loadScript = nodeLoadScript;
-} else if (RUNTIME_ENV.IN_SHELL) {
-  loadScript = load;
-} else {
+    };
+  }
+  if (runtimeEnv.IN_NODE) {
+    return nodeLoadScript;
+  }
+  if (runtimeEnv.IN_SHELL) {
+    return load;
+  }
+  if (runtimeEnv.IN_BROWSER) {
+    // IN_BROWSER is broad; module evaluation can set this true while neither
+    // main-thread nor worker probes are available.
+    // Keep this lazy to avoid false "Cannot determine runtime environment".
+    return async (url: string) => await import(/* webpackIgnore: true */ url);
+  }
   throw new Error("Cannot determine runtime environment");
 }
+
+loadScript = getLoadScriptForRuntimeEnv(RUNTIME_ENV);
 
 /**
  * Load a text file and executes it as Javascript
