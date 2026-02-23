@@ -1,7 +1,7 @@
-From 198ad7882105abb53e3b57c1aa44a73ad96c7bd3 Mon Sep 17 00:00:00 2001
+From 2ced1c0454df340dac85d3f02331021fbd9ac7d0 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 25 Jul 2024 14:28:57 +0200
-Subject: [PATCH 07/07] Warn if ZoneInfo is imported without tzdata
+Subject: [PATCH 7/8] Warn if ZoneInfo is imported without tzdata
 
 ---
  Lib/zoneinfo/_common.py | 6 ++++++
@@ -24,5 +24,6 @@ index 03cc42149f9..2767edb9c6a 100644
          # There are four types of exception that can be raised that all amount
          # to "we cannot find this key":
          #
---
-2.50.1 (Apple Git-155)
+-- 
+2.34.1
+

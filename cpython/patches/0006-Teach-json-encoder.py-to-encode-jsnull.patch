@@ -1,7 +1,7 @@
-From 7cf6863176a7b3b62980e25652102532582ae49e Mon Sep 17 00:00:00 2001
+From 77bcb5f2de330bc9ae13c7b50eb72cb4d52a7eef Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 9 Jul 2025 17:00:12 +0200
-Subject: [PATCH 06/07] Teach json encoder.py to encode jsnull
+Subject: [PATCH 6/8] Teach json encoder.py to encode jsnull
 
 ---
  Lib/json/encoder.py | 9 +++++++++
@@ -9,7 +9,7 @@ Subject: [PATCH 06/07] Teach json encoder.py to encode jsnull
  2 files changed, 14 insertions(+), 3 deletions(-)
 
 diff --git a/Lib/json/encoder.py b/Lib/json/encoder.py
-index bc446e0f377..c4515f9812f 100644
+index 5cf6d64f3ea..a75ea21baff 100644
 --- a/Lib/json/encoder.py
 +++ b/Lib/json/encoder.py
 @@ -33,6 +33,7 @@
@@ -20,7 +20,7 @@ index bc446e0f377..c4515f9812f 100644
  
  def py_encode_basestring(s):
      """Return a JSON representation of a Python string
-@@ -301,6 +302,8 @@ def _iterencode_list(lst, _current_indent_level):
+@@ -303,6 +304,8 @@ def _iterencode_list(lst, _current_indent_level):
                      yield buf + _encoder(value)
                  elif value is None:
                      yield buf + 'null'
@@ -29,7 +29,7 @@ index bc446e0f377..c4515f9812f 100644
                  elif value is True:
                      yield buf + 'true'
                  elif value is False:
-@@ -370,6 +373,8 @@ def _iterencode_dict(dct, _current_indent_level):
+@@ -372,6 +375,8 @@ def _iterencode_dict(dct, _current_indent_level):
                  key = 'false'
              elif key is None:
                  key = 'null'
@@ -38,7 +38,7 @@ index bc446e0f377..c4515f9812f 100644
              elif isinstance(key, int):
                  # see comment for int/float in _make_iterencode
                  key = _intstr(key)
-@@ -391,6 +396,8 @@ def _iterencode_dict(dct, _current_indent_level):
+@@ -393,6 +398,8 @@ def _iterencode_dict(dct, _current_indent_level):
                      yield _encoder(value)
                  elif value is None:
                      yield 'null'
@@ -47,7 +47,7 @@ index bc446e0f377..c4515f9812f 100644
                  elif value is True:
                      yield 'true'
                  elif value is False:
-@@ -426,6 +433,8 @@ def _iterencode(o, _current_indent_level):
+@@ -428,6 +435,8 @@ def _iterencode(o, _current_indent_level):
              yield _encoder(o)
          elif o is None:
              yield 'null'
@@ -57,7 +57,7 @@ index bc446e0f377..c4515f9812f 100644
              yield 'true'
          elif o is False:
 diff --git a/Modules/_json.c b/Modules/_json.c
-index 2f82a69a157..6104aea8832 100644
+index 2f82a69a157..83d1c3e2f62 100644
 --- a/Modules/_json.c
 +++ b/Modules/_json.c
 @@ -1398,11 +1398,13 @@ encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
@@ -94,6 +94,5 @@ index 2f82a69a157..6104aea8832 100644
                         True and False are also 1 and 0.*/
          keystr = _encoded_const(key);
 -- 
-2.43.0
-
+2.34.1
 

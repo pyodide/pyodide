@@ -1,11 +1,10 @@
-From b41f4bcdd8adc76f742d434ee2adec8423d41589 Mon Sep 17 00:00:00 2001
+From 7774d54f58deb619b13b5220e17b6bc3377e9196 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Fri, 30 Jan 2026 15:48:03 +0900
-Subject: [PATCH 05/07] Remove JSPI-related parts in emscripten_syscalls.c
+Subject: [PATCH 5/8] Remove JSPI-related parts in emscripten_syscalls.c
 
 These changes were to make CPython's WASM build work with pyrepl,
 but we don't use main in Pyodide, so we can remove these parts.
-
 ---
  Python/emscripten_syscalls.c | 244 -----------------------------------
  1 file changed, 244 deletions(-)
@@ -266,5 +265,5 @@ index b1236e6b123..e2deb7281b9 100644
  
  int syscall_ioctl_orig(int fd, int request, void* varargs)
 -- 
-2.29.2.windows.2
+2.34.1
 
