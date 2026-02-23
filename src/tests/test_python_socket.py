@@ -6,6 +6,12 @@ import pytest
 
 from conftest import only_node
 
+# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
+pytestmark = [
+    pytest.mark.requires_dynamic_linking,
+    pytest.mark.skip_refcount_check,
+    only_node,
+]
 
 @contextlib.contextmanager
 def tcp_server(handler, *, timeout=5.0):
@@ -65,9 +71,7 @@ def selenium_nodesock(selenium_standalone_noload):
         selenium.run_js("globalThis.pyodide;")
 
 
-# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
-@pytest.mark.skip_refcount_check
-@only_node
+
 def test_socket_connect(selenium_nodesock):
     """Test that Python socket can connect to a server and exchange data."""
     TEST_MESSAGE = b"Hello from client"
@@ -110,9 +114,6 @@ def test_socket_connect(selenium_nodesock):
     )
 
 
-# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
-@pytest.mark.skip_refcount_check
-@only_node
 def test_socket_multiple_send_recv(selenium_nodesock):
     """Test multiple send/recv operations on the same connection."""
     MESSAGES = [b"First message", b"Second message", b"Third message"]
@@ -154,9 +155,6 @@ def test_socket_multiple_send_recv(selenium_nodesock):
     )
 
 
-# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
-@pytest.mark.skip_refcount_check
-@only_node
 def test_socket_large_data_transfer(selenium_nodesock):
     """Test transferring larger amounts of data."""
     DATA_SIZE = 64 * 1024  # 64KB
@@ -200,9 +198,6 @@ def test_socket_large_data_transfer(selenium_nodesock):
     assert result == f"Received {DATA_SIZE} bytes"
 
 
-# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
-@pytest.mark.skip_refcount_check
-@only_node
 def test_socket_getpeername(selenium_nodesock):
     """Test socket.getpeername() returns correct remote address."""
 
@@ -235,9 +230,6 @@ def test_socket_getpeername(selenium_nodesock):
     )
 
 
-# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
-@pytest.mark.skip_refcount_check
-@only_node
 def test_socket_getsockname(selenium_nodesock):
     """Test socket.getsockname() returns local address info."""
 
@@ -268,9 +260,6 @@ def test_socket_getsockname(selenium_nodesock):
     assert len(result) >= 2, f"Expected at least 2 elements, got {len(result)}"
 
 
-# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
-@pytest.mark.skip_refcount_check
-@only_node
 def test_socket_connection_refused(selenium_nodesock):
     """Test that connecting to a non-listening port raises an error."""
     # Bind to port 0, get the assigned port, then close immediately.
@@ -305,9 +294,6 @@ def test_socket_connection_refused(selenium_nodesock):
     )
 
 
-# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
-@pytest.mark.skip_refcount_check
-@only_node
 def test_socket_recv_after_close(selenium_nodesock):
     """Test receiving data after server closes connection."""
 
@@ -337,9 +323,6 @@ def test_socket_recv_after_close(selenium_nodesock):
     assert result == "Final message", f"Expected 'Final message', got {result!r}"
 
 
-# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
-@pytest.mark.skip_refcount_check
-@only_node
 def test_socket_fileno(selenium_nodesock):
     """Test that socket.fileno() returns a valid file descriptor."""
 
@@ -380,9 +363,6 @@ def test_socket_fileno(selenium_nodesock):
     )
 
 
-# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
-@pytest.mark.skip_refcount_check
-@only_node
 def test_socket_send_recv_partial(selenium_nodesock):
     """Test partial recv when buffer is smaller than data."""
     FULL_MESSAGE = b"A" * 1000
@@ -421,9 +401,6 @@ def test_socket_send_recv_partial(selenium_nodesock):
     )
 
 
-# skip_refcount_check is needed as selenium_standalone_noload fixture does not initialize global hiwire objects
-@pytest.mark.skip_refcount_check
-@only_node
 def test_socket_create_multiple(selenium_nodesock):
     """Test creating multiple sockets simultaneously."""
 
