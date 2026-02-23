@@ -5,7 +5,7 @@ import { initializeNativeFS } from "./nativefs";
 import { initializeNodeSockFS } from "./fs/nodesockfs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type PyodideModule, type FSType } from "./types";
-import { getSentinelImport } from "generated/sentinel";
+import { getJsvErrorImport } from "generated/jsverror";
 import { RUNTIME_ENV } from "./environments";
 import type { EmscriptenModule } from "./types";
 
@@ -390,7 +390,7 @@ function getInstantiateWasmFunc(
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
-  const sentinelImportPromise = getSentinelImport();
+  const jsvErrorImportPromise = getJsvErrorImport();
   return function (
     imports: { [key: string]: { [key: string]: any } },
     successCallback: (
@@ -399,7 +399,10 @@ function getInstantiateWasmFunc(
     ) => void,
   ) {
     (async function () {
-      imports.sentinel = await sentinelImportPromise;
+      const { Jsv_GetError_import, JsvError_Check } =
+        await jsvErrorImportPromise;
+      imports.env.Jsv_GetError_import = Jsv_GetError_import;
+      imports.env.JsvError_Check = JsvError_Check;
 
       // Wrap socket syscalls with JSPI support before instantiation
       if (withNodeSocket) {
