@@ -19,37 +19,8 @@
 
 int pystate_keepalive;
 
-typedef struct
-{
-  PyObject* loop;
-} AsyncioState;
-
 _Py_IDENTIFIER(get_event_loop);
 _Py_IDENTIFIER(_set_running_loop);
-
-AsyncioState
-saveAsyncioState()
-{
-  AsyncioState as;
-  PyObject* asyncio_module = NULL;
-  PyObject* loop = NULL;
-
-  asyncio_module = PyImport_ImportModule("asyncio");
-  FAIL_IF_NULL(asyncio_module);
-  loop = _PyObject_CallMethodIdNoArgs(asyncio_module, &PyId_get_event_loop);
-  FAIL_IF_NULL(loop);
-
-finally:
-  Py_CLEAR(asyncio_module);
-  as.loop = loop;
-  return as;
-}
-
-void
-cleanAsyncioState(AsyncioState as)
-{
-  Py_CLEAR(as.loop);
-}
 
 #define THREADSTATE_MAX_FREELIST 10
 
@@ -78,34 +49,47 @@ delete_tstate(PyThreadState* tstate)
   }
 }
 
-typedef struct
+EMSCRIPTEN_KEEPALIVE void
+restoreThreadState(PyThreadState* state)
 {
-  AsyncioState as;
-  PyThreadState* ts;
-} ThreadState;
-
-EMSCRIPTEN_KEEPALIVE ThreadState*
-captureThreadState()
-{
-  ThreadState* res = malloc(sizeof(ThreadState));
-  res->as = saveAsyncioState();
-  res->ts = PyThreadState_Swap(new_tstate());
-
-  PyObject* _asyncio_module = NULL;
-  PyObject* t = NULL;
-  _asyncio_module = PyImport_ImportModule("_asyncio");
-  t = _PyObject_CallMethodIdOneArg(
-    _asyncio_module, &PyId__set_running_loop, res->as.loop);
-
-  Py_CLEAR(_asyncio_module);
-  Py_CLEAR(t);
-
-  return res;
+  delete_tstate(PyThreadState_Swap(state));
 }
 
-EMSCRIPTEN_KEEPALIVE void
-restoreThreadState(ThreadState* state)
+EMSCRIPTEN_KEEPALIVE PyThreadState*
+captureThreadState()
 {
-  cleanAsyncioState(state->as);
-  delete_tstate(PyThreadState_Swap(state->ts));
+  PyObject* asyncio_module = NULL;
+  PyObject* loop = NULL;
+  PyObject* tmp = NULL;
+  PyThreadState* result = NULL;
+
+  // We need to set the event loop in the new thread state to be the same as the
+  // event loop in the old thread state.
+
+  // 1. get the event loop from the old thread state
+  asyncio_module = PyImport_ImportModule("asyncio");
+  FAIL_IF_NULL(asyncio_module);
+  loop = _PyObject_CallMethodIdNoArgs(asyncio_module, &PyId_get_event_loop);
+  FAIL_IF_NULL(loop);
+
+  // 2. swap thread state
+  result = PyThreadState_Swap(new_tstate());
+
+  // 3. set the running event loop in the new thread state
+  tmp =
+    _PyObject_CallMethodIdOneArg(asyncio_module, &PyId__set_running_loop, loop);
+  if (tmp == NULL) {
+    PyErr_Clear();
+    restoreThreadState(result);
+    result = NULL;
+    PyErr_SetString(PyExc_SystemError, "Unexpected error when stack switching");
+    FAIL();
+  }
+
+finally:
+  Py_CLEAR(asyncio_module);
+  Py_CLEAR(loop);
+  Py_CLEAR(tmp);
+
+  return result;
 }

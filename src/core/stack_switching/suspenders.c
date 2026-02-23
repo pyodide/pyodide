@@ -62,6 +62,11 @@ EM_JS(JsVal, saveState, (void), {
   }
   const stackState = new StackState();
   const threadState = _captureThreadState();
+  // clang-format off
+  if (threadState === 0) {
+    return Module.error;
+  }
+  // clang-format on
   return {
     threadState,
     stackState,
