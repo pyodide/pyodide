@@ -57,7 +57,8 @@ static PyThreadState* threadstate_freelist[THREADSTATE_MAX_FREELIST] = {};
 static int threadstate_freelist_len = 0;
 
 static PyThreadState*
-new_tstate(void) {
+new_tstate(void)
+{
   if (threadstate_freelist_len > 0) {
     threadstate_freelist_len--;
     return threadstate_freelist[threadstate_freelist_len];
@@ -67,7 +68,8 @@ new_tstate(void) {
 }
 
 static void
-delete_tstate(PyThreadState* tstate) {
+delete_tstate(PyThreadState* tstate)
+{
   if (threadstate_freelist_len == THREADSTATE_MAX_FREELIST) {
     PyThreadState_Delete(tstate);
   } else {
