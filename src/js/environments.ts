@@ -7,6 +7,8 @@ export interface RuntimeEnv extends BaseRuntimeEnv {
   IN_BROWSER: boolean;
   IN_BROWSER_MAIN_THREAD: boolean;
   IN_BROWSER_WEB_WORKER: boolean;
+  IN_BROWSER_CLASSIC_WORKER: boolean;
+  IN_BROWSER_MODULE_WORKER: boolean;
 }
 
 interface BaseRuntimeEnv {
@@ -77,11 +79,20 @@ function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
     typeof (globalThis as any).WorkerGlobalScope !== "undefined" &&
     typeof (globalThis as any).self !== "undefined" &&
     (globalThis as any).self instanceof (globalThis as any).WorkerGlobalScope;
+
+  const IN_BROWSER_CLASSIC_WORKER =
+    IN_BROWSER_WEB_WORKER &&
+    typeof (globalThis as any).importScripts === "function";
+  const IN_BROWSER_MODULE_WORKER =
+    IN_BROWSER_WEB_WORKER &&
+    typeof (globalThis as any).importScripts !== "function";
   return {
     ...base,
     IN_BROWSER,
     IN_BROWSER_MAIN_THREAD,
     IN_BROWSER_WEB_WORKER,
+    IN_BROWSER_CLASSIC_WORKER,
+    IN_BROWSER_MODULE_WORKER,
     IN_NODE_COMMONJS,
     IN_NODE_ESM,
   };

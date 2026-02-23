@@ -1162,7 +1162,7 @@ def test_js_stackframes(selenium):
     def normalize_tb(t):
         res = []
         for [file, name] in t:
-            if file.endswith((".js", ".html")):
+            if file.endswith((".js", ".html", ".mjs")):
                 file = file.rpartition("/")[-1]
             if file.endswith(".py"):
                 file = "/".join(file.split("/")[-2:])
@@ -1847,7 +1847,9 @@ def test_static_import(selenium_standalone_noload, tmp_path, httpserver):
     test_html = (
         PYODIDE_ROOT / "src/templates/module_static_import_test.html"
     ).read_text()
-    test_html = test_html.replace("./pyodide.asm.mjs", f"./{hiding_dir}/pyodide.asm.mjs")
+    test_html = test_html.replace(
+        "./pyodide.asm.mjs", f"./{hiding_dir}/pyodide.asm.mjs"
+    )
     test_html_content = test_html.encode()
 
     # Setup httpserver to serve all necessary files

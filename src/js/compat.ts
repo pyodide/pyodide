@@ -9,7 +9,6 @@ export let nodeFSMod: typeof import("node:fs");
 /** @private */
 export let nodeFsPromisesMod: typeof import("node:fs/promises");
 
-
 declare function read(a: string): string;
 declare function readbuffer(a: string): ArrayBuffer;
 
@@ -213,21 +212,11 @@ export async function loadBinaryFile(
  * @private
  */
 export let loadScript: (url: string) => Promise<any>;
-if (RUNTIME_ENV.IN_BROWSER_MAIN_THREAD) {
-  // browser
-  loadScript = async (url) => {
-    const module = await import(/* webpackIgnore: true */ url);
-    return module;
-  };
-} else if (RUNTIME_ENV.IN_BROWSER_WEB_WORKER) {
-  // webworker
-  loadScript = async (url) => {
-    const module = await import(/* webpackIgnore: true */ url);
-    return module;
-  };
+if (RUNTIME_ENV.IN_BROWSER_CLASSIC_WORKER) {
+  throw new Error("Classic web workers are not supported");
 } else if (RUNTIME_ENV.IN_NODE) {
   loadScript = nodeLoadScript;
-} else if (RUNTIME_ENV.IN_SHELL) {
+} else if (RUNTIME_ENV.IN_BROWSER || RUNTIME_ENV.IN_SHELL) {
   loadScript = async (url) => {
     const module = await import(/* webpackIgnore: true */ url);
     return module;
@@ -253,7 +242,9 @@ async function nodeLoadScript(url: string) {
   } else {
     // Otherwise, hopefully it is a relative path we can load from the file
     // system.
-    module = await import(/* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href);
+    module = await import(
+      /* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href
+    );
   }
   return module;
 }

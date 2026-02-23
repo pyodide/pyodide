@@ -364,13 +364,13 @@ async function prepareSnapshot(
 /**
  * @private
  */
-async function createPyodideModule(
-  _createPyodideModule: CreatePyodideModuleFn,
+async function instantiatePyodideModule(
+  createPyodideModule: CreatePyodideModuleFn,
   emscriptenSettings: EmscriptenSettings,
 ): Promise<PyodideModule> {
-  // _createPyodideModule is specified in the Makefile by the linker flag:
-  // `-s EXPORT_NAME="'_createPyodideModule'"`
-  const module = await _createPyodideModule(emscriptenSettings);
+  const module = await createPyodideModule(emscriptenSettings);
+
+  // Handle early exit
   if (emscriptenSettings.exitCode !== undefined) {
     throw new module.ExitStatus(emscriptenSettings.exitCode);
   }
@@ -481,13 +481,16 @@ export async function loadPyodide(
   const emscriptenSettings = createEmscriptenSettings(config);
 
   // Stage 3: Load WASM script
-  const _createPyodideModule = await loadWasmScript(config);
+  const createPyodideModuleFn = await loadWasmScript(config);
 
   // Stage 4: Prepare snapshot
   const snapshot = await prepareSnapshot(config, emscriptenSettings);
 
   // Stage 5: Create and initialize the Emscripten module
-  const pyodideModule = await createPyodideModule(_createPyodideModule, emscriptenSettings);
+  const pyodideModule = await instantiatePyodideModule(
+    createPyodideModuleFn,
+    emscriptenSettings,
+  );
 
   // Stage 6: Configure API and validate versions
   configureAPI(pyodideModule, config);
