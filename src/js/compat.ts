@@ -13,7 +13,7 @@ declare function read(a: string): string;
 declare function readbuffer(a: string): ArrayBuffer;
 
 declare var globalThis: {
-  importScripts: (url: string) => void;
+  importScripts?: (url: string) => void;
   document?: typeof document;
   fetch?: typeof fetch;
   location?: URL;
