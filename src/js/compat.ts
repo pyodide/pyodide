@@ -208,7 +208,7 @@ export async function loadBinaryFile(
 }
 
 /**
- * Load the pyodide.asm.mjs ES6 module and return the _createPyodideModule function.
+ * Load the pyodide.asm.mjs ES6 module
  * @param url
  * @private
  */
@@ -237,7 +237,7 @@ if (RUNTIME_ENV.IN_BROWSER_MAIN_THREAD) {
 }
 
 /**
- * Load the pyodide.asm.mjs ES6 module in Node.js and return the _createPyodideModule function.
+ * Load the pyodide.asm.mjs ES6 module in Node.js.
  * @param url The path to load. May be a url or a relative file system path.
  * @private
  */
