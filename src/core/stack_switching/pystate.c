@@ -51,30 +51,43 @@ cleanAsyncioState(AsyncioState as)
   Py_CLEAR(as.loop);
 }
 
+#define THREADSTATE_MAX_FREELIST 10
+
+static PyThreadState* threadstate_freelist[THREADSTATE_MAX_FREELIST] = {};
+static int threadstate_freelist_len = 0;
+
+static PyThreadState*
+new_tstate(void) {
+  if (threadstate_freelist_len > 0) {
+    threadstate_freelist_len--;
+    return threadstate_freelist[threadstate_freelist_len];
+  } else {
+    return PyThreadState_New(PyInterpreterState_Get());
+  }
+}
+
+static void
+delete_tstate(PyThreadState* tstate) {
+  if (threadstate_freelist_len == THREADSTATE_MAX_FREELIST) {
+    PyThreadState_Delete(tstate);
+  } else {
+    threadstate_freelist[threadstate_freelist_len] = tstate;
+    threadstate_freelist_len++;
+  }
+}
+
 typedef struct
 {
   AsyncioState as;
   PyThreadState* ts;
 } ThreadState;
 
-#define THREADSTATE_MAX_FREELIST 10
-
-PyThreadState* threadstate_freelist[THREADSTATE_MAX_FREELIST] = {};
-int threadstate_freelist_len = 0;
-
 EMSCRIPTEN_KEEPALIVE ThreadState*
 captureThreadState()
 {
   ThreadState* res = malloc(sizeof(ThreadState));
   res->as = saveAsyncioState();
-  PyThreadState* tstate;
-  if (threadstate_freelist_len > 0) {
-    tstate = threadstate_freelist[threadstate_freelist_len - 1];
-    threadstate_freelist_len--;
-  } else {
-    tstate = PyThreadState_New(PyInterpreterState_Get());
-  }
-  res->ts = PyThreadState_Swap(tstate);
+  res->ts = PyThreadState_Swap(new_tstate());
 
   PyObject* _asyncio_module = NULL;
   PyObject* t = NULL;
@@ -92,11 +105,5 @@ EMSCRIPTEN_KEEPALIVE void
 restoreThreadState(ThreadState* state)
 {
   cleanAsyncioState(state->as);
-  PyThreadState* res = PyThreadState_Swap(state->ts);
-  if (threadstate_freelist_len == THREADSTATE_MAX_FREELIST) {
-    PyThreadState_Delete(res);
-  } else {
-    threadstate_freelist[threadstate_freelist_len] = res;
-    threadstate_freelist_len++;
-  }
+  delete_tstate(PyThreadState_Swap(state->ts));
 }
