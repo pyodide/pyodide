@@ -487,7 +487,10 @@ export async function loadPyodide(
   const snapshot = await prepareSnapshot(config, emscriptenSettings);
 
   // Stage 5: Create and initialize the Emscripten module
-  const pyodideModule = await createPyodideModule(_createPyodideModule, emscriptenSettings);
+  const pyodideModule = await createPyodideModule(
+    _createPyodideModule,
+    emscriptenSettings,
+  );
 
   // Stage 6: Configure API and validate versions
   configureAPI(pyodideModule, config);

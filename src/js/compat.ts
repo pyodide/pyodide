@@ -9,7 +9,6 @@ export let nodeFSMod: typeof import("node:fs");
 /** @private */
 export let nodeFsPromisesMod: typeof import("node:fs/promises");
 
-
 declare function read(a: string): string;
 declare function readbuffer(a: string): ArrayBuffer;
 
@@ -253,7 +252,9 @@ async function nodeLoadScript(url: string) {
   } else {
     // Otherwise, hopefully it is a relative path we can load from the file
     // system.
-    module = await import(/* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href);
+    module = await import(
+      /* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href
+    );
   }
   return module;
 }
