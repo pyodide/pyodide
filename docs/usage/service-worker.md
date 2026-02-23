@@ -30,7 +30,7 @@ will require a server to be running for this example.
 Setup your project to serve the service worker script `sw.js`, and a
 `XMLHttpRequest` polyfill - one such polyfill that works in service workers is
 [xhr-shim](https://www.npmjs.com/package/xhr-shim). You should also serve
-`pyodide.js`, and all its associated `.asm.js`, `.json`, and `.wasm`
+`pyodide.js`, and all its associated `.asm.mjs`, `.json`, and `.wasm`
 files as well, though this is not strictly required if `pyodide.js` is pointing
 to a site serving current versions of these files. The simplest way to serve the
 required files is to use a CDN, such as `https://cdn.jsdelivr.net/pyodide`.
@@ -116,7 +116,7 @@ To set up Pyodide in a service worker, you'll need to do the following:
 2. Import Pyodide
 3. We don't need it for this example, but if you're planning on calling
    `loadPyodide` after [installation](https://web.dev/service-worker-lifecycle/)
-   of the service worker, import `pyodide.asm.js` too.
+   of the service worker, import `pyodide.asm.mjs` too.
 
 After all the required scripts are imported, we call `loadPyodide` to set up
 Pyodide, then create a Python function called `modify_data`. This function add a
@@ -133,7 +133,7 @@ modified using `modifyData`.
 importScripts("./node_modules/xhr-shim/src/index.js");
 self.XMLHttpRequest = self.XMLHttpRequestShim;
 importScripts("./pyodide.js");
-// importScripts("./pyodide.asm.js"); // if loading Pyodide after installation phase, you'll need to import this too
+// importScripts("./pyodide.asm.mjs"); // if loading Pyodide after installation phase, you'll need to import this too
 
 let modifyData;
 let pyodide;
@@ -265,7 +265,7 @@ the importScripts calls shown below:
 importScripts("./node_modules/xhr-shim/src/index.js");
 self.XMLHttpRequest = self.XMLHttpRequestShim;
 importScripts("./pyodide.js");
-// importScripts("./pyodide.asm.js"); // if loading Pyodide after installation phase, you'll need to import this too
+// importScripts("./pyodide.asm.mjs"); // if loading Pyodide after installation phase, you'll need to import this too
 ```
 
 With the following imports:
@@ -276,6 +276,6 @@ With the following imports:
 // We're using the npm package xhr-shim, which assigns self.XMLHttpRequestShim
 import "./node_modules/xhr-shim/src/index.js";
 self.XMLHttpRequest = self.XMLHttpRequestShim;
-import "./pyodide.asm.js"; // IMPORTANT: This is compulsory in a module-type service worker, which cannot use importScripts
+import "./pyodide.asm.mjs"; // IMPORTANT: This is compulsory in a module-type service worker, which cannot use importScripts
 import { loadPyodide } from "./pyodide.mjs"; // Note the .mjs extension
 ```

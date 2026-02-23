@@ -9,7 +9,7 @@ export let nodeFSMod: typeof import("node:fs");
 /** @private */
 export let nodeFsPromisesMod: typeof import("node:fs/promises");
 
-declare function load(a: string): Promise<void>;
+
 declare function read(a: string): string;
 declare function readbuffer(a: string): ArrayBuffer;
 
@@ -47,9 +47,9 @@ export async function initNodeModules() {
   if (typeof require !== "undefined") {
     return;
   }
-  // These are all the packages required in pyodide.asm.js. You can get this
+  // These are all the packages required in pyodide.asm.mjs. You can get this
   // list with:
-  // $ grep -o 'require("[a-z]*")' pyodide.asm.js  | sort -u
+  // $ grep -o 'require("[a-z]*")' pyodide.asm.mjs  | sort -u
   const fs = nodeFSMod;
   const crypto = await import("node:crypto");
   const ws = await import("ws");
@@ -208,40 +208,36 @@ export async function loadBinaryFile(
 }
 
 /**
- * Currently loadScript is only used once to load `pyodide.asm.js`.
+ * Load the pyodide.asm.mjs ES6 module and return the _createPyodideModule function.
  * @param url
  * @private
  */
-export let loadScript: (url: string) => Promise<void>;
-
+export let loadScript: (url: string) => Promise<any>;
 if (RUNTIME_ENV.IN_BROWSER_MAIN_THREAD) {
   // browser
-  loadScript = async (url) => await import(/* webpackIgnore: true */ url);
+  loadScript = async (url) => {
+    const module = await import(/* webpackIgnore: true */ url);
+    return module._createPyodideModule;
+  };
 } else if (RUNTIME_ENV.IN_BROWSER_WEB_WORKER) {
   // webworker
   loadScript = async (url) => {
-    try {
-      // use importScripts in classic web worker
-      globalThis.importScripts(url);
-    } catch (e) {
-      // importScripts throws TypeError in a module type web worker, use import instead
-      if (e instanceof TypeError) {
-        await import(/* webpackIgnore: true */ url);
-      } else {
-        throw e;
-      }
-    }
+    const module = await import(/* webpackIgnore: true */ url);
+    return module._createPyodideModule;
   };
 } else if (RUNTIME_ENV.IN_NODE) {
   loadScript = nodeLoadScript;
 } else if (RUNTIME_ENV.IN_SHELL) {
-  loadScript = load;
+  loadScript = async (url) => {
+    const module = await import(/* webpackIgnore: true */ url);
+    return module._createPyodideModule;
+  };
 } else {
   throw new Error("Cannot determine runtime environment");
 }
 
 /**
- * Load a text file and executes it as Javascript
+ * Load the pyodide.asm.mjs ES6 module in Node.js and return the _createPyodideModule function.
  * @param url The path to load. May be a url or a relative file system path.
  * @private
  */
@@ -250,14 +246,16 @@ async function nodeLoadScript(url: string) {
     // handle file:// with filesystem operations rather than with fetch.
     url = url.slice("file://".length);
   }
+  let module;
   if (url.includes("://")) {
-    // If it's a url, load it with fetch then eval it.
-    nodeVmMod.runInThisContext(await (await fetch(url)).text());
+    // If it's a url, use dynamic import.
+    module = await import(/* webpackIgnore: true */ url);
   } else {
     // Otherwise, hopefully it is a relative path we can load from the file
     // system.
-    await import(/* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href);
+    module = await import(/* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href);
   }
+  return module._createPyodideModule;
 }
 
 export async function loadLockFile(lockFileURL: string): Promise<Lockfile> {

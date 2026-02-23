@@ -51,7 +51,7 @@
       "types": "./ffi.d.ts"
     },
     "./pyodide.asm.wasm": "./pyodide.asm.wasm",
-    "./pyodide.asm.js": "./pyodide.asm.js",
+    "./pyodide.asm.mjs": "./pyodide.asm.mjs",
     "./python_stdlib.zip": "./python_stdlib.zip",
     "./pyodide.mjs": "./pyodide.mjs",
     "./pyodide.js": "./pyodide.js",
@@ -59,7 +59,7 @@
     "./pyodide-lock.json": "./pyodide-lock.json"
   },
   "files": [
-    "pyodide.asm.js",
+    "pyodide.asm.mjs",
     "pyodide.asm.wasm",
     "python_stdlib.zip",
     "pyodide.mjs",
