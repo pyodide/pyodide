@@ -336,7 +336,7 @@ async function loadWasmScript(
     return (globalThis as any)._createPyodideModule;
   }
   const scriptSrc = `${config.indexURL}pyodide.asm.mjs`;
-  return await loadScript(scriptSrc);
+  return (await loadScript(scriptSrc)).default;
 }
 
 /**

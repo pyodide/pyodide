@@ -217,20 +217,20 @@ if (RUNTIME_ENV.IN_BROWSER_MAIN_THREAD) {
   // browser
   loadScript = async (url) => {
     const module = await import(/* webpackIgnore: true */ url);
-    return module._createPyodideModule;
+    return module;
   };
 } else if (RUNTIME_ENV.IN_BROWSER_WEB_WORKER) {
   // webworker
   loadScript = async (url) => {
     const module = await import(/* webpackIgnore: true */ url);
-    return module._createPyodideModule;
+    return module;
   };
 } else if (RUNTIME_ENV.IN_NODE) {
   loadScript = nodeLoadScript;
 } else if (RUNTIME_ENV.IN_SHELL) {
   loadScript = async (url) => {
     const module = await import(/* webpackIgnore: true */ url);
-    return module._createPyodideModule;
+    return module;
   };
 } else {
   throw new Error("Cannot determine runtime environment");
@@ -255,7 +255,7 @@ async function nodeLoadScript(url: string) {
     // system.
     module = await import(/* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href);
   }
-  return module._createPyodideModule;
+  return module;
 }
 
 export async function loadLockFile(lockFileURL: string): Promise<Lockfile> {
