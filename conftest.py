@@ -261,9 +261,10 @@ def pytest_runtest_call(item):
         result = yield
         return result
 
-    trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
+    all_markers = list(item.iter_markers())
+    trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in all_markers
     trace_hiwire_refs = (
-        trace_pyproxies and pytest.mark.skip_refcount_check.mark not in item.own_markers
+        trace_pyproxies and pytest.mark.skip_refcount_check.mark not in all_markers
     )
     yield from extra_checks_test_wrapper(
         browser, trace_hiwire_refs, trace_pyproxies, item
