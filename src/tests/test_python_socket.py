@@ -13,6 +13,7 @@ pytestmark = [
     only_node,
 ]
 
+
 @contextlib.contextmanager
 def tcp_server(handler, *, timeout=5.0):
     """Start a TCP server on an OS-assigned port in a background thread.
@@ -69,7 +70,6 @@ def selenium_nodesock(selenium_standalone_noload):
         yield selenium
     finally:
         selenium.run_js("globalThis.pyodide;")
-
 
 
 def test_socket_connect(selenium_nodesock):
