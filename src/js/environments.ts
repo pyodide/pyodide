@@ -80,26 +80,24 @@ function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
     typeof (globalThis as any).self !== "undefined" &&
     (globalThis as any).self instanceof (globalThis as any).WorkerGlobalScope;
 
-  // Service workers always expose `importScripts` on their global scope, even
-  // module-type ones (where calling it throws). Exclude ServiceWorkerGlobalScope
-  // so module-type service workers aren't misclassified as classic workers.
-  const IN_SERVICE_WORKER =
-    IN_BROWSER_WEB_WORKER &&
-    typeof (globalThis as any).ServiceWorkerGlobalScope !== "undefined" &&
-    (globalThis as any).self instanceof
-      (globalThis as any).ServiceWorkerGlobalScope;
-  const IN_BROWSER_CLASSIC_WORKER =
-    IN_BROWSER_WEB_WORKER &&
-    !IN_SERVICE_WORKER &&
-    typeof (globalThis as any).importScripts === "function";
-  const IN_BROWSER_MODULE_WORKER =
-    IN_BROWSER_WEB_WORKER && !IN_BROWSER_CLASSIC_WORKER;
+  let IN_BROWSER_CLASSIC_WORKER = IN_BROWSER_WEB_WORKER;
+  let IN_BROWSER_MODULE_WORKER = IN_BROWSER_WEB_WORKER;
+  if (IN_BROWSER_WEB_WORKER) {
+    try {
+      (globalThis as any).importScripts("data:text/javascript,");
+      IN_BROWSER_CLASSIC_WORKER = true;
+      IN_BROWSER_MODULE_WORKER = false;
+    } catch (e) {
+      IN_BROWSER_CLASSIC_WORKER = false;
+      IN_BROWSER_MODULE_WORKER = true;
+    }
+  }
 
   if (IN_BROWSER_CLASSIC_WORKER) {
     throw new Error("Classic web workers are not supported");
   }
 
-  return {
+  const env = {
     ...base,
     IN_BROWSER,
     IN_BROWSER_MAIN_THREAD,
@@ -109,4 +107,20 @@ function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
     IN_NODE_COMMONJS,
     IN_NODE_ESM,
   };
+
+  // One of the following must be true, otherwise we are in an unknown environment that we do not support.
+  if (
+    !(
+      env.IN_BROWSER_MAIN_THREAD ||
+      env.IN_BROWSER_WEB_WORKER ||
+      env.IN_NODE ||
+      env.IN_SHELL
+    )
+  ) {
+    throw new Error(
+      `Cannot determine runtime environment: ${JSON.stringify(env)}`,
+    );
+  }
+
+  return env;
 }
