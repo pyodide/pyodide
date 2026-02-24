@@ -212,17 +212,12 @@ export async function loadBinaryFile(
  * @private
  */
 export let loadScript: (url: string) => Promise<any>;
-if (RUNTIME_ENV.IN_BROWSER_CLASSIC_WORKER) {
-  throw new Error("Classic web workers are not supported");
-} else if (RUNTIME_ENV.IN_NODE) {
+if (RUNTIME_ENV.IN_NODE) {
   loadScript = nodeLoadScript;
-} else if (RUNTIME_ENV.IN_BROWSER || RUNTIME_ENV.IN_SHELL) {
-  loadScript = async (url) => {
-    const module = await import(/* webpackIgnore: true */ url);
-    return module;
-  };
 } else {
-  throw new Error("Cannot determine runtime environment");
+  loadScript = async (url) => {
+    return await import(/* webpackIgnore: true */ url);
+  };
 }
 
 /**
@@ -235,18 +230,16 @@ async function nodeLoadScript(url: string) {
     // handle file:// with filesystem operations rather than with fetch.
     url = url.slice("file://".length);
   }
-  let module;
   if (url.includes("://")) {
     // If it's a url, use dynamic import.
-    module = await import(/* webpackIgnore: true */ url);
+    return await import(/* webpackIgnore: true */ url);
   } else {
     // Otherwise, hopefully it is a relative path we can load from the file
     // system.
-    module = await import(
+    return await import(
       /* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href
     );
   }
-  return module;
 }
 
 export async function loadLockFile(lockFileURL: string): Promise<Lockfile> {

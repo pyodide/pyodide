@@ -122,8 +122,11 @@ dist/pyodide.asm.mjs: \
 		cd dist && npx prettier -w pyodide.asm.mjs ; \
 	fi
 
+   # Strip out C++ symbols which all start __Z.
+   # There are 4821 of these and they have VERY VERY long names.
+   # To show some stats on the symbols you can use the following:
+   # cat dist/pyodide.asm.mjs | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
 	$(SED) -i -E 's/var __Z[^;]*;//g' dist/pyodide.asm.mjs
-	$(SED) -i '1i "use strict";' dist/pyodide.asm.mjs
 	@date +"[%F %T] done building pyodide.asm.mjs."
 
 env:

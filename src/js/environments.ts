@@ -86,6 +86,11 @@ function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
   const IN_BROWSER_MODULE_WORKER =
     IN_BROWSER_WEB_WORKER &&
     typeof (globalThis as any).importScripts !== "function";
+
+  if (IN_BROWSER_CLASSIC_WORKER) {
+    throw new Error("Classic web workers are not supported");
+  }
+
   return {
     ...base,
     IN_BROWSER,
