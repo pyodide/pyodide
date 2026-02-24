@@ -27,9 +27,7 @@ will require a server to be running for this example.
 
 ### Setup
 
-Setup your project to serve the service worker script `sw.js`, and a
-`XMLHttpRequest` polyfill - one such polyfill that works in service workers is
-[xhr-shim](https://www.npmjs.com/package/xhr-shim). You should also serve
+You serve
 `pyodide.mjs`, and all its associated `.asm.mjs`, `.json`, and `.wasm`
 files as well, though this is not strictly required if `pyodide.mjs` is pointing
 to a site serving current versions of these files. The simplest way to serve the
@@ -109,12 +107,10 @@ For convenience, we also provide a button that fetches data and logs it.
 ### Service worker
 
 To set up Pyodide in a service worker, you'll need to do the following:
-1. Polyfill `XMLHttpRequest` because it is used by Emscripten but isn't available in service workers'
-   global scopes.
-2. Statically import `pyodide.asm.mjs` and set `globalThis._createPyodideModule`.
+1. Statically import `pyodide.asm.mjs` and set `globalThis._createPyodideModule`.
    This is necessary because Pyodide loads it dynamically, but service workers forbid dynamic `import()`,
    so `loadPyodide` cannot load it automatically.
-3. Import `loadPyodide` from `pyodide.mjs`
+2. Import `loadPyodide` from `pyodide.mjs`
 After all the required scripts are imported, we call `loadPyodide` to set up
 Pyodide, then create a Python function called `modify_data`. This function add a
 `count` property to an object, where `count` is equal to the number of times
@@ -125,9 +121,6 @@ modified using `modifyData`.
 ```js
 /* sw.js */
 /* MODIFY IMPORT PATHS TO POINT TO YOUR SCRIPTS */
-// We're using the npm package xhr-shim, which assigns self.XMLHttpRequestShim
-import "./node_modules/xhr-shim/src/index.js";
-globalThis.XMLHttpRequest = globalThis.XMLHttpRequestShim;
 // Service workers forbid dynamic import(), so we statically import
 // pyodide.asm.mjs and set the escape hatch that loadPyodide checks first.
 import _createPyodideModule from "./pyodide.asm.mjs";
