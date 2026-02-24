@@ -107,9 +107,9 @@ For convenience, we also provide a button that fetches data and logs it.
 ### Service worker
 
 To set up Pyodide in a service worker, you'll need to do the following:
-1. Statically import `pyodide.asm.mjs` and set `globalThis._createPyodideModule`.
-   This is necessary because Pyodide loads it dynamically, but service workers forbid dynamic `import()`,
-   so `loadPyodide` cannot load it automatically.
+1. Statically import `pyodide.asm.mjs` pass the default export to `loadPyodide` as `_createPyodideModule` option.
+   Norally, `pyodide.asm.mjs` is dynamically imported by `loadPyodide`, but service workers forbid dynamic `import()`,
+   so `loadPyodide` cannot load it automatically. Therefore, we need to pass the default export of `pyodide.asm.mjs` to `loadPyodide` as `_createPyodideModule` option.
 2. Import `loadPyodide` from `pyodide.mjs`
 After all the required scripts are imported, we call `loadPyodide` to set up
 Pyodide, then create a Python function called `modify_data`. This function add a
@@ -124,12 +124,11 @@ modified using `modifyData`.
 // Service workers forbid dynamic import(), so we statically import
 // pyodide.asm.mjs and set the escape hatch that loadPyodide checks first.
 import _createPyodideModule from "./pyodide.asm.mjs";
-globalThis._createPyodideModule = _createPyodideModule;
 import { loadPyodide } from "./pyodide.mjs";
 
 let modifyData;
 let pyodide;
-loadPyodide({}).then((_pyodide) => {
+loadPyodide({ _createPyodideModule }).then((_pyodide) => {
   pyodide = _pyodide;
   let namespace = pyodide.globals.get("dict")();
 

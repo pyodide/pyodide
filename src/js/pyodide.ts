@@ -227,6 +227,9 @@ export interface PyodideConfig {
   _snapshotDeserializer?: (obj: any) => any;
 
   /** @ignore */
+  _createPyodideModule?: CreatePyodideModuleFn;
+
+  /** @ignore */
   BUILD_ID?: string;
 
   /** @ignore */
@@ -328,13 +331,10 @@ function createEmscriptenSettings(
 async function loadWasmScript(
   config: PyodideConfigWithDefaults,
 ): Promise<CreatePyodideModuleFn> {
-  // If the pyodide.asm.mjs script has been statically imported, the
-  // _createPyodideModule function may be available on globalThis.
-  // Users can use this in environments where dynamic importing is not
-  // allowed or not desirable, like module-type service workers.
-  if (typeof (globalThis as any)._createPyodideModule === "function") {
-    return (globalThis as any)._createPyodideModule;
+  if (config._createPyodideModule) {
+    return config._createPyodideModule;
   }
+
   const scriptSrc = `${config.indexURL}pyodide.asm.mjs`;
   return (await loadScript(scriptSrc)).default;
 }
