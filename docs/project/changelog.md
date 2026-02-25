@@ -33,9 +33,13 @@ myst:
   hashlib. Now, we do not provide hash functions coming from OpenSSL.
   {pr}`6044`
 
-- {{ Breaking }} `pyodide.asm.js` is renamed to `pyodide.asm.mjs`, meaning it is now an ESM module.
-  While this is no functional change for most users, it will break any code that imports `pyodide.asm.js` directly or classic workers.
+- {{ Breaking }} `pyodide.asm.js` has been renamed to `pyodide.asm.mjs` to properly indicate it is an ES module.
+  This change affects:
+  - Classic (non-module) workers: No longer supported
+  - Service workers: Must now statically import `pyodide.asm.mjs` (see {ref}`using_from_service_worker`)
+  - Bundlers: Update configuration to reference the new filename
   {pr}`6111`
+
 
 - {{ Enhancement }} A JavaScript object is now treated as an array-like object
   if it has a `length` property and is iterable. Every JsProxy of an array-like
