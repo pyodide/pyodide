@@ -1,7 +1,7 @@
 From 7774d54f58deb619b13b5220e17b6bc3377e9196 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Fri, 30 Jan 2026 15:48:03 +0900
-Subject: [PATCH 5/8] Remove JSPI-related parts in emscripten_syscalls.c
+Subject: [PATCH 5/9] Remove JSPI-related parts in emscripten_syscalls.c
 
 These changes were to make CPython's WASM build work with pyrepl,
 but we don't use main in Pyodide, so we can remove these parts.

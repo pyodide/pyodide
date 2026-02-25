@@ -1,7 +1,7 @@
 From 2ced1c0454df340dac85d3f02331021fbd9ac7d0 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 25 Jul 2024 14:28:57 +0200
-Subject: [PATCH 7/8] Warn if ZoneInfo is imported without tzdata
+Subject: [PATCH 7/9] Warn if ZoneInfo is imported without tzdata
 
 ---
  Lib/zoneinfo/_common.py | 6 ++++++

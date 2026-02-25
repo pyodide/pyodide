@@ -1,7 +1,7 @@
 From 3416cd2d272444404c4842500957f72d62ce8346 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 20 Feb 2026 17:02:46 +0100
-Subject: [PATCH 8/8] Export _Py_emscripten_signal_clock
+Subject: [PATCH 8/9] Export _Py_emscripten_signal_clock
 
 Needed by signal handling in Cloudflare's JS runtime
 ---

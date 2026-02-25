@@ -1,7 +1,7 @@
 From 77bcb5f2de330bc9ae13c7b50eb72cb4d52a7eef Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 9 Jul 2025 17:00:12 +0200
-Subject: [PATCH 6/8] Teach json encoder.py to encode jsnull
+Subject: [PATCH 6/9] Teach json encoder.py to encode jsnull
 
 ---
  Lib/json/encoder.py | 9 +++++++++

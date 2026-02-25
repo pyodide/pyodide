@@ -1,7 +1,7 @@
 From a28e166e3c40ee5c2bd0c759e52e3522c7b9dc05 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 25 Jul 2024 14:41:37 +0200
-Subject: [PATCH 3/8] Add call to `JsProxy_GetMethod` to help remove temporary
+Subject: [PATCH 3/9] Add call to `JsProxy_GetMethod` to help remove temporary
 
 `_PyObject_GetMethod` is a special attribute lookup function that won't call the
 `__get__` descriptor on a method to avoid creating a temporary PyMethodObject.
