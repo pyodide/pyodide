@@ -226,8 +226,17 @@ export interface PyodideConfig {
   /** @ignore */
   _snapshotDeserializer?: (obj: any) => any;
 
-  /** @ignore */
-  _createPyodideModule?: CreatePyodideModuleFn;
+  /**
+   * @experimental
+   * The constructor function to use to create the Pyodide module.
+   * This function can be imported from `pyodide.asm.mjs`
+   * and passed to `loadPyodide` as `createPyodideModule` option.
+   * This is used to work around service workers forbid dynamic import(),
+   * and not intended to be used in other cases.
+   *
+   * Warning: This is an experimental feature and may change in the future.
+   */
+  createPyodideModule?: CreatePyodideModuleFn;
 
   /** @ignore */
   BUILD_ID?: string;
@@ -331,8 +340,8 @@ function createEmscriptenSettings(
 async function loadWasmScript(
   config: PyodideConfigWithDefaults,
 ): Promise<CreatePyodideModuleFn> {
-  if (config._createPyodideModule) {
-    return config._createPyodideModule;
+  if (config.createPyodideModule) {
+    return config.createPyodideModule;
   }
 
   const scriptSrc = `${config.indexURL}pyodide.asm.mjs`;

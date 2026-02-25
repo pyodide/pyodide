@@ -123,12 +123,12 @@ modified using `modifyData`.
 /* MODIFY IMPORT PATHS TO POINT TO YOUR SCRIPTS */
 // Service workers forbid dynamic import(), so we statically import
 // pyodide.asm.mjs and set the escape hatch that loadPyodide checks first.
-import _createPyodideModule from "./pyodide.asm.mjs";
+import createPyodideModule from "./pyodide.asm.mjs";
 import { loadPyodide } from "./pyodide.mjs";
 
 let modifyData;
 let pyodide;
-loadPyodide({ _createPyodideModule }).then((_pyodide) => {
+loadPyodide({ createPyodideModule }).then((_pyodide) => {
   pyodide = _pyodide;
   let namespace = pyodide.globals.get("dict")();
 
