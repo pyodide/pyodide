@@ -97,21 +97,7 @@ function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
     throw new Error("Classic web workers are not supported");
   }
 
-  // One of the following must be true, otherwise we are in an unknown environment that we do not support.
-  if (
-    !(
-      IN_BROWSER_MAIN_THREAD ||
-      IN_BROWSER_WEB_WORKER ||
-      base.IN_NODE ||
-      base.IN_SHELL
-    )
-  ) {
-    throw new Error(
-      `Cannot determine runtime environment: ${JSON.stringify(env)}`,
-    );
-  }
-
-  return {
+  const env = {
     ...base,
     IN_BROWSER,
     IN_BROWSER_MAIN_THREAD,
@@ -121,4 +107,20 @@ function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
     IN_NODE_COMMONJS,
     IN_NODE_ESM,
   };
+
+  // One of the following must be true, otherwise we are in an unknown environment that we do not support.
+  if (
+    !(
+      env.IN_BROWSER_MAIN_THREAD ||
+      env.IN_BROWSER_WEB_WORKER ||
+      env.IN_NODE ||
+      env.IN_SHELL
+    )
+  ) {
+    throw new Error(
+      `Cannot determine runtime environment: ${JSON.stringify(env)}`,
+    );
+  }
+
+  return env;
 }
