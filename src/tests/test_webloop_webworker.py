@@ -10,7 +10,6 @@ def no_support_classic_worker(script_type):
         pytest.skip("Classic workers are not supported anymore")
 
 
-
 def test_webworker_zero_timeout1(selenium_webworker_standalone, script_type):
     no_support_classic_worker(script_type)
     selenium = selenium_webworker_standalone
