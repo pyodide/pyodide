@@ -2,12 +2,8 @@
  * NodeSockFS — Node.js native socket filesystem replacing Emscripten's SOCKFS.
  * Uses WinterCG Sockets API as transport.
  *
- * Two I/O paths exist:
- *  1. JSPI syscalls (emscripten-settings.ts) — sync Python (socket.connect/recv/send)
- *     suspends the WASM stack via WebAssembly.Suspending, awaits the async op, resumes.
- *  2. api._nodeSock helpers (below) — asyncio Python (WebLoop.sock_connect/recv/sendall)
- *     calls these directly as JS Promises without WASM suspension, avoiding thread
- *     state corruption inside the event loop.
+ * JSPI syscalls (emscripten-settings.ts) — sync Python (socket.connect/recv/send)
+ * suspends the WASM stack via WebAssembly.Suspending, awaits the async op, resumes.
  */
 
 import type { PyodideModule, PreRunFunc, FSType, API } from "../types";
@@ -46,11 +42,7 @@ interface NodeSock {
 
 export function initializeNodeSockFS(): PreRunFunc[] {
   if (!RUNTIME_ENV.IN_NODE) {
-    DEBUG &&
-      console.debug(
-        "[NodeSockFS] Not in Node.js environment, skipping NodeSockFS initialization",
-      );
-    return [];
+    throw new Error("NodeSockFS is only supported in Node.js");
   }
 
   return [
@@ -67,18 +59,11 @@ export function initializeNodeSockFS(): PreRunFunc[] {
 
 async function _initializeNodeSockFS(module: PyodideModule) {
   const FS = module.FS;
-  const api = module.API;
   const ERRNO_CODES = module.ERRNO_CODES;
 
   setPyodideModuleforJSPI(module);
 
   await initWinterCGSockets();
-
-  DEBUG && console.debug(`[NodeSockFS] Initializing...`);
-  DEBUG &&
-    console.debug(
-      `[NodeSockFS] Module.jspiSupported: ${(module as any).jspiSupported}`,
-    );
 
   const AF_INET = 2;
   const SOCK_STREAM = 1;
