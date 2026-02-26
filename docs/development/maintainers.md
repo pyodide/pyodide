@@ -263,50 +263,86 @@ cd pyodide-build
 git checkout "<COMMIT HASH>"
 ```
 
-## Updating the Emscripten version
+## Upgrading the ABI
 
-To update Emscripten requires the following three steps:
+Each year, we aim to release a new Pyodide ABI version with a new CPython and
+Emscripten version.
+
+Similar to the CPython alpha release, we stabilize the ABI early before
+releasing the new Pyodide version so that package maintainers can update their
+packages to use the new ABI ([#5580](https://github.com/pyodide/pyodide/issues/5580)).
+
+### 0. Stabilize and freeze the ABI
+
+Discuss with the maintainers to decide what ABI changes to make before the
+release.
+
+Once the ABI changes are decided, create a `20XX_0` branch (targeting year) from
+the `main` branch. All PRs that change the ABI should be merged to the `20XX_0`
+branch.
+
+### 1. Disable `USE_PREBUILT_PACKAGES`
+
+Pyodide CI uses prebuilt packages built with the ABI of the last release. To
+upgrade the ABI, you need to disable them, otherwise the CI will fail.
+
+- Find the `USE_PREBUILT_PACKAGES` environment variable in
+  [.circleci/config.yml](https://github.com/ryanking13/pyodide/blob/unvendor-recipes/.circleci/config.yml)
+  and set it to `false`.
+
+### 2. Upgrade Emscripten and CPython version
+
+Update the Emscripten and CPython versions respectively.
+
+Updating the Emscripten version is not mandatory, but it is recommended to
+benefit from the latest features and bug fixes.
+
+Updating Emscripten and CPython separately is often easier than updating them
+together.
+
+#### 2.1. Upgrade the Emscripten version
+
+Updating Emscripten requires the following three steps:
 
 1. Rebase the patches in `emsdk/patches` onto the new Emscripten version.
-2. Update the Emscripten version in `Makefile.envs`
-3. Update the `struct_info` json file in `src/js/` to match the version of the
+2. Update the Emscripten version in `Makefile.envs`.
+3. Update the `struct_info` JSON file in `src/js/` to match the version of the
    file in Emscripten.
 
-All three of these steps are automated by `tools/update_emscripten.py`. To
-update, you can say: `./tools/update_emscripten.py new_version`. If there are
-rebase conflicts, you will have to manually finish the rebase. Once the rebase
-is completed, you can rerun `update_emscripten.py`. It will start over the
+All three steps are automated by `tools/update_emscripten.py`. To update, run:
+
+```sh
+./tools/update_emscripten.py new_version
+```
+
+If there are rebase conflicts, you will have to manually finish the rebase. Once
+the rebase is completed, rerun `update_emscripten.py`. It will start over the
 rebase from scratch but reuse your conflict resolutions using the git rerere
 feature.
-
-Updating Emscripten is an ABI break so all platformed wheels that are downloaded
-from an external URL need to be disabled until they are rebuilt.
 
 After this is done, commit all the changes and open a PR. There are frequently
 complicated CI failures.
 
-## Upgrading pyodide to a new version of CPython
+#### 2.2. Upgrade CPython version
 
-### Prerequisites
+##### Prerequisites
 
 The desired version of CPython must be available at:
 
-1. The `specific release` section of https://www.python.org/downloads
+1. The "specific release" section of https://www.python.org/downloads
 2. https://hub.docker.com/_/python
 3. https://github.com/actions/python-versions/releases
 
-If doing a major version update, save time by {ref}`updating-packages` first.
+##### Steps
 
-### Steps
-
-1. Follow the steps in "Updating the Docker image" to create a docker image for
+1. Follow the steps in "Updating the Docker image" to create a Docker image for
    the new Python version.
 
 2. Make sure you are in a Python virtual environment with the new version of
    Python and with `requirements.txt` installed. (It is also possible to work in
-   the docker image as an alternative.)
+   the Docker image as an alternative.)
 
-3. Update the Python version in Makefile.envs
+3. Update the Python version in `Makefile.envs`.
 
 4. Update the Python version in the following locations:
    - `.github/workflows/main.yml`
@@ -320,22 +356,23 @@ If doing a major version update, save time by {ref}`updating-packages` first.
    (TODO: make this list shorter.)
 
 5. Rebase the patches:
-   - Clone cpython and cd into it. Checkout the Python version you are upgrading
-     from. For instance, if the old version is 3.11.3, use `git checkout v3.11.3`
-     (Python tags have a leading v.) Run
+
+   - Clone CPython and cd into it. Checkout the Python version you are upgrading
+     from. For instance, if the old version is 3.13.2, use `git checkout v3.13.2`
+     (Python tags have a leading `v`). Run:
 
      ```sh
      git am ~/path/to/pyodide/cpython/patches/*
      ```
 
-   - Rebase the patches onto the new version of Python. For instance if updating
-     from Python v3.11.3 to Python 3.12.1:
+   - Rebase the patches onto the new version of Python. For instance, if updating
+     from Python v3.13.2 to Python 3.14.1:
 
      ```sh
-     git rebase v3.11.3 --onto v3.12.1
+     git rebase v3.13.2 --onto v3.14.1
      ```
 
-   - Resolve conflicts / drop patches that have been upstreamed. If you have
+   - Resolve conflicts and drop patches that have been upstreamed. If you have
      conflicts, make sure you are using diff3:
 
      ```sh
@@ -343,33 +380,35 @@ If doing a major version update, save time by {ref}`updating-packages` first.
      ```
 
    - Generate the new patches:
+
      ```sh
      rm ~/path/to/pyodide/cpython/patches/*
-     git format-patch v3.12.1 -o ~/path/to/pyodide/cpython/patches/
+     git format-patch v3.14.1 -o ~/path/to/pyodide/cpython/patches/
      ```
 
 6. Try to build Python with `make -C cpython`. Fix any build errors. If you
-   modify the Python source in tree after a failed build it may be useful to run
-   `make rebuild`.
+   modify the Python source in-tree after a failed build, it may be useful to
+   run `make rebuild`.
 
-7. Try to finish the build with a top level `make`. Fix compile errors in
+7. Try to finish the build with a top-level `make`. Fix compile errors in
    `src/core` and any link errors. It may be useful to apply
-   `upgrade_pythoncapi.py --no-compat` to the C extension in `src/code`.
-   https://github.com/python/pythoncapi-compat/blob/main/upgrade_pythoncapi.py
+   [`upgrade_pythoncapi.py --no-compat`](https://github.com/python/pythoncapi-compat/blob/main/upgrade_pythoncapi.py)
+   to the C extension in `src/core`.
 
    The file most tightly coupled to the CPython version is
-   `src/core/stack_switching/pystate.c`. Consult the following greenlet file to
-   figure out how to fix it:
-   https://github.com/python-greenlet/greenlet/blob/master/src/greenlet/TPythonState.cpp
+   `src/core/stack_switching/pystate.c`. Consult the
+   [greenlet TPythonState.cpp](https://github.com/python-greenlet/greenlet/blob/master/src/greenlet/TPythonState.cpp)
+   to figure out how to fix it.
 
-8. Run
+8. Run:
 
    ```sh
    python tools/make_test_list.py
    ```
 
-   Then run the core tests `pytest src/tests/test_core_python.py` and either fix
-   the failures or update `src/tests/python_tests.yaml` to skip or xfail them.
+   Then run the core tests with `pytest src/tests/test_core_python.py` and
+   either fix the failures or update `src/tests/python_tests.yaml` to skip or
+   xfail them.
 
 9. Try to build packages with:
 
@@ -377,19 +416,13 @@ If doing a major version update, save time by {ref}`updating-packages` first.
    pyodide build-recipes '*'
    ```
 
-   Disable packages until the build succeeds. Then fix the build failures. In
-   many cases, this just requires updating to the most recent version of the
-   package. If you have trouble, try searching on the package's issue tracker
-   for "python 3.12" (or whatever the new version is). It's best to create
-   separate PRs for tricky package upgrades.
-
 10. Fix failing package tests.
 
-11. Update standard library stubs in `src/templates`. We currently have `webbrowser.py` and `ssl.py`
-    that we implement ourselves. If you are updating the Python version, you may need to update
-    these stubs. Take a look at the Python docs for the standard library modules you are updating
-    and see if the APIs have changed. You can search for the string "in version 3.XX" to find
-    the relevant changes.
+11. Update standard library stubs in `src/templates`. We currently have
+    `webbrowser.py` and `ssl.py` that we implement ourselves. If you are
+    updating the Python version, you may need to update these stubs. Review the
+    Python docs for the standard library modules and check if the APIs have
+    changed. Search for "in version 3.XX" to find the relevant changes.
 
 ### Old major Python upgrades
 
@@ -403,54 +436,48 @@ If doing a major version update, save time by {ref}`updating-packages` first.
 | 3.8     | {pr}`712`  |
 | 3.7     | {pr}`77`   |
 
-## Upgrading the ABI
+### 3. Release a new Pyodide alpha version
 
-When you upgrade the Pyodide ABI, packages that were using the old ABI will no longer be available.
-Therefore, when updating the ABI, following procedure is required to temporarily disable and re-enable packages.
+After all the changes are merged, release a new Pyodide alpha version so that
+people can build packages with the new ABI.
 
-### 0. Stabilize and freeze the ABI
+### 4. Update packages and release new package set
 
-There is a WIP discussion in [#5580](https://github.com/pyodide/pyodide/issues/5580) about how to stabilize the ABI before making a release.
-Please discuss the ABI release with other maintainers before you decide to upgrade the ABI, and make sure that the ABI is stable and frozen.
+TODO: Update the process after [PEP 783](https://peps.python.org/pep-0783/) is accepted.
 
-### 1. Disable `USE_PREBUILT_PACKAGES` and upgrade the ABI in the nightly branch
-
-Pyodide CI uses prebuilt packages that are built with the ABI of the last release.
-To upgrade the ABI, you need to disable them, otherwise the CI will fail.
-
-- Find `USE_PREBUILT_PACKAGES` env variable in [.circleci/config.yml](https://github.com/ryanking13/pyodide/blob/unvendor-recipes/.circleci/config.yml)
-  and set it to `false`.
-- Open a PR to upgrade the ABI. The target branch should _not_ be `main`, but
-  a branch dedicated to the ABI upgrade. For instance, if you are upgrading the ABI
-  to `2025_0`, the branch name can be `abi-2025_0`.
-
-### 2. Release nightly xbuildenv
-
-After the ABI upgrade PR is merged, you need to release the nightly xbuildenv to make it possible for the packages to be built with the new ABI.
-
-Go to [pyodide/pyodide-build-environment-nightly](https://github.com/pyodide/pyodide-build-environment-nightly) and trigger
-[Release Cross-build environment](https://github.com/pyodide/pyodide-build-environment-nightly/actions/workflows/publish.yml) action.
-
-This will create a new release with the new ABI. When running the action, set the target branch to the branch you created in the previous step,
-and set the tag to `nightly-<ABI>-<DATE>`, for instance `nightly-2025_0-2023-10-01`.
-
-### 3. Update packages and release new packages set
-
-Go to [pyodide/pyodide-recipes](https://github.com/pyodide/pyodide-recipes) and follow the guidelines in the
+Go to [pyodide/pyodide-recipes](https://github.com/pyodide/pyodide-recipes) and
+follow the guidelines in
 [MAINTAINERS.md](https://github.com/pyodide/pyodide-recipes/blob/main/docs/MAINTAINERS.md).
-You'll need to make a tag for the existing packages sets, and update the `default_cross_build_env_url` in the main branch.
+You'll need to create a tag for the existing package sets and update
+`default_cross_build_env_url` in the main branch.
 
-If you updated the Python version, you also need to update the `python` version used in the CI.
-When opening the PR, include `[full build]` in the title to trigger a full build of all packages, otherwise, only the small set of packages will be built.
+If you updated the Python version, also update the `python` version used in the
+CI. When opening the PR, include the `full build` label to trigger a full build
+of all packages; otherwise, only a small set of packages will be built.
 
-Most likely, some of the packages will fail to build. You can disable them by adding `_disabled: true` to the recipes of the packages that are failing to build.
-You don't need to handle all the build failures in the same PR, you can open multiple PRs to fix the build failures, or let the package maintainers handle them.
+Most likely, some packages will fail to build. You can disable them by adding
+`_disabled: true` to the recipes of the failing packages. You don't need to
+handle all the build failures in the same PR—you can open multiple PRs to fix
+the build failures or let the package maintainers handle them.
 
-Create a new tag for the new packages set when the build is successful. It will create a new release with the new packages set.
+Create a new tag for the new package set when the build is successful. This will
+create a new release with the new package set.
 
-### 4. Re-enable `USE_PREBUILT_PACKAGES` and upgrade the ABI in the main branch
+### 5. Re-enable `USE_PREBUILT_PACKAGES` and upgrade the ABI in the main branch
 
-Go back to `pyodide/pyodide` and update the `PYODIDE_PREBUILT_PACKAGES_BASE` variable in the Makefile.envs to the
-new packages set you created in the previous step.
+Go back to `pyodide/pyodide` and update the `PYODIDE_PREBUILT_PACKAGES_BASE`
+variable in `Makefile.envs` to the new package set you created in the previous
+step.
 
-Then, re-enable `USE_PREBUILT_PACKAGES` in the `.circleci/config.yml` file and open a PR to merge it into the main branch.
+Then re-enable `USE_PREBUILT_PACKAGES` in `.circleci/config.yml` and open a PR
+to merge it into the main branch.
+
+### 6. Release a new Pyodide version
+
+After enabling most of the packages that were available in the previous ABI
+version, we are ready to release a new Pyodide version with the new ABI.
+
+Update {ref}`pyodide-platform-abi` to match the new ABI.
+
+Merge the `20XX_0` branch into `main` and open a PR, then release a new Pyodide
+version with the new ABI.
