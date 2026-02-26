@@ -14,7 +14,7 @@ bool tracerefs;
   JS_BUILTIN(undefined)                                                        \
   JS_BUILTIN(true)                                                             \
   JS_BUILTIN(false)                                                            \
-  JS_CONST(error, _Jsv_GetNull())                                              \
+  JS_CONST(error, _Jsv_GetError())                                             \
   JS_CONST(novalue, { noValueMarker : 1 })
 
 // we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
@@ -27,17 +27,16 @@ JS_INIT_CONSTS();
 
 #define JS_CONST(name, value) HEAP32[_Jsr_##name / 4] = _hiwire_intern(value);
 
-__attribute__((import_module("sentinel"), import_name("create_sentinel"))) JsVal
-Jsv_GetNull_import(void);
+JsVal
+Jsv_GetError_import(void);
 
 EMSCRIPTEN_KEEPALIVE JsVal
-Jsv_GetNull(void)
+Jsv_GetError(void)
 {
-  return Jsv_GetNull_import();
+  return Jsv_GetError_import();
 }
 
-__attribute__((import_module("sentinel"),
-               import_name("is_sentinel"))) int JsvError_Check(JsVal);
+int JsvError_Check(JsVal);
 
 EM_JS_NUM(int, jslib_init_js, (void), {
   JS_INIT_CONSTS();

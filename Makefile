@@ -69,7 +69,7 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat emsdk/emsdk/.complete
 	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
-src/core/sentinel.wasm: src/core/sentinel.wat emsdk/emsdk/.complete
+src/core/jsverror.wasm: src/core/jsverror.wat emsdk/emsdk/.complete
 	./emsdk/emsdk/upstream/bin/wasm-as $< -o $@ -all
 
 src/core/libpyodide.a: \
@@ -163,7 +163,7 @@ dist/pyodide.js:                             \
 		src/js/compat.ts                     \
 		src/js/emscripten-settings.ts        \
 		src/js/version.ts                    \
-		src/core/sentinel.wasm
+		src/core/jsverror.wasm
 	cd src/js && npm run build
 
 src/core/stack_switching/stack_switching.out.js: src/core/stack_switching/*.mjs node_modules/.installed
