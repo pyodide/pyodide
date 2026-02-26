@@ -137,11 +137,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       port: number,
       options?: SocketOptions,
     ): Promise<number> {
-      DEBUG &&
-        console.debug(
-          `[NodeSockFS:connectAsync] addr=${addr}, port=${port}, tls=${options?.secureTransport ?? "off"}`,
-        );
-
       if (sock.wcgSocket) {
         return Promise.resolve(-ERRNO_CODES.EISCONN);
       }
@@ -167,8 +162,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
           sock.connecting = false;
           sock.reader =
             wcgSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
-          DEBUG &&
-            console.debug(`[NodeSockFS:connectAsync] Connection established`);
           return 0;
         })
         .catch((err: unknown) => {
@@ -198,8 +191,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       _addr?: string,
       _port?: number,
     ): number {
-      DEBUG && console.debug(`[NodeSockFS:sendmsg] length=${length}`);
-
       if (!sock.wcgSocket) {
         throw new FS.ErrnoError(ERRNO_CODES.ENOTCONN);
       }
@@ -213,8 +204,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       sock: NodeSock,
       length: number,
     ): Promise<{ bytesRead: number; buffer: Uint8Array } | null> {
-      DEBUG && console.debug(`[NodeSockFS:recvmsgAsync] requested=${length}`);
-
       if (sock.leftover && sock.leftover.length > 0) {
         const bytesRead = Math.min(length, sock.leftover.length);
         const data = sock.leftover.subarray(0, bytesRead);
@@ -222,10 +211,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
           bytesRead < sock.leftover.length
             ? sock.leftover.subarray(bytesRead)
             : null;
-        DEBUG &&
-          console.debug(
-            `[NodeSockFS:recvmsgAsync] ${bytesRead} bytes from leftover`,
-          );
         return Promise.resolve({ bytesRead, buffer: new Uint8Array(data) });
       }
 
@@ -236,7 +221,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       return sock.reader.read().then(
         ({ value, done }) => {
           if (done || !value) {
-            DEBUG && console.debug(`[NodeSockFS:recvmsgAsync] EOF`);
             return null;
           }
 
@@ -267,11 +251,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         key?: string;
       },
     ): Promise<number> {
-      DEBUG &&
-        console.debug(
-          `[NodeSockFS:upgradeTLSAsync] servername=${options?.servername}`,
-        );
-
       if (!sock.wcgSocket) {
         return -ERRNO_CODES.ENOTCONN;
       }
@@ -333,8 +312,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
           readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
         sock.tls = true;
         sock.leftover = null;
-
-        DEBUG && console.debug(`[NodeSockFS:upgradeTLSAsync] Complete`);
         return 0;
       } catch (err: unknown) {
         DEBUG &&
@@ -406,7 +383,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     createSocket(family: number, type: number, protocol: number): NodeSock {
       // Validate family - only AF_INET supported
       if (family !== AF_INET) {
-        DEBUG && console.debug(`[NodeSockFS] Unsupported family: ${family}`);
         throw new FS.ErrnoError(ERRNO_CODES.EAFNOSUPPORT);
       }
 
@@ -416,17 +392,13 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       // Validate type - only SOCK_STREAM supported in this PoC
       if (type !== SOCK_STREAM) {
         if (type === SOCK_DGRAM) {
-          DEBUG && console.debug("[NodeSockFS] UDP sockets not implemented");
           throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP); // UDP not implemented
         }
-        DEBUG && console.debug(`[NodeSockFS] Unsupported socket type: ${type}`);
         throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
       }
 
       // Validate protocol for TCP
       if (protocol && protocol !== IPPROTO_TCP) {
-        DEBUG &&
-          console.debug(`[NodeSockFS] Unsupported protocol: ${protocol}`);
         throw new FS.ErrnoError(ERRNO_CODES.EPROTONOSUPPORT);
       }
 
