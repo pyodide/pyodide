@@ -75,9 +75,8 @@ EM_JS(__externref_t, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
   if (!sock || !sock.sock_ops || !sock.sock_ops.recvmsgAsync) return null;
   return sock.sock_ops.recvmsgAsync(sock, len).then(function(result) {
     if (result === null) return 0;
-    var n = Math.min(result.bytesRead, len);
-    Module.HEAPU8.set(result.buffer.subarray(0, n), buf);
-    return n;
+    Module.HEAPU8.set(result, buf);
+    return result.length;
   });
 })
 

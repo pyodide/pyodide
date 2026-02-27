@@ -85,6 +85,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     poll(sock: NodeSock): number {
       let mask = 0;
 
+      // Readable case
       if (
         (sock.leftover && sock.leftover.length > 0) ||
         (sock.wcgSocket?.innerSocket?.readableLength ?? 0) > 0
@@ -92,11 +93,13 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         mask |= POLLRDNORM | POLLIN;
       }
 
+      // Writable case
       const innerSocket = sock.wcgSocket?.innerSocket;
       if (sock.connected && innerSocket && !innerSocket.destroyed) {
         mask |= POLLOUT;
       }
 
+      // Hup case
       if (innerSocket?.destroyed) {
         mask |= POLLHUP;
       }
@@ -104,6 +107,10 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       return mask;
     },
 
+    /**
+     * For now only FIONREAD is supported.
+     * TODO: support other requests?
+     */
     ioctl(sock: NodeSock, request: number, _arg: any): number {
       if (request === FIONREAD) {
         return sock.leftover ? sock.leftover.length : 0;
@@ -126,14 +133,14 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       return 0;
     },
 
-    connectAsync(
+    async connectAsync(
       sock: NodeSock,
       addr: string,
       port: number,
       options?: SocketOptions,
     ): Promise<number> {
       if (sock.wcgSocket) {
-        return Promise.resolve(-ERRNO_CODES.EISCONN);
+        return -ERRNO_CODES.EISCONN;
       }
 
       sock.connecting = true;
@@ -150,23 +157,18 @@ async function _initializeNodeSockFS(module: PyodideModule) {
 
       sock.wcgSocket = wcgSocket;
 
-      return wcgSocket.opened
-        .then(() => {
-          sock.connected = true;
-          sock.connecting = false;
-          sock.reader =
-            wcgSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
-          return 0;
-        })
-        .catch((err: unknown) => {
-          sock.error = ERRNO_CODES.ECONNREFUSED;
-          sock.connecting = false;
-          DEBUG &&
-            console.debug(
-              `[NodeSockFS:connectAsync] Error: ${err instanceof Error ? err.message : err}`,
-            );
-          return -ERRNO_CODES.ECONNREFUSED;
-        });
+      try {
+        await wcgSocket.opened;
+        sock.connected = true;
+        sock.connecting = false;
+        sock.reader =
+          wcgSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+        return 0;
+      } catch (err: unknown) {
+        sock.error = ERRNO_CODES.ECONNREFUSED;
+        sock.connecting = false;
+        return -sock.error;
+      }
     },
 
     sendmsg(
@@ -186,45 +188,39 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       return length;
     },
 
-    recvmsgAsync(
+    async recvmsgAsync(
       sock: NodeSock,
       length: number,
-    ): Promise<{ bytesRead: number; buffer: Uint8Array } | null> {
+    ): Promise<Uint8Array | null> {
       if (sock.leftover && sock.leftover.length > 0) {
         const bytesRead = Math.min(length, sock.leftover.length);
-        const data = sock.leftover.subarray(0, bytesRead);
+        const result = sock.leftover.subarray(0, bytesRead);
         sock.leftover =
           bytesRead < sock.leftover.length
             ? sock.leftover.subarray(bytesRead)
             : null;
-        return Promise.resolve({ bytesRead, buffer: new Uint8Array(data) });
+        return result;
       }
 
       if (!sock.reader) {
-        return Promise.resolve(null);
+        return null;
       }
 
-      return sock.reader.read().then(
-        ({ value, done }) => {
-          if (done || !value) {
-            return null;
-          }
+      try {
+        const { value, done } = await sock.reader.read();
+        if (done || !value) {
+          return null;
+        }
 
-          const chunk =
-            value instanceof Uint8Array ? value : new Uint8Array(value as any);
+        if (value.length <= length) {
+          return value;
+        }
 
-          if (chunk.length <= length) {
-            return { bytesRead: chunk.length, buffer: new Uint8Array(chunk) };
-          }
-
-          sock.leftover = chunk.subarray(length);
-          return {
-            bytesRead: length,
-            buffer: new Uint8Array(chunk.subarray(0, length)),
-          };
-        },
-        () => null,
-      );
+        sock.leftover = value.subarray(length);
+        return value.subarray(0, length);
+      } catch {
+        return null;
+      }
     },
 
     /*
@@ -288,7 +284,8 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     },
 
     /**
-     * Create a new socket
+     * Create a new socket.
+     * This function replaces the original SOCKFS.createSocket.
      */
     createSocket(family: number, type: number, protocol: number): NodeSock {
       // Validate family - only AF_INET supported
@@ -296,10 +293,12 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         throw new FS.ErrnoError(ERRNO_CODES.EAFNOSUPPORT);
       }
 
-      // Strip CLOEXEC and NONBLOCK flags
+
+      // Some applications may pass it; it makes no sense for a single process.
+      https://github.com/emscripten-core/emscripten/blob/af01558779231dcf3524438e904b688a5576432c/src/lib/libsockfs.js#L51C66-L51C139
       type &= ~(SOCK_CLOEXEC | SOCK_NONBLOCK);
 
-      // Validate type - only SOCK_STREAM supported in this PoC
+      // Validate type - only SOCK_STREAM supported for now
       if (type !== SOCK_STREAM) {
         if (type === SOCK_DGRAM) {
           throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP); // UDP not implemented
