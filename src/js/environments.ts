@@ -7,8 +7,6 @@ export interface RuntimeEnv extends BaseRuntimeEnv {
   IN_BROWSER: boolean;
   IN_BROWSER_MAIN_THREAD: boolean;
   IN_BROWSER_WEB_WORKER: boolean;
-  IN_BROWSER_CLASSIC_WORKER: boolean;
-  IN_BROWSER_MODULE_WORKER: boolean;
 }
 
 interface BaseRuntimeEnv {
@@ -80,20 +78,7 @@ function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
     typeof (globalThis as any).self !== "undefined" &&
     (globalThis as any).self instanceof (globalThis as any).WorkerGlobalScope;
 
-  let IN_BROWSER_CLASSIC_WORKER = IN_BROWSER_WEB_WORKER;
-  let IN_BROWSER_MODULE_WORKER = IN_BROWSER_WEB_WORKER;
-  if (IN_BROWSER_WEB_WORKER) {
-    try {
-      (globalThis as any).importScripts("data:text/javascript,");
-      IN_BROWSER_CLASSIC_WORKER = true;
-      IN_BROWSER_MODULE_WORKER = false;
-    } catch (e) {
-      IN_BROWSER_CLASSIC_WORKER = false;
-      IN_BROWSER_MODULE_WORKER = true;
-    }
-  }
-
-  if (IN_BROWSER_CLASSIC_WORKER) {
+  if (IN_BROWSER_WEB_WORKER && isClassicWorker()) {
     throw new Error("Classic web workers are not supported");
   }
 
@@ -102,8 +87,6 @@ function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
     IN_BROWSER,
     IN_BROWSER_MAIN_THREAD,
     IN_BROWSER_WEB_WORKER,
-    IN_BROWSER_CLASSIC_WORKER,
-    IN_BROWSER_MODULE_WORKER,
     IN_NODE_COMMONJS,
     IN_NODE_ESM,
   };
@@ -123,4 +106,13 @@ function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
   }
 
   return env;
+}
+
+function isClassicWorker(): boolean {
+  try {
+    (globalThis as any).importScripts();
+    return true;
+  } catch (e) {
+    return false;
+  }
 }

@@ -338,8 +338,3 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
             continue
         res.append(msg)
     return res
-
-
-def no_support_classic_worker(script_type):
-    if script_type == "classic":
-        pytest.skip("Classic workers are not supported anymore")
