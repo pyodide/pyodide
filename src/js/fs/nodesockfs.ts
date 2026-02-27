@@ -185,6 +185,8 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       }
     },
 
+    // Node.js support synchronous sendmsg while the wintercg sockets API is
+    // asynchronous.
     async sendmsgAsync(sock: NodeSock, data: Uint8Array): Promise<number> {
       if (!sock.writer) {
         return -ERRNO_CODES.ENOTCONN;
