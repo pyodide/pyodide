@@ -110,7 +110,19 @@ function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
 
 function isClassicWorker(): boolean {
   try {
+    // First check if importScripts throws
+    // This throws in chrome, but not in firefox (firefox swallows importScripts when no input is given)
+    // However, passing non-empty string would cause error in some environments that enables
+    // no-unsafe-eval
     (globalThis as any).importScripts();
+
+    // Second check if import.meta exists
+    // This is only available in module type worker
+    try {
+      (globalThis as any).import && (globalThis as any).import.meta
+    } catch (e) {
+      return true;
+    }
     return true;
   } catch (e) {
     return false;
