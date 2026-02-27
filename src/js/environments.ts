@@ -119,7 +119,7 @@ function isClassicWorker(): boolean {
     // Second check if import.meta exists
     // This is only available in module type worker
     try {
-      (globalThis as any).import && (globalThis as any).import.meta
+      (globalThis as any).import && (globalThis as any).import.meta;
     } catch (e) {
       return true;
     }
