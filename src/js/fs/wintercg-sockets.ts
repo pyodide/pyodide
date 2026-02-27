@@ -34,7 +34,7 @@ export interface SocketOptions {
 }
 
 export interface SocketAddress {
-  /** The hostname to connect to. Example: `vercel.com`. */
+  /** The hostname to connect to. Example: `cloudflare.com`. */
   hostname: string;
   /** The port number to connect to. Example: `5432`. */
   port: number;

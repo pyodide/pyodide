@@ -3,14 +3,19 @@
 
 // Socket syscall overrides for NodeSockFS.
 //
-// Uses the same WebAssembly.Suspending pattern as CPython 3.14's
-// Python/emscripten_syscalls.c to suspend WASM execution while awaiting
-// async socket operations.
+// Overrides __syscall_connect and __syscall_recvfrom to intercept NodeSock
+// file descriptors and route them through async JSPI operations. Non-NodeSock
+// fds fall through to the original Emscripten SOCKFS implementations.
 //
-// For non-NodeSock fds, the EM_JS functions return null and the C code calls
-// the original Emscripten SOCKFS logic inline (we cannot import the original
-// JS syscall functions via __import_name__ because defining them in C causes
-// Emscripten to drop the JS versions entirely).
+// Ideally we'd bind the originals via __import_name__ (as CPython 3.14 does
+// in Python/emscripten_syscalls.c), but Pyodide builds with EXPORT_ALL=1
+// which causes every C function to appear in WASM_EXPORTS. Emscripten's
+// jsifier.mjs skips emitting JS library functions that already exist as WASM
+// exports, so the JS originals get dropped and the __import_name__ import
+// becomes unsatisfiable at instantiation time.
+//
+// Instead, the original SOCKFS logic is reimplemented via EM_JS under
+// different names (_orig_syscall_connect / _orig_syscall_recvfrom).
 //
 // GIL handling
 // ────────────
@@ -26,10 +31,33 @@
 extern int
 syscall_syncify(__externref_t promise);
 
+// Original Emscripten SOCKFS connect — reimplemented via EM_JS since the
+// JS library version gets dropped when EXPORT_ALL=1 is active.
+EM_JS(int, _orig_syscall_connect, (int fd, intptr_t addr, int addrlen), {
+  var sock = Module.getSocketFromFD(fd);
+  var info = Module.getSocketAddress(addr, addrlen);
+  sock.sock_ops.connect(sock, info.addr, info.port);
+  return 0;
+})
+
+// Original Emscripten SOCKFS recvfrom — reimplemented via EM_JS.
+EM_JS(int, _orig_syscall_recvfrom, (int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen), {
+  var sock = Module.getSocketFromFD(fd);
+  var msg = sock.sock_ops.recvmsg(sock, len);
+  if (!msg) return 0;
+  if (addr) {
+    var errno = Module.writeSockaddr(
+      addr, sock.family, Module.DNS.lookup_name(msg.addr), msg.port, addrlen
+    );
+  }
+  Module.HEAPU8.set(msg.buffer, buf);
+  return msg.buffer.byteLength;
+})
+
 // clang-format off
 
 // Returns a Promise for NodeSock fds, null for everything else.
-// When null, C code runs the original Emscripten SOCKFS connect inline.
+// When null, C code falls through to the original Emscripten implementation.
 EM_JS(__externref_t, _maybe_connect_async, (int fd, intptr_t addr, int addrlen), {
   var SOCKFS = Module.SOCKFS;
   if (!SOCKFS || !SOCKFS.getSocket) return null;
@@ -53,48 +81,19 @@ EM_JS(__externref_t, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
   });
 })
 
-// Original Emscripten SOCKFS connect logic (synchronous).
-// Called for non-NodeSock fds (regular Emscripten sockets).
-EM_JS(int, _emscripten_syscall_connect, (int fd, intptr_t addr, int addrlen), {
-  try {
-    var sock = getSocketFromFD(fd);
-    var info = getSocketAddress(addr, addrlen);
-    sock.sock_ops.connect(sock, info.addr, info.port);
-    return 0;
-  } catch (e) {
-    if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-    return -e.errno;
-  }
-})
-
-// Original Emscripten SOCKFS recvfrom logic (synchronous).
-EM_JS(int, _emscripten_syscall_recvfrom, (int fd, intptr_t buf, int len,
-                                          int flags, intptr_t addr,
-                                          int addrlen), {
-  try {
-    var sock = getSocketFromFD(fd);
-    var msg = sock.sock_ops.recvmsg(sock, len);
-    if (!msg) return 0;
-    if (addr) {
-      var errno = writeSockaddr(addr, sock.family,
-        DNS.lookup_name(msg.addr), msg.port, addrlen);
-    }
-    HEAPU8.set(msg.buffer, buf);
-    return msg.buffer.byteLength;
-  } catch (e) {
-    if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-    return -e.errno;
-  }
-})
-
 // clang-format on
 
 int
-__syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
+__syscall_connect(int fd,
+                  intptr_t addr,
+                  int addrlen,
+                  int d1,
+                  int d2,
+                  int d3)
 {
   __externref_t p = _maybe_connect_async(fd, addr, addrlen);
   if (__builtin_wasm_ref_is_null_extern(p)) {
-    return _emscripten_syscall_connect(fd, addr, addrlen);
+    return _orig_syscall_connect(fd, addr, addrlen);
   }
   return syscall_syncify(p);
 }
@@ -109,7 +108,7 @@ __syscall_recvfrom(int fd,
 {
   __externref_t p = _maybe_recvfrom_async(fd, buf, len);
   if (__builtin_wasm_ref_is_null_extern(p)) {
-    return _emscripten_syscall_recvfrom(fd, buf, len, flags, addr, addrlen);
+    return _orig_syscall_recvfrom(fd, buf, len, flags, addr, addrlen);
   }
   return syscall_syncify(p);
 }

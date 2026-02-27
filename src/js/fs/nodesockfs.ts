@@ -56,10 +56,12 @@ export function initializeNodeSockFS(): PreRunFunc[] {
 }
 
 async function _initializeNodeSockFS(module: PyodideModule) {
-  const FS = module.FS;
-  const ERRNO_CODES = module.ERRNO_CODES;
   await initWinterCGSockets();
 
+  const FS = module.FS;
+  const ERRNO_CODES = module.ERRNO_CODES;
+
+  // Values copied from Emscripten
   const AF_INET = 2;
   const SOCK_STREAM = 1;
   const SOCK_DGRAM = 2;
@@ -77,6 +79,8 @@ async function _initializeNodeSockFS(module: PyodideModule) {
 
   const FIONREAD = 0x541b;
 
+  // Highly inspired by Emscripten's SOCKFS implementation
+  // https://github.com/emscripten-core/emscripten/blob/main/src/lib/libsockfs.js
   const tcp_sock_ops = {
     poll(sock: NodeSock): number {
       let mask = 0;
@@ -122,10 +126,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       return 0;
     },
 
-    bind(_sock: NodeSock, _addr: string, _port: number): void {
-      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
-    },
-
     connectAsync(
       sock: NodeSock,
       addr: string,
@@ -167,14 +167,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
             );
           return -ERRNO_CODES.ECONNREFUSED;
         });
-    },
-
-    listen(_sock: NodeSock, _backlog: number): void {
-      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
-    },
-
-    accept(_sock: NodeSock): never {
-      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
     },
 
     sendmsg(
@@ -235,15 +227,20 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       );
     },
 
-    getname(sock: NodeSock, peer: boolean): { addr: string; port: number } {
-      if (peer) {
-        if (!sock.daddr || !sock.dport) {
-          throw new FS.ErrnoError(ERRNO_CODES.ENOTCONN);
-        }
-        return { addr: sock.daddr, port: sock.dport };
-      } else {
-        return { addr: sock.saddr || "0.0.0.0", port: sock.sport || 0 };
-      }
+    /*
+     *  Server socket operations: not supported
+     */
+
+    bind(_sock: NodeSock, _addr: string, _port: number): void {
+      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
+    },
+
+    listen(_sock: NodeSock, _backlog: number): void {
+      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
+    },
+
+    accept(_sock: NodeSock): never {
+      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
     },
   };
 
@@ -315,6 +312,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         throw new FS.ErrnoError(ERRNO_CODES.EPROTONOSUPPORT);
       }
 
+      // create our internal socket structure
       const sock: NodeSock = {
         family,
         type,
@@ -329,12 +327,13 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         sock_ops: tcp_sock_ops,
       };
 
-      // Create filesystem node
+      // create the filesystem node to store the socket structure
       const name = `socket[${socketCounter++}]`;
       const node = FS.createNode(NodeSockFS.root, name, S_IFSOCK, 0);
       node.sock = sock;
 
-      // Create stream for the socket
+      // and the wrapping stream that enables library functions such
+      // as read and write to indirectly interact with the socket
       const stream = FS.createStream({
         path: name,
         node,
@@ -343,21 +342,11 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         stream_ops,
       });
 
-      // Link socket to stream
+      // map the new stream to the socket structure (sockets have a 1:1
+      // relationship with a stream)
       sock.stream = stream;
 
       return sock;
-    },
-
-    /**
-     * Get a socket by file descriptor
-     */
-    getSocket(fd: number): NodeSock | null {
-      const stream = FS.getStream(fd);
-      if (!stream || !FS.isSocket((stream as any).node.mode)) {
-        return null;
-      }
-      return (stream as any).node.sock as NodeSock;
     },
   };
 
@@ -371,7 +360,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
   // FIXME: This depends on internal Emscripten structures, which may change anytime.
   //        We should consider contributing upstream or finding a more stable integration method.
   module.SOCKFS.createSocket = NodeSockFS.createSocket;
-  module.SOCKFS.getSocket = NodeSockFS.getSocket;
 
   return NodeSockFS;
 }
