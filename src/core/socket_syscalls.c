@@ -23,7 +23,8 @@
 // Defined in stack_switching/suspenders.c — syncify a promise from syscall
 // context where the GIL is not held. Reacquires GIL, delegates to
 // JsvPromise_Syncify, converts result to int, re-releases GIL.
-extern int syscall_syncify(__externref_t promise);
+extern int
+syscall_syncify(__externref_t promise);
 
 // clang-format off
 
@@ -89,12 +90,7 @@ EM_JS(int, _emscripten_syscall_recvfrom, (int fd, intptr_t buf, int len,
 // clang-format on
 
 int
-__syscall_connect(int fd,
-                  intptr_t addr,
-                  int addrlen,
-                  int d1,
-                  int d2,
-                  int d3)
+__syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
 {
   __externref_t p = _maybe_connect_async(fd, addr, addrlen);
   if (__builtin_wasm_ref_is_null_extern(p)) {
