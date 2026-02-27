@@ -112,7 +112,7 @@ function isClassicWorker(): boolean {
   try {
     // Check if importScripts throws. importScripts only available in the classic web worker.
     // This check might give false positive when no-unsafe-eval is enabled, but better than having nothing
-    (globalThis as any).importScripts("data:text/javascript,"); 
+    (globalThis as any).importScripts("data:text/javascript,");
     return true;
   } catch (e) {
     return false;
