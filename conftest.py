@@ -54,6 +54,7 @@ def set_configs():
         pyodide._api.importlib.invalidate_caches;
         pyodide._api.package_loader.get_install_dir;
         pyodide._api.package_loader.unpack_buffer;
+        pyodide._api.package_loader.install_files;
         pyodide._api.package_loader.get_dynlibs;
         pyodide._api.pyodide_code.eval_code;
         pyodide._api.pyodide_code.eval_code_async;

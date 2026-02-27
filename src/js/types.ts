@@ -462,6 +462,7 @@ export interface API {
   config: PyodideConfigWithDefaults;
   packageIndexReady: Promise<void>;
   bootstrapFinalizedPromise: Promise<void>;
+  bootstrapFinalized: boolean;
   typedArrayAsUint8Array: (buffer: TypedArray | ArrayBuffer) => Uint8Array;
   initializeStreams: (
     stdin?: InFuncType | undefined,
@@ -524,7 +525,7 @@ export interface API {
     buffer: Uint8Array,
     filename: string,
     installDir: string,
-    metadata?: ReadonlyMap<string, string>,
+    metadata: [string, string][],
   ) => Promise<void>;
   _Comlink: any;
 
@@ -557,18 +558,22 @@ export interface API {
 export type PackageManagerAPI = Pick<
   API,
   | "importlib"
+  | "sys"
   | "package_loader"
   | "lockfile_packages"
   | "bootstrapFinalizedPromise"
+  | "bootstrapFinalized"
   | "sitepackages"
   | "defaultLdLibraryPath"
   | "version"
+  | "public_api"
 > & {
   config: Pick<
     PyodideConfigWithDefaults,
     "packageCacheDir" | "packageBaseUrl" | "cdnUrl"
   >;
 };
+
 /**
  * @hidden
  */
@@ -587,4 +592,5 @@ export type PackageManagerModule = Pick<
   | "promiseMap"
   | "_dlerror"
   | "UTF8ToString"
+  | "FS"
 >;
