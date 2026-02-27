@@ -57,7 +57,11 @@ def tcp_server(handler, *, timeout=5.0):
 
 # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
 @pytest.fixture(scope="function")
-def selenium_nodesock(selenium_standalone_noload):
+def selenium_nodesock(selenium_standalone_noload, runtime):
+    # only_node marker doesn't work in fixture level... *sigh*
+    if runtime != "node":
+        pytest.skip("Only works in node")
+
     selenium = selenium_standalone_noload
 
     selenium.run_js(

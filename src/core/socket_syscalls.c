@@ -26,10 +26,16 @@ syscall_syncify(__externref_t promise);
 // Original Emscripten SOCKFS connect
 // https://github.com/emscripten-core/emscripten/blob/af01558779231dcf3524438e904b688a5576432c/src/lib/libsyscall.js#L374
 EM_JS(int, _orig_syscall_connect, (int fd, intptr_t addr, int addrlen), {
-  var sock = Module.getSocketFromFD(fd);
-  var info = Module.getSocketAddress(addr, addrlen);
-  sock.sock_ops.connect(sock, info.addr, info.port);
-  return 0;
+  try {
+    var sock = Module.getSocketFromFD(fd);
+    var info = Module.getSocketAddress(addr, addrlen);
+    sock.sock_ops.connect(sock, info.addr, info.port);
+    return 0;
+  } catch (e) {
+    if (e instanceof Module.FS.ErrnoError)
+      return -e.errno;
+    throw e;
+  }
 })
 
 // Original Emscripten SOCKFS recvfrom
@@ -38,19 +44,25 @@ EM_JS(int,
       _orig_syscall_recvfrom,
       (int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen),
       {
-        var sock = Module.getSocketFromFD(fd);
-        var msg = sock.sock_ops.recvmsg(sock, len);
-        if (!msg)
-          return 0;
-        if (addr) {
-          var errno = Module.writeSockaddr(addr,
-                                           sock.family,
-                                           Module.DNS.lookup_name(msg.addr),
-                                           msg.port,
-                                           addrlen);
+        try {
+          var sock = Module.getSocketFromFD(fd);
+          var msg = sock.sock_ops.recvmsg(sock, len);
+          if (!msg)
+            return 0;
+          if (addr) {
+            var errno = Module.writeSockaddr(addr,
+                                             sock.family,
+                                             Module.DNS.lookup_name(msg.addr),
+                                             msg.port,
+                                             addrlen);
+          }
+          Module.HEAPU8.set(msg.buffer, buf);
+          return msg.buffer.byteLength;
+        } catch (e) {
+          if (e instanceof Module.FS.ErrnoError)
+            return -e.errno;
+          throw e;
         }
-        Module.HEAPU8.set(msg.buffer, buf);
-        return msg.buffer.byteLength;
       })
 
 // Original Emscripten SOCKFS sendto
@@ -64,13 +76,19 @@ EM_JS(int,
        intptr_t addr,
        int addr_len),
       {
-        var sock = Module.getSocketFromFD(fd);
-        if (!addr) {
-          return sock.sock_ops.sendmsg(sock, Module.HEAP8, message, length);
+        try {
+          var sock = Module.getSocketFromFD(fd);
+          if (!addr) {
+            return sock.sock_ops.sendmsg(sock, Module.HEAP8, message, length);
+          }
+          var dest = Module.getSocketAddress(addr, addr_len);
+          return sock.sock_ops.sendmsg(
+            sock, Module.HEAP8, message, length, dest.addr, dest.port);
+        } catch (e) {
+          if (e instanceof Module.FS.ErrnoError)
+            return -e.errno;
+          throw e;
         }
-        var dest = Module.getSocketAddress(addr, addr_len);
-        return sock.sock_ops.sendmsg(
-          sock, Module.HEAP8, message, length, dest.addr, dest.port);
       })
 
 // clang-format off
