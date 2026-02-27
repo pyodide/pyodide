@@ -1,4 +1,5 @@
-#include "stdio.h"
+#include <stdint.h>
+#include <stddef.h>
 
 int
 __syscall_setsockopt(int sockfd,

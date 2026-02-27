@@ -7,7 +7,6 @@ import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type PyodideModule, type FSType } from "./types";
 import { getJsvErrorImport } from "generated/jsverror";
 import { RUNTIME_ENV } from "./environments";
-import type { EmscriptenModule } from "./types";
 
 /**
  * @private
@@ -72,10 +71,7 @@ export function createSettings(
     // means dependency resolution has already failed and we want to throw an
     // error anyways.
     locateFile: (path: string) => config.indexURL + path,
-    instantiateWasm: getInstantiateWasmFunc(
-      config.indexURL,
-      config.withNodeSocket,
-    ),
+    instantiateWasm: getInstantiateWasmFunc(config.indexURL),
   };
   return settings;
 }
@@ -202,117 +198,8 @@ function getFileSystemInitializationFuncs(
   return hooks;
 }
 
-// FIXME:
-// Global pyodide module used in wrapSocketSyscallsWithJSPI
-// Unlike other functions, functioned wrapped with WebAssembly.suspending in wrapSocketSyscallsWithJSPI
-// cannot reference the global `Module` object (don't fully understand why)
-// so we need to keep the explicit reference to the module here.
-let _pyodideModuleforJSPI: EmscriptenModule | null = null;
-
-/**
- * @private
- */
-export function setPyodideModuleforJSPI(module: EmscriptenModule) {
-  _pyodideModuleforJSPI = module;
-}
-
-/**
- * Wrap socket syscalls with JSPI support.
- * This replaces the syscall imports with versions that can suspend WebAssembly
- * execution while waiting for async socket operations.
- *
- * Note: this function is called before the pyodide WASM module is loaded, so accessing
- *       the global Module object should be done with care.
- */
-function wrapSocketSyscallsWithJSPI(imports: {
-  [key: string]: { [key: string]: any };
-}) {
-  if (!RUNTIME_ENV.IN_NODE) {
-    throw new Error("wrapSocketSyscallsWithJSPI is only supported in Node.js");
-  }
-
-  // @ts-ignore
-  if (!WebAssembly.Suspending) {
-    throw new Error(
-      "wrapSocketSyscallsWithJSPI requires WebAssembly.Suspending",
-    );
-  }
-
-  const env = imports.env;
-  const origConnect = env.__syscall_connect;
-  const origRecvfrom = env.__syscall_recvfrom;
-
-  // Create an async version that will be wrapped with WebAssembly.Suspending
-  const connectAsync = async (
-    fd: number,
-    addr: number,
-    addrlen: number,
-    d1: number,
-    d2: number,
-    d3: number,
-  ): Promise<number> => {
-    const SOCKFS = _pyodideModuleforJSPI!.SOCKFS;
-    const getSocketAddress = _pyodideModuleforJSPI!.getSocketAddress;
-    if (!SOCKFS || !getSocketAddress) {
-      return origConnect(fd, addr, addrlen, d1, d2, d3);
-    }
-
-    const sock = SOCKFS.getSocket(fd);
-    if (!sock || !sock.sock_ops || !sock.sock_ops.connectAsync) {
-      return origConnect(fd, addr, addrlen, d1, d2, d3);
-    }
-
-    try {
-      const info = getSocketAddress(addr, addrlen);
-      return await sock.sock_ops.connectAsync(sock, info.addr, info.port);
-    } catch (e) {
-      DEBUG && console.debug("[JSPI:__syscall_connect] Error:", e);
-      return origConnect(fd, addr, addrlen, d1, d2, d3);
-    }
-  };
-
-  // @ts-ignore
-  env.__syscall_connect = new WebAssembly.Suspending(connectAsync);
-
-  const recvfromAsync = async (
-    fd: number,
-    buf: number,
-    len: number,
-    flags: number,
-    addr: number,
-    addrlen: number,
-  ): Promise<number> => {
-    const SOCKFS = _pyodideModuleforJSPI!.SOCKFS;
-    const HEAPU8 = _pyodideModuleforJSPI!.HEAPU8;
-    const sock = SOCKFS.getSocket(fd);
-
-    if (!sock || !sock.sock_ops || !sock.sock_ops.recvmsgAsync) {
-      return origRecvfrom(fd, buf, len, flags, addr, addrlen);
-    }
-
-    try {
-      const result = await sock.sock_ops.recvmsgAsync(sock, len);
-      if (result === null) {
-        return 0; // EOF
-      }
-      HEAPU8.set(result.buffer, buf);
-      return result.bytesRead;
-    } catch (e: any) {
-      DEBUG && console.debug("[JSPI:__syscall_recvfrom] Error:", e);
-      if (e.name === "ErrnoError") {
-        return -e.errno;
-      }
-      return -5; // EIO
-    }
-  };
-
-  // @ts-ignore
-  env.__syscall_recvfrom = new WebAssembly.Suspending(recvfromAsync);
-}
-
 function getInstantiateWasmFunc(
   indexURL: string,
-  withNodeSocket: boolean = false,
 ): EmscriptenSettings["instantiateWasm"] {
   // @ts-ignore
   if (SOURCEMAP || typeof WasmOffsetConverter !== "undefined") {
@@ -339,11 +226,6 @@ function getInstantiateWasmFunc(
         await jsvErrorImportPromise;
       imports.env.Jsv_GetError_import = Jsv_GetError_import;
       imports.env.JsvError_Check = JsvError_Check;
-
-      // Wrap socket syscalls with JSPI support before instantiation
-      if (withNodeSocket) {
-        wrapSocketSyscallsWithJSPI(imports);
-      }
 
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;

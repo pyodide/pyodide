@@ -2,13 +2,13 @@
  * NodeSockFS — Node.js native socket filesystem replacing Emscripten's SOCKFS.
  * Uses WinterCG Sockets API as transport.
  *
- * JSPI syscalls (emscripten-settings.ts) — sync Python (socket.connect/recv/send)
- * suspends the WASM stack via WebAssembly.Suspending, awaits the async op, resumes.
+ * JSPI syscalls (socket_syscalls.c) — sync Python (socket.connect/recv/send)
+ * suspends the WASM stack via WebAssembly.Suspending, awaits the async op,
+ * resumes.
  */
 
-import type { PyodideModule, PreRunFunc, FSType, API } from "../types";
+import type { PyodideModule, PreRunFunc } from "../types";
 import { RUNTIME_ENV } from "../environments";
-import { setPyodideModuleforJSPI } from "../emscripten-settings";
 import {
   init as initWinterCGSockets,
   connect,
@@ -30,8 +30,6 @@ interface NodeSock {
   leftover: Uint8Array | null;
   connected: boolean;
   connecting: boolean;
-  /** Whether the socket has been upgraded to TLS */
-  tls: boolean;
   stream?: any;
   daddr?: string;
   dport?: number;
@@ -60,9 +58,6 @@ export function initializeNodeSockFS(): PreRunFunc[] {
 async function _initializeNodeSockFS(module: PyodideModule) {
   const FS = module.FS;
   const ERRNO_CODES = module.ERRNO_CODES;
-
-  setPyodideModuleforJSPI(module);
-
   await initWinterCGSockets();
 
   const AF_INET = 2;
@@ -154,7 +149,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       );
 
       sock.wcgSocket = wcgSocket;
-      sock.tls = options?.secureTransport === "on";
 
       return wcgSocket.opened
         .then(() => {
@@ -239,87 +233,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         },
         () => null,
       );
-    },
-
-    async upgradeTLSAsync(
-      sock: NodeSock,
-      options?: {
-        servername?: string;
-        rejectUnauthorized?: boolean;
-        ca?: string;
-        cert?: string;
-        key?: string;
-      },
-    ): Promise<number> {
-      if (!sock.wcgSocket) {
-        return -ERRNO_CODES.ENOTCONN;
-      }
-      if (sock.tls) {
-        return -ERRNO_CODES.EISCONN;
-      }
-
-      try {
-        // Guard against data loss: leftover bytes from TCP phase must be
-        // consumed before upgrading to TLS, since the TLS handshake replaces
-        // the readable stream entirely.
-        if (sock.leftover && sock.leftover.length > 0) {
-          console.warn(
-            `[NodeSockFS:upgradeTLSAsync] ${sock.leftover.length} leftover bytes will be lost during TLS upgrade`,
-          );
-        }
-
-        if (sock.reader) {
-          sock.reader.releaseLock();
-          sock.reader = null;
-        }
-
-        const tls = await import("node:tls");
-        const tlsSocket = tls.connect({
-          socket: sock.wcgSocket.innerSocket,
-          servername: options?.servername,
-          rejectUnauthorized: options?.rejectUnauthorized ?? true,
-          ca: options?.ca,
-          cert: options?.cert,
-          key: options?.key,
-        });
-
-        await new Promise<void>((resolve, reject) => {
-          const onSecure = () => {
-            cleanup();
-            resolve();
-          };
-          const onError = (err: Error) => {
-            cleanup();
-            reject(err);
-          };
-          const cleanup = () => {
-            tlsSocket.off("secureConnect", onSecure);
-            tlsSocket.off("error", onError);
-          };
-          tlsSocket.once("secureConnect", onSecure);
-          tlsSocket.once("error", onError);
-        });
-
-        const { Duplex } = await import("node:stream");
-        const { readable } = (Duplex as any).toWeb(tlsSocket) as {
-          readable: ReadableStream<Uint8Array>;
-        };
-
-        (sock.wcgSocket as any)._socket = tlsSocket;
-        (sock.wcgSocket as any).readable = readable;
-
-        sock.reader =
-          readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
-        sock.tls = true;
-        sock.leftover = null;
-        return 0;
-      } catch (err: unknown) {
-        DEBUG &&
-          console.debug(
-            `[NodeSockFS:upgradeTLSAsync] Error: ${err instanceof Error ? err.message : err}`,
-          );
-        return -ERRNO_CODES.ECONNREFUSED;
-      }
     },
 
     getname(sock: NodeSock, peer: boolean): { addr: string; port: number } {
@@ -413,7 +326,6 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         leftover: null,
         connected: false,
         connecting: false,
-        tls: false,
         sock_ops: tcp_sock_ops,
       };
 

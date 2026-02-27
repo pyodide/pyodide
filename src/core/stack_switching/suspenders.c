@@ -1,3 +1,4 @@
+#include "Python.h"
 #include "emscripten.h"
 #include "jslib.h"
 
@@ -95,4 +96,42 @@ JsvPromise_Syncify(JsVal promise)
     JsvPromise_Syncify_handleError();
   }
   return result;
+}
+
+// clang-format off
+
+/**
+ * Convert a JsVal holding a JS number to a C int.
+ * Used by syscall_syncify to extract the integer result from JsvPromise_Syncify.
+ */
+EM_JS(int, _JsvNum_toInt, (JsVal v), {
+  return v | 0;
+})
+
+// clang-format on
+
+/**
+ * Syncify for C syscall context: suspend WASM, await a promise that resolves
+ * to int, and resume.
+ *
+ * This is a thin wrapper around JsvPromise_Syncify for use in socket syscall
+ * overrides. At the syscall level the GIL is not held: CPython's socketmodule.c
+ * wraps connect()/recv() in Py_BEGIN_ALLOW_THREADS which releases the GIL and
+ * sets PyThreadState to NULL. We reacquire the GIL via PyGILState_Ensure()
+ * before calling JsvPromise_Syncify, which handles the full state save/restore
+ * (Python thread state, asyncio task state, WASM stack state). After resuming,
+ * PyGILState_Release re-releases the GIL to match what socketmodule.c expects.
+ *
+ * PyGILState_Ensure uses a separate thread-local storage (gilstate TSS) that is
+ * NOT cleared by Py_BEGIN_ALLOW_THREADS, so it can find the valid tstate and
+ * reacquire the GIL even from this context.
+ */
+int
+syscall_syncify(__externref_t promise)
+{
+  PyGILState_STATE gilstate = PyGILState_Ensure();
+  JsVal result = JsvPromise_Syncify(promise);
+  int ret = JsvError_Check(result) ? -1 : _JsvNum_toInt(result);
+  PyGILState_Release(gilstate);
+  return ret;
 }
