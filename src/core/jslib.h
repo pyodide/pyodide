@@ -73,6 +73,9 @@ JsvNum_fromInt(int x);
 JsVal
 JsvNum_fromDouble(double x);
 
+int
+JsvNum_toInt(JsVal v);
+
 JsVal
 JsvBigInt_fromDigits(const unsigned int* digits, size_t ndigits);
 

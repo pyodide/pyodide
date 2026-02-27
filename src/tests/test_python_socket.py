@@ -55,6 +55,7 @@ def tcp_server(handler, *, timeout=5.0):
         assert not errors, f"Server error: {errors[0]}"
 
 
+# TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
 @pytest.fixture(scope="function")
 def selenium_nodesock(selenium_standalone_noload):
     selenium = selenium_standalone_noload
@@ -85,7 +86,6 @@ def test_socket_connect(selenium_nodesock):
         conn.sendall(RESPONSE_MESSAGE)
 
     with tcp_server(handler) as (host, port):
-        # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
         result = selenium_nodesock.run_js(
             f"""
             return await pyodide.runPythonAsync(`
@@ -128,7 +128,6 @@ def test_socket_multiple_send_recv(selenium_nodesock):
                 conn.sendall(data)
 
     with tcp_server(handler) as (host, port):
-        # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
         results = selenium_nodesock.run_js(
             f"""
             return await pyodide.runPythonAsync(`
@@ -172,7 +171,6 @@ def test_socket_large_data_transfer(selenium_nodesock):
         conn.sendall(f"Received {len(received)} bytes".encode())
 
     with tcp_server(handler, timeout=10.0) as (host, port):
-        # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
         result = selenium_nodesock.run_js(
             f"""
             return await pyodide.runPythonAsync(`
@@ -206,7 +204,6 @@ def test_socket_getpeername(selenium_nodesock):
         conn.sendall(b"OK")
 
     with tcp_server(handler) as (host, port):
-        # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
         result = selenium_nodesock.run_js(
             f"""
             return await pyodide.runPythonAsync(`
@@ -238,7 +235,6 @@ def test_socket_getsockname(selenium_nodesock):
         conn.sendall(b"OK")
 
     with tcp_server(handler) as (host, port):
-        # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
         result = selenium_nodesock.run_js(
             f"""
             return await pyodide.runPythonAsync(`
@@ -269,7 +265,6 @@ def test_socket_connection_refused(selenium_nodesock):
     _, port = tmp.getsockname()
     tmp.close()
 
-    # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
     result = selenium_nodesock.run_js(
         f"""
         return await pyodide.runPythonAsync(`
@@ -301,7 +296,6 @@ def test_socket_recv_after_close(selenium_nodesock):
         conn.sendall(b"Final message")
 
     with tcp_server(handler) as (host, port):
-        # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
         result = selenium_nodesock.run_js(
             f"""
             return await pyodide.runPythonAsync(`
@@ -331,7 +325,6 @@ def test_socket_fileno(selenium_nodesock):
         conn.sendall(b"OK")
 
     with tcp_server(handler) as (host, port):
-        # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
         result = selenium_nodesock.run_js(
             f"""
             return await pyodide.runPythonAsync(`
@@ -372,7 +365,6 @@ def test_socket_send_recv_partial(selenium_nodesock):
         conn.sendall(FULL_MESSAGE)
 
     with tcp_server(handler) as (host, port):
-        # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
         result = selenium_nodesock.run_js(
             f"""
             return await pyodide.runPythonAsync(`
@@ -413,7 +405,6 @@ def test_socket_create_multiple(selenium_nodesock):
         tcp_server(echo_handler) as (host1, port1),
         tcp_server(echo_handler) as (host2, port2),
     ):
-        # TODO(pytest-pyodide): Make selenium_standalone_noload support run_in_pyodide
         result = selenium_nodesock.run_js(
             f"""
             return await pyodide.runPythonAsync(`
@@ -440,3 +431,214 @@ def test_socket_create_multiple(selenium_nodesock):
         )
 
     assert result == f"Server{port1}:Hello1-Server{port2}:Hello2"
+
+
+# @pytest.mark.skip(reason="EOF not yet propagated through Duplex.toWeb() ReadableStream")
+def test_socket_recv_eof(selenium_nodesock):
+    """Test that recv returns b'' after server closes and all data is consumed."""
+
+    def handler(conn, _addr):
+        conn.sendall(b"goodbye")
+        conn.close()
+
+    with tcp_server(handler) as (host, port):
+        result = selenium_nodesock.run_js(
+            f"""
+            return await pyodide.runPythonAsync(`
+                import socket
+                import time
+
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect(("{host}", {port}))
+
+                data = s.recv(1024)
+
+                # Give time for the FIN to arrive
+                time.sleep(1.0)
+
+                eof = s.recv(1024)
+
+                s.close()
+                (data.decode(), len(eof))
+            `);
+            """
+        )
+
+    assert result[0] == "goodbye", f"Expected 'goodbye', got {result[0]!r}"
+    assert result[1] == 0, f"Expected empty bytes (EOF), got {result[1]} bytes"
+
+
+def test_socket_send_after_remote_close(selenium_nodesock):
+    """Test that sending data after the remote side closes raises an error."""
+
+    def handler(conn, _addr):
+        conn.close()
+
+    with tcp_server(handler) as (host, port):
+        result = selenium_nodesock.run_js(
+            f"""
+            return await pyodide.runPythonAsync(`
+                import socket
+                import time
+
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect(("{host}", {port}))
+
+                # Give time for the FIN to arrive
+                time.sleep(0.5)
+
+                error_type = "no_error"
+                try:
+                    # Send enough data to trigger the error
+                    for _ in range(10):
+                        s.sendall(b"X" * 4096)
+                        time.sleep(0.05)
+                except (BrokenPipeError, ConnectionResetError, OSError) as e:
+                    error_type = type(e).__name__
+                finally:
+                    s.close()
+                error_type
+            `);
+            """
+        )
+
+    assert result in ("BrokenPipeError", "ConnectionResetError", "OSError"), (
+        f"Expected a connection error, got: {result}"
+    )
+
+
+# @pytest.mark.skip(reason="readlines() requires EOF propagation")
+def test_socket_makefile(selenium_nodesock):
+    """Test socket.makefile() with line-based I/O."""
+
+    def handler(conn, _addr):
+        conn.sendall(b"line1\nline2\nline3\n")
+        conn.close()
+
+    with tcp_server(handler) as (host, port):
+        result = selenium_nodesock.run_js(
+            f"""
+            return await pyodide.runPythonAsync(`
+                import socket
+
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect(("{host}", {port}))
+
+                f = s.makefile("r")
+                lines = f.readlines()
+                f.close()
+                s.close()
+                [l.strip() for l in lines]
+            `);
+            """
+        )
+
+    assert result == ["line1", "line2", "line3"], (
+        f"Expected ['line1', 'line2', 'line3'], got {result}"
+    )
+
+
+def test_socket_asyncio_concurrent(selenium_nodesock):
+    """Test concurrent socket operations with asyncio.gather."""
+
+    def echo_handler(conn, _addr):
+        data = conn.recv(1024)
+        conn.sendall(data)
+
+    with (
+        tcp_server(echo_handler) as (host1, port1),
+        tcp_server(echo_handler) as (host2, port2),
+    ):
+        result = selenium_nodesock.run_js(
+            f"""
+            return await pyodide.runPythonAsync(`
+                import asyncio
+                import socket
+
+                async def socket_task(host, port, msg):
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.connect((host, port))
+                    s.sendall(msg.encode())
+                    data = s.recv(1024)
+                    s.close()
+                    return data.decode()
+
+                r1, r2 = await asyncio.gather(
+                    socket_task("{host1}", {port1}, "msg1"),
+                    socket_task("{host2}", {port2}, "msg2"),
+                )
+                f"{{r1}}-{{r2}}"
+            `);
+            """
+        )
+
+    assert result == "msg1-msg2", f"Expected 'msg1-msg2', got {result!r}"
+
+
+def test_socket_large_recv(selenium_nodesock):
+    """Test receiving large data (64KB) from server via recv loop."""
+    DATA_SIZE = 64 * 1024  # 64KB
+
+    def handler(conn, _addr):
+        conn.recv(1024)  # wait for ready signal
+        data = b"Y" * DATA_SIZE
+        conn.sendall(data)
+        conn.close()
+
+    with tcp_server(handler, timeout=10.0) as (host, port):
+        result = selenium_nodesock.run_js(
+            f"""
+            return await pyodide.runPythonAsync(`
+                import socket
+
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect(("{host}", {port}))
+
+                s.sendall(b"ready")
+
+                received = b""
+                while len(received) < {DATA_SIZE}:
+                    chunk = s.recv(8192)
+                    if not chunk:
+                        break
+                    received += chunk
+
+                s.close()
+                (len(received), received == b"Y" * {DATA_SIZE})
+            `);
+            """
+        )
+
+    assert result[0] == DATA_SIZE, (
+        f"Expected {DATA_SIZE} bytes, got {result[0]}"
+    )
+    assert result[1] is True, "Received data content mismatch"
+
+
+def test_socket_double_close(selenium_nodesock):
+    """Test that closing a socket twice does not crash."""
+
+    def handler(conn, _addr):
+        conn.recv(1024)
+        conn.sendall(b"OK")
+
+    with tcp_server(handler) as (host, port):
+        result = selenium_nodesock.run_js(
+            f"""
+            return await pyodide.runPythonAsync(`
+                import socket
+
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect(("{host}", {port}))
+
+                s.sendall(b"test")
+                s.recv(1024)
+
+                s.close()
+                s.close()  # second close should not raise
+                "ok"
+            `);
+            """
+        )
+
+    assert result == "ok", f"Expected 'ok', got {result!r}"

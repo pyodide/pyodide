@@ -26,10 +26,13 @@ interface NodeSock {
   wcgSocket: WinterCGSocket | null;
   /** ReadableStream reader for receiving data */
   reader: ReadableStreamDefaultReader<Uint8Array> | null;
+  /** WritableStream writer for sending data */
+  writer: WritableStreamDefaultWriter<Uint8Array> | null;
   /** Leftover bytes from a previous read that were larger than requested */
   leftover: Uint8Array | null;
   connected: boolean;
   connecting: boolean;
+  closed: boolean;
   stream?: any;
   daddr?: string;
   dport?: number;
@@ -85,22 +88,18 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     poll(sock: NodeSock): number {
       let mask = 0;
 
-      // Readable case
-      if (
-        (sock.leftover && sock.leftover.length > 0) ||
-        (sock.wcgSocket?.innerSocket?.readableLength ?? 0) > 0
-      ) {
+      // Readable: we have buffered leftover data ready to return
+      if (sock.leftover && sock.leftover.length > 0) {
         mask |= POLLRDNORM | POLLIN;
       }
 
-      // Writable case
-      const innerSocket = sock.wcgSocket?.innerSocket;
-      if (sock.connected && innerSocket && !innerSocket.destroyed) {
+      // Writable: connected and writer is available
+      if (sock.connected && sock.writer) {
         mask |= POLLOUT;
       }
 
-      // Hup case
-      if (innerSocket?.destroyed) {
+      // Hangup: the underlying transport has closed
+      if (sock.closed) {
         mask |= POLLHUP;
       }
 
@@ -124,12 +123,17 @@ async function _initializeNodeSockFS(module: PyodideModule) {
           sock.reader.releaseLock();
           sock.reader = null;
         }
+        if (sock.writer) {
+          sock.writer.releaseLock();
+          sock.writer = null;
+        }
         sock.wcgSocket.close().catch(() => {});
         sock.wcgSocket = null;
       }
       sock.leftover = null;
       sock.connected = false;
       sock.connecting = false;
+      sock.closed = true;
       return 0;
     },
 
@@ -151,7 +155,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         { hostname: addr, port },
         {
           secureTransport: options?.secureTransport ?? "off",
-          allowHalfOpen: true,
+          allowHalfOpen: false,
         },
       );
 
@@ -163,6 +167,10 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         sock.connecting = false;
         sock.reader =
           wcgSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+        sock.writer =
+          wcgSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
+        // Track when the underlying transport closes
+        wcgSocket.closed.then(() => { sock.closed = true; }).catch(() => { sock.closed = true; });
         return 0;
       } catch (err: unknown) {
         sock.error = ERRNO_CODES.ECONNREFUSED;
@@ -171,21 +179,26 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       }
     },
 
-    sendmsg(
+
+    async sendmsgAsync(
       sock: NodeSock,
-      buffer: Uint8Array,
-      offset: number,
-      length: number,
-      _addr?: string,
-      _port?: number,
-    ): number {
-      if (!sock.wcgSocket) {
-        throw new FS.ErrnoError(ERRNO_CODES.ENOTCONN);
+      data: Uint8Array,
+    ): Promise<number> {
+      if (!sock.writer) {
+        return -ERRNO_CODES.ENOTCONN;
       }
 
-      const data = buffer.subarray(offset, offset + length);
-      sock.wcgSocket.innerSocket.write(data);
-      return length;
+      try {
+        await sock.writer.write(data);
+        return data.length;
+      } catch (err: unknown) {
+        const msg =
+          err instanceof Error ? err.message : String(err);
+        if (msg.includes("EPIPE") || msg.includes("ECONNRESET")) {
+          return -ERRNO_CODES.EPIPE;
+        }
+        return -ERRNO_CODES.EIO;
+      }
     },
 
     async recvmsgAsync(
@@ -251,15 +264,9 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       return tcp_sock_ops.ioctl(sock, request, varargs);
     },
 
-    write(
-      stream: any,
-      buffer: Uint8Array,
-      offset: number,
-      length: number,
-      _position: any,
-    ): number {
-      const sock = stream.node.sock as NodeSock;
-      return tcp_sock_ops.sendmsg(sock, buffer, offset, length);
+    write(): number {
+      // All sends go through __syscall_sendto → sendmsgAsync.
+      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
     },
 
     close(stream: any): void {
@@ -320,9 +327,11 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         error: null,
         wcgSocket: null,
         reader: null,
+        writer: null,
         leftover: null,
         connected: false,
         connecting: false,
+        closed: false,
         sock_ops: tcp_sock_ops,
       };
 
