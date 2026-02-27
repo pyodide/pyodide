@@ -112,8 +112,9 @@ function isClassicWorker(): boolean {
   try {
     // First check if importScripts throws
     // This throws in chrome, but not in firefox (firefox swallows importScripts when no input is given)
-    // However, passing non-empty string would cause error in some environments that enables
-    // no-unsafe-eval
+    // We can pass non-empty string to importScripts to cause error both in chrome and firefox,
+    // however, passing non-empty string would cause error in some environments that enables
+    // no-unsafe-eval, so we have two checks...
     (globalThis as any).importScripts();
 
     // Second check if import.meta exists
