@@ -121,10 +121,10 @@ function isClassicWorker(): boolean {
     // This is only available in module type worker
     try {
       (globalThis as any).import && (globalThis as any).import.meta;
+      return false;
     } catch (e) {
       return true;
     }
-    return true;
   } catch (e) {
     return false;
   }
