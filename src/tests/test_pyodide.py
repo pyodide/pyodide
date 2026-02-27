@@ -1170,23 +1170,23 @@ def test_js_stackframes(selenium):
                 "debugger eval code",
                 "evalmachine.<anonymous>",
             }:
-                file = "test.html"
+                file = "module_test.html"
             res.append([file, name])
         return res
 
     frames = [
         ["<exec>", "e"],
-        ["test.html", "d4"],
-        ["test.html", "d3"],
-        ["test.html", "d2"],
-        ["test.html", "d1"],
+        ["module_test.html", "d4"],
+        ["module_test.html", "d3"],
+        ["module_test.html", "d2"],
+        ["module_test.html", "d1"],
         ["pyodide.asm.mjs", "runPython"],
         ["_pyodide/_base.py", "eval_code"],
         ["_pyodide/_base.py", "run"],
         ["<exec>", "<module>"],
         ["<exec>", "c2"],
         ["<exec>", "c1"],
-        ["test.html", "b"],
+        ["module_test.html", "b"],
         ["pyodide.asm.mjs", "pyimport"],
         ["_pyodide/_base.py", "pyimport_impl"],
     ]
