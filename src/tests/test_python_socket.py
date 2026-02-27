@@ -433,7 +433,6 @@ def test_socket_create_multiple(selenium_nodesock):
     assert result == f"Server{port1}:Hello1-Server{port2}:Hello2"
 
 
-# @pytest.mark.skip(reason="EOF not yet propagated through Duplex.toWeb() ReadableStream")
 def test_socket_recv_eof(selenium_nodesock):
     """Test that recv returns b'' after server closes and all data is consumed."""
 
