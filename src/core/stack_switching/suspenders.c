@@ -104,8 +104,8 @@ JsvPromise_Syncify(JsVal promise)
  *
  * This is a thin wrapper around JsvPromise_Syncify for use in socket syscall
  * overrides. At the syscall level the GIL is not held.
- * We reacquire the GIL via PyGILState_Ensure() before calling JsvPromise_Syncify.
- * After resuming, PyGILState_Release re-releases the GIL.
+ * We reacquire the GIL via PyGILState_Ensure() before calling
+ * JsvPromise_Syncify. After resuming, PyGILState_Release re-releases the GIL.
  */
 int
 syscall_syncify(__externref_t promise)

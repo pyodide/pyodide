@@ -608,9 +608,7 @@ def test_socket_large_recv(selenium_nodesock):
             """
         )
 
-    assert result[0] == DATA_SIZE, (
-        f"Expected {DATA_SIZE} bytes, got {result[0]}"
-    )
+    assert result[0] == DATA_SIZE, f"Expected {DATA_SIZE} bytes, got {result[0]}"
     assert result[1] is True, "Received data content mismatch"
 
 

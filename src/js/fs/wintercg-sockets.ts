@@ -135,8 +135,6 @@ export class Socket {
   private closedReject!: (reason?: unknown) => void;
   private startTlsCalled = false;
 
-
-
   constructor(
     addressOrSocket: SocketAddress | import("node:net").Socket,
     options?: SocketOptions,

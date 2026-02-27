@@ -34,29 +34,44 @@ EM_JS(int, _orig_syscall_connect, (int fd, intptr_t addr, int addrlen), {
 
 // Original Emscripten SOCKFS recvfrom
 // https://github.com/emscripten-core/emscripten/blob/af01558779231dcf3524438e904b688a5576432c/src/lib/libsyscall.js#L411
-EM_JS(int, _orig_syscall_recvfrom, (int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen), {
-  var sock = Module.getSocketFromFD(fd);
-  var msg = sock.sock_ops.recvmsg(sock, len);
-  if (!msg) return 0;
-  if (addr) {
-    var errno = Module.writeSockaddr(
-      addr, sock.family, Module.DNS.lookup_name(msg.addr), msg.port, addrlen
-    );
-  }
-  Module.HEAPU8.set(msg.buffer, buf);
-  return msg.buffer.byteLength;
-})
+EM_JS(int,
+      _orig_syscall_recvfrom,
+      (int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen),
+      {
+        var sock = Module.getSocketFromFD(fd);
+        var msg = sock.sock_ops.recvmsg(sock, len);
+        if (!msg)
+          return 0;
+        if (addr) {
+          var errno = Module.writeSockaddr(addr,
+                                           sock.family,
+                                           Module.DNS.lookup_name(msg.addr),
+                                           msg.port,
+                                           addrlen);
+        }
+        Module.HEAPU8.set(msg.buffer, buf);
+        return msg.buffer.byteLength;
+      })
 
 // Original Emscripten SOCKFS sendto
 // https://github.com/emscripten-core/emscripten/blob/af01558779231dcf3524438e904b688a5576432c/src/lib/libsyscall.js#L425
-EM_JS(int, _orig_syscall_sendto, (int fd, intptr_t message, int length, int flags, intptr_t addr, int addr_len), {
-  var sock = Module.getSocketFromFD(fd);
-  if (!addr) {
-    return sock.sock_ops.sendmsg(sock, Module.HEAP8, message, length);
-  }
-  var dest = Module.getSocketAddress(addr, addr_len);
-  return sock.sock_ops.sendmsg(sock, Module.HEAP8, message, length, dest.addr, dest.port);
-})
+EM_JS(int,
+      _orig_syscall_sendto,
+      (int fd,
+       intptr_t message,
+       int length,
+       int flags,
+       intptr_t addr,
+       int addr_len),
+      {
+        var sock = Module.getSocketFromFD(fd);
+        if (!addr) {
+          return sock.sock_ops.sendmsg(sock, Module.HEAP8, message, length);
+        }
+        var dest = Module.getSocketAddress(addr, addr_len);
+        return sock.sock_ops.sendmsg(
+          sock, Module.HEAP8, message, length, dest.addr, dest.port);
+      })
 
 // clang-format off
 
@@ -101,12 +116,7 @@ EM_JS(__externref_t, _maybe_sendto_async, (int fd, intptr_t message, int length)
 // clang-format on
 
 int
-__syscall_connect(int fd,
-                  intptr_t addr,
-                  int addrlen,
-                  int d1,
-                  int d2,
-                  int d3)
+__syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
 {
   __externref_t p = _maybe_connect_async(fd, addr, addrlen);
   if (__builtin_wasm_ref_is_null_extern(p)) {

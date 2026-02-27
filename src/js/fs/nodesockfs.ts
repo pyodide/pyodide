@@ -170,7 +170,13 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         sock.writer =
           wcgSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
         // Track when the underlying transport closes
-        wcgSocket.closed.then(() => { sock.closed = true; }).catch(() => { sock.closed = true; });
+        wcgSocket.closed
+          .then(() => {
+            sock.closed = true;
+          })
+          .catch(() => {
+            sock.closed = true;
+          });
         return 0;
       } catch (err: unknown) {
         sock.error = ERRNO_CODES.ECONNREFUSED;
@@ -179,11 +185,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       }
     },
 
-
-    async sendmsgAsync(
-      sock: NodeSock,
-      data: Uint8Array,
-    ): Promise<number> {
+    async sendmsgAsync(sock: NodeSock, data: Uint8Array): Promise<number> {
       if (!sock.writer) {
         return -ERRNO_CODES.ENOTCONN;
       }
@@ -192,8 +194,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         await sock.writer.write(data);
         return data.length;
       } catch (err: unknown) {
-        const msg =
-          err instanceof Error ? err.message : String(err);
+        const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes("EPIPE") || msg.includes("ECONNRESET")) {
           return -ERRNO_CODES.EPIPE;
         }
@@ -300,10 +301,9 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         throw new FS.ErrnoError(ERRNO_CODES.EAFNOSUPPORT);
       }
 
-
       // Some applications may pass it; it makes no sense for a single process.
-      https://github.com/emscripten-core/emscripten/blob/af01558779231dcf3524438e904b688a5576432c/src/lib/libsockfs.js#L51C66-L51C139
-      type &= ~(SOCK_CLOEXEC | SOCK_NONBLOCK);
+      //github.com/emscripten-core/emscripten/blob/af01558779231dcf3524438e904b688a5576432c/src/lib/libsockfs.js#L51C66-L51C139
+      https: type &= ~(SOCK_CLOEXEC | SOCK_NONBLOCK);
 
       // Validate type - only SOCK_STREAM supported for now
       if (type !== SOCK_STREAM) {
