@@ -7,7 +7,7 @@ export PYTHON_ARCHIVE_SHA256=b8d79530e3b7c96a5cb2d40d431ddb512af4a563e863728d871
 
 export SED ?= sed
 
-export RUST_TOOLCHAIN ?= nightly-2025-12-10
+export RUST_TOOLCHAIN ?= 1.93.0
 export RUSTFLAGS = -C link-arg=-sSIDE_MODULE=2
 
 # URL to the prebuilt packages
