@@ -234,6 +234,8 @@ export type FSStreamOpsGen<T> = {
 interface PyodideFSType {
   filesystems: any;
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
+  createNode(parent: any, name: string, mode: number, dev: number): any;
+  createStream(stream: any, fd?: number): any;
 }
 
 /**
@@ -278,7 +280,10 @@ export interface EmscriptenModule {
   stringToNewUTF8(x: string): number;
   stringToUTF8OnStack: (str: string) => number;
   HEAP8: Uint8Array;
+  HEAPU8: Uint8Array;
   HEAPU32: Uint32Array;
+  SOCKFS: any;
+  getSocketAddress: (addr: number, addrlen: number) => any;
   getExceptionMessage(e: number): [string, string];
   exitCode: number | undefined;
   ExitStatus: { new (exitCode: number): Error };

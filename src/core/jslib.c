@@ -110,6 +110,10 @@ EM_JS(JsVal, JsvNum_fromDouble, (double val), {
   return val;
 });
 
+EM_JS(int, JsvNum_toInt, (JsVal v), {
+  return v | 0;
+})
+
 EM_JS_UNCHECKED(JsVal,
 JsvBigInt_fromDigits,
 (const unsigned int* digits, size_t ndigits),
