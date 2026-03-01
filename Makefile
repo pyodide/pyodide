@@ -19,7 +19,7 @@ all-but-packages: \
 	check \
 	check-emcc \
 	$(CPYTHONINSTALL)/.installed-pyodide \
-	dist/pyodide.asm.js \
+	dist/pyodide.asm.mjs \
 	dist/pyodide.js \
 	dist/package.json \
 	dist/python \
@@ -105,37 +105,29 @@ $(CPYTHONINSTALL)/lib/libpyodide.a: src/core/libpyodide.a
 $(CPYTHONINSTALL)/.installed-pyodide: $(CPYTHONINSTALL)/include/pyodide/.installed $(CPYTHONINSTALL)/lib/libpyodide.a
 	touch $@
 
-dist/pyodide.asm.js: \
+dist/pyodide.asm.mjs: \
 	dist \
 	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB) \
 	$(CPYTHONINSTALL)/.installed-pyodide
 
-	@date +"[%F %T] Building pyodide.asm.js..."
+	@date +"[%F %T] Building pyodide.asm.mjs..."
    # TODO(ryanking13): Link libgl to a side module not to the main module.
    # For unknown reason, a side module cannot see symbols when libGL is linked to it.
 	embuilder build libgl
-	$(CXX) -o dist/pyodide.asm.js -lpyodide src/core/main.o $(MAIN_MODULE_LDFLAGS)
+	$(CXX) -o dist/pyodide.asm.mjs -lpyodide src/core/main.o $(MAIN_MODULE_LDFLAGS)
 
 	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
-		cd dist && npx prettier -w pyodide.asm.js ; \
+		cd dist && npx prettier -w pyodide.asm.mjs ; \
 	fi
 
    # Strip out C++ symbols which all start __Z.
    # There are 4821 of these and they have VERY VERY long names.
    # To show some stats on the symbols you can use the following:
-   # cat dist/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
-	$(SED) -i -E 's/var __Z[^;]*;//g' dist/pyodide.asm.js
-	$(SED) -i '1i "use strict";' dist/pyodide.asm.js
-	# Remove last 7 lines of pyodide.asm.js, see issue #2282
-	# Hopefully we will remove this after emscripten fixes it, upstream issue
-	# emscripten-core/emscripten#16518
-	# Sed nonsense from https://stackoverflow.com/a/13383331
-	$(SED) -i -n -e :a -e '1,7!{P;N;D;};N;ba' dist/pyodide.asm.js
-	echo "globalThis._createPyodideModule = _createPyodideModule;" >> dist/pyodide.asm.js
-
-	@date +"[%F %T] done building pyodide.asm.js."
+   # cat dist/pyodide.asm.mjs | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
+	$(SED) -i -E 's/var __Z[^;]*;//g' dist/pyodide.asm.mjs
+	@date +"[%F %T] done building pyodide.asm.mjs."
 
 env:
 	env
@@ -157,7 +149,7 @@ src/js/generated/_pyodide.out.js:            \
 	cd src/js && npm run build-inner && cd -
 
 dist/pyodide.js:                             \
-		dist/pyodide.asm.js            		 \
+		dist/pyodide.asm.mjs            		 \
 		src/js/generated/_pyodide.out.js  	 \
 		src/js/pyodide.ts                    \
 		src/js/compat.ts                     \

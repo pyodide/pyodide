@@ -2,7 +2,7 @@
 
 # A short script to check the size of files when compressed.
 # Usage:
-#   check_compressed_size.py pyodide.asm.js pyodide.asm.wasm
+#   check_compressed_size.py pyodide.asm.mjs pyodide.asm.wasm
 
 import gzip
 import sys

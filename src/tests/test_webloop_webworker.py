@@ -5,7 +5,7 @@ import pytest
 #        (https://github.com/pyodide/pytest-pyodide/blob/f957dcd510eb62af286df608ed9a1861adce1b6d/pytest_pyodide/hook.py#L274)
 
 
-def test_webworker_zero_timeout1(selenium_webworker_standalone, script_type):
+def test_webworker_zero_timeout1(selenium_webworker_standalone):
     selenium = selenium_webworker_standalone
     output = selenium.run_webworker(
         """
@@ -18,7 +18,7 @@ def test_webworker_zero_timeout1(selenium_webworker_standalone, script_type):
 
 
 @pytest.mark.xfail_browsers(safari="Safari uses setTimeout as a fallback for 0ms delay")
-def test_webworker_zero_timeout2(selenium_webworker_standalone, script_type):
+def test_webworker_zero_timeout2(selenium_webworker_standalone):
     selenium = selenium_webworker_standalone
     output = selenium.run_webworker(
         """

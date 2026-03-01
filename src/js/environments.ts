@@ -24,7 +24,7 @@ declare var Bun: any;
 
 function getGlobalRuntimeEnv(): RuntimeEnv {
   if (typeof API !== "undefined" && API !== globalThis.API) {
-    // We're in pyodide.asm.js, get runtimeEnv off of API.
+    // We're in pyodide.asm.mjs, get runtimeEnv off of API.
     // Hopefully this API !== globalThis.API prevents us from accidentally
     // picking up a global.
     return API.runtimeEnv;
@@ -77,7 +77,12 @@ function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
     typeof (globalThis as any).WorkerGlobalScope !== "undefined" &&
     typeof (globalThis as any).self !== "undefined" &&
     (globalThis as any).self instanceof (globalThis as any).WorkerGlobalScope;
-  return {
+
+  if (IN_BROWSER_WEB_WORKER && isClassicWorker()) {
+    throw new Error("Classic web workers are not supported");
+  }
+
+  const env = {
     ...base,
     IN_BROWSER,
     IN_BROWSER_MAIN_THREAD,
@@ -85,4 +90,31 @@ function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
     IN_NODE_COMMONJS,
     IN_NODE_ESM,
   };
+
+  // One of the following must be true, otherwise we are in an unknown environment that we do not support.
+  if (
+    !(
+      env.IN_BROWSER_MAIN_THREAD ||
+      env.IN_BROWSER_WEB_WORKER ||
+      env.IN_NODE ||
+      env.IN_SHELL
+    )
+  ) {
+    throw new Error(
+      `Cannot determine runtime environment: ${JSON.stringify(env)}`,
+    );
+  }
+
+  return env;
+}
+
+function isClassicWorker(): boolean {
+  try {
+    // Check if importScripts throws. importScripts only available in the classic web worker.
+    // This check might give false positive when no-unsafe-eval is enabled, but better than having nothing
+    (globalThis as any).importScripts("data:text/javascript,");
+    return true;
+  } catch (e) {
+    return false;
+  }
 }

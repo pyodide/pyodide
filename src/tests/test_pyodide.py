@@ -1162,7 +1162,7 @@ def test_js_stackframes(selenium):
     def normalize_tb(t):
         res = []
         for [file, name] in t:
-            if file.endswith((".js", ".html")):
+            if file.endswith((".js", ".html", ".mjs")):
                 file = file.rpartition("/")[-1]
             if file.endswith(".py"):
                 file = "/".join(file.split("/")[-2:])
@@ -1170,24 +1170,24 @@ def test_js_stackframes(selenium):
                 "debugger eval code",
                 "evalmachine.<anonymous>",
             }:
-                file = "test.html"
+                file = "module_test.html"
             res.append([file, name])
         return res
 
     frames = [
         ["<exec>", "e"],
-        ["test.html", "d4"],
-        ["test.html", "d3"],
-        ["test.html", "d2"],
-        ["test.html", "d1"],
-        ["pyodide.asm.js", "runPython"],
+        ["module_test.html", "d4"],
+        ["module_test.html", "d3"],
+        ["module_test.html", "d2"],
+        ["module_test.html", "d1"],
+        ["pyodide.asm.mjs", "runPython"],
         ["_pyodide/_base.py", "eval_code"],
         ["_pyodide/_base.py", "run"],
         ["<exec>", "<module>"],
         ["<exec>", "c2"],
         ["<exec>", "c1"],
-        ["test.html", "b"],
-        ["pyodide.asm.js", "pyimport"],
+        ["module_test.html", "b"],
+        ["pyodide.asm.mjs", "pyimport"],
         ["_pyodide/_base.py", "pyimport_impl"],
     ]
     assert normalize_tb(res[: len(frames)]) == frames
@@ -1835,19 +1835,21 @@ def test_static_import(selenium_standalone_noload, tmp_path, httpserver):
     # copy dist to tmp_path to perform file changes safely
     shutil.copytree(DIST_PATH, tmp_path, dirs_exist_ok=True)
 
-    # define the directory to hide the statically imported pyodide.asm.js in
+    # define the directory to hide the statically imported pyodide.asm.mjs in
     hiding_dir = "hide_pyodide_asm_for_test"
 
-    # create the directory and move pyodide.asm.js to the directory
+    # create the directory and move pyodide.asm.mjs to the directory
     # so that dynamic import won't find it
     (tmp_path / hiding_dir).mkdir()
-    shutil.move(tmp_path / "pyodide.asm.js", tmp_path / hiding_dir / "pyodide.asm.js")
+    shutil.move(tmp_path / "pyodide.asm.mjs", tmp_path / hiding_dir / "pyodide.asm.mjs")
 
-    # make sure the test html references the new directory when importing pyodide.asm.js
+    # make sure the test html references the new directory when importing pyodide.asm.mjs
     test_html = (
         PYODIDE_ROOT / "src/templates/module_static_import_test.html"
     ).read_text()
-    test_html = test_html.replace("./pyodide.asm.js", f"./{hiding_dir}/pyodide.asm.js")
+    test_html = test_html.replace(
+        "./pyodide.asm.mjs", f"./{hiding_dir}/pyodide.asm.mjs"
+    )
     test_html_content = test_html.encode()
 
     # Setup httpserver to serve all necessary files
@@ -1860,10 +1862,10 @@ def test_static_import(selenium_standalone_noload, tmp_path, httpserver):
         status=200,
     )
 
-    # Serve the moved pyodide.asm.js file
-    pyodide_asm_data = (tmp_path / hiding_dir / "pyodide.asm.js").read_bytes()
+    # Serve the moved pyodide.asm.mjs file
+    pyodide_asm_data = (tmp_path / hiding_dir / "pyodide.asm.mjs").read_bytes()
     httpserver.expect_oneshot_request(
-        f"/{hiding_dir}/pyodide.asm.js"
+        f"/{hiding_dir}/pyodide.asm.mjs"
     ).respond_with_data(
         pyodide_asm_data,
         content_type="application/javascript",
