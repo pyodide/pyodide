@@ -66,8 +66,7 @@ export PYODIDE_ZIP_COMPRESSION_LEVEL?=6
 export PIP_CONSTRAINT=$(PYODIDE_ROOT)/tools/constraints.txt
 
 # List of modules to exclude from the zipped standard library
-export =\
-	export PYZIP_EXCLUDE_FILES=\
+export PYZIP_EXCLUDE_FILES=\
 	ensurepip/ \
 	venv/ \
 	lib2to3/ \
