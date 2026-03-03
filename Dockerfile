@@ -34,7 +34,9 @@ RUN if [ $CHROME_VERSION = "latest" ]; then SE_CHROME_VERSION="stable"; \
   && mv $(dirname ${SE_CHROME_DRIVER_PATH}) /opt/chromedriver
 
 
-FROM node:20.11-bookworm-slim AS node-image
+FROM node:24.7-bookworm-slim AS node-image
+FROM golang:1.21-alpine AS golang-image
+
 FROM python:3.13.2-slim-bookworm
 
 RUN apt-get update \
@@ -79,24 +81,23 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 
 RUN npm install -g \
   jsdoc \
-  prettier \
-  rollup \
-  rollup-plugin-terser
+  prettier
 
 # Normally, it is a bad idea to install rustup and cargo in
 # system directories (it should not be shared between users),
 # but this docker image is only for building packages, so I hope it is ok.
-# Setting RUSTUP_UPDATE_ROOT gives us a beta rustup.
-# TODO: Remove when Rustup 1.28.0 is released.
+ENV RUSTUP_HOME=/usr
+ENV CARGO_HOME=/usr
 RUN wget -q -O  -  https://sh.rustup.rs | \
-  RUSTUP_UPDATE_ROOT=https://dev-static.rust-lang.org/rustup \
-  RUSTUP_HOME=/usr CARGO_HOME=/usr \
   sh -s -- -y --profile minimal --no-modify-path
 
 COPY --from=selenium-manager-image /opt/firefox /opt/firefox
 COPY --from=selenium-manager-image /opt/geckodriver /opt/geckodriver
 COPY --from=selenium-manager-image /opt/chrome /opt/chrome
 COPY --from=selenium-manager-image /opt/chromedriver /opt/chromedriver
+
+COPY --from=golang-image /usr/local/go/ /usr/local/go/
+ENV PATH="/usr/local/go/bin:${PATH}"
 
 RUN ln -fs /opt/firefox/firefox /usr/local/bin/firefox \
   && ln -fs /opt/geckodriver/geckodriver /usr/local/bin/geckodriver \
@@ -106,6 +107,13 @@ RUN ln -fs /opt/firefox/firefox /usr/local/bin/firefox \
   && echo "Using GeckoDriver version: $(geckodriver --version)" \
   && echo "Using Chrome version: $(chrome --version)" \
   && echo "Using Chrome Driver version: $(chromedriver --version)"
+
+ARG DOCKER_VERSION=27.4.1
+RUN wget -q -O /tmp/docker.tgz https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
+  && tar xzf /tmp/docker.tgz -C /tmp \
+  && mv /tmp/docker/docker /usr/local/bin/ \
+  && rm -rf /tmp/docker /tmp/docker.tgz \
+  && echo "Using Docker version: $(docker --version)"
 
 CMD ["/bin/sh"]
 WORKDIR /src

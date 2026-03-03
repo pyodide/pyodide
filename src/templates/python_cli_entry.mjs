@@ -1,5 +1,5 @@
 import { loadPyodide } from "./pyodide.mjs";
-import { readdirSync } from "fs";
+import { readdirSync, statSync } from "fs";
 
 /**
  * Determine which native top level directories to mount into the Emscripten
@@ -10,16 +10,64 @@ import { readdirSync } from "fs";
  * am not sure why but if we link tmp then the process silently fails.
  */
 function dirsToMount() {
+  const filteredDirs = new Set([
+    // Unix
+    "dev",
+    "lib",
+    "proc",
+  ]);
+
   return readdirSync("/")
-    .filter((dir) => !["dev", "lib", "proc"].includes(dir))
+    .filter((dir) => !filteredDirs.has(dir))
+    .filter((dir) => !dir.startsWith("$")) // System directories in Windows, such as $Recycle.Bin
+    .filter((dir) => {
+      // Use stat to confirm this entry is a directory.
+      try {
+        const st = statSync("/" + dir);
+        return st.isDirectory();
+      } catch (e) {
+        return false;
+      }
+    })
     .map((dir) => "/" + dir);
+}
+
+/**
+ * Convert a Windows absolute path to a Unix-style path.
+ * Strips the drive letter (e.g., "C:") and converts backslashes to forward slashes.
+ *
+ * @example
+ * windowsPathToUnix("C:\\Users\\siha\\file.txt") // returns "/Users/siha/file.txt"
+ * windowsPathToUnix("D:\\projects\\myapp") // returns "/projects/myapp"
+ */
+function windowsPathToUnix(path) {
+  if (process.platform === "win32") {
+    // Remove drive letter (e.g., "C:" or "D:")
+    let unixPath = path.replace(/^[A-Za-z]:/, "");
+
+    // Replace all backslashes with forward slashes
+    unixPath = unixPath.replace(/\\/g, "/");
+
+    return unixPath;
+  }
+  return path;
+}
+
+/**
+ * Escape backslashes in a Windows path for use in Python strings.
+ */
+function escapeWindowsPath(path) {
+  if (process.platform === "win32") {
+    return path.replace(/\\/g, "\\\\");
+  }
+  return path;
 }
 
 const thisProgramFlag = "--this-program=";
 const thisProgramIndex = process.argv.findIndex((x) =>
   x.startsWith(thisProgramFlag),
 );
-const args = process.argv.slice(thisProgramIndex + 1);
+const args = process.argv.slice(thisProgramIndex + 1).map(windowsPathToUnix);
 const _sysExecutable = process.argv[thisProgramIndex].slice(
   thisProgramFlag.length,
 );
@@ -32,6 +80,65 @@ function fsInit(FS) {
   }
 }
 
+function patchPlatformForUv(py) {
+  // UV uses sysconfig configs to determine platform details when installing
+  // packages through `uv pip`. When running on Windows, we need to patch
+  // sysconfig to return the correct values for a Windows platform.
+  if (process.platform !== "win32" || process.env.UV === undefined) {
+    return;
+  }
+
+  const virtualEnvPrefix = process.env.VIRTUAL_ENV || "/";
+  py.runPython(
+    `
+    import sys
+    import sysconfig
+    import os, ntpath, posixpath
+    sys.prefix = "${escapeWindowsPath(virtualEnvPrefix)}"
+    sys.executable = "${escapeWindowsPath(_sysExecutable)}"
+    sysconfig._INSTALL_SCHEMES['venv'] = sysconfig._INSTALL_SCHEMES['nt_venv']
+    def _abspath(path):
+      """uv tries to call abspath on a windows path, make it work"""
+      if ntpath.isabs(path):
+        return path
+      elif posixpath.isabs(path):  # we cannot use posixpath.abspath directly here because it ends up infinite recursion
+        return path
+      else:
+        return posixpath.abspath(path)
+    os.path.abspath = _abspath
+    `,
+  );
+}
+
+function calculateSysPath(py) {
+  // On windows, packages are installed in a different location (Lib\\site-packages)
+  // compared to other platforms (lib/pythonX.Y/site-packages).
+  // In this case, Python will not be able to setup the sys.path correctly by itself,
+  // so we need to manually add the site-packages path to sys.path.
+  if (process.platform === "win32") {
+    const virtualEnvPrefix = process.env.VIRTUAL_ENV;
+    if (!virtualEnvPrefix) {
+      return;
+    }
+
+    const sitePackagesPath = `${virtualEnvPrefix}\\Lib\\site-packages`;
+    // check if the path exists
+    const stat = statSync(sitePackagesPath);
+    if (!stat.isDirectory()) {
+      return;
+    }
+
+    py.runPython(
+      `
+      import sys
+      site_packages_path = "${windowsPathToUnix(sitePackagesPath)}"
+      if site_packages_path not in sys.path:
+          sys.path.append(site_packages_path)
+      `,
+    );
+  }
+}
+
 async function main() {
   let py;
   try {
@@ -41,9 +148,13 @@ async function main() {
       env: Object.assign(
         {
           PYTHONINSPECT: "",
+          // In Windows, passing _sysExecutable doesn't seem to set sys.executable to python.bat
+          // since the python.bat batch file is not a real executable that Python interpreter can inspect.
+          // Therefore, we force set PYTHONEXECUTABLE here to ensure sys.executable is correct.
+          PYTHONEXECUTABLE: windowsPathToUnix(_sysExecutable),
         },
         process.env,
-        { HOME: process.cwd() },
+        { HOME: windowsPathToUnix(process.cwd()) },
       ),
       fullStdLib: false,
       fsInit,
@@ -94,6 +205,10 @@ async function main() {
       console.error(e);
     }
   }
+
+  patchPlatformForUv(py);
+  calculateSysPath(py);
+
   py.runPython(
     `
     import asyncio

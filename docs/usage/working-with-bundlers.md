@@ -68,7 +68,9 @@ export function viteStaticCopyPyodide() {
   return viteStaticCopy({
     targets: [
       {
-        src: [join(pyodideDir, "*")].concat(PYODIDE_EXCLUDE),
+        src: [join(pyodideDir, "*").replace(/\\/g, "/")].concat(
+          PYODIDE_EXCLUDE
+        ),
         dest: "assets",
       },
     ],
@@ -84,7 +86,7 @@ export default defineConfig({
 You can test your setup with this `index.html` file:
 
 ```html
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <title>Vite + Pyodide</title>

@@ -1,0 +1,25 @@
+From 3fee6733a032d677cbcd86941cf7f8a9bda7ce25 Mon Sep 17 00:00:00 2001
+From: Christoph Gohlke <cgohlke@cgohlke.com>
+Date: Mon, 12 Jan 2026 15:06:19 -0800
+Subject: [PATCH 11/12] Change nc type from int64_t to Py_ssize_t
+
+---
+ scipy/interpolate/src/_dierckxmodule.cc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scipy/interpolate/src/_dierckxmodule.cc b/scipy/interpolate/src/_dierckxmodule.cc
+index 32ad5e0c85..4be2d59c7c 100644
+--- a/scipy/interpolate/src/_dierckxmodule.cc
++++ b/scipy/interpolate/src/_dierckxmodule.cc
+@@ -203,7 +203,7 @@ py_fpbacp(PyObject* self, PyObject *args)
+     Py_ssize_t m = PyArray_DIM(a_x, 0);
+     Py_ssize_t len_t = PyArray_DIM(a_t, 0);
+ 
+-    int64_t nc = len_t - k - 1;
++    Py_ssize_t nc = len_t - k - 1;
+ 
+     // allocate the output buffer
+     npy_intp dims[2] = {nc, PyArray_DIM(a_y, 1)};
+-- 
+2.29.2.windows.2
+

@@ -112,6 +112,6 @@ Communication
 
 - Blog: `blog.pyodide.org <https://blog.pyodide.org/>`_
 - Mailing list: `mail.python.org/mailman3/lists/pyodide.python.org/ <https://mail.python.org/mailman3/lists/pyodide.python.org/>`_
-- Gitter: `gitter.im/pyodide/community <https://gitter.im/pyodide/community>`_
+- Discord: `discord.gg/cRxMCG5kJQ <https://discord.gg/cRxMCG5kJQ>`_
 - Twitter: `twitter.com/pyodide <https://twitter.com/pyodide>`_
 - Stack Overflow: `stackoverflow.com/questions/tagged/pyodide <https://stackoverflow.com/questions/tagged/pyodide>`_

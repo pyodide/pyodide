@@ -88,7 +88,7 @@ _python2js_float(PyObject* x)
 #endif
 
 static JsVal
-_python2js_long(PyObject* x)
+_python2js_bigint(PyObject* x)
 {
   int overflow;
   long x_long = PyLong_AsLongAndOverflow(x, &overflow);
@@ -97,7 +97,7 @@ _python2js_long(PyObject* x)
       FAIL_IF_ERR_OCCURRED();
     } else {
       // We want to group into u32 chunks for convenience of
-      // JsvNum_fromDigits. If the number of bits is evenly divisible by
+      // JsvBigInt_fromDigits. If the number of bits is evenly divisible by
       // 32, we overestimate the number of needed u32s by one.
       size_t nbits = _PyLong_NumBits(x);
       size_t ndigits = (nbits >> 5) + 1;
@@ -108,10 +108,20 @@ _python2js_long(PyObject* x)
                                             true /* little endian */,
                                             true /* signed */,
                                             true /* with_exceptions */));
-      return JsvNum_fromDigits(digits, ndigits);
+      return JsvBigInt_fromDigits(digits, ndigits);
     }
   }
-  return JsvNum_fromInt(x_long);
+  return JsvBigInt_fromInt(x_long);
+finally:
+  return JS_ERROR;
+}
+
+static JsVal
+_python2js_long(PyObject* x)
+{
+  JsVal res = _python2js_bigint(x);
+  FAIL_IF_JS_ERROR(res);
+  return Jsv_BigIntToNum(res);
 finally:
   return JS_ERROR;
 }
@@ -368,6 +378,8 @@ _python2js_immutable(PyObject* x)
     return Jsv_false;
   } else if (x == py_jsnull) {
     return Jsv_null;
+  } else if (PyObject_IsInstance(x, py_JsBigInt)) {
+    return _python2js_bigint(x);
   } else if (PyLong_Check(x)) {
     return _python2js_long(x);
   } else if (PyFloat_Check(x)) {
@@ -574,6 +586,36 @@ _JsMap_Set(ConversionContext *context, JsVal map, JsVal key, JsVal value)
   return JsvMap_Set(map, key, value);
 }
 
+static JsVal
+_JsObject_New(ConversionContext *context) {
+  return JsvObject_New();
+}
+
+EM_JS_NUM(int, _JsObject_Set_js, (JsVal obj, JsVal key, JsVal value), {
+  if (key in obj) {
+    return -2;
+  }
+  obj[key] = value;
+})
+
+static int
+_JsObject_Set(ConversionContext *context, JsVal obj, JsVal key, JsVal value) {
+  int result = _JsObject_Set_js(obj, key, value);
+  if (result == -2) {
+    PyObject* pykey = js2python(key);
+    if (pykey == NULL) {
+      PyErr_SetString(
+        conversion_error, "Key collision when converting Python dictionary to JavaScript.");
+      return -1;
+    }
+    PyErr_Format(
+      conversion_error, "Key collision when converting Python dictionary to JavaScript. Key: %R", pykey);
+    Py_CLEAR(pykey);
+    return -1;
+  }
+  return result;
+}
+
 /**
  * Do a conversion from Python to JavaScript, converting lists, dicts, and sets
  * down to depth "depth".
@@ -735,6 +777,9 @@ python2js_custom__create_jscontext,
 })
 // clang-format on
 
+EMSCRIPTEN_KEEPALIVE
+bool compat_dict_to_literalmap = false;
+
 /**
  * dict_converter should be a JavaScript function that converts an Iterable of
  * pairs into the desired JavaScript object. If dict_converter is NULL, we use
@@ -758,9 +803,14 @@ python2js_custom(PyObject* x,
                                 .jspostprocess_list =
                                   hiwire_new(JsvArray_New()) };
   if (JsvError_Check(dict_converter)) {
-    // No custom converter provided, go back to default conversion to Map.
-    context.dict_new = _JsMap_New;
-    context.dict_add_keyvalue = _JsMap_Set;
+    // No custom converter provided, use default
+    if (compat_dict_to_literalmap) {
+      context.dict_new = _JsMap_New;
+      context.dict_add_keyvalue = _JsMap_Set;
+    } else {
+      context.dict_new = _JsObject_New;
+      context.dict_add_keyvalue = _JsObject_Set;
+    }
     context.dict_postprocess = NULL;
   } else {
     context.dict_new = _JsArray_New;
@@ -969,6 +1019,7 @@ static PyMethodDef methods[] = {
 };
 
 PyObject* py_jsnull = NULL;
+PyObject* py_JsBigInt = NULL;
 
 int
 python2js_init(PyObject* core)
@@ -980,6 +1031,8 @@ python2js_init(PyObject* core)
     add_methods_and_set_docstrings(core, methods, docstring_source));
   py_jsnull = PyObject_GetAttrString(docstring_source, "jsnull");
   FAIL_IF_NULL(py_jsnull);
+  py_JsBigInt = PyObject_GetAttrString(docstring_source, "JsBigInt");
+  FAIL_IF_NULL(py_JsBigInt);
 
   success = true;
 finally:

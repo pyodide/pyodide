@@ -56,10 +56,13 @@ async function main() {
       import scipy.io.tests
       path = Path(scipy.io.tests.__file__).parent / "test_fortran.py"
       os.unlink(path)
+    `);
 
-      import scipy.integrate.tests
-      path = Path(scipy.integrate.tests.__file__).parent / "test_odeint_jac.py"
-      os.unlink(path)
+    // get_native_id is not available in Pyodide but scipy uses it a lot in tests
+    await pyodide.runPythonAsync(`
+      import threading
+      import random
+      threading.get_native_id = lambda: random.randint(0, 10000)
     `);
 
     await pyodide.runPythonAsync(

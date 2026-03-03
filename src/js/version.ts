@@ -6,4 +6,4 @@
  * from the version in ``package.json`` which follows the node package manager
  * version convention.
  */
-export const version: string = "0.29.0.dev0";
+export const version: string = "0.30.0.dev0";

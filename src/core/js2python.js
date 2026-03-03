@@ -55,13 +55,15 @@ function js2python_bigint(value) {
     ASSIGN_U32(ptr, i, Number(value & BigInt(0xffffffff)));
     value >>= BigInt(32);
   }
-  const res = __PyLong_FromByteArray(
+  const resInt = __PyLong_FromByteArray(
     ptr,
     length * 4 /* length in bytes */,
     true /* little endian */,
     true /* signed? */,
   );
   stackRestore(orig);
+  const res = __js2python_bigint(resInt);
+  _Py_DecRef(resInt);
   return res;
 }
 

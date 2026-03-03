@@ -44,6 +44,7 @@ DATA = {
         "Float64Array": "$global/",
         "Map": "$global/",
         "Response": "API/",
+        "Request": "API/",
         "Set": "$global/",
         # the JavaScript domain has no exception type for some reason...
         "Error": "$global/",
@@ -182,6 +183,21 @@ for ty, key, url in [
         "js:class",
         "Record",
         "https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type",
+    ),
+    (
+        "js:class",
+        "Omit",
+        "https://www.typescriptlang.org/docs/handbook/utility-types.html#omittype-keys",
+    ),
+    (
+        "js:class",
+        "FS",
+        "https://emscripten.org/docs/api_reference/Filesystem-API.html",
+    ),
+    (
+        "js:class",
+        "Partial",
+        "https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype",
     ),
 ]:
     INVDATA[ty][key] = (

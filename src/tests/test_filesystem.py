@@ -28,23 +28,23 @@ def test_idbfs_persist_code(selenium_standalone):
         pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, mountDir);
         """
     )
-    # create file in mount
-    selenium.run_js(
-        f"""
-        pyodide.runPython(`
-            import pathlib
-            p = pathlib.Path('{mount_dir}/test_idbfs/__init__.py')
-            p.parent.mkdir(exist_ok=True, parents=True)
-            p.write_text("def test(): return 7")
-            from importlib import invalidate_caches
-            invalidate_caches()
-            import sys
-            sys.path.append('{mount_dir}')
-            from test_idbfs import test
-            assert test() == 7
-        `);
-        """
-    )
+
+    @run_in_pyodide
+    def create_test_file(selenium_module, mount_dir):
+        import sys
+        from importlib import invalidate_caches
+        from pathlib import Path
+
+        p = Path(f"{mount_dir}/test_idbfs/__init__.py")
+        p.parent.mkdir(exist_ok=True, parents=True)
+        p.write_text("def test(): return 7")
+        invalidate_caches()
+        sys.path.append(mount_dir)
+        from test_idbfs import test
+
+        assert test() == 7
+
+    create_test_file(selenium, mount_dir)
     # sync TO idbfs
     selenium.run_js(
         """

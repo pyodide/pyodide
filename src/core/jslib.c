@@ -14,7 +14,7 @@ bool tracerefs;
   JS_BUILTIN(undefined)                                                        \
   JS_BUILTIN(true)                                                             \
   JS_BUILTIN(false)                                                            \
-  JS_CONST(error, _Jsv_GetNull())                                              \
+  JS_CONST(error, _Jsv_GetError())                                             \
   JS_CONST(novalue, { noValueMarker : 1 })
 
 // we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
@@ -27,17 +27,16 @@ JS_INIT_CONSTS();
 
 #define JS_CONST(name, value) HEAP32[_Jsr_##name / 4] = _hiwire_intern(value);
 
-__attribute__((import_module("sentinel"), import_name("create_sentinel"))) JsVal
-Jsv_GetNull_import(void);
+JsVal
+Jsv_GetError_import(void);
 
 EMSCRIPTEN_KEEPALIVE JsVal
-Jsv_GetNull(void)
+Jsv_GetError(void)
 {
-  return Jsv_GetNull_import();
+  return Jsv_GetError_import();
 }
 
-__attribute__((import_module("sentinel"),
-               import_name("is_sentinel"))) int JsvError_Check(JsVal);
+int JsvError_Check(JsVal);
 
 EM_JS_NUM(int, jslib_init_js, (void), {
   JS_INIT_CONSTS();
@@ -98,16 +97,21 @@ JsRef_new(JsVal v)
 // ==================== Primitive Conversions ====================
 
 // clang-format off
+EM_JS(JsVal, JsvBigInt_fromInt, (int x), {
+  return BigInt(x);
+})
+
 EM_JS(JsVal, JsvNum_fromInt, (int x), {
   return x;
 })
+
 
 EM_JS(JsVal, JsvNum_fromDouble, (double val), {
   return val;
 });
 
 EM_JS_UNCHECKED(JsVal,
-JsvNum_fromDigits,
+JsvBigInt_fromDigits,
 (const unsigned int* digits, size_t ndigits),
 {
   let result = BigInt(0);
@@ -116,11 +120,16 @@ JsvNum_fromDigits,
   }
   result += BigInt(DEREF_U32(digits, ndigits - 1) & 0x80000000)
             << BigInt(1 + 32 * (ndigits - 1));
-  if (-Number.MAX_SAFE_INTEGER < result &&
-      result < Number.MAX_SAFE_INTEGER) {
-    result = Number(result);
-  }
   return result;
+});
+
+EM_JS(JsVal,
+Jsv_BigIntToNum, (JsVal x), {
+  if (-Number.MAX_SAFE_INTEGER < x &&
+      x < Number.MAX_SAFE_INTEGER) {
+    return Number(x);
+  }
+  return x;
 });
 
 EM_JS(bool, Jsv_to_bool, (JsVal x), {
@@ -222,7 +231,7 @@ EM_JS_NUM(errcode, JsvArray_Insert, (JsVal arr, int idx, JsVal value), {
   arr.splice(idx, 0, value);
 });
 
-EM_JS_NUM(JsVal, JsvArray_ShallowCopy, (JsVal arr), {
+EM_JS_VAL(JsVal, JsvArray_ShallowCopy, (JsVal arr), {
   return ("slice" in arr) ? arr.slice() : Array.from(arr);
 })
 
@@ -232,7 +241,7 @@ JsvArray_slice,
 (JsVal obj, int length, int start, int stop, int step),
 {
   let result;
-  if (step === 1) {
+  if (step === 1 && obj.slice) {
     result = obj.slice(start, stop);
   } else {
     result = Array.from({ length }, (_, i) => obj[start + i * step]);

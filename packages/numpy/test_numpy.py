@@ -175,17 +175,15 @@ def test_python2js_numpy_scalar(selenium, dtype):
 
 
 @pytest.mark.skip_pyproxy_check
-def test_runpythonasync_numpy(selenium_standalone):
-    selenium_standalone.run_async(
+def test_runpythonasync_numpy(selenium):
+    selenium.run_async(
         """
         import numpy as np
         x = np.zeros(5)
         """
     )
     for i in range(5):
-        assert selenium_standalone.run_js(
-            f"return pyodide.globals.get('x').toJs()[{i}] == 0"
-        )
+        assert selenium.run_js(f"return pyodide.globals.get('x').toJs()[{i}] == 0")
 
 
 @pytest.mark.xfail_browsers(

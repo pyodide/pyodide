@@ -16,9 +16,7 @@ DIST_PATH = PYODIDE_ROOT / "dist"
 
 sys.path.append(str(PYODIDE_ROOT / "src" / "py"))
 
-# importing this fixture has a side effect of making the safari webdriver reused during the session
 from pytest_pyodide import get_global_config
-from pytest_pyodide.runner import use_global_safari_service  # noqa: F401
 from pytest_pyodide.utils import package_is_built as _package_is_built
 
 os.environ["IN_PYTEST"] = "1"
@@ -64,7 +62,7 @@ def set_configs():
         pyodide._api.pyodide_ffi.register_js_module;
         pyodide._api.pyodide_ffi.unregister_js_module;
         pyodide.pyimport("pyodide.ffi.wrappers").destroy();
-        pyodide.pyimport("pyodide.http").destroy();
+        pyodide.pyimport("pyodide.http.pyxhr").destroy();
         pyodide.pyimport("pyodide_js._api");
     """)
 

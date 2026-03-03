@@ -15,7 +15,10 @@ API.getExpectedKeys = function () {
   ];
 };
 
+// Symbol used in our serializer to get the access list
 const getAccessorList = Symbol("getAccessorList");
+// Symbol used to unwrap receivers
+const getObject = Symbol("getObject");
 /**
  * @private
  */
@@ -27,6 +30,9 @@ export function makeGlobalsProxy(
     get(target, prop, receiver) {
       if (prop === getAccessorList) {
         return accessorList;
+      }
+      if (prop === getObject) {
+        return target;
       }
       // @ts-ignore
       const orig = Reflect.get(...arguments);
@@ -44,6 +50,12 @@ export function makeGlobalsProxy(
         return orig;
       }
       return makeGlobalsProxy(orig, [...accessorList, prop]);
+    },
+    apply(target, thisArg, argumentList) {
+      // If thisArg is a GlobalsProxy it may break APIs that expect the receiver
+      // to be unmodified. Unwrap any GlobalsProxy before making the call.
+      thisArg = thisArg?.[getObject] ?? thisArg;
+      return Reflect.apply(target, thisArg, argumentList);
     },
     getPrototypeOf() {
       // @ts-ignore
