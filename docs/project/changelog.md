@@ -33,6 +33,14 @@ myst:
   hashlib. Now, we do not provide hash functions coming from OpenSSL.
   {pr}`6044`
 
+- {{ Breaking }} `pyodide.asm.js` has been renamed to `pyodide.asm.mjs` to properly indicate it is an ES module.
+  This change affects:
+  - Classic (non-module) workers: No longer supported
+  - Service workers: Instead of statically importing `pyodide.asm.js` they must now statically import `createPyodideModule` from `pyodide.asm.mjs`and pass the result as an argument to `loadPyodide` (see {ref}`using_from_service_worker`)
+  - Bundlers: Update configuration to reference the new filename
+  {pr}`6111`
+
+
 - {{ Enhancement }} A JavaScript object is now treated as an array-like object
   if it has a `length` property and is iterable. Every JsProxy of an array-like
   object now implements subscripting.
