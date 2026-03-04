@@ -4,9 +4,7 @@ import pytest
 
 
 @pytest.mark.xfail_browsers(chrome="flaky")
-def test_runwebworker_different_package_name(
-    selenium_webworker_standalone, script_type
-):
+def test_runwebworker_different_package_name(selenium_webworker_standalone):
     selenium = selenium_webworker_standalone
     output = selenium.run_webworker(
         """
@@ -18,7 +16,7 @@ def test_runwebworker_different_package_name(
 
 
 @pytest.mark.xfail_browsers(chrome="flaky")
-def test_runwebworker_no_imports(selenium_webworker_standalone, script_type):
+def test_runwebworker_no_imports(selenium_webworker_standalone):
     selenium = selenium_webworker_standalone
     output = selenium.run_webworker(
         """
@@ -29,7 +27,7 @@ def test_runwebworker_no_imports(selenium_webworker_standalone, script_type):
 
 
 @pytest.mark.xfail_browsers(chrome="flaky")
-def test_runwebworker_missing_import(selenium_webworker_standalone, script_type):
+def test_runwebworker_missing_import(selenium_webworker_standalone):
     selenium = selenium_webworker_standalone
     msg = "ModuleNotFoundError"
     with pytest.raises(selenium.JavascriptException, match=msg):
@@ -41,7 +39,7 @@ def test_runwebworker_missing_import(selenium_webworker_standalone, script_type)
 
 
 @pytest.mark.xfail_browsers(chrome="flaky")
-def test_runwebworker_exception(selenium_webworker_standalone, script_type):
+def test_runwebworker_exception(selenium_webworker_standalone):
     selenium = selenium_webworker_standalone
     msg = "ZeroDivisionError"
     with pytest.raises(selenium.JavascriptException, match=msg):
@@ -53,9 +51,7 @@ def test_runwebworker_exception(selenium_webworker_standalone, script_type):
 
 
 @pytest.mark.xfail_browsers(chrome="flaky")
-def test_runwebworker_exception_after_import(
-    selenium_webworker_standalone, script_type
-):
+def test_runwebworker_exception_after_import(selenium_webworker_standalone):
     selenium = selenium_webworker_standalone
     msg = "ZeroDivisionError"
     with pytest.raises(selenium.JavascriptException, match=msg):
@@ -68,7 +64,7 @@ def test_runwebworker_exception_after_import(
 
 
 @pytest.mark.xfail_browsers(chrome="flaky", firefox="flaky")
-def test_runwebworker_micropip(selenium_webworker_standalone, httpserver, script_type):
+def test_runwebworker_micropip(selenium_webworker_standalone, httpserver):
     selenium = selenium_webworker_standalone
 
     test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"

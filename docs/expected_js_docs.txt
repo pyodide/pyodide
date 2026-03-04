@@ -16,6 +16,7 @@ js:attribute
   exports.PyodideConfig.args?
   exports.PyodideConfig.checkAPIVersion?
   exports.PyodideConfig.convertNullToNone?
+  exports.PyodideConfig.createPyodideModule?
   exports.PyodideConfig.enableRunUntilComplete?
   exports.PyodideConfig.env?
   exports.PyodideConfig.fullStdLib?
