@@ -1,0 +1,27 @@
+From 441ec3c6dd0f7ffd26bfff16ea4542e50547585b Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Fri, 27 Feb 2026 13:37:50 +0100
+Subject: [PATCH 5/5] Fix: When symbol is both imported and exported, don't
+ drop import
+
+Upstream PR:
+* https://github.com/emscripten-core/emscripten/pull/26356
+
+---
+ src/jsifier.mjs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/jsifier.mjs b/src/jsifier.mjs
+--- a/src/jsifier.mjs
++++ b/src/jsifier.mjs
+@@ -508,7 +508,7 @@
+ 
+       // if the function was implemented in compiled code, there is no need to
+       // include the js version
+-      if (WASM_EXPORTS.has(symbol) && !force) {
++      if (WASM_EXPORTS.has(symbol) && !force && !DEFAULT_LIBRARY_FUNCS_TO_INCLUDE.includes(symbol)) {
+         return;
+       }
+ 
+-- 
+2.29.2.windows.2
