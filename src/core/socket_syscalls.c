@@ -6,12 +6,7 @@
 // Overrides __syscall_connect, __syscall_recvfrom, and __syscall_sendto to
 // intercept NodeSock file descriptors and route them through async JSPI
 // operations. Non-NodeSock fds fall through to the original Emscripten SOCKFS
-// fds fall through to the original Emscripten SOCKFS implementations for
-// compatibility.
-//
-// Note that the original SOCKFS logic is reimplemented via EM_JS as
-// Emscripten's jsifier.mjs drops the JS library functions when we link our
-// JSPI version of the function with the same name.
+// implementations for compatibility.
 //
 // GIL handling
 // ────────────
@@ -23,73 +18,38 @@
 extern int
 syscall_syncify(__externref_t promise);
 
-// Original Emscripten SOCKFS connect
-// https://github.com/emscripten-core/emscripten/blob/af01558779231dcf3524438e904b688a5576432c/src/lib/libsyscall.js#L374
-EM_JS(int, _orig_syscall_connect, (int fd, intptr_t addr, int addrlen), {
-  try {
-    var sock = Module.getSocketFromFD(fd);
-    var info = Module.getSocketAddress(addr, addrlen);
-    sock.sock_ops.connect(sock, info.addr, info.port);
-    return 0;
-  } catch (e) {
-    if (e instanceof Module.FS.ErrnoError)
-      return -e.errno;
-    throw e;
-  }
-})
+int
+_orig_syscall_connect(int fd,
+                      intptr_t addr,
+                      int addrlen,
+                      int d1,
+                      int d2,
+                      int d3)
+  __attribute__((__import_module__("env"),
+                 __import_name__("__syscall_connect"),
+                 __warn_unused_result__));
 
-// Original Emscripten SOCKFS recvfrom
-// https://github.com/emscripten-core/emscripten/blob/af01558779231dcf3524438e904b688a5576432c/src/lib/libsyscall.js#L411
-EM_JS(int,
-      _orig_syscall_recvfrom,
-      (int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen),
-      {
-        try {
-          var sock = Module.getSocketFromFD(fd);
-          var msg = sock.sock_ops.recvmsg(sock, len);
-          if (!msg)
-            return 0;
-          if (addr) {
-            var errno = Module.writeSockaddr(addr,
-                                             sock.family,
-                                             Module.DNS.lookup_name(msg.addr),
-                                             msg.port,
-                                             addrlen);
-          }
-          Module.HEAPU8.set(msg.buffer, buf);
-          return msg.buffer.byteLength;
-        } catch (e) {
-          if (e instanceof Module.FS.ErrnoError)
-            return -e.errno;
-          throw e;
-        }
-      })
+int
+_orig_syscall_recvfrom(int fd,
+                       intptr_t buf,
+                       int len,
+                       int flags,
+                       intptr_t addr,
+                       int addrlen)
+  __attribute__((__import_module__("env"),
+                 __import_name__("__syscall_recvfrom"),
+                 __warn_unused_result__));
 
-// Original Emscripten SOCKFS sendto
-// https://github.com/emscripten-core/emscripten/blob/af01558779231dcf3524438e904b688a5576432c/src/lib/libsyscall.js#L425
-EM_JS(int,
-      _orig_syscall_sendto,
-      (int fd,
-       intptr_t message,
-       int length,
-       int flags,
-       intptr_t addr,
-       int addr_len),
-      {
-        try {
-          var sock = Module.getSocketFromFD(fd);
-          if (!addr) {
-            return sock.sock_ops.sendmsg(sock, Module.HEAP8, message, length);
-          }
-          var dest = Module.getSocketAddress(addr, addr_len);
-          return sock.sock_ops.sendmsg(
-            sock, Module.HEAP8, message, length, dest.addr, dest.port);
-        } catch (e) {
-          if (e instanceof Module.FS.ErrnoError)
-            return -e.errno;
-          throw e;
-        }
-      })
+int
+_orig_syscall_sendto(int fd,
+                     intptr_t message,
+                     int length,
+                     int flags,
+                     intptr_t addr,
+                     int addrlen)
+  __attribute__((__import_module__("env"),
+                 __import_name__("__syscall_sendto"),
+                 __warn_unused_result__));
 
 // clang-format off
 
@@ -138,7 +98,7 @@ __syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
 {
   __externref_t p = _maybe_connect_async(fd, addr, addrlen);
   if (__builtin_wasm_ref_is_null_extern(p)) {
-    return _orig_syscall_connect(fd, addr, addrlen);
+    return _orig_syscall_connect(fd, addr, addrlen, d1, d2, d3);
   }
   return syscall_syncify(p);
 }
