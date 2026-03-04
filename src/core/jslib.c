@@ -111,7 +111,7 @@ EM_JS(JsVal, JsvNum_fromDouble, (double val), {
 });
 
 EM_JS(int, JsvNum_toInt, (JsVal v), {
-  return v | 0;
+  return v;
 })
 
 EM_JS_UNCHECKED(JsVal,
