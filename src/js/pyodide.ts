@@ -188,6 +188,15 @@ export interface PyodideConfig {
   fsInit?: (FS: FSType, info: { sitePackages: string }) => Promise<void>;
 
   /**
+   * Use NodeJS's native socket implementation for socket syscalls.
+   * This allows running code that uses sockets, such as database clients or
+   * HTTP clients that use sockets under the hood.
+   *
+   * @experimental
+   */
+  withNodeSocket?: boolean;
+
+  /**
    * Opt into the old behavior where :js:func:`PyProxy.toString() <pyodide.ffi.PyProxy.toString>`
    * calls :py:func:`repr` and not :py:class:`str() <str>`. Deprecated.
    * @deprecated
