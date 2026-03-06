@@ -117,6 +117,11 @@ dist/pyodide.asm.js: \
    # For unknown reason, a side module cannot see symbols when libGL is linked to it.
 	embuilder build libgl
 	$(CXX) -o dist/pyodide.asm.js -lpyodide src/core/main.o $(MAIN_MODULE_LDFLAGS)
+	@if [ "$(TAIL_CALL_DISPATCH)" = "5" ]; then \
+		cp dist/pyodide.asm.wasm dist/pyodide.asm.orig.wasm; \
+		python tools/tail-calling/patch_wasm.py dist/pyodide.asm.wasm; \
+		wasm-validate --enable-all dist/pyodide.asm.wasm; \
+	fi
 
 	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
 		cd dist && npx prettier -w pyodide.asm.js ; \
