@@ -1,4 +1,9 @@
-export async function runBenchmark(loadPyodide, distName, iterations, pystonePath) {
+export async function runBenchmark(
+  loadPyodide,
+  distName,
+  iterations,
+  pystonePath,
+) {
   const py = await loadPyodide();
 
   const pystoneCode = read(pystonePath);

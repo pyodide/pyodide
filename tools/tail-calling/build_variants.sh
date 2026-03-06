@@ -24,7 +24,7 @@ for i in 0 1 2 3 4 5 6; do
         continue
     fi
     echo "=== Building tail call variant $i ==="
-    # clear cpython dir as we are setting new flags and 
+    # clear cpython dir as we are setting new flags and
     # just build the wasm module since the rest is already built
     (cd cpython && make clean)
     # force remove the files we care about

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run pystone benchmarks across tail-calling dist-* directories.
 
-    python tools/tail-calling/run-benchmarks.py [-n ITERATIONS] [NAME]
+python tools/tail-calling/run-benchmarks.py [-n ITERATIONS] [NAME]
 """
 
 import argparse
@@ -34,9 +34,7 @@ def main():
 
     if not V8_PATH.is_file() or not os.access(V8_PATH, os.X_OK):
         print(f"Error: v8 not found at {V8_PATH}", file=sys.stderr)
-        print(
-            "Install via: npx jsvu --engines=v8 --os=linux64", file=sys.stderr
-        )
+        print("Install via: npx jsvu --engines=v8 --os=linux64", file=sys.stderr)
         sys.exit(1)
 
     if args.name:
@@ -69,16 +67,19 @@ def main():
         )
 
         subprocess.run(
-            [str(V8_PATH), 
-            "--enable-os-system", 
-            # "--experimental-wasm-assume-ref-cast-succeeds",
-            # "--experimental-wasm-ref-cast-nop",
-            # "--experimental-wasm-skip-bounds-checks",
-            # "--experimental-wasm-skip-null-checks",
-            # "--no-wasm-bounds-checks",
-            # "--no-wasm-stack-checks",
-            # "--test-only-unsafe",
-            "--module", str(entry_path)],
+            [
+                str(V8_PATH),
+                "--enable-os-system",
+                # "--experimental-wasm-assume-ref-cast-succeeds",
+                # "--experimental-wasm-ref-cast-nop",
+                # "--experimental-wasm-skip-bounds-checks",
+                # "--experimental-wasm-skip-null-checks",
+                # "--no-wasm-bounds-checks",
+                # "--no-wasm-stack-checks",
+                # "--test-only-unsafe",
+                "--module",
+                str(entry_path),
+            ],
             check=True,
         )
         print()

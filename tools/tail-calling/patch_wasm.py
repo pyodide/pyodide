@@ -5,7 +5,7 @@ def read_leb128(data, offset):
     size = 0
     while True:
         b = data[offset + size]
-        result |= (b & 0x7f) << shift
+        result |= (b & 0x7F) << shift
         size += 1
         if not (b & 0x80):
             break
@@ -55,7 +55,7 @@ def encode_leb128_padded(value, num_bytes):
 # Additionally, it add locals to store these.
 # This function just hacks all that out in a brute force fashion.
 def patch_wasm(input_file, output_file, target_name):
-    with open(input_file, 'rb') as f:
+    with open(input_file, "rb") as f:
         data = bytearray(f.read())
 
     # Locate the code section (id=10)
@@ -67,18 +67,18 @@ def patch_wasm(input_file, output_file, target_name):
         sec_size, sec_size_leb = read_leb128(data, pos)
         if sec_id == 10:
             code_sec = {
-                'size_offset': pos,
-                'size_leb': sec_size_leb,
-                'size': sec_size,
-                'content_start': pos + sec_size_leb,
+                "size_offset": pos,
+                "size_leb": sec_size_leb,
+                "size": sec_size,
+                "content_start": pos + sec_size_leb,
             }
         pos += sec_size_leb + sec_size
     assert code_sec, "Code section not found"
     print(f"Code section: size={code_sec['size']} at 0x{code_sec['size_offset']:x}")
 
     # Find the export and resolve function index
-    name_bytes = target_name.encode('utf-8')
-    export_needle = bytes([len(name_bytes)]) + name_bytes + b'\x00'
+    name_bytes = target_name.encode("utf-8")
+    export_needle = bytes([len(name_bytes)]) + name_bytes + b"\x00"
     exp_pos = data.find(export_needle)
     assert exp_pos >= 0, f"Export {target_name} not found"
     func_idx, _ = read_leb128(data, exp_pos + len(export_needle))
@@ -101,31 +101,43 @@ def patch_wasm(input_file, output_file, target_name):
     import_count, ll = read_leb128(data, ipos)
     ipos += ll
     for _ in range(import_count):
-        mod_len, ll = read_leb128(data, ipos); ipos += ll; ipos += mod_len
-        name_len, ll = read_leb128(data, ipos); ipos += ll; ipos += name_len
-        kind = data[ipos]; ipos += 1
-        if kind == 0:    # func
+        mod_len, ll = read_leb128(data, ipos)
+        ipos += ll
+        ipos += mod_len
+        name_len, ll = read_leb128(data, ipos)
+        ipos += ll
+        ipos += name_len
+        kind = data[ipos]
+        ipos += 1
+        if kind == 0:  # func
             func_imports += 1
-            _, ll = read_leb128(data, ipos); ipos += ll
+            _, ll = read_leb128(data, ipos)
+            ipos += ll
         elif kind == 1:  # table
-            ipos += 1    # elemtype
-            flags = data[ipos]; ipos += 1
-            _, ll = read_leb128(data, ipos); ipos += ll
+            ipos += 1  # elemtype
+            flags = data[ipos]
+            ipos += 1
+            _, ll = read_leb128(data, ipos)
+            ipos += ll
             if flags & 1:
-                _, ll = read_leb128(data, ipos); ipos += ll
+                _, ll = read_leb128(data, ipos)
+                ipos += ll
         elif kind == 2:  # memory
-            flags = data[ipos]; ipos += 1
-            _, ll = read_leb128(data, ipos); ipos += ll
+            flags = data[ipos]
+            ipos += 1
+            _, ll = read_leb128(data, ipos)
+            ipos += ll
             if flags & 1:
-                _, ll = read_leb128(data, ipos); ipos += ll
+                _, ll = read_leb128(data, ipos)
+                ipos += ll
         elif kind == 3:  # global
-            ipos += 2    # valtype + mutability
+            ipos += 2  # valtype + mutability
 
     code_idx = func_idx - func_imports
     print(f"Function imports: {func_imports}, code index: {code_idx}")
 
     # Navigate to the target function body
-    pos = code_sec['content_start']
+    pos = code_sec["content_start"]
     func_count, ll = read_leb128(data, pos)
     pos += ll
     for _ in range(code_idx):
@@ -148,15 +160,15 @@ def patch_wasm(input_file, output_file, target_name):
         lpos += ll2 + 1  # count + valtype
     locals_end = lpos
     bytecode_start = lpos
-    print(f"Locals: {local_decl_count} decl(s), {locals_end - locals_start} bytes "
-          f"({data[locals_start:locals_end].hex()})")
+    print(
+        f"Locals: {local_decl_count} decl(s), {locals_end - locals_start} bytes "
+        f"({data[locals_start:locals_end].hex()})"
+    )
 
     # Collect byte ranges to remove
     # This is the encoding of that push pop sequence
     garbage_pattern = (
-        b'\x21\x09\x21\x08\x21\x07\x21\x06'
-        b'\x22\x05'
-        b'\x20\x06\x20\x07\x20\x08\x20\x09'
+        b"\x21\x09\x21\x08\x21\x07\x21\x06\x22\x05\x20\x06\x20\x07\x20\x08\x20\x09"
     )
     removals = []
 
@@ -198,7 +210,9 @@ def patch_wasm(input_file, output_file, target_name):
     new_body.extend(data[copy_pos:body_end])
 
     new_body_size = len(new_body)
-    print(f"New body size: {new_body_size} (was {body_size}, delta={body_size - new_body_size})")
+    print(
+        f"New body size: {new_body_size} (was {body_size}, delta={body_size - new_body_size})"
+    )
 
     # --- Reconstruct the binary ---
     new_body_size_enc = encode_leb128_padded(new_body_size, body_size_leb)
@@ -210,19 +224,24 @@ def patch_wasm(input_file, output_file, target_name):
     out.extend(data[body_end:])
 
     # Fix the code section size
-    new_code_sec_size = code_sec['size'] - total_removed
-    new_code_sec_size_enc = encode_leb128_padded(new_code_sec_size, code_sec['size_leb'])
-    cs_off = code_sec['size_offset']
-    out[cs_off:cs_off + code_sec['size_leb']] = new_code_sec_size_enc
+    new_code_sec_size = code_sec["size"] - total_removed
+    new_code_sec_size_enc = encode_leb128_padded(
+        new_code_sec_size, code_sec["size_leb"]
+    )
+    cs_off = code_sec["size_offset"]
+    out[cs_off : cs_off + code_sec["size_leb"]] = new_code_sec_size_enc
     print(f"Code section size: {code_sec['size']} -> {new_code_sec_size}")
 
-    with open(output_file, 'wb') as f:
+    with open(output_file, "wb") as f:
         f.write(out)
-    print(f"Wrote {len(out)} bytes to {output_file} (was {len(data)}, saved {len(data) - len(out)})")
+    print(
+        f"Wrote {len(out)} bytes to {output_file} (was {len(data)}, saved {len(data) - len(out)})"
+    )
 
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) != 2:
         print(f"Usage: {sys.argv[0]} <path-to-pyodide.asm.wasm>", file=sys.stderr)
         sys.exit(1)
