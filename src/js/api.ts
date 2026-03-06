@@ -842,5 +842,6 @@ API.finalizeBootstrap = function (
   pyodide.pyodide_py = API.pyodide_py;
   pyodide.globals = API.globals;
   bootstrapFinalized!();
+  API.bootstrapFinalized = true;
   return pyodide;
 };
