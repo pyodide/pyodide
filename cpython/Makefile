@@ -4,6 +4,13 @@ include ../Makefile.envs
 ROOT=$(abspath .)
 
 PYTHON_CFLAGS=$(CFLAGS_BASE) -DPY_CALL_TRAMPOLINE
+ifdef TAIL_CALL_DISPATCH
+PYTHON_CFLAGS += -mtail-call
+ifneq ($(TAIL_CALL_DISPATCH),0)
+PYTHON_CFLAGS += -DTAIL_CALL_DISPATCH_MODE=$(TAIL_CALL_DISPATCH)
+endif
+CONFIGURE_TAIL_CALL=--with-tail-call-interp
+endif
 
 PYBUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)
 PYINSTALL=$(CPYTHONINSTALL)
@@ -220,6 +227,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 			  --disable-shared \
 			  --disable-ipv6 \
 			  --enable-big-digits=30 \
+			  $(CONFIGURE_TAIL_CALL) \
 			  --enable-optimizations \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(PYBUILD)/config.guess) \
@@ -237,6 +245,9 @@ $(PYBUILD)/$(PYLIB): $(PYBUILD)/Makefile $(PYBUILD)/pyconfig.h $(PYBUILD)/Module
 	( \
 		cd $(PYBUILD); \
 		make regen-frozen; \
+		if [ -n "$(TAIL_CALL_DISPATCH)" ]; then \
+			python Tools/cases_generator/target_generator.py; \
+		fi; \
 		emmake make CROSS_COMPILE=yes $(PYLIB) -j $${PYODIDE_JOBS:-3} \
 	)
 	touch $(PYBUILD)/$(PYLIB)
