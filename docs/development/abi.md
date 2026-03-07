@@ -106,13 +106,10 @@ dynamic loader has been patched so that all dynamic libraries in a wheel named
 dynamic library dependencies should be placed in the wheel in a folder called
 `wheel_name.libs`.
 
-### pyodide_2025_0 (under development)
+### pyodide_2025_0
 
 By default, all builds of the Pyodide runtime with Python 3.13 will use the
-`pyodide_2025_0` abi.
-
-This section reflects the aspirational ABI for `pyodide_2025_0`. This is all
-subject to change without notice.
+`pyodide_2025_0` abi. This section reflects the ABI for `pyodide_2025_0`.
 
 The Emscripten version is 4.0.9.
 
