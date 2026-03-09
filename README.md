@@ -55,7 +55,7 @@ your browser. For further information, see the
 The Pyodide project consists of the following components:
 1. A build of CPython with a few patches (https://github.com/pyodide/pyodide/tree/main/cpython/)
 2. A JS/Python foreign function interface
-   (https://github.com/pyodide/pyodide/tree/main/src/code and
+   (https://github.com/pyodide/pyodide/tree/main/src/core and
    https://github.com/pyodide/pyodide/tree/main/src/py)
 3. JavaScript code for creating and managing Pyodide interpreters
    (https://github.com/pyodide/pyodide/tree/main/src/js)
