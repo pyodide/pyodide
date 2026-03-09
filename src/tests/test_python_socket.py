@@ -64,7 +64,7 @@ def selenium_nodesock(selenium_standalone, runtime):
 
     selenium.run_js(
         """
-        await pyodide._api.initializeNodeSockFS();
+        await pyodide.useNodeSockFS();
         """
     )
     try:
