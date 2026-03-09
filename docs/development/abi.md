@@ -16,8 +16,8 @@ the interpreter to avoid load-time or run-time errors.
 
 To balance ABI stability needs of package maintainers with flexibility to adopt
 new platform features and bug fixes, Pyodide adopts a new ABI for each feature
-release of Python. The platform tags take the form `pyodide_${PYTHON_MAJOR_MINOR}_${PATCH}_wasm32`
-(e.g., `pyodide_314_0_wasm32` for Python 3.14).
+release of Python. The platform tags take the form `pyodide_${YEAR}_${PATCH}_wasm32`
+(e.g., `pyodide_2026_0_wasm32` for Python 3.14).
 
 Each ABI version specifies the CPython version, Emscripten compiler version,
 linked libraries, and required compiler/linker flags needed to build compatible
