@@ -23,3 +23,4 @@ sphinx-design>=0.3.0
 sphinx-issues
 sphinx-js>=5.0.0
 sphinx_book_theme
+pyodide-cli<0.5.0
