@@ -7,14 +7,12 @@
  * resumes.
  */
 
-import type { PyodideModule, PreRunFunc } from "../types";
-import { RUNTIME_ENV } from "../environments";
 import {
   init as initWinterCGSockets,
   connect,
   Socket as WinterCGSocket,
 } from "./wintercg-sockets";
-import type { SocketOptions } from "./wintercg-sockets";
+import type { SocketOptions, ConnectFunc } from "./wintercg-sockets";
 
 interface NodeSock {
   family: number;
@@ -41,26 +39,19 @@ interface NodeSock {
   sock_ops: any;
 }
 
-export function initializeNodeSockFS(): PreRunFunc[] {
-  if (!RUNTIME_ENV.IN_NODE) {
-    throw new Error("NodeSockFS is only supported in Node.js");
+/**
+ * Initialize NodeSockFS.
+ * connectFunc can be optionally given to change the behavior of the connect function.
+ * The conndctFunc should satisfy the WinterCG socket-api interface (https://github.com/WinterTC55/proposal-sockets-api),
+ * and it is designed to be used in Cloudflare Workers
+ */
+export async function initializeNodeSockFS(connectFunc?: ConnectFunc) {
+  if (!connectFunc) {
+    await initWinterCGSockets();
+    connectFunc = connect;
   }
 
-  return [
-    async (module: PyodideModule) => {
-      module.addRunDependency("initializeNodeSockFSHook");
-      try {
-        await _initializeNodeSockFS(module);
-      } finally {
-        module.removeRunDependency("initializeNodeSockFSHook");
-      }
-    },
-  ];
-}
-
-async function _initializeNodeSockFS(module: PyodideModule) {
-  await initWinterCGSockets();
-
+  const module = Module;
   const FS = module.FS;
   const ERRNO_CODES = module.ERRNO_CODES;
 

@@ -20,6 +20,7 @@ import {
 } from "./snapshot";
 import { unpackArchiveMetadata } from "./constants";
 import { syncLocalToRemote, syncRemoteToLocal } from "./nativefs";
+import { initializeNodeSockFS } from "./fs/nodesockfs";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
@@ -72,6 +73,8 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
 // Used in webloop
 /** @private */
 API.scheduleCallback = scheduleCallback;
+
+API.initializeNodeSockFS = initializeNodeSockFS;
 
 // @ts-ignore
 if (typeof AbortSignal !== "undefined" && AbortSignal.any) {

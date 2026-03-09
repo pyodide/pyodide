@@ -105,6 +105,11 @@ export class SocketError extends TypeError {
   }
 }
 
+export type ConnectFunc = (
+  address: SocketAddress | string,
+  options?: SocketOptions,
+) => Socket;
+
 export function connect(
   address: SocketAddress | string,
   options?: SocketOptions,

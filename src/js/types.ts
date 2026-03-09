@@ -4,6 +4,7 @@ import { type PyodideAPI } from "./api";
 import { type PyodideConfigWithDefaults } from "./pyodide";
 import { type InFuncType } from "./streams";
 import { type RuntimeEnv } from "./environments";
+import type { initializeNodeSockFS } from "./fs/nodesockfs";
 import { SnapshotConfig } from "./snapshot";
 import { ResolvablePromise } from "./common/resolveable";
 import { PackageManager } from "./load-package";
@@ -553,6 +554,7 @@ export interface API {
   pyVersionTuple: [number, number, number];
   LiteralMap: any;
   sitePackages: string;
+  initializeNodeSockFS: typeof initializeNodeSockFS;
 }
 
 // Subset of the API and Module that the package manager needs
