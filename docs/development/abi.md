@@ -31,9 +31,6 @@ extensions.
 - [pyodide_2025_0](abi/313.md) (Python 3.13)
 - [pyodide_2024_0](abi/312.md) (Python 3.12)
 
-> Before Python 3.14, Pyodide used a different ABI versioning scheme based on the year of release.
-> From Python 3.14, Pyodide uses the ABI versioning scheme based on the Python version.
-
 For background on why specific flags were chosen, see [ABI-sensitive flags](abi/flags.md).
 
 ```{eval-rst}
