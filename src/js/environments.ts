@@ -44,7 +44,9 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
     navigator.userAgent.indexOf("Chrome") === -1 &&
     navigator.userAgent.indexOf("Safari") > -1;
   const IN_SHELL = typeof read === "function" && typeof load === "function";
-  const IN_WORKERD = typeof navigator === "object" && navigator.userAgent.includes("Cloudflare-Workers");
+  const IN_WORKERD =
+    typeof navigator === "object" &&
+    navigator.userAgent.includes("Cloudflare-Workers");
   return calculateDerivedFlags({
     IN_BUN,
     IN_DENO,
