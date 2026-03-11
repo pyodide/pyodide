@@ -1,10 +1,10 @@
-# Pyodide Platform ABI
+# The PyEmscripten Platform
 
 (pyodide-platform-abi)=
 
-## What is Pyodide Platform ABI?
+## What is the PyEmscripten Platform?
 
-The Pyodide Platform ABI defines the binary interface that Python extension
+The PyEmscripten platform defines the binary interface that Python extension
 modules must follow to be compatible with a specific version of the Pyodide
 runtime. This specification ensures that wheels built for Pyodide will load and
 run correctly.
@@ -15,18 +15,20 @@ Emscripten must match the ABI-sensitive compiler and linker flags used to build
 the interpreter to avoid load-time or run-time errors.
 
 To balance ABI stability needs of package maintainers with flexibility to adopt
-new platform features and bug fixes, Pyodide adopts a new ABI for each feature
-release of Python. The platform tags take the form `pyodide_${YEAR}_${PATCH}_wasm32`
-(e.g., `pyodide_2026_0_wasm32` for Python 3.14).
+new platform features and bug fixes, Pyodide adopts a new PyEmscripten platform
+for each feature release of Python. The platform tags take the form
+`pyemscripten_${YEAR}_${PATCH}_wasm32` (e.g., `pyemscripten_2026_0_wasm32` for
+Python 3.14). Prior to Python 3.14, it was called the Pyodide platform instead
+of the PyEmscripten platform.
 
 Each ABI version specifies the Emscripten compiler version, linked libraries,
 and required compiler/linker flags needed to build compatible extensions.
 
 > See: [PEP 783](https://peps.python.org/pep-0783/) for the full specification.
 
-### ABI Versions
+### Platform Versions
 
-- [pyodide_314_0](abi/314.md) (Python 3.14, under development)
+- [pyemscripten_2026_0](abi/314.md) (Python 3.14, under development)
 - [pyodide_2025_0](abi/313.md) (Python 3.13)
 - [pyodide_2024_0](abi/312.md) (Python 3.12)
 
@@ -46,7 +48,7 @@ For background on why specific flags were chosen, see [ABI-sensitive flags](abi/
 
 ### Building for the Emscripten target
 
-To build C/C++ projects, use emscripten compiler toolchain `emcc`.
+To build C/C++ projects, use the Emscripten compiler toolchain `emcc`.
 
 To build Rust projects, use `rustc --target wasm32-unknown-emscripten` or
 `cargo build --target wasm32-unknown-emscripten`. When building, `emcc` must be
@@ -61,9 +63,28 @@ format](https://webassembly.github.io/spec/core/binary/index.html) and have a
 `emcc` will ignore the `-shared` flag. To make a shared library with `emcc`, you
 must pass `-sSIDE_MODULE=1` or `-sSIDE_MODULE=2`.
 
-To make a shared library with `rustc`, pass `-C link-arg=-sSIDE_MODULE=2`. To
-build a shared library with `cargo`, put `-C link-arg=-sSIDE_MODULE=2` in the
-`RUSTFLAGS` environment variable.
+With Rust version 1.95.0 and later, Rust will automatically detect that the
+crate is a cdylib and link an Emscripten shared library. For older Rust
+versions, to make a shared library with `rustc`, pass
+`-C link-arg=-sSIDE_MODULE=2`. To build a shared library with `cargo`, put
+`-C link-arg=-sSIDE_MODULE=2` in the `RUSTFLAGS` environment variable.
+
+### Static Libraries Linked to the Pyodide Main Binary
+
+Many libraries cannot be dynamically linked on the Emscripten platform, most
+frequently because they contain JavaScript code. If they are to be made
+available for packages to use, they must be statically linked to the
+interpreter. There are also a few libraries that are needed for a Python builtin
+module. As a part of the platform definition, we document which versions of
+which libraries are linked.
+
+### Other Library Dependencies
+
+Other library dependencies should either be statically linked to the extension
+module or built as a shared library and vendored into the wheel in a `.libs`
+directory. Like on native platforms, the RPATH of the dependent extension module
+should also be set as appropriate to ensure that the dependency is resolved
+correctly.
 
 ### No pthreads support
 
@@ -87,8 +108,3 @@ link with:
 ```
 -sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS=["_PyInit_MyCModule1", "_PyInit_MyCModule2]
 ```
-
-To compile Rust packages, `-C link-arg=-sSIDE_MODULE=2` must be passed to rustc.
-Compiling with `-sSIDE_MODULE=1` will not work with Rust because Rust libraries
-contain a `lib.rmeta` file which is not an object file. Rust produces the
-correct list of exported symbols automatically so this should not be a problem.
