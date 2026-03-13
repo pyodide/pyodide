@@ -15,43 +15,19 @@
 // full state save/suspend/restore cycle.
 // See suspenders.c syscall_syncify() for details.
 
+// clang-format off
+
 extern int
 syscall_syncify(__externref_t promise);
 
-int
-_orig_syscall_connect(int fd,
-                      intptr_t addr,
-                      int addrlen,
-                      int d1,
-                      int d2,
-                      int d3)
-  __attribute__((__import_module__("env"),
-                 __import_name__("__syscall_connect"),
-                 __warn_unused_result__));
+int _orig_syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
+  __attribute__((__import_module__("env"), __import_name__("__syscall_connect"), __warn_unused_result__));
 
-int
-_orig_syscall_recvfrom(int fd,
-                       intptr_t buf,
-                       int len,
-                       int flags,
-                       intptr_t addr,
-                       int addrlen)
-  __attribute__((__import_module__("env"),
-                 __import_name__("__syscall_recvfrom"),
-                 __warn_unused_result__));
+int _orig_syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen)
+  __attribute__((__import_module__("env"), __import_name__("__syscall_recvfrom"), __warn_unused_result__));
 
-int
-_orig_syscall_sendto(int fd,
-                     intptr_t message,
-                     int length,
-                     int flags,
-                     intptr_t addr,
-                     int addrlen)
-  __attribute__((__import_module__("env"),
-                 __import_name__("__syscall_sendto"),
-                 __warn_unused_result__));
-
-// clang-format off
+int _orig_syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addrlen)
+  __attribute__((__import_module__("env"), __import_name__("__syscall_sendto"), __warn_unused_result__));
 
 // Returns a Promise for NodeSock fds, null for everything else.
 // When null, C code falls through to the original Emscripten implementation.
@@ -91,10 +67,7 @@ EM_JS(__externref_t, _maybe_sendto_async, (int fd, intptr_t message, int length)
   return sock.sock_ops.sendmsgAsync(sock, data);
 })
 
-// clang-format on
-
-int
-__syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
+int __syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
 {
   __externref_t p = _maybe_connect_async(fd, addr, addrlen);
   if (__builtin_wasm_ref_is_null_extern(p)) {
@@ -103,13 +76,7 @@ __syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
   return syscall_syncify(p);
 }
 
-int
-__syscall_recvfrom(int fd,
-                   intptr_t buf,
-                   int len,
-                   int flags,
-                   intptr_t addr,
-                   int addrlen)
+int __syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen)
 {
   __externref_t p = _maybe_recvfrom_async(fd, buf, len);
   if (__builtin_wasm_ref_is_null_extern(p)) {
@@ -118,13 +85,7 @@ __syscall_recvfrom(int fd,
   return syscall_syncify(p);
 }
 
-int
-__syscall_sendto(int fd,
-                 intptr_t message,
-                 int length,
-                 int flags,
-                 intptr_t addr,
-                 int addr_len)
+int __syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addr_len)
 {
   __externref_t p = _maybe_sendto_async(fd, message, length);
   if (__builtin_wasm_ref_is_null_extern(p)) {
@@ -132,3 +93,5 @@ __syscall_sendto(int fd,
   }
   return syscall_syncify(p);
 }
+
+// clang-format on

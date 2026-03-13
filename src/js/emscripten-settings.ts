@@ -182,15 +182,13 @@ function getFileSystemInitializationFuncs(
     stdLibURL = config.indexURL + "python_stdlib.zip";
   }
 
-  const hooks = [
+  return [
     installStdlib(stdLibURL),
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
     initializeNativeFS,
     ...callFsInitHook(config.fsInit),
   ];
-
-  return hooks;
 }
 
 function getInstantiateWasmFunc(
@@ -221,7 +219,6 @@ function getInstantiateWasmFunc(
         await jsvErrorImportPromise;
       imports.env.Jsv_GetError_import = Jsv_GetError_import;
       imports.env.JsvError_Check = JsvError_Check;
-
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {
