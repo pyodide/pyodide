@@ -41,7 +41,7 @@ extern JsRef Jsr_error;
 
 #define JS_ERROR hiwire_get(Jsr_error)
 
-__attribute__((import_module("sentinel"), import_name("is_sentinel"))) int
+int
 JsvError_Check(JsVal val);
 
 #define Jsv_undefined hiwire_get(Jsr_undefined)

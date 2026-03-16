@@ -49,6 +49,10 @@ check_cmake() {
   check_binary_present "cmake"
 }
 
+check_autoreconf() {
+  check_binary_present "autoreconf"
+}
+
 check_sed() {
   check_binary_present "sed"
   gnu_sed_found=$(sed --help | grep -q gnu.org)
@@ -74,6 +78,7 @@ check_patch() {
 check_python_version
 check_pkgconfig
 check_cmake
+check_autoreconf
 check_sed
 check_patch
 #check_python_headers

@@ -18,9 +18,9 @@
       };
     </script>
     <script type="module">
-      import "./pyodide.asm.js";
+      import createPyodideModule from "./pyodide.asm.mjs";
       import { loadPyodide } from "./pyodide.mjs";
-      window.loadPyodide = loadPyodide;
+      window.loadPyodide = () => loadPyodide({ createPyodideModule });
     </script>
   </head>
   <body></body>
