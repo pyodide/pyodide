@@ -15,6 +15,7 @@ interface BaseRuntimeEnv {
   IN_DENO: boolean;
   IN_SAFARI: boolean;
   IN_SHELL: boolean;
+  IN_WORKERD: boolean;
 }
 
 declare var read: any;
@@ -43,12 +44,16 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
     navigator.userAgent.indexOf("Chrome") === -1 &&
     navigator.userAgent.indexOf("Safari") > -1;
   const IN_SHELL = typeof read === "function" && typeof load === "function";
+  const IN_WORKERD =
+    typeof navigator === "object" &&
+    navigator.userAgent?.includes("Cloudflare-Workers");
   return calculateDerivedFlags({
     IN_BUN,
     IN_DENO,
     IN_NODE,
     IN_SAFARI,
     IN_SHELL,
+    IN_WORKERD,
   });
 }
 
@@ -97,7 +102,8 @@ function calculateDerivedFlags(base: BaseRuntimeEnv): RuntimeEnv {
       env.IN_BROWSER_MAIN_THREAD ||
       env.IN_BROWSER_WEB_WORKER ||
       env.IN_NODE ||
-      env.IN_SHELL
+      env.IN_SHELL ||
+      env.IN_WORKERD
     )
   ) {
     throw new Error(
