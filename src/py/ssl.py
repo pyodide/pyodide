@@ -758,21 +758,7 @@ class SSLSocket(socket):
     def getpeercert(self, binary_form=False):
         if binary_form:
             return b""
-        try:
-            from pyodide_js._api import _nodeSock
-        except ImportError:
-            return {}
-
-        cert = _nodeSock.getPeerCert(self.fileno())
-        if cert is None:
-            return {}
-        result = cert.to_py() if hasattr(cert, "to_py") else cert
-        if isinstance(result, dict):
-            for key in ("subject", "issuer"):
-                val = result.get(key)
-                if isinstance(val, list):
-                    result[key] = tuple(tuple(pair) for pair in val)
-        return result
+        return {}
 
     def get_verified_chain(self):
         return []
@@ -789,15 +775,7 @@ class SSLSocket(socket):
         pass
 
     def cipher(self):
-        try:
-            from pyodide_js._api import _nodeSock
-        except ImportError:
-            return None
-
-        info = _nodeSock.getCipher(self.fileno())
-        if info is None:
-            return None
-        return (info.name, info.standardName, info.version)
+        return None
 
     def shared_ciphers(self):
         pass
@@ -860,23 +838,9 @@ class SSLSocket(socket):
         try:
             from pyodide_js._api import _nodeSock
         except ImportError:
-            raise NotImplementedError(
-                "TLS handshake requires Node.js socket support "
-                "(loadPyodide with withNodeSocket: true)."
-            )
-        from pyodide.ffi import run_sync
+            return
 
-        ctx = self._context
-        result = run_sync(
-            _nodeSock.upgradeTLS(
-                self.fileno(),
-                self._server_hostname or "",
-                ctx.verify_mode != CERT_NONE,
-                getattr(ctx, "_ca_data", None),
-                getattr(ctx, "_certfile_data", None),
-                getattr(ctx, "_keyfile_data", None),
-            )
-        )
+        result = _nodeSock.startTls(self.fileno())
         if result < 0:
             raise SSLError(1, f"[SSL] TLS handshake failed (errno={-result})")
 
@@ -893,15 +857,7 @@ class SSLSocket(socket):
         pass
 
     def version(self):
-        try:
-            from pyodide_js._api import _nodeSock
-        except ImportError:
-            return None
-
-        info = _nodeSock.getCipher(self.fileno())
-        if info is None:
-            return None
-        return info.version
+        return None
 
 
 SSLContext.sslsocket_class = SSLSocket

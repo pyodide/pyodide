@@ -1,3 +1,4 @@
+#include "Python.h"
 #include "emscripten.h"
 #include "jslib.h"
 
@@ -95,4 +96,14 @@ JsvPromise_Syncify(JsVal promise)
     JsvPromise_Syncify_handleError();
   }
   return result;
+}
+
+int
+syscall_syncify(__externref_t promise)
+{
+  PyGILState_STATE gilstate = PyGILState_Ensure();
+  JsVal result = JsvPromise_Syncify(promise);
+  int ret = JsvError_Check(result) ? -1 : JsvNum_toInt(result);
+  PyGILState_Release(gilstate);
+  return ret;
 }

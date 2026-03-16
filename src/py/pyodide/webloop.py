@@ -865,28 +865,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         sock.setblocking(False)
 
         if ssl is not None:
-            try:
-                from pyodide_js._api import _nodeSock
-            except ImportError:
-                raise RuntimeError("SSL support not available") from None
-
-            reject_unauthorized = True
-            ca_data = cert_data = key_data = None
-            if hasattr(ssl, "verify_mode"):
-                reject_unauthorized = ssl.verify_mode != 0  # CERT_NONE = 0
-                ca_data = getattr(ssl, "_ca_data", None)
-                cert_data = getattr(ssl, "_certfile_data", None)
-                key_data = getattr(ssl, "_keyfile_data", None)
-
-            sni_hostname = server_hostname or host or ""
-            await _nodeSock.upgradeTLS(
-                sock.fileno(),
-                sni_hostname,
-                reject_unauthorized,
-                ca_data,
-                cert_data,
-                key_data,
-            )
+            pass
 
         protocol = protocol_factory()
         waiter = self.create_future()
@@ -987,7 +966,7 @@ class WebLoop(asyncio.AbstractEventLoop):
             raise NotImplementedError(
                 "sock_sendall() is not available in browser environments due to restricted raw socket access."
             ) from None
-        _nodeSock.send(sock.fileno(), data)
+        await _nodeSock.send(sock.fileno(), data)
 
     async def sock_sendto(self, sock, data, address):
         """Send a datagram to address (unsupported on WebLoop)."""

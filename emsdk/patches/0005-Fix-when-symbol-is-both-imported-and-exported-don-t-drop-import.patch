@@ -1,0 +1,125 @@
+From 441ec3c6dd0f7ffd26bfff16ea4542e50547585b Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Fri, 27 Feb 2026 13:37:50 +0100
+Subject: [PATCH 5/5] Fix: When symbol is both imported and exported, don't
+ drop import
+
+Upstream PR:
+* https://github.com/emscripten-core/emscripten/pull/26356
+
+Adapted for Emscripten 4.0.9:
+
+When a C function uses __attribute__((import_name("X"))) to import a
+symbol that is also exported from wasm (e.g. to override a syscall
+while falling through to the original), Emscripten generates duplicate
+var declarations — one from jsifier (JS library function) and one from
+the export wrapper.
+
+Fix by introducing WASM_IMPORTS setting (parallel to WASM_EXPORTS):
+- settings_internal.js: Declare WASM_IMPORTS array.
+- emscripten.py: Populate WASM_IMPORTS from metadata.imports. Skip
+  export wrappers for symbols that are also wasm imports.
+- compiler.mjs: Convert WASM_IMPORTS to a Set.
+- jsifier.mjs: Don't skip JS library function when symbol is also a
+  wasm import.
+
+---
+ src/jsifier.mjs          | 2 +-
+ src/settings_internal.js | 1 +
+ tools/compiler.mjs       | 1 +
+ tools/emscripten.py      | 12 +++++++-----
+ 4 files changed, 10 insertions(+), 6 deletions(-)
+
+diff --git a/src/jsifier.mjs b/src/jsifier.mjs
+--- a/src/jsifier.mjs
++++ b/src/jsifier.mjs
+@@ -508,7 +508,7 @@
+ 
+       // if the function was implemented in compiled code, there is no need to
+       // include the js version
+-      if (WASM_EXPORTS.has(symbol) && !force) {
++      if (WASM_EXPORTS.has(symbol) && !force && !WASM_IMPORTS.has(symbol)) {
+         return;
+       }
+ 
+diff --git a/src/settings_internal.js b/src/settings_internal.js
+--- a/src/settings_internal.js
++++ b/src/settings_internal.js
+@@ -15,6 +15,7 @@
+ // These are raw symbol names and are not mangled to include the leading
+ // underscore.
+ var WASM_EXPORTS = [];
++var WASM_IMPORTS = [];
+ 
+ // Similar to above but only includes the global/data symbols.
+ var WASM_GLOBAL_EXPORTS = [];
+diff --git a/tools/compiler.mjs b/tools/compiler.mjs
+--- a/tools/compiler.mjs
++++ b/tools/compiler.mjs
+@@ -60,6 +60,7 @@
+ 
+ EXPORTED_FUNCTIONS = new Set(EXPORTED_FUNCTIONS);
+ WASM_EXPORTS = new Set(WASM_EXPORTS);
++WASM_IMPORTS = new Set(WASM_IMPORTS);
+ SIDE_MODULE_EXPORTS = new Set(SIDE_MODULE_EXPORTS);
+ INCOMING_MODULE_JS_API = new Set(INCOMING_MODULE_JS_API);
+ ALL_INCOMING_MODULE_JS_API = new Set(ALL_INCOMING_MODULE_JS_API);
+diff --git a/tools/emscripten.py b/tools/emscripten.py
+--- a/tools/emscripten.py
++++ b/tools/emscripten.py
+@@ -111,6 +111,7 @@
+     settings.WASM_EXPORTS = base_metadata.all_exports
+   else:
+     settings.WASM_EXPORTS = metadata.all_exports
++  settings.WASM_IMPORTS = metadata.imports
+   settings.WASM_GLOBAL_EXPORTS = list(metadata.global_exports.keys())
+   settings.HAVE_EM_ASM = bool(settings.MAIN_MODULE or len(metadata.em_asm_consts) != 0)
+ 
+@@ -899,7 +900,7 @@
+   return settings.MODULARIZE
+ 
+ 
+-def make_export_wrappers(function_exports):
++def make_export_wrappers(function_exports, wasm_imports=None):
+   assert not settings.MINIMAL_RUNTIME
+ 
+   wrappers = []
+@@ -921,6 +922,8 @@
+   for name, types in function_exports.items():
+     nargs = len(types.params)
+     mangled = asmjs_mangle(name)
++    if wasm_imports is not None and name in wasm_imports:
++      continue
+     wrapper = f'var {mangled} = '
+ 
+     # TODO(sbc): Can we avoid exporting the dynCall_ functions on the module.
+@@ -961,7 +964,7 @@
+   return wrappers
+ 
+ 
+-def create_receiving(function_exports, tag_exports):
++def create_receiving(function_exports, tag_exports, wasm_imports=None):
+   receiving = ['// Imports from the Wasm binary.']
+ 
+   if settings.WASM_ESM_INTEGRATION:
+@@ -1003,7 +1006,7 @@
+     mangled = [asmjs_mangle(s) for s in exports]
+     receiving.append(f'var {sep.join(mangled)};')
+   else:
+-    receiving += make_export_wrappers(function_exports)
++    receiving += make_export_wrappers(function_exports, wasm_imports)
+ 
+   return '\n'.join(receiving) + '\n'
+ 
+@@ -1011,7 +1014,8 @@
+ def create_module(metadata, function_exports, global_exports, tag_exports,library_symbols):
+   module = []
+ 
+-  receiving = create_receiving(function_exports, tag_exports)
++  receiving = create_receiving(function_exports, tag_exports,
++                               wasm_imports=set(metadata.imports))
+   receiving += create_global_exports(global_exports)
+   sending = create_sending(metadata, library_symbols)
+ 
+-- 
+2.29.2.windows.2

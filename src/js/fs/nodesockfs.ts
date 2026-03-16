@@ -10,15 +10,13 @@
  *     state corruption inside the event loop.
  */
 
-import type { PyodideModule, PreRunFunc, FSType, API } from "../types";
-import { RUNTIME_ENV } from "../environments";
-import { setPyodideModuleforJSPI } from "../emscripten-settings";
+import type { API } from "../types";
 import {
   init as initWinterCGSockets,
   connect,
   Socket as WinterCGSocket,
 } from "./wintercg-sockets";
-import type { SocketOptions } from "./wintercg-sockets";
+import type { SocketOptions, ConnectFunc } from "./wintercg-sockets";
 
 interface NodeSock {
   family: number;
@@ -30,57 +28,29 @@ interface NodeSock {
   wcgSocket: WinterCGSocket | null;
   /** ReadableStream reader for receiving data */
   reader: ReadableStreamDefaultReader<Uint8Array> | null;
+  writer: WritableStreamDefaultWriter<Uint8Array> | null;
   /** Leftover bytes from a previous read that were larger than requested */
   leftover: Uint8Array | null;
   connected: boolean;
   connecting: boolean;
-  /** Whether the socket has been upgraded to TLS */
-  tls: boolean;
+  closed: boolean;
   stream?: any;
   daddr?: string;
   dport?: number;
   saddr?: string;
   sport?: number;
   sock_ops: any;
-  /** Written by EM_JS in socket_stub.c via setsockopt/getsockopt */
-  sockOpts?: Record<number, number>;
 }
 
-export function initializeNodeSockFS(): PreRunFunc[] {
-  if (!RUNTIME_ENV.IN_NODE) {
-    DEBUG &&
-      console.debug(
-        "[NodeSockFS] Not in Node.js environment, skipping NodeSockFS initialization",
-      );
-    return [];
+export async function initializeNodeSockFS(connectFunc?: ConnectFunc) {
+  if (!connectFunc) {
+    await initWinterCGSockets();
+    connectFunc = connect;
   }
 
-  return [
-    async (module: PyodideModule) => {
-      module.addRunDependency("initializeNodeSockFSHook");
-      try {
-        await _initializeNodeSockFS(module);
-      } finally {
-        module.removeRunDependency("initializeNodeSockFSHook");
-      }
-    },
-  ];
-}
-
-async function _initializeNodeSockFS(module: PyodideModule) {
-  const FS = module.FS;
-  const api = module.API;
-  const ERRNO_CODES = module.ERRNO_CODES;
-
-  setPyodideModuleforJSPI(module);
-
-  await initWinterCGSockets();
-
-  DEBUG && console.debug(`[NodeSockFS] Initializing...`);
-  DEBUG &&
-    console.debug(
-      `[NodeSockFS] Module.jspiSupported: ${(module as any).jspiSupported}`,
-    );
+  const FS = Module.FS;
+  const api = Module.API;
+  const ERRNO_CODES = Module.ERRNO_CODES;
 
   const AF_INET = 2;
   const SOCK_STREAM = 1;
@@ -103,19 +73,15 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     poll(sock: NodeSock): number {
       let mask = 0;
 
-      if (
-        (sock.leftover && sock.leftover.length > 0) ||
-        (sock.wcgSocket?.innerSocket?.readableLength ?? 0) > 0
-      ) {
+      if (sock.leftover && sock.leftover.length > 0) {
         mask |= POLLRDNORM | POLLIN;
       }
 
-      const innerSocket = sock.wcgSocket?.innerSocket;
-      if (sock.connected && innerSocket && !innerSocket.destroyed) {
+      if (sock.connected && sock.writer) {
         mask |= POLLOUT;
       }
 
-      if (innerSocket?.destroyed) {
+      if (sock.closed) {
         mask |= POLLHUP;
       }
 
@@ -135,12 +101,17 @@ async function _initializeNodeSockFS(module: PyodideModule) {
           sock.reader.releaseLock();
           sock.reader = null;
         }
+        if (sock.writer) {
+          sock.writer.releaseLock();
+          sock.writer = null;
+        }
         sock.wcgSocket.close().catch(() => {});
         sock.wcgSocket = null;
       }
       sock.leftover = null;
       sock.connected = false;
       sock.connecting = false;
+      sock.closed = true;
       return 0;
     },
 
@@ -167,23 +138,32 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       sock.daddr = addr;
       sock.dport = port;
 
-      const wcgSocket = connect(
+      const wcgSocket = connectFunc(
         { hostname: addr, port },
         {
-          secureTransport: options?.secureTransport ?? "off",
-          allowHalfOpen: true,
+          secureTransport: options?.secureTransport ?? "starttls",
+          allowHalfOpen: false,
         },
       );
 
       sock.wcgSocket = wcgSocket;
-      sock.tls = options?.secureTransport === "on";
 
       return wcgSocket.opened
         .then(() => {
           sock.connected = true;
           sock.connecting = false;
+          sock.closed = false;
           sock.reader =
             wcgSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+          sock.writer =
+            wcgSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
+          wcgSocket.closed
+            .then(() => {
+              sock.closed = true;
+            })
+            .catch(() => {
+              sock.closed = true;
+            });
           DEBUG &&
             console.debug(`[NodeSockFS:connectAsync] Connection established`);
           return 0;
@@ -191,6 +171,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         .catch((err: unknown) => {
           sock.error = ERRNO_CODES.ECONNREFUSED;
           sock.connecting = false;
+          sock.closed = true;
           DEBUG &&
             console.debug(
               `[NodeSockFS:connectAsync] Error: ${err instanceof Error ? err.message : err}`,
@@ -207,29 +188,57 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
     },
 
-    sendmsg(
-      sock: NodeSock,
-      buffer: Uint8Array,
-      offset: number,
-      length: number,
-      _addr?: string,
-      _port?: number,
-    ): number {
-      DEBUG && console.debug(`[NodeSockFS:sendmsg] length=${length}`);
-
+    startTls(sock: NodeSock): number {
       if (!sock.wcgSocket) {
-        throw new FS.ErrnoError(ERRNO_CODES.ENOTCONN);
+        return -ERRNO_CODES.ENOTCONN;
       }
 
-      const data = buffer.subarray(offset, offset + length);
-      sock.wcgSocket.innerSocket.write(data);
-      return length;
+      if (sock.reader) {
+        sock.reader.releaseLock();
+        sock.reader = null;
+      }
+      if (sock.writer) {
+        sock.writer.releaseLock();
+        sock.writer = null;
+      }
+
+      const tlsSocket = sock.wcgSocket.startTls();
+
+      sock.wcgSocket = tlsSocket;
+      sock.reader =
+        tlsSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+      sock.writer =
+        tlsSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
+      sock.leftover = null;
+
+      tlsSocket.closed
+        .then(() => {
+          sock.closed = true;
+        })
+        .catch(() => {
+          sock.closed = true;
+        });
+
+      return 0;
     },
 
-    recvmsgAsync(
-      sock: NodeSock,
-      length: number,
-    ): Promise<{ bytesRead: number; buffer: Uint8Array } | null> {
+    async sendmsgAsync(sock: NodeSock, data: Uint8Array): Promise<number> {
+      if (!sock.writer) {
+        return -ERRNO_CODES.ENOTCONN;
+      }
+      try {
+        await sock.writer.write(data);
+        return data.length;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("EPIPE") || msg.includes("ECONNRESET")) {
+          return -ERRNO_CODES.EPIPE;
+        }
+        return -ERRNO_CODES.EIO;
+      }
+    },
+
+    recvmsgAsync(sock: NodeSock, length: number): Promise<Uint8Array | null> {
       DEBUG && console.debug(`[NodeSockFS:recvmsgAsync] requested=${length}`);
 
       if (sock.leftover && sock.leftover.length > 0) {
@@ -243,7 +252,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
           console.debug(
             `[NodeSockFS:recvmsgAsync] ${bytesRead} bytes from leftover`,
           );
-        return Promise.resolve({ bytesRead, buffer: new Uint8Array(data) });
+        return Promise.resolve(new Uint8Array(data));
       }
 
       if (!sock.reader) {
@@ -261,116 +270,14 @@ async function _initializeNodeSockFS(module: PyodideModule) {
             value instanceof Uint8Array ? value : new Uint8Array(value as any);
 
           if (chunk.length <= length) {
-            return { bytesRead: chunk.length, buffer: new Uint8Array(chunk) };
+            return new Uint8Array(chunk);
           }
 
           sock.leftover = chunk.subarray(length);
-          return {
-            bytesRead: length,
-            buffer: new Uint8Array(chunk.subarray(0, length)),
-          };
+          return new Uint8Array(chunk.subarray(0, length));
         },
         () => null,
       );
-    },
-
-    async upgradeTLSAsync(
-      sock: NodeSock,
-      options?: {
-        servername?: string;
-        rejectUnauthorized?: boolean;
-        ca?: string;
-        cert?: string;
-        key?: string;
-      },
-    ): Promise<number> {
-      DEBUG &&
-        console.debug(
-          `[NodeSockFS:upgradeTLSAsync] servername=${options?.servername}`,
-        );
-
-      if (!sock.wcgSocket) {
-        return -ERRNO_CODES.ENOTCONN;
-      }
-      if (sock.tls) {
-        return -ERRNO_CODES.EISCONN;
-      }
-
-      try {
-        // Guard against data loss: leftover bytes from TCP phase must be
-        // consumed before upgrading to TLS, since the TLS handshake replaces
-        // the readable stream entirely.
-        if (sock.leftover && sock.leftover.length > 0) {
-          console.warn(
-            `[NodeSockFS:upgradeTLSAsync] ${sock.leftover.length} leftover bytes will be lost during TLS upgrade`,
-          );
-        }
-
-        if (sock.reader) {
-          sock.reader.releaseLock();
-          sock.reader = null;
-        }
-
-        const tls = await import("node:tls");
-        const tlsSocket = tls.connect({
-          socket: sock.wcgSocket.innerSocket,
-          servername: options?.servername,
-          rejectUnauthorized: options?.rejectUnauthorized ?? true,
-          ca: options?.ca,
-          cert: options?.cert,
-          key: options?.key,
-        });
-
-        await new Promise<void>((resolve, reject) => {
-          const onSecure = () => {
-            cleanup();
-            resolve();
-          };
-          const onError = (err: Error) => {
-            cleanup();
-            reject(err);
-          };
-          const cleanup = () => {
-            tlsSocket.off("secureConnect", onSecure);
-            tlsSocket.off("error", onError);
-          };
-          tlsSocket.once("secureConnect", onSecure);
-          tlsSocket.once("error", onError);
-        });
-
-        const { Duplex } = await import("node:stream");
-        const { readable } = (Duplex as any).toWeb(tlsSocket) as {
-          readable: ReadableStream<Uint8Array>;
-        };
-
-        (sock.wcgSocket as any)._socket = tlsSocket;
-        (sock.wcgSocket as any).readable = readable;
-
-        sock.reader =
-          readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
-        sock.tls = true;
-        sock.leftover = null;
-
-        DEBUG && console.debug(`[NodeSockFS:upgradeTLSAsync] Complete`);
-        return 0;
-      } catch (err: unknown) {
-        DEBUG &&
-          console.debug(
-            `[NodeSockFS:upgradeTLSAsync] Error: ${err instanceof Error ? err.message : err}`,
-          );
-        return -ERRNO_CODES.ECONNREFUSED;
-      }
-    },
-
-    getname(sock: NodeSock, peer: boolean): { addr: string; port: number } {
-      if (peer) {
-        if (!sock.daddr || !sock.dport) {
-          throw new FS.ErrnoError(ERRNO_CODES.ENOTCONN);
-        }
-        return { addr: sock.daddr, port: sock.dport };
-      } else {
-        return { addr: sock.saddr || "0.0.0.0", port: sock.sport || 0 };
-      }
     },
   };
 
@@ -385,15 +292,8 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       return tcp_sock_ops.ioctl(sock, request, varargs);
     },
 
-    write(
-      stream: any,
-      buffer: Uint8Array,
-      offset: number,
-      length: number,
-      _position: any,
-    ): number {
-      const sock = stream.node.sock as NodeSock;
-      return tcp_sock_ops.sendmsg(sock, buffer, offset, length);
+    write(): number {
+      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
     },
 
     close(stream: any): void {
@@ -455,10 +355,11 @@ async function _initializeNodeSockFS(module: PyodideModule) {
         error: null,
         wcgSocket: null,
         reader: null,
+        writer: null,
         leftover: null,
         connected: false,
         connecting: false,
-        tls: false,
+        closed: false,
         sock_ops: tcp_sock_ops,
       };
 
@@ -494,19 +395,15 @@ async function _initializeNodeSockFS(module: PyodideModule) {
     },
   };
 
-  module.FS.filesystems.NODESOCKFS = NodeSockFS;
+  Module.FS.filesystems.NODESOCKFS = NodeSockFS;
 
   // @ts-ignore - Use `pseudo` mountpoint which is null. It is not documented but used in Emscripten code
-  NodeSockFS.root = module.FS.mount(NodeSockFS, {}, null);
+  NodeSockFS.root = Module.FS.mount(NodeSockFS, {}, null);
 
-  // Replace the SOCKFS APIs with NodeSockFS
-  // This makes the syscall layer use our implementation
-  // FIXME: This depends on internal Emscripten structures, which may change anytime.
-  //        We should consider contributing upstream or finding a more stable integration method.
-  module.SOCKFS.createSocket = NodeSockFS.createSocket;
-  module.SOCKFS.getSocket = NodeSockFS.getSocket;
+  Module.SOCKFS.createSocket = NodeSockFS.createSocket;
+  Module.SOCKFS.getSocket = NodeSockFS.getSocket;
 
-  api._nodeSock = {
+  (api as any)._nodeSock = {
     async connect(fd: number, host: string, port: number): Promise<void> {
       const sock = NodeSockFS.getSocket(fd);
       if (!sock) {
@@ -527,10 +424,10 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       if (result === null) {
         return new Uint8Array(0);
       }
-      return result.buffer;
+      return result;
     },
 
-    send(fd: number, data: any): number {
+    async send(fd: number, data: any): Promise<number> {
       const sock = NodeSockFS.getSocket(fd);
       if (!sock) {
         throw new FS.ErrnoError(ERRNO_CODES.EBADF);
@@ -544,28 +441,7 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       } else {
         buf = new Uint8Array(data);
       }
-      return tcp_sock_ops.sendmsg(sock, buf, 0, buf.length);
-    },
-
-    async upgradeTLS(
-      fd: number,
-      servername: string,
-      rejectUnauthorized: boolean,
-      ca?: string,
-      cert?: string,
-      key?: string,
-    ): Promise<number> {
-      const sock = NodeSockFS.getSocket(fd);
-      if (!sock) {
-        return -ERRNO_CODES.EBADF;
-      }
-      return await tcp_sock_ops.upgradeTLSAsync(sock, {
-        servername,
-        rejectUnauthorized,
-        ca,
-        cert,
-        key,
-      });
+      return await tcp_sock_ops.sendmsgAsync(sock, buf);
     },
 
     async connectTLS(fd: number, host: string, port: number): Promise<void> {
@@ -581,40 +457,12 @@ async function _initializeNodeSockFS(module: PyodideModule) {
       }
     },
 
-    getPeerCert(fd: number): any {
+    startTls(fd: number): number {
       const sock = NodeSockFS.getSocket(fd);
-      if (!sock || !sock.wcgSocket) {
-        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+      if (!sock) {
+        return -ERRNO_CODES.EBADF;
       }
-      const innerSocket = sock.wcgSocket.innerSocket;
-      if (!("getPeerCertificate" in innerSocket)) {
-        return null;
-      }
-      const raw = (innerSocket as any).getPeerCertificate();
-      if (!raw || !raw.subject) return null;
-      const fmt = (dn: Record<string, string>) =>
-        Object.entries(dn || {}).map(([k, v]) => [k, v]);
-      return {
-        subject: fmt(raw.subject),
-        issuer: fmt(raw.issuer),
-        serialNumber: raw.serialNumber || "",
-        valid_from: raw.valid_from || "",
-        valid_to: raw.valid_to || "",
-      };
-    },
-
-    getCipher(
-      fd: number,
-    ): { name: string; standardName: string; version: string } | null {
-      const sock = NodeSockFS.getSocket(fd);
-      if (!sock || !sock.wcgSocket) {
-        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
-      }
-      const innerSocket = sock.wcgSocket.innerSocket;
-      if ("getCipher" in innerSocket) {
-        return (innerSocket as any).getCipher();
-      }
-      return null;
+      return tcp_sock_ops.startTls(sock);
     },
   };
 

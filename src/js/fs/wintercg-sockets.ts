@@ -8,8 +8,6 @@
  * Modifications for Pyodide:
  *   - Dynamic `import('node:net')` / `import('node:tls')` to avoid top-level
  *     Node.js dependencies (keeps the module importable in browser builds).
- *   - Exposed `innerSocket` getter so NodeSockFS can use the underlying
- *     `net.Socket` / `tls.TLSSocket` for synchronous writes.
  *   - Merged types.ts and is-socket-address.ts into a single file.
  *   - Module-level `init()` must be called once before `connect()`.
  */
@@ -34,7 +32,7 @@ export interface SocketOptions {
 }
 
 export interface SocketAddress {
-  /** The hostname to connect to. Example: `vercel.com`. */
+  /** The hostname to connect to. Example: `cloudflare.com`. */
   hostname: string;
   /** The port number to connect to. Example: `5432`. */
   port: number;
@@ -106,6 +104,11 @@ export class SocketError extends TypeError {
   }
 }
 
+export type ConnectFunc = (
+  address: SocketAddress | string,
+  options?: SocketOptions,
+) => Socket;
+
 export function connect(
   address: SocketAddress | string,
   options?: SocketOptions,
@@ -135,14 +138,6 @@ export class Socket {
   private closedResolve!: () => void;
   private closedReject!: (reason?: unknown) => void;
   private startTlsCalled = false;
-
-  /**
-   * Pyodide extension: expose the underlying Node.js socket so that
-   * NodeSockFS can call `.write()` synchronously for sendmsg.
-   */
-  get innerSocket(): import("node:net").Socket | import("node:tls").TLSSocket {
-    return this._socket;
-  }
 
   constructor(
     addressOrSocket: SocketAddress | import("node:net").Socket,

@@ -54,9 +54,8 @@ def selenium_nodesock(selenium_standalone_noload):
 
     selenium.run_js(
         """
-        globalThis.pyodide = await loadPyodide({
-            withNodeSocket: true,
-        });
+        globalThis.pyodide = await loadPyodide();
+        await pyodide.useNodeSockFS();
         """
     )
     try:
@@ -466,98 +465,39 @@ def test_socket_create_multiple(selenium_nodesock):
 
 
 # ---------------------------------------------------------------------------
-# TLS socket tests
+# TLS tests (basic — uses wintercg startTls(), no custom CA support)
 # ---------------------------------------------------------------------------
 
-import ipaddress
-import os
-import ssl
 
-
-@contextlib.contextmanager
-def tls_server(handler, *, timeout=5.0, expect_client_error=False):
-    """Start a TLS server with a self-signed cert on an OS-assigned port.
-
-    Yields (host, port, ca_pem) where ca_pem is the PEM certificate string
-    that clients should trust.
-
-    If *expect_client_error* is True, server-side TLS errors (e.g. the client
-    aborting the handshake) are silently ignored.
-    """
-    import tempfile
-
-    tmpdir = tempfile.mkdtemp()
-    certfile = os.path.join(tmpdir, "tls_cert.pem")
-    keyfile = os.path.join(tmpdir, "tls_key.pem")
-    _generate_self_signed_cert(certfile, keyfile)
-
-    with open(certfile) as f:
-        ca_pem = f.read()
-
-    server_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)  # type: ignore[attr-defined]
-    server_ctx.load_cert_chain(certfile, keyfile)
-
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind(("127.0.0.1", 0))
-    server_socket.listen(1)
-    server_socket.settimeout(timeout)
-    host, port = server_socket.getsockname()
-
-    tls_server_socket = server_ctx.wrap_socket(server_socket, server_side=True)
-
-    errors: list[str] = []
-    ready = threading.Event()
-
-    def _serve():
-        ready.set()
-        try:
-            conn, addr = tls_server_socket.accept()
-            try:
-                handler(conn, addr)
-            finally:
-                conn.close()
-        except Exception as e:
-            errors.append(str(e))
-        finally:
-            tls_server_socket.close()
-
-    thread = threading.Thread(target=_serve, daemon=True)
-    thread.start()
-    ready.wait(timeout=timeout)
-
-    try:
-        yield host, port, ca_pem
-    finally:
-        thread.join(timeout=timeout)
-        if not expect_client_error:
-            assert not errors, f"TLS server error: {errors[0]}"
-
-
-def _generate_self_signed_cert(certfile, keyfile):
+@pytest.mark.skip_refcount_check
+@only_node
+def test_tls_starttls_send_recv(selenium_nodesock):
+    """Connect plain TCP, upgrade via startTls(), exchange data over TLS."""
     import datetime
+    import ipaddress
+    import os
+    import ssl as host_ssl
+    import tempfile
 
     from cryptography import x509
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import rsa
     from cryptography.x509.oid import NameOID
 
-    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    tmpdir = tempfile.mkdtemp()
+    certfile = os.path.join(tmpdir, "cert.pem")
+    keyfile = os.path.join(tmpdir, "key.pem")
 
-    subject = issuer = x509.Name(
-        [
-            x509.NameAttribute(NameOID.COMMON_NAME, "localhost"),
-        ]
-    )
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     cert = (
         x509.CertificateBuilder()
-        .subject_name(subject)
-        .issuer_name(issuer)
+        .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")]))
+        .issuer_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")]))
         .public_key(key.public_key())
         .serial_number(x509.random_serial_number())
         .not_valid_before(datetime.datetime.now(datetime.UTC))
         .not_valid_after(
-            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=365)
+            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=1)
         )
         .add_extension(
             x509.SubjectAlternativeName(
@@ -570,8 +510,6 @@ def _generate_self_signed_cert(certfile, keyfile):
         )
         .sign(key, hashes.SHA256())
     )
-
-    os.makedirs(os.path.dirname(certfile), exist_ok=True)
     with open(certfile, "wb") as f:
         f.write(cert.public_bytes(serialization.Encoding.PEM))
     with open(keyfile, "wb") as f:
@@ -583,335 +521,71 @@ def _generate_self_signed_cert(certfile, keyfile):
             )
         )
 
+    server_ctx = host_ssl.SSLContext(host_ssl.PROTOCOL_TLS_SERVER)  # type: ignore[attr-defined]
+    server_ctx.load_cert_chain(certfile, keyfile)
 
-def _tls_run(selenium, host, port, ca_pem, python_body):
-    import base64
+    RESPONSE = b"TLS OK"
 
-    ca_b64 = base64.b64encode(ca_pem.encode()).decode()
-    return selenium.run_js(
+    def handler(conn, _addr):
+        conn.recv(1024)
+        conn.sendall(RESPONSE)
+
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind(("127.0.0.1", 0))
+    server_socket.listen(1)
+    server_socket.settimeout(5.0)
+    host, port = server_socket.getsockname()
+    tls_sock = server_ctx.wrap_socket(server_socket, server_side=True)
+
+    errors: list[str] = []
+    ready = threading.Event()
+
+    def _serve():
+        ready.set()
+        try:
+            conn, _ = tls_sock.accept()
+            try:
+                handler(conn, _)
+            finally:
+                conn.close()
+        except Exception as e:
+            errors.append(str(e))
+        finally:
+            tls_sock.close()
+
+    thread = threading.Thread(target=_serve, daemon=True)
+    thread.start()
+    ready.wait()
+
+    result = selenium_nodesock.run_js(
         f"""
         return await pyodide.runPythonAsync(`
-import socket, ssl, base64
-
-ca_pem = base64.b64decode("{ca_b64}").decode()
-
-ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-ctx.check_hostname = False
-ctx.load_verify_locations(cadata=ca_pem)
+import socket, ssl
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect(("{host}", {port}))
-ss = ctx.wrap_socket(s, server_hostname="localhost")
 
-{python_body}
+ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+ctx.check_hostname = False
+
+ss = ctx.wrap_socket(s, server_hostname="localhost")
+ss.sendall(b"Hello TLS")
+response = ss.recv(1024)
+ss.close()
+response.decode()
         `);
         """
     )
+    thread.join(timeout=5.0)
 
-
-@pytest.mark.skip_refcount_check
-@only_node
-def test_tls_wrap_socket(selenium_nodesock):
-    TEST_MESSAGE = b"Hello TLS"
-    RESPONSE_MESSAGE = b"TLS OK"
-
-    def handler(conn, _addr):
-        conn.recv(1024)
-        conn.sendall(RESPONSE_MESSAGE)
-
-    with tls_server(handler) as (host, port, ca_pem):
-        result = _tls_run(
-            selenium_nodesock,
-            host,
-            port,
-            ca_pem,
-            f"""
-ss.sendall({TEST_MESSAGE!r})
-response = ss.recv(1024)
-ss.close()
-response.decode()
-""",
-        )
-
-    assert result == RESPONSE_MESSAGE.decode()
-
-
-@pytest.mark.skip_refcount_check
-@only_node
-def test_tls_data_exchange(selenium_nodesock):
-    MESSAGES = [b"First", b"Second", b"Third"]
-
-    def handler(conn, _addr):
-        for _ in range(len(MESSAGES)):
-            data = conn.recv(1024)
-            if data:
-                conn.sendall(data)
-
-    with tls_server(handler) as (host, port, ca_pem):
-        results = _tls_run(
-            selenium_nodesock,
-            host,
-            port,
-            ca_pem,
-            f"""
-responses = []
-for msg in {MESSAGES}:
-    ss.sendall(msg)
-    responses.append(ss.recv(1024).decode())
-ss.close()
-"-".join(responses)
-""",
-        )
-
-    assert results == "-".join(m.decode() for m in MESSAGES)
-
-
-@pytest.mark.skip_refcount_check
-@only_node
-def test_tls_cipher_and_version(selenium_nodesock):
-    def handler(conn, _addr):
-        conn.recv(1024)
-        conn.sendall(b"OK")
-
-    with tls_server(handler) as (host, port, ca_pem):
-        result = _tls_run(
-            selenium_nodesock,
-            host,
-            port,
-            ca_pem,
-            """
-c = ss.cipher()
-v = ss.version()
-ss.sendall(b"ping")
-ss.recv(1024)
-ss.close()
-(len(c) == 3, isinstance(c[0], str), "TLS" in v)
-""",
-        )
-
-    assert result[0] is True, "cipher() should return a 3-tuple"
-    assert result[1] is True, "cipher name should be a string"
-    assert result[2] is True, "version() should contain 'TLS'"
-
-
-@pytest.mark.skip_refcount_check
-@only_node
-def test_tls_getpeercert(selenium_nodesock):
-    def handler(conn, _addr):
-        conn.recv(1024)
-        conn.sendall(b"OK")
-
-    with tls_server(handler) as (host, port, ca_pem):
-        result = _tls_run(
-            selenium_nodesock,
-            host,
-            port,
-            ca_pem,
-            """
-cert = ss.getpeercert()
-ss.sendall(b"ping")
-ss.recv(1024)
-ss.close()
-(type(cert).__name__, "subject" in cert if isinstance(cert, dict) else False)
-""",
-        )
-
-    assert result[0] == "dict", f"Expected dict, got {result[0]}"
-    assert result[1] is True, "Peer cert should have 'subject' key"
-
-
-@pytest.mark.skip_refcount_check
-@only_node
-def test_tls_reject_unauthorized(selenium_nodesock):
-    def handler(conn, _addr):
-        conn.recv(1024)
-        conn.sendall(b"OK")
-
-    with tls_server(handler, expect_client_error=True) as (host, port, _ca_pem):
-        result = selenium_nodesock.run_js(
-            f"""
-            return await pyodide.runPythonAsync(`
-import socket
-import ssl
-
-ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-ctx.check_hostname = False
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("{host}", {port}))
-
-try:
-    ss = ctx.wrap_socket(s, server_hostname="localhost")
-    result = "no_error"
-except Exception as e:
-    result = type(e).__name__
-finally:
-    s.close()
-result
-            `);
-            """
-        )
-
-    assert result != "no_error", "Expected TLS rejection, but got no error"
-
-
-@pytest.mark.skip_refcount_check
-@only_node
-def test_tls_large_data(selenium_nodesock):
-    DATA_SIZE = 64 * 1024
-
-    def handler(conn, _addr):
-        received = b""
-        while len(received) < DATA_SIZE:
-            chunk = conn.recv(8192)
-            if not chunk:
-                break
-            received += chunk
-        conn.sendall(f"Received {len(received)} bytes".encode())
-
-    with tls_server(handler, timeout=10.0) as (host, port, ca_pem):
-        result = _tls_run(
-            selenium_nodesock,
-            host,
-            port,
-            ca_pem,
-            f"""
-data = b"X" * {DATA_SIZE}
-ss.sendall(data)
-response = ss.recv(1024)
-ss.close()
-response.decode()
-""",
-        )
-
-    assert result == f"Received {DATA_SIZE} bytes"
+    assert not errors, f"Server error: {errors[0]}"
+    assert result == RESPONSE.decode()
 
 
 # ---------------------------------------------------------------------------
-# setsockopt / getsockopt tests
+# setsockopt tests
 # ---------------------------------------------------------------------------
-
-
-@pytest.mark.skip_refcount_check
-@only_node
-def test_socket_setsockopt_tcp_nodelay(selenium_nodesock):
-    def handler(conn, _addr):
-        conn.recv(1024)
-        conn.sendall(b"OK")
-
-    with tcp_server(handler) as (host, port):
-        result = selenium_nodesock.run_js(
-            f"""
-            return await pyodide.runPythonAsync(`
-                import socket
-
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect(("{host}", {port}))
-
-                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                val = s.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
-
-                s.sendall(b"test")
-                s.recv(1024)
-                s.close()
-                val
-            `);
-            """
-        )
-
-    assert result == 1
-
-
-@pytest.mark.skip_refcount_check
-@only_node
-def test_socket_setsockopt_so_keepalive(selenium_nodesock):
-    def handler(conn, _addr):
-        conn.recv(1024)
-        conn.sendall(b"OK")
-
-    with tcp_server(handler) as (host, port):
-        result = selenium_nodesock.run_js(
-            f"""
-            return await pyodide.runPythonAsync(`
-                import socket
-
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect(("{host}", {port}))
-
-                s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-                val = s.getsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE)
-
-                s.sendall(b"test")
-                s.recv(1024)
-                s.close()
-                val
-            `);
-            """
-        )
-
-    assert result == 1
-
-
-@pytest.mark.skip_refcount_check
-@only_node
-def test_socket_setsockopt_tcp_nodelay_roundtrip(selenium_nodesock):
-    def handler(conn, _addr):
-        conn.recv(1024)
-        conn.sendall(b"OK")
-
-    with tcp_server(handler) as (host, port):
-        result = selenium_nodesock.run_js(
-            f"""
-            return await pyodide.runPythonAsync(`
-                import socket
-
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect(("{host}", {port}))
-
-                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                val_on = s.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
-
-                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 0)
-                val_off = s.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
-
-                s.sendall(b"test")
-                s.recv(1024)
-                s.close()
-                (val_on, val_off)
-            `);
-            """
-        )
-
-    assert result == [1, 0]
-
-
-@pytest.mark.skip_refcount_check
-@only_node
-def test_socket_getsockopt_unset_returns_zero(selenium_nodesock):
-    def handler(conn, _addr):
-        conn.recv(1024)
-        conn.sendall(b"OK")
-
-    with tcp_server(handler) as (host, port):
-        result = selenium_nodesock.run_js(
-            f"""
-            return await pyodide.runPythonAsync(`
-                import socket
-
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect(("{host}", {port}))
-
-                val = s.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
-
-                s.sendall(b"test")
-                s.recv(1024)
-                s.close()
-                val
-            `);
-            """
-        )
-
-    assert result == 0
 
 
 @pytest.mark.skip_refcount_check
