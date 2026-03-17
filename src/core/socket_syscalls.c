@@ -1,5 +1,7 @@
 #include "emscripten.h"
 #include "jslib.h"
+#include <stddef.h>
+#include <stdint.h>
 
 // Socket syscall overrides for NodeSockFS.
 //
@@ -15,19 +17,8 @@
 // full state save/suspend/restore cycle.
 // See suspenders.c syscall_syncify() for details.
 
-// clang-format off
-
 extern int
 syscall_syncify(JsVal promise);
-
-int _orig_syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_connect"), __warn_unused_result__));
-
-int _orig_syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_recvfrom"), __warn_unused_result__));
-
-int _orig_syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addrlen)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_sendto"), __warn_unused_result__));
 
 // Returns a Promise for NodeSock fds, null for everything else.
 // When null, C code falls through to the original Emscripten implementation.
@@ -35,7 +26,8 @@ EM_JS(JsVal, _maybe_connect_async, (int fd, intptr_t addr, int addrlen), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   // Will return null for non-NodeSock fds.
-  if (!sock?.sock_ops?.connectAsync) return null;
+  if (!sock?.sock_ops?.connectAsync)
+    return null;
 
   var info = Module.getSocketAddress(addr, addrlen);
   return sock.sock_ops.connectAsync(sock, info.addr, info.port);
@@ -46,13 +38,16 @@ EM_JS(JsVal, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   // Will return null for non-NodeSock fds.
-  if (!sock?.sock_ops?.recvmsgAsync) return null;
+  if (!sock?.sock_ops?.recvmsgAsync)
+    return null;
 
-  return sock.sock_ops.recvmsgAsync(sock, len).then(function(result) {
-    if (result === null) return 0;
+  return (async function() {
+    var result = await sock.sock_ops.recvmsgAsync(sock, len);
+    if (result == = null)
+      return 0;
     Module.HEAPU8.set(result, buf);
     return result.length;
-  });
+  })();
 })
 
 // Returns a Promise for NodeSock fds, null for everything else.
@@ -60,12 +55,24 @@ EM_JS(JsVal, _maybe_sendto_async, (int fd, intptr_t message, int length), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   // Will return null for non-NodeSock fds.
-  if (!sock?.sock_ops?.sendmsgAsync) return null;
+  if (!sock?.sock_ops?.sendmsgAsync)
+    return null;
 
   // Copy data out of HEAPU8 before the async boundary — memory may grow.
   var data = Module.HEAPU8.slice(message, message + length);
   return sock.sock_ops.sendmsgAsync(sock, data);
 })
+
+// clang-format off
+
+int _orig_syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
+  __attribute__((__import_module__("env"), __import_name__("__syscall_connect"), __warn_unused_result__));
+
+int _orig_syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen)
+  __attribute__((__import_module__("env"), __import_name__("__syscall_recvfrom"), __warn_unused_result__));
+
+int _orig_syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addrlen)
+  __attribute__((__import_module__("env"), __import_name__("__syscall_sendto"), __warn_unused_result__));
 
 int __syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
 {
@@ -95,3 +102,19 @@ int __syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t a
 }
 
 // clang-format on
+
+int
+__syscall_setsockopt(int sockfd,
+                     int level,
+                     int optname,
+                     intptr_t optval,
+                     size_t optlen,
+                     int dummy)
+{
+  // Emscripten's stub setsockopt returns ENOPROTOOPT without doing anything,
+  // which is considered as an error by applications.
+  // We cannot support any useful setsockopt for now, but we return success
+  // to avoid breaking applications.
+  // TODO: Replace with a more appropriate error code.
+  return 0;
+}
