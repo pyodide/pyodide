@@ -1,5 +1,5 @@
 #include "emscripten.h"
-#include <stdint.h>
+#include "jslib.h"
 
 // Socket syscall overrides for NodeSockFS.
 //
@@ -18,7 +18,7 @@
 // clang-format off
 
 extern int
-syscall_syncify(__externref_t promise);
+syscall_syncify(JsVal promise);
 
 int _orig_syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
   __attribute__((__import_module__("env"), __import_name__("__syscall_connect"), __warn_unused_result__));
@@ -31,22 +31,22 @@ int _orig_syscall_sendto(int fd, intptr_t message, int length, int flags, intptr
 
 // Returns a Promise for NodeSock fds, null for everything else.
 // When null, C code falls through to the original Emscripten implementation.
-EM_JS(__externref_t, _maybe_connect_async, (int fd, intptr_t addr, int addrlen), {
+EM_JS(JsVal, _maybe_connect_async, (int fd, intptr_t addr, int addrlen), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   // Will return null for non-NodeSock fds.
-  if (!sock || !sock.sock_ops || !sock.sock_ops.connectAsync) return null;
+  if (!sock?.sock_ops?.connectAsync) return null;
 
   var info = Module.getSocketAddress(addr, addrlen);
   return sock.sock_ops.connectAsync(sock, info.addr, info.port);
 })
 
 // Returns a Promise for NodeSock fds, null for everything else.
-EM_JS(__externref_t, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
+EM_JS(JsVal, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   // Will return null for non-NodeSock fds.
-  if (!sock || !sock.sock_ops || !sock.sock_ops.recvmsgAsync) return null;
+  if (!sock?.sock_ops?.recvmsgAsync) return null;
 
   return sock.sock_ops.recvmsgAsync(sock, len).then(function(result) {
     if (result === null) return 0;
@@ -56,11 +56,11 @@ EM_JS(__externref_t, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
 })
 
 // Returns a Promise for NodeSock fds, null for everything else.
-EM_JS(__externref_t, _maybe_sendto_async, (int fd, intptr_t message, int length), {
+EM_JS(JsVal, _maybe_sendto_async, (int fd, intptr_t message, int length), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   // Will return null for non-NodeSock fds.
-  if (!sock || !sock.sock_ops || !sock.sock_ops.sendmsgAsync) return null;
+  if (!sock?.sock_ops?.sendmsgAsync) return null;
 
   // Copy data out of HEAPU8 before the async boundary — memory may grow.
   var data = Module.HEAPU8.slice(message, message + length);
@@ -69,7 +69,7 @@ EM_JS(__externref_t, _maybe_sendto_async, (int fd, intptr_t message, int length)
 
 int __syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
 {
-  __externref_t p = _maybe_connect_async(fd, addr, addrlen);
+  JsVal p = _maybe_connect_async(fd, addr, addrlen);
   if (__builtin_wasm_ref_is_null_extern(p)) {
     return _orig_syscall_connect(fd, addr, addrlen, d1, d2, d3);
   }
@@ -78,7 +78,7 @@ int __syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3
 
 int __syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen)
 {
-  __externref_t p = _maybe_recvfrom_async(fd, buf, len);
+  JsVal p = _maybe_recvfrom_async(fd, buf, len);
   if (__builtin_wasm_ref_is_null_extern(p)) {
     return _orig_syscall_recvfrom(fd, buf, len, flags, addr, addrlen);
   }
@@ -87,7 +87,7 @@ int __syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t addr, 
 
 int __syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addr_len)
 {
-  __externref_t p = _maybe_sendto_async(fd, message, length);
+  JsVal p = _maybe_sendto_async(fd, message, length);
   if (__builtin_wasm_ref_is_null_extern(p)) {
     return _orig_syscall_sendto(fd, message, length, flags, addr, addr_len);
   }
