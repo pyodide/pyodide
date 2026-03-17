@@ -20,9 +20,13 @@ import {
 } from "./snapshot";
 import { unpackArchiveMetadata } from "./constants";
 import { syncLocalToRemote, syncRemoteToLocal } from "./nativefs";
+import { initializeNodeSockFS } from "./fs/nodesockfs";
+import type { ConnectFunc } from "./fs/wintercg-sockets";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
+
+API.initializeNodeSockFS = initializeNodeSockFS;
 
 /**
  * Runs code after python vm has been initialized but prior to any bootstrapping.
@@ -599,6 +603,18 @@ export class PyodideAPI_ {
       { root: hostPath },
       emscriptenPath,
     );
+  }
+
+  /**
+   * Use Node.js native socket filesystem instead of Emscripten's SOCKFS.
+   * @param connectFunc Optional custom connect function satisfying WinterCG socket-api interface.
+   * @experimental
+   */
+  static async useNodeSockFS(connectFunc?: ConnectFunc) {
+    if (!RUNTIME_ENV.IN_NODE) {
+      throw new Error("useNodeSockFS only works in Node.js");
+    }
+    await API.initializeNodeSockFS(connectFunc);
   }
 
   /**

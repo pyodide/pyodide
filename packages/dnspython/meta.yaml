@@ -1,0 +1,16 @@
+package:
+  name: dnspython
+  version: 2.8.0
+  top-level:
+    - dns
+source:
+  url: https://files.pythonhosted.org/packages/py3/d/dnspython/dnspython-2.8.0-py3-none-any.whl
+  sha256: 01d9bbc4a2d76bf0db7c1f729812ded6d912bd318d3b1cf81d30c0f845dbf3af
+about:
+  home: null
+  PyPI: https://pypi.org/project/dnspython
+  summary: DNS toolkit
+  license: ISC
+extra:
+  recipe-maintainers:
+    - ryanking13
