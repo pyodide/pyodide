@@ -109,6 +109,45 @@ hello_python().then((result) => {
   console.log("Python says that 1+1 =", result);
 });
 ```
+### Handling Packages
+
+Since `.whl` package files are excluded from the bundle, you have two options:
+
+#### Option 1: Load packages from CDN
+
+Add a `packageBaseUrl` pointing to the CDN when loading Pyodide:
+```js
+import { loadPyodide, version } from "pyodide";
+
+const pyodide = await loadPyodide({
+  indexURL: `${import.meta.env.BASE_URL}assets/pyodide`,
+  packageBaseUrl: `https://cdn.jsdelivr.net/pyodide/v${version}/full/`,
+});
+```
+
+#### Option 2: Bundle specific packages locally
+
+Extract the `.whl` files you need from the full Pyodide distribution, then add to `vite.config.mjs`:
+```js
+const PYODIDE_PACKAGES = new Set(['micropip', /* add other packages here */]);
+```
+
+Add an entry to the `viteStaticCopy` targets to transform `pyodide-lock.json` to only include your selected packages:
+```js
+{
+  src: join(pyodideDir, 'pyodide-lock.json'),
+  dest: 'assets/pyodide',
+  transform: (content) => {
+    const lockfile = JSON.parse(content.toString());
+    lockfile.packages = Object.fromEntries(
+      Object.entries(lockfile.packages).filter(([name]) =>
+        PYODIDE_PACKAGES.has(name)
+      )
+    );
+    return JSON.stringify(lockfile);
+  },
+}
+```
 
 If you need to specify a specific path for the bundled files, you can set the `indexURL` parameter:
 
