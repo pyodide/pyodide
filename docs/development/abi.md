@@ -4,10 +4,15 @@
 
 ## What is the PyEmscripten Platform?
 
-The PyEmscripten platform defines the binary interface that Python extension
-modules must follow to be compatible with a specific version of the Pyodide
-runtime. This specification ensures that wheels built for Pyodide will load and
-run correctly.
+The PyEmscripten platform defines a binary interface for an Emscripten
+application. If an Emscripten application and an Emscripten shared library are
+both built to target this platform, then the application will be able to load
+and run the shared library.
+
+To build a shared library that is compatible with a given version of Pyodide, it
+is necessary to identify which PyEmscripten platform that version of Pyodide
+uses and follow the corresponding shared library build instructions. This allows
+wheels to be built for Pyodide that will load and run correctly.
 
 The Emscripten compiler makes no ABI stability guarantees between versions, and
 several linker flags can adjust the ABI. Therefore, Python packages built for
@@ -21,10 +26,21 @@ for each feature release of Python. The platform tags take the form
 Python 3.14). Prior to Python 3.14, it was called the Pyodide platform instead
 of the PyEmscripten platform.
 
-Each ABI version specifies the Emscripten compiler version, linked libraries,
-and required compiler/linker flags needed to build compatible extensions.
+Each PyEmscripten platform specifies:
 
-> See: [PEP 783](https://peps.python.org/pep-0783/) for the full specification.
+* the version of the Emscripten compiler to be used,
+* what libraries are statically linked to the application,
+* the stack unwinding ABI to be used,
+* how the loader handles dependency lookup, and
+* various additional compile and linker flags
+
+The PyEmscripten platform definition does not include anything about Python and
+in particular it is agnostic to the Python version it is intended to be used
+with. However, for clarity we indicate in the platform documentation which
+Python version we plan to use each platform with.
+
+The PyEmscripten platform is part of a draft Python packaging specification. See
+[PEP 783](https://peps.python.org/pep-0783/) for the full specification.
 
 ### Platform Versions
 
@@ -69,14 +85,14 @@ versions, to make a shared library with `rustc`, pass
 `-C link-arg=-sSIDE_MODULE=2`. To build a shared library with `cargo`, put
 `-C link-arg=-sSIDE_MODULE=2` in the `RUSTFLAGS` environment variable.
 
-### Static Libraries Linked to the Pyodide Main Binary
+### Static Libraries Linked to the Main Binary
 
 Many libraries cannot be dynamically linked on the Emscripten platform, most
 frequently because they contain JavaScript code. If they are to be made
 available for packages to use, they must be statically linked to the
 interpreter. There are also a few libraries that are needed for a Python builtin
 module. As a part of the platform definition, we document which versions of
-which libraries are linked.
+which libraries are linked to the main binary.
 
 ### Other Library Dependencies
 
