@@ -1,0 +1,281 @@
+From 04771d6906cdb3414a51dce00e40b7f2e0d165e3 Mon Sep 17 00:00:00 2001
+From: Dan Carney <dcarney@cloudflare.com>
+Date: Fri, 6 Mar 2026 12:23:36 +0000
+Subject: [PATCH] generated tail dispatch
+
+---
+ Include/internal/pycore_interpframe_structs.h |   3 +
+ Python/ceval_macros.h                         |  15 +-
+ Tools/cases_generator/target_generator.py     | 191 +++++++++++++++++-
+ 3 files changed, 207 insertions(+), 2 deletions(-)
+
+diff --git a/Include/internal/pycore_interpframe_structs.h b/Include/internal/pycore_interpframe_structs.h
+index 835b8e58194..df558c79117 100644
+--- a/Include/internal/pycore_interpframe_structs.h
++++ b/Include/internal/pycore_interpframe_structs.h
+@@ -48,6 +48,9 @@ struct _PyInterpreterFrame {
+     uint8_t lltrace:7;
+ #else
+     uint8_t visited;
++#endif
++#if defined(TAIL_CALL_DISPATCH_MODE) && TAIL_CALL_DISPATCH_MODE > 0
++    uint8_t tail_call_opcode;
+ #endif
+     /* Locals and stack */
+     _PyStackRef localsplus[1];
+diff --git a/Python/ceval_macros.h b/Python/ceval_macros.h
+index 4a878d6dff4..09f2e051328 100644
+--- a/Python/ceval_macros.h
++++ b/Python/ceval_macros.h
+@@ -80,7 +80,7 @@
+ 
+ #if Py_TAIL_CALL_INTERP
+ #   if defined(__clang__) || defined(__GNUC__)
+-#       if !_Py__has_attribute(preserve_none) || !_Py__has_attribute(musttail)
++#       if !_Py__has_attribute(musttail)
+ #           error "This compiler does not have support for efficient tail calling."
+ #       endif
+ #   elif defined(_MSC_VER)
+@@ -89,14 +89,27 @@
+ 
+     // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
+ #   define Py_MUSTTAIL [[clang::musttail]]
++#ifdef __EMSCRIPTEN__
++#   define Py_PRESERVE_NONE_CC
++#else
+ #   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
++#endif
+     Py_PRESERVE_NONE_CC typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
+ 
+ #   define TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_##op(TAIL_CALL_PARAMS)
++#if defined(TAIL_CALL_DISPATCH_MODE) && TAIL_CALL_DISPATCH_MODE > 0
++    Py_PRESERVE_NONE_CC PyObject* tail_call_dispatcher(TAIL_CALL_PARAMS);
++#   define DISPATCH_GOTO() \
++        do { \
++            frame->tail_call_opcode = opcode; \
++            Py_MUSTTAIL return tail_call_dispatcher(TAIL_CALL_ARGS); \
++        } while (0)
++#else
+ #   define DISPATCH_GOTO() \
+         do { \
+             Py_MUSTTAIL return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS); \
+         } while (0)
++#endif
+ #   define JUMP_TO_LABEL(name) \
+         do { \
+             Py_MUSTTAIL return (_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
+diff --git a/Tools/cases_generator/target_generator.py b/Tools/cases_generator/target_generator.py
+index ca151ff640a..9a304b12e8a 100644
+--- a/Tools/cases_generator/target_generator.py
++++ b/Tools/cases_generator/target_generator.py
+@@ -34,10 +34,20 @@ def write_opcode_targets(analysis: Analysis, out: CWriter) -> None:
+     out.emit("#else /* Py_TAIL_CALL_INTERP */\n")
+ 
+ def function_proto(name: str) -> str:
+-    return f"Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_{name}(TAIL_CALL_PARAMS)"
++    return f"_TAIL_CALL_EXPORT(_TAIL_CALL_{name}) Py_PRESERVE_NONE_CC _TAIL_CALL_LINKAGE PyObject *_TAIL_CALL_{name}(TAIL_CALL_PARAMS)"
+ 
+ 
+ def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
++    # _TAIL_CALL_* functions must be non-static so the
++    # wasm linker can resolve inline-asm return_call references, and exported
++    # so that wasm-opt does not inline them into tail_call_dispatcher
++    out.emit("#ifdef __EMSCRIPTEN__\n")
++    out.emit("#define _TAIL_CALL_EXPORT(name) __attribute__((export_name(#name)))\n")
++    out.emit("#define _TAIL_CALL_LINKAGE [[clang::noinline]]\n")
++    out.emit("#else\n")
++    out.emit("#define _TAIL_CALL_EXPORT(name)\n")
++    out.emit("#define _TAIL_CALL_LINKAGE static\n")
++    out.emit("#endif\n\n")
+     out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256];\n")
+     out.emit("\n")
+ 
+@@ -68,6 +78,185 @@ def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
+         if rest not in named_values:
+             out.emit(f"[{rest}] = _TAIL_CALL_UNKNOWN_OPCODE,\n")
+     out.emit("};\n")
++
++
++    # Emit a variety of tail call implementations for benchmarking, controlled by TAIL_CALL_DISPATCH_MODE
++    name_map = {v: k for k, v in analysis.opmap.items()}
++
++    FUNC_SIG = '__attribute__((export_name("tail_call_dispatcher")))\n' \
++               '[[clang::noinline]] Py_PRESERVE_NONE_CC PyObject * tail_call_dispatcher(TAIL_CALL_PARAMS)'
++
++    # variant 1: indirect call through INSTRUCTION_TABLE
++    out.emit(f'''
++#if TAIL_CALL_DISPATCH_MODE == 1
++{FUNC_SIG} {{
++    uint8_t opcode = frame->tail_call_opcode;
++    extern py_tail_call_funcptr INSTRUCTION_TABLE[256];
++    Py_MUSTTAIL return INSTRUCTION_TABLE[opcode](TAIL_CALL_ARGS);
++}}
++#endif
++
++    ''')
++
++    # variant 2: switch assigns function pointer, then tail-calls it
++    code = f'''
++#if TAIL_CALL_DISPATCH_MODE == 2
++{FUNC_SIG} {{
++    uint8_t opcode = frame->tail_call_opcode;
++    Py_PRESERVE_NONE_CC PyObject* (*x)(TAIL_CALL_PARAMS);
++    switch(opcode) {{
++    '''
++
++    for rest in range(256):
++        if rest not in name_map:
++            code += f"        case {rest}: x = &_TAIL_CALL_UNKNOWN_OPCODE; break;\n"
++        else:
++            name = name_map[rest]
++            code += f"        case {rest}: x = &_TAIL_CALL_{name}; break;\n"
++
++    code += '''
++    }
++    Py_MUSTTAIL return x(TAIL_CALL_ARGS);
++}
++#endif
++
++    '''
++
++    out.emit(code)
++
++    # variant 3: switch with direct musttail return_call per case
++    code = f'''
++#if TAIL_CALL_DISPATCH_MODE == 3
++{FUNC_SIG} {{
++    uint8_t opcode = frame->tail_call_opcode;
++    switch(opcode) {{
++    '''
++
++    for rest in range(256):
++        if rest not in name_map:
++            code += f"       case {rest}: Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);\n"
++        else:
++            name = name_map[rest]
++            code += f"       case {rest}: Py_MUSTTAIL return _TAIL_CALL_{name}(TAIL_CALL_ARGS);\n"
++
++    code += '''
++    }
++    Py_UNREACHABLE();
++}
++#endif
++
++     '''
++
++    out.emit(code)
++
++    # variant 4: like 3 but uses default for UNKNOWN_OPCODE
++    code = f'''
++#if TAIL_CALL_DISPATCH_MODE == 4
++{FUNC_SIG} {{
++    uint8_t opcode = frame->tail_call_opcode;
++    switch(opcode) {{
++    '''
++
++    for rest in range(256):
++        if rest not in name_map:
++            continue
++        else:
++            name = name_map[rest]
++            code += f"       case {rest}: Py_MUSTTAIL return _TAIL_CALL_{name}(TAIL_CALL_ARGS);\n"
++
++    code += '''
++        default:
++            Py_MUSTTAIL return _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_ARGS);
++    }
++}
++#endif
++
++     '''
++
++    out.emit(code)
++
++    # construct .functypes in asm so our wasm assembly functions can see them for variants 5 and 6
++    wasm_functype = '(i32, i32, i32, i32, i32) -> (i32)'
++    code = '\n#if defined(__EMSCRIPTEN__) && defined(TAIL_CALL_DISPATCH_MODE) && TAIL_CALL_DISPATCH_MODE >= 5\n'
++    code += '__asm__(\n'
++    seen = set()
++    for case_num in range(256):
++        if case_num not in name_map:
++            fn = "_TAIL_CALL_UNKNOWN_OPCODE"
++        else:
++            fn = f"_TAIL_CALL_{name_map[case_num]}"
++        if fn not in seen:
++            seen.add(fn)
++            code += f'    ".functype {fn} {wasm_functype}\\n"\n'
++    code += ');\n'
++    code += '#endif\n'
++    out.emit(code)
++
++    # variant 5: inline wasm br_table with multivalue blocks
++    code = f'\n#if TAIL_CALL_DISPATCH_MODE == 5\n'
++    code += FUNC_SIG + ' {\n'
++    code += '    PyObject *_result;\n'
++    code += '    __asm__ __volatile__(\n'
++    block_sig = '(i32, i32, i32, i32, i32) -> (i32, i32, i32, i32, i32)'
++    for arg_num in range(5):
++        code += f'        "local.get %{arg_num + 1}\\n"\n'
++    for i in range(257):
++        code += f'        "block {block_sig}\\n"\n'
++    code += '        "local.get %1\\n"\n'
++    code += '        "i32.load8_u %6\\n"\n'
++    br_entries = ", ".join(str(i) for i in range(257))  # 0..255 = cases, 256 = default
++    code += f'        "br_table {{{br_entries}}}\\n"\n'
++    for case_num in range(256):
++        code += '        "end_block\\n"\n'
++        if case_num not in name_map:
++            func_name = "_TAIL_CALL_UNKNOWN_OPCODE"
++        else:
++            func_name = f"_TAIL_CALL_{name_map[case_num]}"
++        code += f'        "return_call {func_name}\\n"\n'
++    code += '        "end_block\\n"\n'
++    code += '        "unreachable\\n"\n'
++    code += '        : "=r"(_result)\n'
++    code += '        : "r"(frame), "r"(stack_pointer), "r"(tstate), "r"(next_instr), "r"(oparg), \n'
++    code += '          "i"(offsetof(struct _PyInterpreterFrame, tail_call_opcode))\n'
++    code += '    );\n'
++    code += '    return _result;\n'
++    code += '}\n'
++    code += '#endif\n'
++
++    out.emit(code)
++
++    # variant 6: inline wasm br_table, no multivalue blocks
++    code =  '\n#if TAIL_CALL_DISPATCH_MODE == 6\n'
++    code += FUNC_SIG + ' {\n'
++    code += '    PyObject *_result;\n'
++    code += '    __asm__ __volatile__(\n'
++    for i in range(257):
++        code += '        "block\\n"\n'
++    code += '        "local.get %1\\n"\n'
++    code += '        "i32.load8_u %6\\n"\n'
++    br_entries = ", ".join(str(i) for i in range(257))
++    code += f'        "br_table {{{br_entries}}}\\n"\n'
++    for case_num in range(256):
++        code += '        "end_block\\n"\n'
++        for arg_num in range(5):
++            code += f'        "local.get %{arg_num + 1}\\n"\n'
++        if case_num not in name_map:
++            func_name = "_TAIL_CALL_UNKNOWN_OPCODE"
++        else:
++            func_name = f"_TAIL_CALL_{name_map[case_num]}"
++        code += f'        "return_call {func_name}\\n"\n'
++    code += '        "end_block\\n"\n'
++    code += '        "unreachable\\n"\n'
++    code += '        : "=r"(_result)\n'
++    code += '        : "r"(frame), "r"(stack_pointer), "r"(tstate), "r"(next_instr), "r"(oparg), \n'
++    code += '          "i"(offsetof(struct _PyInterpreterFrame, tail_call_opcode))\n'
++    code += '    );\n'
++    code += '    return _result;\n'
++    code += '}\n'
++    code += '#endif\n'
++
++    out.emit(code)
++
+     outfile.write("#endif /* Py_TAIL_CALL_INTERP */\n")
+ 
+ arg_parser = argparse.ArgumentParser(
+-- 
+2.39.5
+
