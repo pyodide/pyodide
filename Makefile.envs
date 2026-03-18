@@ -7,7 +7,7 @@ export PYTHON_ARCHIVE_SHA256=b8d79530e3b7c96a5cb2d40d431ddb512af4a563e863728d871
 
 export SED ?= sed
 
-export RUST_TOOLCHAIN ?= nightly-2025-12-10
+export RUST_TOOLCHAIN ?= 1.93.0
 export RUSTFLAGS = -C link-arg=-sSIDE_MODULE=2
 
 # URL to the prebuilt packages
@@ -72,6 +72,9 @@ export PYZIP_EXCLUDE_FILES=\
 	lib2to3/ \
 	_osx_support.py \
 	_aix_support.py \
+	_android_support.py \
+	_ios_support.py \
+	_apple_support.py \
 	curses/ \
 	dbm/ \
 	idlelib/ \
@@ -81,6 +84,7 @@ export PYZIP_EXCLUDE_FILES=\
 	test/ \
 	_pydecimal.py \
 	pydoc_data/
+
 
 # List of modules that we replace with a stub in the zipped standard library
 export PYZIP_JS_STUBS=\
@@ -150,7 +154,6 @@ export CXXFLAGS_BASE=
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s ENVIRONMENT=web,webview,worker,node,shell \
 	-s MAIN_MODULE=1 \
-	-s MODULARIZE=1 \
 	-s LZ4=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
@@ -261,6 +264,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,stackSave \
 		,stackRestore \
 		,runtimeKeepalivePush \
+		,SOCKFS \
 		,HEAP8 \
 		,HEAPU8 \
 		,HEAP16 \
@@ -272,7 +276,6 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,HEAPF32 \
 		,HEAPF64
 	export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
-		-s MODULARIZE=1 \
 		-s EXPORT_NAME="'_createPyodideModule'" \
 		-sEXPORTED_RUNTIME_METHODS='$(EXPORTED_RUNTIME_METHODS)' \
 		-s LZ4=1 \
