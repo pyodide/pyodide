@@ -127,28 +127,41 @@ const pyodide = await loadPyodide({
 
 #### Option 2: Bundle specific packages locally
 
-Extract the `.whl` files you need from the full Pyodide distribution, then add to `vite.config.mjs`:
+Extract the `.whl` files you need from the full Pyodide distribution, define the packages you want, then add two entries to the `viteStaticCopy` targets in `vite.config.mjs`.
+```{note}
+Specify exact `.whl` filenames rather than using a glob like `*.whl`, to avoid copying all unused packages into your build.
+```
 ```js
 const PYODIDE_PACKAGES = new Set(['micropip', /* add other packages here */]);
 ```
-
-Add an entry to the `viteStaticCopy` targets to transform `pyodide-lock.json` to only include your selected packages:
 ```js
-{
-  src: join(pyodideDir, 'pyodide-lock.json'),
-  dest: 'assets/pyodide',
-  transform: (content) => {
-    const lockfile = JSON.parse(content.toString());
-    lockfile.packages = Object.fromEntries(
-      Object.entries(lockfile.packages).filter(([name]) =>
-        PYODIDE_PACKAGES.has(name)
-      )
-    );
-    return JSON.stringify(lockfile);
-  },
-}
+viteStaticCopy({
+  targets: [
+    // Copy only the specific .whl files you need
+    {
+      src: [
+        join(pyodideDir, 'micropip-*-py3-none-any.whl'),
+        // add other specific wheel files here
+      ],
+      dest: 'assets/pyodide',
+    },
+    // Transform lockfile to only include selected packages
+    {
+      src: join(pyodideDir, 'pyodide-lock.json'),
+      dest: 'assets/pyodide',
+      transform: (content) => {
+        const lockfile = JSON.parse(content.toString());
+        lockfile.packages = Object.fromEntries(
+          Object.entries(lockfile.packages).filter(([name]) =>
+            PYODIDE_PACKAGES.has(name)
+          )
+        );
+        return JSON.stringify(lockfile);
+      },
+    },
+  ],
+});
 ```
-
 If you need to specify a specific path for the bundled files, you can set the `indexURL` parameter:
 
 ```js
