@@ -602,7 +602,7 @@ async def eval_code_async(
 
     >>> source = "1 + 1;"
     >>> asyncio.run(eval_code_async(source))  # semicolon suppresses result
-    None 
+    None
     """
     flags = flags or ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
     return (
