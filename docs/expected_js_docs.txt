@@ -163,6 +163,7 @@ js:function
   pyodide.toPy
   pyodide.unpackArchive
   pyodide.unregisterJsModule
+  pyodide.useNodeSockFS
 js:class
   pyodide.ffi.PyAsyncGenerator
   pyodide.ffi.PyAsyncIterable
