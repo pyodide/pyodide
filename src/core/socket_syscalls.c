@@ -43,8 +43,10 @@ EM_JS(JsVal, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
 
   return (async function() {
     var result = await sock.sock_ops.recvmsgAsync(sock, len);
-    if (result == = null)
+    // clang-format off
+    if (result === null)
       return 0;
+    // clang-format on
     Module.HEAPU8.set(result, buf);
     return result.length;
   })();
