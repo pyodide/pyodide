@@ -591,6 +591,18 @@ async def eval_code_async(
         ``None``. If the last statement is an expression, return the result of
         the expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
         parameters to modify this default behavior.
+
+    Examples
+    --------
+    >>> import asyncio
+    >>> from pyodide import eval_code_async
+    >>> source = "1 + 1"
+    >>> asyncio.run(eval_code_async(source))
+    2
+
+    >>> source = "1 + 1;"
+    >>> asyncio.run(eval_code_async(source))  # semicolon suppresses result
+    None 
     """
     flags = flags or ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
     return (
