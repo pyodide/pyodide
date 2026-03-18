@@ -3,6 +3,7 @@ This test file is for testing database drivers with Node.js socket support.
 
 All the tests are disabled by default and need to be run manually with `-m db` flag.
 """
+
 import os
 import time
 import uuid
@@ -11,7 +12,6 @@ import pytest
 from pytest_pyodide import run_in_pyodide
 
 from conftest import only_node
-
 
 pytestmark = [
     pytest.mark.requires_dynamic_linking,
@@ -271,6 +271,7 @@ def test_mysql_pymysql_features(selenium_nodesock, mysql_test_db):
 
     run(selenium_nodesock, host, port, user, password, db)
 
+
 @pytest.fixture(scope="session")
 def pg_admin_config():
     host = os.environ.get("POSTGRES_HOST", "127.0.0.1")
@@ -359,6 +360,7 @@ def pg_test_db(pg_admin_config):
             cur.close()
         finally:
             conn.close()
+
 
 # When running this test locally, start a PostgreSQL server and install dependencies:
 #   docker run -d --name postgres-server -e POSTGRES_PASSWORD=test -e POSTGRES_HOST_AUTH_METHOD=md5 -e POSTGRES_INITDB_ARGS="--auth-host=md5" -p 5432:5432 postgres:16
@@ -479,9 +481,7 @@ def test_postgresql_pg8000_features(selenium_nodesock, pg_test_db):
                 """
             )
             rows = [("a", 1), ("b", 2), ("c", 3)]
-            cur.executemany(
-                "INSERT INTO bulk_test (k, v) VALUES (%s, %s)", rows
-            )
+            cur.executemany("INSERT INTO bulk_test (k, v) VALUES (%s, %s)", rows)
             cur.execute("SELECT k, v FROM bulk_test ORDER BY k")
             cols = [desc[0] for desc in cur.description]
             raw = cur.fetchall()
@@ -495,6 +495,10 @@ def test_postgresql_pg8000_features(selenium_nodesock, pg_test_db):
         assert results["tx"]["after_rollback"] == 0
         assert results["tx"]["names"] == ["kept"]
         assert results["bulk"]["inserted"] == 3
-        assert results["bulk"]["out"] == [{"k": "a", "v": 1}, {"k": "b", "v": 2}, {"k": "c", "v": 3}]
+        assert results["bulk"]["out"] == [
+            {"k": "a", "v": 1},
+            {"k": "b", "v": 2},
+            {"k": "c", "v": 3},
+        ]
 
     run(selenium_nodesock, host, port, user, password, db)
