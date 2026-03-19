@@ -422,12 +422,10 @@ jobs:
         run: |
           source pyodide_env.sh
           tools/pytest_wrapper.py \
-            --junitxml=test-results/db_integration.xml \
             --verbose \
             --runtime=node-no-host \
             -m db \
-            src/tests/test_mysql_pymysql.py \
-            src/tests/test_postgresql_pg8000.py
+            src/tests/test_database_driver.py
 
   test-scipy-trigger:
     name: test-scipy-trigger

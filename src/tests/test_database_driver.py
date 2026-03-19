@@ -158,7 +158,7 @@ def test_mysql_pymysql_features(selenium_nodesock, mysql_test_db):
 
         await micropip.install("pymysql==1.1.0")
 
-        import pymysql
+        import pymysql  # type: ignore[import-untyped]
 
         def connect(**kwargs):
             return pymysql.connect(
@@ -485,7 +485,7 @@ def test_postgresql_pg8000_features(selenium_nodesock, pg_test_db):
             cur.execute("SELECT k, v FROM bulk_test ORDER BY k")
             cols = [desc[0] for desc in cur.description]
             raw = cur.fetchall()
-            out = [dict(zip(cols, row)) for row in raw]
+            out = [dict(zip(cols, row, strict=True)) for row in raw]
             cur.close()
             results["bulk"] = {"inserted": len(rows), "out": out}
         finally:
