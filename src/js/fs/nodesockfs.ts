@@ -2,9 +2,12 @@
  * NodeSockFS — Node.js native socket filesystem replacing Emscripten's SOCKFS.
  * Uses WinterCG Sockets API as transport.
  *
- * JSPI syscalls (socket_syscalls.c) — sync Python (socket.connect/recv/send)
- * suspends the WASM stack via WebAssembly.Suspending, awaits the async op,
- * resumes.
+ * This is used in two contexts:
+ *   - Replacing socket syscalls: JSPI syscalls (socket_syscalls.c) — sync Python (socket.connect/recv/send)
+ *     suspends the WASM stack via WebAssembly.Suspending, awaits the async op,
+ *     resumes.
+ *   - In asyncio webloop (webloop.py) - async Python event loop socket functions
+ *     go through NodeSockFS directly.
  */
 
 import {
@@ -54,6 +57,7 @@ export async function initializeNodeSockFS(connectFunc?: ConnectFunc) {
   const module = Module;
   const FS = module.FS;
   const ERRNO_CODES = module.ERRNO_CODES;
+  const API = module.API;
 
   // Values copied from Emscripten
   const AF_INET = 2;
@@ -348,6 +352,60 @@ export async function initializeNodeSockFS(connectFunc?: ConnectFunc) {
       sock.stream = stream;
 
       return sock;
+    },
+
+    /**
+     * Get a socket by file descriptor
+     */
+    getSocket(fd: number): NodeSock | null {
+      const stream = FS.getStream(fd);
+      if (!stream || !FS.isSocket((stream as any).node.mode)) {
+        return null;
+      }
+      return (stream as any).node.sock as NodeSock;
+    },
+  };
+
+  // Used in webloop.py to forward eventloop socket operations to Node.js
+  API._nodeSock = {
+    async connect(fd: number, host: string, port: number): Promise<void> {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock) {
+        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+      }
+      const result = await tcp_sock_ops.connectAsync(sock, host, port);
+      if (result < 0) {
+        throw new FS.ErrnoError(-result);
+      }
+    },
+
+    async recv(fd: number, nbytes: number): Promise<Uint8Array> {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock) {
+        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+      }
+      const result = await tcp_sock_ops.recvmsgAsync(sock, nbytes);
+      if (result === null) {
+        return new Uint8Array(0);
+      }
+      return result;
+    },
+
+    async send(fd: number, data: any): Promise<number> {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock) {
+        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+      }
+      let buf: Uint8Array;
+      if (data instanceof Uint8Array) {
+        buf = data;
+      } else if (data.toJs) {
+        buf = data.toJs();
+        data.destroy();
+      } else {
+        buf = new Uint8Array(data);
+      }
+      return await tcp_sock_ops.sendmsgAsync(sock, buf);
     },
   };
 

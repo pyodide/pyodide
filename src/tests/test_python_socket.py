@@ -609,3 +609,318 @@ def test_socket_double_close(selenium_nodesock):
 
         result = run(selenium_nodesock, host, port)
         assert result == "ok", f"Expected 'ok', got {result!r}"
+
+
+# ---------------------------------------------------------------------------
+# asyncio webloop tests
+# ---------------------------------------------------------------------------
+
+
+def test_asyncio_sock_connect_recv_sendall(selenium_nodesock):
+    """Test low-level sock_connect + sock_recv + sock_sendall via asyncio."""
+    TEST_MESSAGE = b"async hello"
+    RESPONSE = b"async reply"
+
+    def handler(conn, _addr):
+        _ = conn.recv(1024)
+        conn.sendall(RESPONSE)
+
+    with tcp_server(handler) as (host, port):
+
+        @run_in_pyodide
+        async def run(selenium, host, port, message):
+            import asyncio
+            import socket
+
+            loop = asyncio.get_event_loop()
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setblocking(False)
+
+            await loop.sock_connect(s, (host, port))
+            await loop.sock_sendall(s, message)
+            data = await loop.sock_recv(s, 1024)
+            s.close()
+            return data.decode()
+
+        result = run(selenium_nodesock, host, port, TEST_MESSAGE)
+        assert result == RESPONSE.decode()
+
+
+def test_asyncio_create_connection_echo(selenium_nodesock):
+    """Test create_connection with an echo protocol."""
+
+    def handler(conn, _addr):
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            conn.sendall(data)
+
+    with tcp_server(handler) as (host, port):
+
+        @run_in_pyodide
+        async def run(selenium, host, port):
+            import asyncio
+
+            class EchoClient(asyncio.Protocol):
+                def __init__(self):
+                    self.received = bytearray()
+                    self.done = asyncio.get_event_loop().create_future()
+
+                def data_received(self, data):
+                    self.received.extend(data)
+
+                def connection_lost(self, exc):
+                    if not self.done.done():
+                        self.done.set_result(None)
+
+            loop = asyncio.get_event_loop()
+            transport, proto = await loop.create_connection(EchoClient, host, port)
+
+            transport.write(b"First")
+            transport.write(b"Second")
+            transport.write(b"Third")
+
+            await asyncio.sleep(1)
+            transport.close()
+            await asyncio.wait_for(proto.done, timeout=5.0)
+            return proto.received.decode()
+
+        result = run(selenium_nodesock, host, port)
+        assert "First" in result
+        assert "Second" in result
+        assert "Third" in result
+
+
+def test_asyncio_create_connection_server_closes(selenium_nodesock):
+    """Server sends data then closes; transport should detect EOF."""
+
+    def handler(conn, _addr):
+        conn.sendall(b"goodbye")
+        conn.close()
+
+    with tcp_server(handler) as (host, port):
+
+        @run_in_pyodide
+        async def run(selenium, host, port):
+            import asyncio
+
+            class Receiver(asyncio.Protocol):
+                def __init__(self):
+                    self.received = bytearray()
+                    self.lost_exc = "not_called"
+                    self.done = asyncio.get_event_loop().create_future()
+
+                def data_received(self, data):
+                    self.received.extend(data)
+
+                def connection_lost(self, exc):
+                    self.lost_exc = repr(exc)
+                    if not self.done.done():
+                        self.done.set_result(None)
+
+            loop = asyncio.get_event_loop()
+            transport, proto = await loop.create_connection(Receiver, host, port)
+
+            await asyncio.wait_for(proto.done, timeout=5.0)
+            return (proto.received.decode(), proto.lost_exc)
+
+        data, exc = run(selenium_nodesock, host, port)
+        assert data == "goodbye"
+        assert exc == "None"
+
+
+def test_asyncio_open_connection(selenium_nodesock):
+    """Test asyncio.open_connection (StreamReader/Writer API)."""
+    RESPONSE = b"stream reply"
+
+    def handler(conn, _addr):
+        _ = conn.recv(1024)
+        conn.sendall(RESPONSE)
+        conn.close()
+
+    with tcp_server(handler) as (host, port):
+
+        @run_in_pyodide
+        async def run(selenium, host, port):
+            import asyncio
+
+            reader, writer = await asyncio.open_connection(host, port)
+
+            writer.write(b"stream hello")
+            await writer.drain()
+
+            data = await reader.read(1024)
+            writer.close()
+            return data.decode()
+
+        result = run(selenium_nodesock, host, port)
+        assert result == RESPONSE.decode()
+
+
+def test_asyncio_getaddrinfo(selenium_nodesock):
+    """Test that getaddrinfo resolves localhost."""
+
+    @run_in_pyodide
+    async def run(selenium):
+        import asyncio
+
+        loop = asyncio.get_event_loop()
+        results = await loop.getaddrinfo("127.0.0.1", 80)
+        return len(results) > 0
+
+    assert run(selenium_nodesock) is True
+
+
+def test_asyncio_sock_recv_into(selenium_nodesock):
+    """Test sock_recv_into fills a buffer."""
+    RESPONSE = b"buffer test"
+
+    def handler(conn, _addr):
+        conn.sendall(RESPONSE)
+
+    with tcp_server(handler) as (host, port):
+
+        @run_in_pyodide
+        async def run(selenium, host, port, expected_len):
+            import asyncio
+            import socket
+
+            loop = asyncio.get_event_loop()
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setblocking(False)
+
+            await loop.sock_connect(s, (host, port))
+
+            buf = bytearray(1024)
+            n = await loop.sock_recv_into(s, buf)
+            s.close()
+            return (n, buf[:n].decode())
+
+        n, data = run(selenium_nodesock, host, port, len(RESPONSE))
+        assert n == len(RESPONSE)
+        assert data == RESPONSE.decode()
+
+
+def test_asyncio_server_initiated_close(selenium_nodesock):
+    """Server sends data then closes; verify EOF and connection_lost(None)."""
+
+    def handler(conn, _addr):
+        conn.sendall(b"goodbye")
+
+    with tcp_server(handler) as (host, port):
+
+        @run_in_pyodide
+        async def run(selenium, host, port):
+            import asyncio
+
+            class Receiver(asyncio.Protocol):
+                def __init__(self):
+                    self.received = bytearray()
+                    self.lost_exc = "not_called"
+                    self.done = asyncio.get_event_loop().create_future()
+
+                def data_received(self, data):
+                    self.received.extend(data)
+
+                def connection_lost(self, exc):
+                    self.lost_exc = repr(exc)
+                    if not self.done.done():
+                        self.done.set_result(None)
+
+            loop = asyncio.get_event_loop()
+            transport, proto = await loop.create_connection(Receiver, host, port)
+
+            await asyncio.wait_for(proto.done, timeout=5.0)
+            return (proto.received.decode(), proto.lost_exc)
+
+        data, exc = run(selenium_nodesock, host, port)
+        assert data == "goodbye"
+        assert exc == "None"
+
+
+def test_asyncio_concurrent_connections(selenium_nodesock):
+    """Two concurrent open_connection calls via asyncio.gather."""
+
+    def handler(conn, _addr):
+        data = conn.recv(1024)
+        conn.sendall(data)
+
+    with (
+        tcp_server(handler) as (host1, port1),
+        tcp_server(handler) as (host2, port2),
+    ):
+
+        @run_in_pyodide
+        async def run(selenium, host1, port1, host2, port2):
+            import asyncio
+
+            async def do_echo(host, port, msg):
+                reader, writer = await asyncio.open_connection(host, port)
+                writer.write(msg)
+                await writer.drain()
+                data = await reader.read(1024)
+                writer.close()
+                return data.decode()
+
+            r1, r2 = await asyncio.gather(
+                do_echo(host1, port1, b"conn1"),
+                do_echo(host2, port2, b"conn2"),
+            )
+            return f"{r1}|{r2}"
+
+        result = run(selenium_nodesock, host1, port1, host2, port2)
+        assert "conn1" in result
+        assert "conn2" in result
+
+
+def test_asyncio_client_close_lifecycle(selenium_nodesock):
+    """Verify transport.close() triggers connection_lost(None)."""
+
+    def handler(conn, _addr):
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            conn.sendall(data)
+
+    with tcp_server(handler) as (host, port):
+
+        @run_in_pyodide
+        async def run(selenium, host, port):
+            import asyncio
+
+            events = []
+
+            class Tracker(asyncio.Protocol):
+                def __init__(self):
+                    self.done = asyncio.get_event_loop().create_future()
+
+                def connection_made(self, transport):
+                    events.append("connection_made")
+                    self.transport = transport
+
+                def data_received(self, data):
+                    events.append(f"data:{data.decode()}")
+
+                def connection_lost(self, exc):
+                    events.append(f"connection_lost:{exc}")
+                    if not self.done.done():
+                        self.done.set_result(None)
+
+            loop = asyncio.get_event_loop()
+            transport, proto = await loop.create_connection(Tracker, host, port)
+
+            transport.write(b"ping")
+            await asyncio.sleep(0.5)
+
+            assert not transport.is_closing()
+            transport.close()
+            assert transport.is_closing()
+
+            await asyncio.wait_for(proto.done, timeout=5.0)
+            return ",".join(events)
+
+        result = run(selenium_nodesock, host, port)
+        assert "connection_made" in result
+        assert "connection_lost:None" in result
