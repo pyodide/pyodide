@@ -555,6 +555,12 @@ export interface API {
   LiteralMap: any;
   sitePackages: string;
   initializeNodeSockFS: typeof initializeNodeSockFS;
+
+  _nodeSock: {
+    connect: (fd: number, host: string, port: number) => Promise<void>;
+    recv: (fd: number, nbytes: number) => Promise<Uint8Array>;
+    send: (fd: number, data: any) => Promise<number>;
+  };
 }
 
 // Subset of the API and Module that the package manager needs
