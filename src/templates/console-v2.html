@@ -357,16 +357,81 @@ of the stable console.
                 refreshLine();
               }
               break;
+            case "\t": {
+              // Tab key: trigger Python autocomplete via pyconsole.complete()
+              const sourceToComplete = buffer.slice(0, cursorIndex);
+              const completionResult = pyconsole.complete(sourceToComplete);
+              const completions = completionResult[0].toJs();
+              const start = completionResult[1];
+              completionResult.destroy();
+              if (completions.length === 1) {
+                const newBuf =
+                  buffer.slice(0, start) +
+                  completions[0] +
+                  buffer.slice(cursorIndex);
+                setBuffer(newBuf, start + completions[0].length);
+              } else if (completions.length > 1) {
+                const commonPrefix = completions.reduce((a, b) => {
+                  let i = 0;
+                  while (i < a.length && i < b.length && a[i] === b[i])
+                    i++;
+                  return a.slice(0, i);
+                });
+                const currentWord = sourceToComplete.slice(start);
+                if (commonPrefix.length > currentWord.length) {
+                  const newBuf =
+                    buffer.slice(0, start) +
+                    commonPrefix +
+                    buffer.slice(cursorIndex);
+                  setBuffer(newBuf, start + commonPrefix.length);
+                } else {
+                  term.write("\r\n");
+                  term.writeln(completions.join("  "));
+                  refreshLine();
+                }
+              }
+              break;
+            }
             default:
               if (data) {
                 // Normalize non-breaking spaces to regular spaces
                 data = data.replace(/\u00a0/g, " ");
-                // Insert arbitrary string at cursor position
-                const before = buffer.slice(0, cursorIndex);
-                const after = buffer.slice(cursorIndex);
-                const newBuf = before + data + after;
-                const newCursor = cursorIndex + data.length;
-                setBuffer(newBuf, newCursor);
+                // Detect and handle multiline paste (data contains line breaks)
+                if (data.includes("\r") || data.includes("\n")) {
+                  const lines = data.split(/\r\n|\r|\n/);
+                  for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    if (i < lines.length - 1) {
+                      // Execute each intermediate line sequentially
+                      const before = buffer.slice(0, cursorIndex);
+                      const after = buffer.slice(cursorIndex);
+                      setBuffer(
+                        before + line + after,
+                        cursorIndex + line.length,
+                      );
+                      term.write("\r\n");
+                      await execLine(buffer);
+                      buffer = "";
+                      cursorIndex = 0;
+                      term.write(prompt);
+                    } else if (line) {
+                      // Place the trailing segment in the buffer
+                      const before = buffer.slice(0, cursorIndex);
+                      const after = buffer.slice(cursorIndex);
+                      setBuffer(
+                        before + line + after,
+                        cursorIndex + line.length,
+                      );
+                    }
+                  }
+                } else {
+                  // Insert arbitrary string at cursor position
+                  const before = buffer.slice(0, cursorIndex);
+                  const after = buffer.slice(cursorIndex);
+                  const newBuf = before + data + after;
+                  const newCursor = cursorIndex + data.length;
+                  setBuffer(newBuf, newCursor);
+                }
               }
           }
         });
