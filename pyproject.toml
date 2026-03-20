@@ -163,9 +163,6 @@ markers = [
 
 [tool._pyodide]
 
-[tool.pyodide.build]
-rust_toolchain = "nightly-2025-02-01"
-
 [tool.codespell]
 ignore-words = 'tools/codespell_ignore_words.txt'
 skip = 'benchmark/benchmarks/pystone_benchmarks/pystone.py,src/js/package-lock.json,tools/codespell_ignore_words.txt'

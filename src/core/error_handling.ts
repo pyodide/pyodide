@@ -212,7 +212,7 @@ function isPyodideFrame(frame: StackFrame): boolean {
   if (fileName.includes("wasm-function")) {
     return true;
   }
-  if (!fileName.includes("pyodide.asm.js")) {
+  if (!fileName.includes("pyodide.asm.mjs")) {
     return false;
   }
   let funcName = frame.functionName || "";
