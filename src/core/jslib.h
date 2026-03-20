@@ -41,7 +41,7 @@ extern JsRef Jsr_error;
 
 #define JS_ERROR hiwire_get(Jsr_error)
 
-__attribute__((import_module("sentinel"), import_name("is_sentinel"))) int
+int
 JsvError_Check(JsVal val);
 
 #define Jsv_undefined hiwire_get(Jsr_undefined)
@@ -72,6 +72,9 @@ JsvNum_fromInt(int x);
 
 JsVal
 JsvNum_fromDouble(double x);
+
+int
+JsvNum_toInt(JsVal v);
 
 JsVal
 JsvBigInt_fromDigits(const unsigned int* digits, size_t ndigits);

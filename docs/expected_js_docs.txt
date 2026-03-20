@@ -16,6 +16,7 @@ js:attribute
   exports.PyodideConfig.args?
   exports.PyodideConfig.checkAPIVersion?
   exports.PyodideConfig.convertNullToNone?
+  exports.PyodideConfig.createPyodideModule?
   exports.PyodideConfig.enableRunUntilComplete?
   exports.PyodideConfig.env?
   exports.PyodideConfig.fullStdLib?
@@ -162,6 +163,7 @@ js:function
   pyodide.toPy
   pyodide.unpackArchive
   pyodide.unregisterJsModule
+  pyodide.useNodeSockFS
 js:class
   pyodide.ffi.PyAsyncGenerator
   pyodide.ffi.PyAsyncIterable

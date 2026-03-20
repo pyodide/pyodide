@@ -2,7 +2,7 @@
 
 # A short script to check the size of files when compressed.
 # Usage:
-#   check_compressed_size.py pyodide.asm.js pyodide.asm.wasm
+#   check_compressed_size.py pyodide.asm.mjs pyodide.asm.wasm
 
 import gzip
 import sys
@@ -32,7 +32,7 @@ def check_size(file: str | Path) -> None:
 
     data = file.read_bytes()
     compressed_data_1 = gzip.compress(data, compresslevel=1)
-    compressed_data_6 = gzip.compress(data, compresslevel=9)
+    compressed_data_6 = gzip.compress(data, compresslevel=6)
     compressed_data_9 = gzip.compress(data, compresslevel=9)
 
     print(f"    Gzip compressed size (level 1): {kb(len(compressed_data_1))} KB")

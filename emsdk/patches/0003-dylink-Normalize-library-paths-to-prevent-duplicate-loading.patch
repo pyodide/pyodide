@@ -1,0 +1,35 @@
+From 0661a9e674723851f6209699d8e73e32bea7e3bc Mon Sep 17 00:00:00 2001
+From: Pepijn de Vos <pepijndevos@gmail.com>
+Date: Fri, 6 Mar 2026 08:37:22 +0100
+Subject: [PATCH 3/4] [dylink] Normalize library paths to prevent duplicate loading
+
+When a shared library in a subdirectory references a dependency via
+$ORIGIN/.. rpath, findLibraryFS resolves it to a non-canonical path
+containing ".." (e.g. "sub/../lib.so"). Since loadDynamicLibrary uses
+the raw path as the LDSO key, this causes the same library to be loaded
+twice under different names, running constructors twice.
+
+Fix by normalizing libName with PATH.normalize() at the top of
+loadDynamicLibrary, matching what dlopenInternal already does.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+---
+ src/lib/libdylink.js | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/lib/libdylink.js b/src/lib/libdylink.js
+index 5cb86ee25..99ae83ff4 100644
+--- a/src/lib/libdylink.js
++++ b/src/lib/libdylink.js
+@@ -1103,6 +1103,8 @@ var LibraryDylink = {
+      * @param {Object=} localScope
+      */`,
+   $loadDynamicLibrary: function(libName, flags = {global: true, nodelete: true}, localScope, handle) {
++    // Avoid duplicate LDSO entries from non-canonical paths (e.g. "sub/../lib.so")
++    libName = PATH.normalize(libName);
+ #if DYLINK_DEBUG
+     dbg(`loadDynamicLibrary: ${libName} handle: ${handle}`);
+     dbg('existing:', Object.keys(LDSO.loadedLibsByName));
+-- 
+2.53.0
+

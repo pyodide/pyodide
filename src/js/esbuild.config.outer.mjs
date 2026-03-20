@@ -18,7 +18,7 @@ async function hashFiles(files) {
 
 const extraDefines = {
   BUILD_ID: await hashFiles([
-    dest("dist/pyodide.asm.js"),
+    dest("dist/pyodide.asm.mjs"),
     dest("dist/pyodide.asm.wasm"),
   ]),
 };

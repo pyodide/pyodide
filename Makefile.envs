@@ -7,7 +7,7 @@ export PYTHON_ARCHIVE_SHA256=c609e078adab90e2c6bacb6afafacd5eaf60cd94cf670f1e159
 
 export SED ?= sed
 
-export RUST_TOOLCHAIN ?= nightly-2025-12-10
+export RUST_TOOLCHAIN ?= 1.93.0
 export RUSTFLAGS = -C link-arg=-sSIDE_MODULE=2
 
 # URL to the prebuilt packages
@@ -72,6 +72,9 @@ export PYZIP_EXCLUDE_FILES=\
 	lib2to3/ \
 	_osx_support.py \
 	_aix_support.py \
+	_android_support.py \
+	_ios_support.py \
+	_apple_support.py \
 	curses/ \
 	dbm/ \
 	idlelib/ \
@@ -83,6 +86,7 @@ export PYZIP_EXCLUDE_FILES=\
 	pydoc_data/ \
   _sysconfig_vars__emscripten_wasm32-emscripten.json \
   build-details.json
+
 
 # List of modules that we replace with a stub in the zipped standard library
 export PYZIP_JS_STUBS=\
@@ -149,12 +153,9 @@ export LDFLAGS_BASE=\
 
 export CXXFLAGS_BASE=
 
-# We need -sERROR_ON_UNDEFINED_SYMBOLS=0 b/c otherwise Emscripten gets mad that
-# the symbols from sentinel.ts are missing.
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s ENVIRONMENT=web,webview,worker,node,shell \
 	-s MAIN_MODULE=1 \
-	-s MODULARIZE=1 \
 	-s LZ4=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
@@ -174,7 +175,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s NODEJS_CATCH_REJECTION=0 \
 	-s EXPORTED_FUNCTIONS='$(EXPORTS)'\
 	-s EXIT_RUNTIME \
-	-sERROR_ON_UNDEFINED_SYMBOLS=0 \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 	-lffi \
@@ -195,6 +195,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lhtml5.js \
 	-lhtml5_webgl.js \
 	-lsdl.js \
+	--js-library=src/core/libjsverror.js \
 	-sMAX_WEBGL_VERSION=2  \
 	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
 
@@ -264,6 +265,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,stackSave \
 		,stackRestore \
 		,runtimeKeepalivePush \
+		,SOCKFS \
 		,HEAP8 \
 		,HEAPU8 \
 		,HEAP16 \
@@ -275,7 +277,6 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,HEAPF32 \
 		,HEAPF64
 	export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
-		-s MODULARIZE=1 \
 		-s EXPORT_NAME="'_createPyodideModule'" \
 		-sEXPORTED_RUNTIME_METHODS='$(EXPORTED_RUNTIME_METHODS)' \
 		-s LZ4=1 \

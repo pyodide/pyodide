@@ -11,12 +11,12 @@
 (module
   (type $empty_struct (struct))
 
-  (func (export "create_sentinel") (result externref)
+  (func (export "Jsv_GetError_import") (result externref)
     struct.new $empty_struct
     extern.convert_any
   )
 
-  (func (export "is_sentinel") (param $input externref) (result i32)
+  (func (export "JsvError_Check") (param $input externref) (result i32)
     local.get $input
     any.convert_extern
     ref.test (ref $empty_struct)

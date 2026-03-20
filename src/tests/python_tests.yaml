@@ -39,9 +39,11 @@
     xfail: platform-specific
 - test_abc
 - test_abstract_numbers
-- test_android
 - test_annotationlib
-- test_apple
+- test_android:
+    xfail: platform-specific
+- test_apple:
+    xfail: platform-specific
 - test_argparse:
     xfail: slow, times out
     skip:
