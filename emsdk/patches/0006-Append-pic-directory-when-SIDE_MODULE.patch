@@ -1,0 +1,40 @@
+From 9400a37036f393c709829a8623a7b7959808253c Mon Sep 17 00:00:00 2001
+From: ryanking13 <def6488@gmail.com>
+Date: Sun, 22 Mar 2026 00:08:21 +0900
+Subject: [PATCH 1/1] Append pic directory when SIDE_MODULE
+
+---
+ tools/cache.py | 2 +-
+ tools/system_libs.py | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tools/cache.py b/tools/cache.py
+index 832dc3118..76ab14208 100644
+--- a/tools/cache.py
++++ b/tools/cache.py
+@@ -124,7 +124,7 @@ def get_lib_dir(absolute):
+       subdir.append('thinlto')
+     else:
+       subdir.append('lto')
+-  if settings.MAIN_MODULE:
++  if settings.MAIN_MODULE or settings.SIDE_MODULE:
+     subdir.append('pic')
+   if subdir:
+     path = Path(path, '-'.join(subdir))
+
+diff --git a/tools/system_libs.py b/tools/system_libs.py
+index b41ae353d..b2cc73700 100644
+--- a/tools/system_libs.py
++++ b/tools/system_libs.py
+@@ -61,7 +61,7 @@ def get_base_cflags(build_dir, force_object_files=False, preprocess=True):
+   flags = ['-g', '-sSTRICT', '-Werror']
+   if settings.LTO and not force_object_files:
+     flags += ['-flto=' + settings.LTO]
+-  if settings.MAIN_MODULE:
++  if settings.MAIN_MODULE or settings.SIDE_MODULE:
+     # Explicitly include `-sMAIN_MODULE` when building system libraries.
+     # `-fPIC` alone is not enough to configure trigger the building and
+     # caching of `pic` libraries (see `get_lib_dir` in `cache.py`)
+-- 
+2.43.0
+
