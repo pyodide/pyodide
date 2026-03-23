@@ -77,7 +77,7 @@ def idfn(testcase: ImportTestCase) -> str:
 @pytest.mark.skip_refcount_check
 @pytest.mark.driver_timeout(120)
 @pytest.mark.parametrize("testcase", build_testcases(), ids=idfn)
-def test_import(selenium_standalone: Any, testcase: ImportTestCase) -> None:
+def test_import(selenium_standalone_refresh: Any, testcase: ImportTestCase) -> None:
     name = testcase["name"]
     if name == "no-lockfile-found":
         pytest.skip(f"Failed to load lockfile from {LOCKFILE_PATH}")
@@ -86,9 +86,9 @@ def test_import(selenium_standalone: Any, testcase: ImportTestCase) -> None:
     if name in XFAIL_PACKAGES:
         pytest.xfail(XFAIL_PACKAGES[name])
 
-    if name in UNSUPPORTED_PACKAGES[selenium_standalone.browser]:
+    if name in UNSUPPORTED_PACKAGES[selenium_standalone_refresh.browser]:
         pytest.xfail(
-            f"{name} fails to load and is not supported on {selenium_standalone.browser}."
+            f"{name} fails to load and is not supported on {selenium_standalone_refresh.browser}."
         )
 
     if not imports:
@@ -96,5 +96,5 @@ def test_import(selenium_standalone: Any, testcase: ImportTestCase) -> None:
         return
 
     for import_name in imports:
-        selenium_standalone.load_package([name])
-        selenium_standalone.run(f"import {import_name}")
+        selenium_standalone_refresh.load_package([name])
+        selenium_standalone_refresh.run(f"import {import_name}")
