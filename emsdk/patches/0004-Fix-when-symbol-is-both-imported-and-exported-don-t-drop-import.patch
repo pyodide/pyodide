@@ -1,7 +1,7 @@
 From 358299885bb6dd0f631eb7890debdbe234886402 Mon Sep 17 00:00:00 2001
 From: Gyeongjae Choi <gyeongjae@cloudflare.com>
 Date: Fri, 20 Mar 2026 10:33:16 +0900
-Subject: [PATCH 4/4] Fix: When symbol is both imported and exported, don't
+Subject: [PATCH 4/5] Fix: When symbol is both imported and exported, don't
  drop import
 
 Upstream PR: https://github.com/emscripten-core/emscripten/pull/26356

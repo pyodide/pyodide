@@ -1,7 +1,9 @@
 From 9400a37036f393c709829a8623a7b7959808253c Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Sun, 22 Mar 2026 00:08:21 +0900
-Subject: [PATCH 1/1] Append pic directory when SIDE_MODULE
+Subject: [PATCH 5/5] Append pic directory when SIDE_MODULE
+
+https://github.com/emscripten-core/emscripten/pull/26514
 
 ---
  tools/cache.py | 2 +-
