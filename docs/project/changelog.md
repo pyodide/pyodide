@@ -41,7 +41,7 @@ myst:
   {pr}`6111`
 
 - {{ Breaking }} We do not unvendor stdlibs anymore. `sqlite3` and `lzma` are now bundled into Pyodide by default. `pydecimal` and `test` package is removed from the distribution.
-  `pydoc_data` package is still in the distribution but needs to be explictily loaded with
+  `pydoc_data` package is still in the distribution but needs to be explicitly loaded with
   `loadPackage("pydoc_data")` to use. The `fullstdlib` option in loadPyodide is deprecated and a no-op.
   {pr}`6151`
 
