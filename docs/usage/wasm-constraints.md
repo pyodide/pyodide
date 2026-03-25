@@ -8,7 +8,7 @@ tests skipped in
 [`src/tests/python_tests.yaml`](https://github.com/pyodide/pyodide/blob/main/src/tests/python_tests.yaml)
 or via [patches](https://github.com/pyodide/pyodide/tree/main/cpython/patches).
 
-#### Modules with limited functionality
+### Modules with limited functionality
 
 - decimal: The decimal module has C (\_decimal) and Python (\_pydecimal) implementations
   with the same functionality. The Python implementation is not available.
