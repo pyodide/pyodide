@@ -258,6 +258,13 @@ of the stable console.
           const completions = completionResult[0].toJs();
           const start = completionResult[1];
           completionResult.destroy();
+          
+          // Guard against autocomplete explosion (too many suggestions)
+          if (completions.length > 100) {
+            // Too many completions - likely a broad namespace dump, ignore
+            return;
+          }
+          
           if (completions.length === 1) {
             const newBuf =
               buffer.slice(0, start) +
@@ -275,7 +282,12 @@ of the stable console.
               setBuffer(newBuf, start + prefix.length);
             } else {
               term.write("\r\n");
-              term.writeln(completions.join("  "));
+              // Limit display to first 50 completions
+              const displayCompletions = completions.slice(0, 50);
+              term.writeln(displayCompletions.join("  "));
+              if (completions.length > 50) {
+                term.writeln(`... and ${completions.length - 50} more`);
+              }
               refreshLine();
             }
           }
@@ -286,7 +298,10 @@ of the stable console.
           if (normalized.includes("\n")) {
             const lines = normalized.split("\n");
             for (let i = 0; i < lines.length; i++) {
-              const line = lines[i];
+              let line = lines[i];
+              // Strip prompt markers (>>> or ...) from pasted transcript
+              line = line.replace(/^(>>>|\.\.\.) /, "").trimStart();
+              
               if (i < lines.length - 1) {
                 // Execute each intermediate line sequentially
                 const before = buffer.slice(0, cursorIndex);
@@ -298,12 +313,14 @@ of the stable console.
                 term.write("\r\n");
                 await execLine(buffer);
                 clearBuffer();
-                term.write(prompt);
+                // Don't write prompt here - it will be written after the loop completes
               } else if (line) {
-                // Place the trailing segment in the buffer
+                // Place the trailing segment in the buffer (last line)
                 insertAtCursor(line);
               }
             }
+            // Write prompt once after all multiline execution completes
+            term.write(prompt);
           } else {
             // Single line paste
             insertAtCursor(data);
@@ -427,6 +444,8 @@ of the stable console.
                 cursorIndex -= 1;
                 refreshLine();
               }
+              break;
+            case "\x1B[Z": // Shift+Tab - ignore to prevent clearing input
               break;
             case "\t":
               await handleTabCompletion();
