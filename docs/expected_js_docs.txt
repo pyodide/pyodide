@@ -19,6 +19,7 @@ js:attribute
   exports.PyodideConfig.createPyodideModule?
   exports.PyodideConfig.enableRunUntilComplete?
   exports.PyodideConfig.env?
+  exports.PyodideConfig.fullStdLib?
   exports.PyodideConfig.indexURL?
   exports.PyodideConfig.jsglobals?
   exports.PyodideConfig.lockFileContents?
