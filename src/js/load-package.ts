@@ -78,10 +78,7 @@ export async function initializePackageIndex(
 
   // Set up module_not_found_hook
   const importhook = API._pyodide._importhook;
-  importhook.register_module_not_found_hook(
-    API._import_name_to_package_name,
-    [],
-  );
+  importhook.register_module_not_found_hook(API._import_name_to_package_name);
   API.package_loader.init_loaded_packages();
 }
 
