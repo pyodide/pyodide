@@ -240,7 +240,8 @@ of the stable console.
         }
 
         function clearBuffer() {
-          setBuffer("", 0);
+          buffer = "";
+          cursorIndex = 0;
         }
 
         function longestCommonPrefix(strings) {
@@ -254,17 +255,23 @@ of the stable console.
 
         async function handleTabCompletion() {
           const sourceToComplete = buffer.slice(0, cursorIndex);
+          if (!sourceToComplete.trim()) {
+            return;
+          }
+          if (/[([{]\s*$/.test(sourceToComplete)) {
+            return;
+          }
+
           const completionResult = pyconsole.complete(sourceToComplete);
           const completions = completionResult[0].toJs();
           const start = completionResult[1];
           completionResult.destroy();
-          
-          // Guard against autocomplete explosion (too many suggestions)
-          if (completions.length > 100) {
-            // Too many completions - likely a broad namespace dump, ignore
+
+          const currentWord = sourceToComplete.slice(start);
+          if (!currentWord.trim() || /^\d+$/.test(currentWord.trim())) {
             return;
           }
-          
+
           if (completions.length === 1) {
             const newBuf =
               buffer.slice(0, start) +
@@ -273,7 +280,6 @@ of the stable console.
             setBuffer(newBuf, start + completions[0].length);
           } else if (completions.length > 1) {
             const prefix = longestCommonPrefix(completions);
-            const currentWord = sourceToComplete.slice(start);
             if (prefix.length > currentWord.length) {
               const newBuf =
                 buffer.slice(0, start) +
@@ -282,11 +288,10 @@ of the stable console.
               setBuffer(newBuf, start + prefix.length);
             } else {
               term.write("\r\n");
-              // Limit display to first 50 completions
-              const displayCompletions = completions.slice(0, 50);
+              const displayCompletions = completions.slice(0, 200);
               term.writeln(displayCompletions.join("  "));
-              if (completions.length > 50) {
-                term.writeln(`... and ${completions.length - 50} more`);
+              if (completions.length > 200) {
+                term.writeln(`... and ${completions.length - 200} more`);
               }
               refreshLine();
             }
@@ -296,31 +301,38 @@ of the stable console.
         async function handlePaste(data) {
           const normalized = data.replace(/\r\n?/g, "\n");
           if (normalized.includes("\n")) {
+            const hasTrailingNewline = normalized.endsWith("\n");
             const lines = normalized.split("\n");
-            for (let i = 0; i < lines.length; i++) {
-              let line = lines[i];
-              // Strip prompt markers (>>> or ...) from pasted transcript
-              line = line.replace(/^(>>>|\.\.\.) /, "").trimStart();
-              
-              if (i < lines.length - 1) {
-                // Execute each intermediate line sequentially
-                const before = buffer.slice(0, cursorIndex);
-                const after = buffer.slice(cursorIndex);
-                setBuffer(
-                  before + line + after,
-                  cursorIndex + line.length,
-                );
-                term.write("\r\n");
-                await execLine(buffer);
-                clearBuffer();
-                // Don't write prompt here - it will be written after the loop completes
-              } else if (line) {
-                // Place the trailing segment in the buffer (last line)
-                insertAtCursor(line);
-              }
+            if (hasTrailingNewline) {
+              lines.pop();
             }
-            // Write prompt once after all multiline execution completes
-            term.write(prompt);
+
+            const cleanedLines = lines.map((line) =>
+              line.replace(/^\s*(>>>|\.\.\.)\s?/, "")
+            );
+
+            const executableLines = hasTrailingNewline
+              ? cleanedLines
+              : cleanedLines.slice(0, -1);
+
+            for (const line of executableLines) {
+              insertAtCursor(line);
+              term.write("\r\n");
+              await execLine(buffer);
+              clearBuffer();
+            }
+
+            if (!hasTrailingNewline) {
+              const trailingFragment =
+                cleanedLines.length > 0
+                  ? cleanedLines[cleanedLines.length - 1]
+                  : "";
+              if (trailingFragment) {
+                insertAtCursor(trailingFragment);
+              }
+            } else {
+              term.write(prompt);
+            }
           } else {
             // Single line paste
             insertAtCursor(data);
