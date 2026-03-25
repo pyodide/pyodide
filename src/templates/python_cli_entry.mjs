@@ -156,7 +156,6 @@ async function main() {
         process.env,
         { HOME: windowsPathToUnix(process.cwd()) },
       ),
-      fullStdLib: false,
       fsInit,
     });
   } catch (e) {

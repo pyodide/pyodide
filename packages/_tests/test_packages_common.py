@@ -54,7 +54,7 @@ def generate_test_list(lockfile: PyodideLockSpec) -> list[ImportTestCase]:
             "imports": [normalize_import_name(name) for name in package.imports],
         }
         for package in packages.values()
-        if package.package_type in ("package", "cpython_module")
+        if package.package_type == "package"
     ]
 
     return testcases

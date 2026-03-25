@@ -59,7 +59,6 @@ export async function initializePackageIndex(
   API.lockfile = lockfile;
   API.lockfile_info = lockfile.info;
   API.lockfile_packages = lockfile.packages;
-  API.lockfile_unvendored_stdlibs_and_test = [];
 
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map<string, string>();
@@ -69,20 +68,9 @@ export async function initializePackageIndex(
     for (let import_name of pkg.imports) {
       API._import_name_to_package_name.set(import_name, name);
     }
-
-    if (pkg.package_type === "cpython_module") {
-      API.lockfile_unvendored_stdlibs_and_test.push(name);
-    }
   }
 
-  API.lockfile_unvendored_stdlibs =
-    API.lockfile_unvendored_stdlibs_and_test.filter(
-      (lib: string) => lib !== "test",
-    );
   let toLoad = API.config.packages;
-  if (API.config.fullStdLib) {
-    toLoad = [...toLoad, ...API.lockfile_unvendored_stdlibs];
-  }
   await loadPackage(toLoad, { messageCallback() {} });
   // Have to wait for bootstrapFinalizedPromise before calling Python APIs
   await API.bootstrapFinalizedPromise;
@@ -92,7 +80,7 @@ export async function initializePackageIndex(
   const importhook = API._pyodide._importhook;
   importhook.register_module_not_found_hook(
     API._import_name_to_package_name,
-    API.lockfile_unvendored_stdlibs_and_test,
+    [],
   );
   API.package_loader.init_loaded_packages();
 }

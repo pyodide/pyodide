@@ -148,7 +148,6 @@ Type of the package. Possible values are:
 - package (default): A normal Python package, built to a wheel file.
 - static_library: A static library.
 - shared_library: A shared library.
-- cpython_module: A CPython stdlib extension module.
   This is used for unvendoring CPython modules, and should not be used
   for other purposes.
 

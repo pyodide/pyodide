@@ -680,7 +680,7 @@ def test_custom_lockfile(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     lock = selenium.run_js(
         """
-        let pyodide = await loadPyodide({fullStdLib: false, packages: ["micropip"]});
+        let pyodide = await loadPyodide({packages: ["micropip"]});
         await pyodide.loadPackage("micropip")
         return pyodide.runPythonAsync(`
             import micropip
@@ -696,7 +696,7 @@ def test_custom_lockfile(selenium_standalone_noload):
         assert (
             selenium.run_js(
                 """
-                let pyodide = await loadPyodide({fullStdLib: false, lockFileURL: "custom_lockfile.json", packages: ["hypothesis"] });
+                let pyodide = await loadPyodide({lockFileURL: "custom_lockfile.json", packages: ["hypothesis"] });
                 return pyodide.runPython("import hypothesis; hypothesis.__version__")
                 """
             )
@@ -714,7 +714,7 @@ def test_custom_lockfile_from_indexedDB(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     lock = selenium.run_js(
         """
-        let pyodide = await loadPyodide({fullStdLib: false, packages: ["micropip"]});
+        let pyodide = await loadPyodide({packages: ["micropip"]});
         await pyodide.loadPackage("micropip")
         return pyodide.runPython(`
             import micropip
@@ -735,7 +735,6 @@ def test_custom_lockfile_from_indexedDB(selenium_standalone_noload):
         lockfileURL = URL.createObjectURL(new Blob([lockfile], {type: "application/json"}));
 
         let pyodide2 = await loadPyodide({
-            fullStdLib: false,
             lockFileURL: lockfileURL,
             packages: ["micropip"],
         });
@@ -798,7 +797,7 @@ def test_custom_lockfile_different_dir(
 
     selenium.run_js(
         f"""
-        let pyodide = await loadPyodide({{fullStdLib: false, lockFileURL: {lockfile_url!r} }});
+        let pyodide = await loadPyodide({{lockFileURL: {lockfile_url!r} }});
         await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
         return pyodide.runPython("import dummy_pkg")
         """
@@ -893,7 +892,7 @@ def test_lockfilecontents_package_base_url(
 
     selenium.run_js(
         f"""
-        let pyodide = await loadPyodide({{fullStdLib: false, lockFileContents: {lockfile_content_json!r}, packageBaseUrl: {base_url!r} }});
+        let pyodide = await loadPyodide({{lockFileContents: {lockfile_content_json!r}, packageBaseUrl: {base_url!r} }});
         await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
         return pyodide.runPython("import dummy_pkg")
         """
@@ -944,7 +943,7 @@ def test_lockfilecontents_absolute_file_name(
 
     selenium.run_js(
         f"""
-        let pyodide = await loadPyodide({{fullStdLib: false, lockFileContents: {lockfile_content_json!r} }});
+        let pyodide = await loadPyodide({{lockFileContents: {lockfile_content_json!r} }});
         await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
         return pyodide.runPython("import dummy_pkg")
         """

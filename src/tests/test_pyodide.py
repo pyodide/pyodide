@@ -1397,27 +1397,6 @@ def test_sys_path0(selenium):
     assert sys.path[0] == ""
 
 
-@pytest.mark.requires_dynamic_linking
-def test_fullstdlib(selenium_standalone_noload):
-    selenium = selenium_standalone_noload
-    selenium.run_js(
-        """
-        let pyodide = await loadPyodide({
-            fullStdLib: true,
-        });
-
-        await pyodide.loadPackage("micropip");
-
-        pyodide.runPython(`
-            import pyodide_js
-            import micropip
-            loaded_packages = micropip.list()
-            assert all((lib in micropip.list()) for lib in pyodide_js._api.lockfile_unvendored_stdlibs)
-        `);
-        """
-    )
-
-
 def test_loadPyodide_relative_index_url(selenium_standalone_noload):
     """Check that loading Pyodide with a relative URL works"""
     selenium_standalone_noload.run_js(
@@ -1666,7 +1645,6 @@ def test_args(selenium_standalone_noload):
             stderrStrings.push(s);
         }
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals : self,
             stdout,
             stderr,
@@ -1955,7 +1933,6 @@ def test_custom_python_stdlib_URL(selenium_standalone_noload, runtime):
         selenium.run_js(
             """
             let pyodide = await loadPyodide({
-                fullStdLib: false,
                 stdLibURL: "./python_stdlib2.zip",
             });
             // Check that we can import stdlib library modules

@@ -70,7 +70,6 @@ def set_configs():
         "chrome",
         """
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals : self,
         });
         """,
@@ -83,7 +82,6 @@ def set_configs():
         let snap = readFileSync("snapshot.bin");
         snap = new Uint8Array(snap.buffer);
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals: self,
             _loadSnapshot: snap,
         });
