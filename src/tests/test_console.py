@@ -664,6 +664,19 @@ def test_console_v2_html(selenium_standalone):
     result = exec_and_get_result("f()")
     assert "<coroutine object f at 0x" in result or "coroutine" in result.lower()
 
+    # Test multiline paste executes complete lines and doesn't duplicate prompts
+    selenium.run_js(
+        """
+        term.clear();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        term.paste("import math\\nmath.sqrt(16)\\n");
+        await new Promise(resolve => setTimeout(resolve, 300));
+        """
+    )
+    result = get_terminal_content()
+    assert ">>> >>>" not in result
+    assert "4.0" in result
+
     # Test syntax error
     result = exec_and_get_result("1+")
     assert ">>> 1+" in result
