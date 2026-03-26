@@ -670,6 +670,7 @@ def test_console_v2_html(selenium_standalone):
         term.clear();
         await new Promise(resolve => setTimeout(resolve, 100));
         term.paste("import math\\nmath.sqrt(16)\\n");
+        term.paste("\\r");
         await new Promise(resolve => setTimeout(resolve, 300));
         """
     )
