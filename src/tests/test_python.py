@@ -164,8 +164,8 @@ def test_version_info(selenium):
 
 
 @pytest.mark.skip_refcount_check
-def test_runpythonasync(selenium_standalone):
-    output = selenium_standalone.run_async(
+def test_runpythonasync(selenium_standalone_refresh):
+    output = selenium_standalone_refresh.run_async(
         """
         import micropip
         micropip.__version__
@@ -174,8 +174,8 @@ def test_runpythonasync(selenium_standalone):
     assert isinstance(output, str)
 
 
-def test_runpythonasync_no_imports(selenium_standalone):
-    output = selenium_standalone.run_async(
+def test_runpythonasync_no_imports(selenium_standalone_refresh):
+    output = selenium_standalone_refresh.run_async(
         """
         42
         """
@@ -183,20 +183,20 @@ def test_runpythonasync_no_imports(selenium_standalone):
     assert output == 42
 
 
-def test_runpythonasync_missing_import(selenium_standalone):
+def test_runpythonasync_missing_import(selenium_standalone_refresh):
     msg = "ModuleNotFoundError"
-    with pytest.raises(selenium_standalone.JavascriptException, match=msg):
-        selenium_standalone.run_async(
+    with pytest.raises(selenium_standalone_refresh.JavascriptException, match=msg):
+        selenium_standalone_refresh.run_async(
             """
             import foo
             """
         )
 
 
-def test_runpythonasync_exception(selenium_standalone):
+def test_runpythonasync_exception(selenium_standalone_refresh):
     msg = "ZeroDivisionError"
-    with pytest.raises(selenium_standalone.JavascriptException, match=msg):
-        selenium_standalone.run_async(
+    with pytest.raises(selenium_standalone_refresh.JavascriptException, match=msg):
+        selenium_standalone_refresh.run_async(
             """
             42 / 0
             """
@@ -204,10 +204,10 @@ def test_runpythonasync_exception(selenium_standalone):
 
 
 @pytest.mark.skip_refcount_check
-def test_runpythonasync_exception_after_import(selenium_standalone):
+def test_runpythonasync_exception_after_import(selenium_standalone_refresh):
     msg = "ZeroDivisionError"
-    with pytest.raises(selenium_standalone.JavascriptException, match=msg):
-        selenium_standalone.run_async(
+    with pytest.raises(selenium_standalone_refresh.JavascriptException, match=msg):
+        selenium_standalone_refresh.run_async(
             """
             import micropip
             42 / 0
@@ -215,8 +215,8 @@ def test_runpythonasync_exception_after_import(selenium_standalone):
         )
 
 
-def test_py(selenium_standalone):
-    selenium_standalone.run_js(
+def test_py(selenium_standalone_refresh):
+    selenium_standalone_refresh.run_js(
         """
         pyodide.runPython(`
             def func():
