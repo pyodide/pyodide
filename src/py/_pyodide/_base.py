@@ -594,15 +594,15 @@ async def eval_code_async(
 
     Examples
     --------
+  
     >>> import asyncio
-    >>> from pyodide import eval_code_async
     >>> source = "1 + 1"
     >>> asyncio.run(eval_code_async(source))
-    2
+2
 
-    >>> source = "1 + 1;"
-    >>> asyncio.run(eval_code_async(source))  # semicolon suppresses result
-    None
+>>> source = "1 + 1;"
+>>> asyncio.run(eval_code_async(source))  # semicolon suppresses result
+None
     """
     flags = flags or ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
     return (
