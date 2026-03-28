@@ -592,17 +592,14 @@ async def eval_code_async(
             the expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
             parameters to modify this default behavior.
 
-        Examples
-        --------
-
-        >>> import asyncio
-        >>> source = "1 + 1"
-        >>> asyncio.run(eval_code_async(source))
+    Examples
+    --------
+    >>> source = "1 + 1"
+    >>> await eval_code_async(source)
     2
 
     >>> source = "1 + 1;"
-    >>> asyncio.run(eval_code_async(source))  # semicolon suppresses result
-    None
+    >>> await eval_code_async(source)  # semicolon suppresses result
     """
     flags = flags or ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
     return (
