@@ -234,7 +234,12 @@ declare global {
   namespace FS {
     let filesystems: Record<string, any>;
     function registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
-    function createNode(parent: any, name: string, mode: number, dev: number): any;
+    function createNode(
+      parent: any,
+      name: string,
+      mode: number,
+      dev: number,
+    ): any;
     function createStream(stream: any, fd?: number): any;
   }
 }
