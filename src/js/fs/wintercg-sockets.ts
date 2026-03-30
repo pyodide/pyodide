@@ -22,10 +22,14 @@ import type { ReadableStream, WritableStream } from "node:stream/web";
 export interface SocketOptions {
   /**
    * Specifies whether or not to use TLS when creating the TCP socket.
-   * `off` — Do not use TLS.
-   * `on` — Use TLS.
-   * `starttls` — Do not use TLS initially, but allow the socket to be
-   *   upgraded to use TLS by calling startTls().
+   *
+   * `off`
+   *    Do not use TLS.
+   * `on`
+   *    Use TLS.
+   * `starttls`
+   *    Do not use TLS initially, but allow the socket to be
+   *    upgraded to use TLS by calling startTls().
    */
   secureTransport?: "off" | "on" | "starttls";
   /**

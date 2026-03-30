@@ -29,6 +29,8 @@ def ts_xref_formatter(_config, xref):
     if name in ["ConcatArray", "IterableIterator", "unknown", "U"]:
         return f"``{name}``"
     if isinstance(xref, TypeXRefInternal):
+        if xref.kind is None:
+            print(xref)
         return f":js:{xref.kind}:`{name}`"
     return f":js:class:`{name}`"
 
