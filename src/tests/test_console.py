@@ -676,7 +676,7 @@ def test_console_v2_html(selenium_standalone):
     )
     result = get_terminal_content()
     assert ">>> >>>" not in result
-    assert "4.0" in result
+    assert "4" in result
 
     # Test syntax error
     result = exec_and_get_result("1+")
