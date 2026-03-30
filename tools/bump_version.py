@@ -7,6 +7,7 @@ import itertools
 import pathlib
 import re
 import subprocess
+import sys
 from ast import Constant
 from collections import namedtuple
 from collections.abc import Callable
@@ -280,6 +281,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import sys
-
     sys.exit(main())

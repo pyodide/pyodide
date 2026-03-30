@@ -89,7 +89,8 @@ src/core/libpyodide.a: \
 	src/core/pyodide_pre.o \
 	src/core/stack_switching/pystate.o \
 	src/core/stack_switching/suspenders.o \
-	src/core/print.o
+	src/core/print.o \
+	src/core/socket_syscalls.o
 
 	emar rcs src/core/libpyodide.a $(filter %.o,$^)
 

@@ -1,3 +1,4 @@
+#include "Python.h"
 #include "emscripten.h"
 #include "jslib.h"
 
@@ -95,4 +96,23 @@ JsvPromise_Syncify(JsVal promise)
     JsvPromise_Syncify_handleError();
   }
   return result;
+}
+
+/**
+ * Syncify for C syscall context: suspend WASM, await a promise that resolves
+ * to int, and resume.
+ *
+ * This is a thin wrapper around JsvPromise_Syncify for use in socket syscall
+ * overrides. At the syscall level the GIL is not held.
+ * We reacquire the GIL via PyGILState_Ensure() before calling
+ * JsvPromise_Syncify. After resuming, PyGILState_Release re-releases the GIL.
+ */
+int
+syscall_syncify(__externref_t promise)
+{
+  PyGILState_STATE gilstate = PyGILState_Ensure();
+  JsVal result = JsvPromise_Syncify(promise);
+  int ret = JsvError_Check(result) ? -1 : JsvNum_toInt(result);
+  PyGILState_Release(gilstate);
+  return ret;
 }
