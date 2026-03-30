@@ -594,12 +594,14 @@ async def eval_code_async(
 
     Examples
     --------
+    >>> import asyncio
     >>> source = "1 + 1"
-    >>> await eval_code_async(source)
+    >>> asyncio.run(eval_code_async(source))
     2
 
     >>> source = "1 + 1;"
-    >>> await eval_code_async(source)  # semicolon suppresses result
+    >>> asyncio.run(eval_code_async(source))  # semicolon suppresses result
+    None
     """
     flags = flags or ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
     return (
