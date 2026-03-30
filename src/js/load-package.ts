@@ -59,6 +59,8 @@ export async function initializePackageIndex(
   API.lockfile = lockfile;
   API.lockfile_info = lockfile.info;
   API.lockfile_packages = lockfile.packages;
+  // Used in `pyodide venv`. Keeping for backward compatibility.
+  API.lockfile_unvendored_stdlibs_and_test = [];
 
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map<string, string>();
