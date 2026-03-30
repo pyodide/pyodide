@@ -617,7 +617,7 @@ def test_window_isnt_super_weird_anymore(selenium):
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 @run_in_pyodide
-def test_mount_object(selenium_standalone):
+def test_mount_object(selenium_standalone_refresh):
     from pyodide.code import run_js
 
     run_js(
@@ -755,7 +755,7 @@ def test_jsmod_import_star2(selenium):
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 @run_in_pyodide
-def test_nested_import(selenium_standalone):
+def test_nested_import(selenium_standalone_refresh):
     import sys
 
     from pyodide.code import run_js
@@ -777,7 +777,7 @@ def test_nested_import(selenium_standalone):
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 @run_in_pyodide
-def test_register_jsmodule_docs_example(selenium_standalone):
+def test_register_jsmodule_docs_example(selenium_standalone_refresh):
     import sys
 
     from pyodide.code import run_js
@@ -817,7 +817,7 @@ def test_register_jsmodule_docs_example(selenium_standalone):
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 @run_in_pyodide
-def test_register_non_extendable_jsmodule(selenium_standalone):
+def test_register_non_extendable_jsmodule(selenium_standalone_refresh):
     from pyodide.code import run_js
 
     run_js(
