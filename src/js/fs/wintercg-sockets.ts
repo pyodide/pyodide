@@ -16,6 +16,9 @@
 import type { Duplex } from "node:stream";
 import type { ReadableStream, WritableStream } from "node:stream/web";
 
+/**
+ * Document me please!
+ */
 export interface SocketOptions {
   /**
    * Specifies whether or not to use TLS when creating the TCP socket.
@@ -32,6 +35,9 @@ export interface SocketOptions {
   allowHalfOpen?: boolean;
 }
 
+/**
+ * Document me please!
+ */
 export interface SocketAddress {
   /** The hostname to connect to. Example: `cloudflare.com`. */
   hostname: string;
@@ -39,6 +45,9 @@ export interface SocketAddress {
   port: number;
 }
 
+/**
+ * @hidden
+ */
 export interface SocketInfo {
   remoteAddress?: string;
   localAddress?: string;
@@ -99,17 +108,26 @@ function getDuplexToWeb() {
   return _duplexToWeb;
 }
 
+/**
+ * @hidden
+ */
 export class SocketError extends TypeError {
   constructor(message: string) {
     super(`SocketError: ${message}`);
   }
 }
 
+/**
+ * @hidden
+ */
 export type ConnectFunc = (
   address: SocketAddress | string,
   options?: SocketOptions,
 ) => Socket;
 
+/**
+ * @hidden
+ */
 export function connect(
   address: SocketAddress | string,
   options?: SocketOptions,
@@ -124,6 +142,9 @@ export function connect(
   return new Socket(address, options);
 }
 
+/**
+ * Document me please!
+ */
 export class Socket {
   readable: ReadableStream<unknown>;
   writable: WritableStream<unknown>;
