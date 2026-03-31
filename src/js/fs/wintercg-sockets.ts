@@ -17,7 +17,7 @@ import type { Duplex } from "node:stream";
 import type { ReadableStream, WritableStream } from "node:stream/web";
 
 /**
- * Document me please!
+ * @hidden
  */
 export interface SocketOptions {
   /**
@@ -40,7 +40,7 @@ export interface SocketOptions {
 }
 
 /**
- * Document me please!
+ * @hidden
  */
 export interface SocketAddress {
   /** The hostname to connect to. Example: `cloudflare.com`. */
@@ -79,6 +79,8 @@ let _duplexToWeb:
  * Must be called once before using `connect()`.  Dynamically loads `node:net`,
  * `node:tls`, and `node:stream` so that this module has no top-level Node.js
  * dependencies.
+ *
+ * @hidden
  */
 export async function init(): Promise<void> {
   if (_net) return; // already initialised
@@ -147,7 +149,7 @@ export function connect(
 }
 
 /**
- * Document me please!
+ * @hidden
  */
 export class Socket {
   readable: ReadableStream<unknown>;

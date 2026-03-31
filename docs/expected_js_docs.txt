@@ -146,6 +146,7 @@ js:function
   pyodide.ffi.PySequence.some
   pyodide.ffi.PySequence.toJSON
   pyodide.ffi.PySequence.values
+  pyodide.initializeNodeSockFS
   pyodide.loadPackage
   pyodide.loadPackagesFromImports
   pyodide.mountNativeFS
