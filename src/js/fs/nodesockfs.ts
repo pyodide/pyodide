@@ -129,7 +129,7 @@ export async function initializeNodeSockFS(
       if (request === FIONREAD) {
         return sock.leftover ? sock.leftover.length : 0;
       }
-      return 0;
+      return -ERRNO_CODES.EINVAL;
     },
 
     close(sock: NodeSock): number {
