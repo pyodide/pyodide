@@ -55,12 +55,12 @@ def tcp_server(handler, *, timeout=5.0):
 
 
 @pytest.fixture(scope="function")
-def selenium_nodesock(selenium_standalone, runtime):
+def selenium_nodesock(selenium_standalone_refresh, runtime):
     # only_node marker doesn't work in fixture level...
     if runtime != "node":
         pytest.skip("Only works in node")
 
-    selenium = selenium_standalone
+    selenium = selenium_standalone_refresh
 
     selenium.run_js(
         """
