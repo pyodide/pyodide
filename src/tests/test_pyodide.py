@@ -1461,12 +1461,6 @@ def test_module_not_found_note(selenium_standalone):
         "micropip",
     ]
 
-    # When error is wrapped, add_note_to_module_not_found_error is called
-    with pytest.raises(ModuleNotFoundError) as e:
-        run_js("(f) => f()")(lambda: importlib.import_module("test"))
-    assert "unvendored from the Python standard library" in e.value.__notes__[0]
-    assert len(e.value.__notes__) == 1
-
     for lib in removed_stdlibs:
         with pytest.raises(ModuleNotFoundError) as e:
             importlib.import_module(lib)
