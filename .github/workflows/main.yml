@@ -79,7 +79,7 @@ jobs:
               --runtime=host \
               --cov=pyodide \
               src tools/
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         with:
           fail_ci_if_error: false
 

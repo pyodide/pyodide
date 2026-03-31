@@ -448,7 +448,7 @@ def test_hyp_tojs_no_crash(selenium, obj):
     max_examples=25,
 )
 @run_in_pyodide
-def test_hypothesis(selenium_standalone, obj):
+def test_hypothesis(selenium_standalone_refresh, obj):
     from pyodide.ffi import to_js
 
     to_js(obj)
