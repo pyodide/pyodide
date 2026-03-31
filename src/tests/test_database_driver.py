@@ -36,10 +36,7 @@ def selenium_nodesock(selenium_standalone, runtime):
         await pyodide.useNodeSockFS();
         """
     )
-    try:
-        yield selenium
-    finally:
-        pass
+    yield selenium
 
 
 @pytest.fixture(scope="session")
