@@ -189,6 +189,7 @@ export type FSNode = {
   rdev: number;
   contents: Uint8Array;
   mode: number;
+  sock?: any;
 };
 
 /** @hidden */
@@ -199,7 +200,7 @@ export type FSStream = {
   seekable?: boolean;
   stream_ops: FSStreamOps;
   node: FSNode;
-};
+} & FS.FSStream;
 
 /** @hidden */
 export type FSStreamOps = FSStreamOpsGen<FSStream>;
@@ -240,7 +241,7 @@ declare global {
       mode: number,
       dev: number,
     ): any;
-    function createStream(stream: any, fd?: number): any;
+    function createStream(stream: any, fd?: number): FSStream;
   }
 }
 
