@@ -56,8 +56,8 @@ def mysql_admin_config():
 
 @pytest.fixture()
 def mysql_test_db(mysql_admin_config):
-    pymysql = pytest.importorskip("pymysql")
-    pytest.importorskip("cryptography")  # for mysql_native_password
+    import cryptography  # noqa: F401  # for mysql_native_password
+    import pymysql  # type: ignore[import-untyped]
 
     suffix = uuid.uuid4().hex[:10]
     db = f"pyodide_it_{suffix}"
@@ -155,7 +155,7 @@ def test_mysql_pymysql_features(selenium_nodesock, mysql_test_db):
 
         await micropip.install("pymysql==1.1.0")
 
-        import pymysql  # type: ignore[import-untyped]
+        import pymysql
 
         def connect(**kwargs):
             return pymysql.connect(
@@ -286,7 +286,7 @@ def pg_admin_config():
 
 @pytest.fixture()
 def pg_test_db(pg_admin_config):
-    pg8000 = pytest.importorskip("pg8000")
+    import pg8000
 
     suffix = uuid.uuid4().hex[:10]
     db = f"pyodide_it_{suffix}"
