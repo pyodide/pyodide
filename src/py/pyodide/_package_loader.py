@@ -194,7 +194,7 @@ def unpack_buffer(
     format: str | None = None,
     extract_dir: str | None = None,
     calculate_dynlibs: bool = False,
-    metadata: dict[str, str] | None = None,
+    metadata: list[tuple[str, str]] | None = None,
 ) -> JsArray[str] | None:
     """Used to install a package either into sitepackages or into the standard
     library.
@@ -233,7 +233,7 @@ def unpack_buffer(
         locations of the .so files.
 
     metadata
-        A dictionary of metadata to be stored in the package's dist-info directory.
+        A list of metadata tuples to be stored in the package's dist-info directory.
         The keys are the names of the metadata files and the values are the contents
         of the files.
 
@@ -296,7 +296,7 @@ def set_wheel_metadata(
     filename: str,
     archive: ZipFile,
     target_dir: Path,
-    metadata: dict[str, str],
+    metadata: list[tuple[str, str]],
 ) -> None:
     """Record the metadata of a wheel into the target directory.
 
@@ -329,7 +329,7 @@ def set_wheel_metadata(
     wheel_name = parse_wheel_name(filename)[0]
     dist_info_name = wheel_dist_info_dir(archive, wheel_name)
     dist_info = target_dir / dist_info_name
-    for key, value in metadata.items():
+    for key, value in metadata:
         (dist_info / key).write_text(value)
 
 

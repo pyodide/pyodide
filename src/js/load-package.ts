@@ -38,6 +38,7 @@ import { createContextWrapper } from "./common/contextManager";
 export async function initializePackageIndex(
   lockFilePromise: Promise<Lockfile | string>,
 ) {
+  addRunDependency("packages");
   await initNodeModules();
   const lockfile_ = await lockFilePromise;
   const lockfile: Lockfile =
@@ -83,9 +84,13 @@ export async function initializePackageIndex(
   if (API.config.fullStdLib) {
     toLoad = [...toLoad, ...API.lockfile_unvendored_stdlibs];
   }
-  await loadPackage(toLoad, { messageCallback() {} });
+  const _postBootstrapPromises: Promise<void>[] = [];
+  await loadPackage(toLoad, { messageCallback() {}, _postBootstrapPromises });
   // Have to wait for bootstrapFinalizedPromise before calling Python APIs
+  removeRunDependency("packages");
   await API.bootstrapFinalizedPromise;
+  // Also wait for any tasks that the installer wants to use Python to do
+  await Promise.all(_postBootstrapPromises);
   API.flushPackageManagerBuffers();
 
   // Set up module_not_found_hook
@@ -235,6 +240,7 @@ export class PackageManager {
       messageCallback?: (message: string) => void;
       errorCallback?: (message: string) => void;
       checkIntegrity?: boolean;
+      _postBootstrapPromises?: Promise<void>[];
     } = {
       checkIntegrity: true,
     },
@@ -253,6 +259,7 @@ export class PackageManager {
       messageCallback?: (message: string) => void;
       errorCallback?: (message: string) => void;
       checkIntegrity?: boolean;
+      _postBootstrapPromises?: Promise<void>[];
     } = {
       checkIntegrity: true,
     },
@@ -306,6 +313,7 @@ export class PackageManager {
           loadedPackageData,
           failed,
           options.checkIntegrity,
+          options._postBootstrapPromises,
         );
       }
 
@@ -331,11 +339,9 @@ export class PackageManager {
 
       // We have to invalidate Python's import caches, or it won't
       // see the new files.
-
-      // Can't use invalidate_caches until bootstrap is finalized.
-      await this.#api.bootstrapFinalizedPromise;
-
-      this.#api.importlib.invalidate_caches();
+      if (API.bootstrapFinalized) {
+        this.#api.importlib.invalidate_caches();
+      }
       return Array.from(loadedPackageData, filterPackageData);
     } finally {
       releaseLock();
@@ -509,6 +515,7 @@ export class PackageManager {
   private async installPackage(
     metadata: PackageLoadMetadata,
     buffer: Uint8Array,
+    postBootstrapPromises: Promise<void>[] | undefined,
   ) {
     let pkg = this.#api.lockfile_packages[metadata.normalizedName];
     if (!pkg) {
@@ -517,10 +524,10 @@ export class PackageManager {
 
     const filename = pkg.file_name;
 
-    // This Python helper function unpacks the buffer and lists out any .so files in it.
-    const installDir: string = this.#api.package_loader.get_install_dir(
-      pkg.install_dir,
-    );
+    const installDir: string =
+      pkg.install_dir === "dynlib"
+        ? "/usr/lib"
+        : "/lib/python3.13/site-packages";
 
     DEBUG &&
       console.debug(
@@ -531,7 +538,7 @@ export class PackageManager {
       buffer,
       filename,
       installDir,
-      new Map([
+      [
         ["INSTALLER", INSTALLER],
         [
           "PYODIDE_SOURCE",
@@ -539,7 +546,8 @@ export class PackageManager {
             ? "pyodide"
             : metadata.channel,
         ],
-      ]),
+      ],
+      postBootstrapPromises,
     );
   }
 
@@ -560,6 +568,7 @@ export class PackageManager {
     loaded: Set<LockfilePackage>,
     failed: Map<string, Error>,
     checkIntegrity: boolean = true,
+    postBootstrapPromises: Promise<void>[] | undefined,
   ) {
     if (loadedPackages[pkg.name] !== undefined) {
       return;
@@ -572,13 +581,10 @@ export class PackageManager {
           ? toLoad.get(dependency)!.done
           : Promise.resolve();
       });
-      // Can't install until bootstrap is finalized.
-      await this.#api.bootstrapFinalizedPromise;
-
       // wait until all dependencies are installed
       await Promise.all(installPromiseDependencies);
 
-      await this.installPackage(pkg, buffer);
+      await this.installPackage(pkg, buffer, postBootstrapPromises);
 
       loaded.add(pkg.packageData);
       loadedPackages[pkg.name] = pkg.channel;
