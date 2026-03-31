@@ -393,7 +393,7 @@ def setup(app):
     app.add_config_value("global_replacements", {}, True)
     app.add_config_value("CDN_URL", "", True)
     files = []
-    for dir in ["core", "js"]:
+    for dir in ["core", "js", "js/fs"]:
         files += [
             str(x)
             for x in (Path("../src") / dir).glob("*.ts")
