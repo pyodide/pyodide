@@ -1454,7 +1454,6 @@ def test_module_not_found_note(selenium_standalone):
     import pytest
 
     from _pyodide._importhook import add_note_to_module_not_found_error
-    from pyodide.code import run_js
 
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
     lockfile_packages = [
