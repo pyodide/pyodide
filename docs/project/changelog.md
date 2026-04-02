@@ -40,6 +40,11 @@ myst:
   - Bundlers: Update configuration to reference the new filename
   {pr}`6111`
 
+- {{ Breaking }} We do not unvendor stdlibs anymore. `sqlite3` and `lzma` are now bundled into Pyodide by default. `pydecimal` and `test` package is removed from the distribution.
+  `pydoc_data` package is still in the distribution but needs to be explicitly loaded with
+  `loadPackage("pydoc_data")` to use. The `fullstdlib` option in loadPyodide is deprecated and a no-op.
+  {pr}`6151`
+
 
 - {{ Enhancement }} A JavaScript object is now treated as an array-like object
   if it has a `length` property and is iterable. Every JsProxy of an array-like
