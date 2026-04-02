@@ -1397,27 +1397,6 @@ def test_sys_path0(selenium):
     assert sys.path[0] == ""
 
 
-@pytest.mark.requires_dynamic_linking
-def test_fullstdlib(selenium_standalone_noload):
-    selenium = selenium_standalone_noload
-    selenium.run_js(
-        """
-        let pyodide = await loadPyodide({
-            fullStdLib: true,
-        });
-
-        await pyodide.loadPackage("micropip");
-
-        pyodide.runPython(`
-            import pyodide_js
-            import micropip
-            loaded_packages = micropip.list()
-            assert all((lib in micropip.list()) for lib in pyodide_js._api.lockfile_unvendored_stdlibs)
-        `);
-        """
-    )
-
-
 def test_loadPyodide_relative_index_url(selenium_standalone_noload):
     """Check that loading Pyodide with a relative URL works"""
     selenium_standalone_noload.run_js(
@@ -1475,27 +1454,11 @@ def test_module_not_found_note(selenium_standalone):
     import pytest
 
     from _pyodide._importhook import add_note_to_module_not_found_error
-    from pyodide.code import run_js
 
-    unvendored_stdlibs = ["test"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
     lockfile_packages = [
         "micropip",
     ]
-
-    # When error is wrapped, add_note_to_module_not_found_error is called
-    with pytest.raises(ModuleNotFoundError) as e:
-        run_js("(f) => f()")(lambda: importlib.import_module("test"))
-    assert "unvendored from the Python standard library" in e.value.__notes__[0]
-    assert len(e.value.__notes__) == 1
-
-    for lib in unvendored_stdlibs:
-        with pytest.raises(ModuleNotFoundError) as e:
-            importlib.import_module(lib)
-        add_note_to_module_not_found_error(e.value)
-        add_note_to_module_not_found_error(e.value)
-        assert "unvendored from the Python standard library" in e.value.__notes__[0]
-        assert len(e.value.__notes__) == 1
 
     for lib in removed_stdlibs:
         with pytest.raises(ModuleNotFoundError) as e:
@@ -1666,7 +1629,6 @@ def test_args(selenium_standalone_noload):
             stderrStrings.push(s);
         }
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals : self,
             stdout,
             stderr,
@@ -1955,7 +1917,6 @@ def test_custom_python_stdlib_URL(selenium_standalone_noload, runtime):
         selenium.run_js(
             """
             let pyodide = await loadPyodide({
-                fullStdLib: false,
                 stdLibURL: "./python_stdlib2.zip",
             });
             // Check that we can import stdlib library modules

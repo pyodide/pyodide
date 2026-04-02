@@ -45,7 +45,9 @@ interface NodeSock {
  * The conndctFunc should satisfy the WinterCG socket-api interface (https://github.com/WinterTC55/proposal-sockets-api),
  * and it is designed to be used in Cloudflare Workers
  */
-export async function initializeNodeSockFS(connectFunc?: ConnectFunc) {
+export async function initializeNodeSockFS(
+  connectFunc?: ConnectFunc,
+): Promise<void> {
   if (!connectFunc) {
     await initWinterCGSockets();
     connectFunc = connect;
