@@ -396,6 +396,13 @@ jobs:
       #       git checkout 164054a9c6fbd2176f386b6552ed8d079c6bcc04
       #       ./build.sh
 
+      # No need to setup NPM ID Token for dry run
+      # But doing this to know if the token is still valid
+      - run:
+          name: Set NPM ID Token
+          command: |
+            export NPM_ID_TOKEN=$(circleci run oidc get --claims '{"aud": "npm:registry.npmjs.org"}')
+
       - run:
           name: test npm deploy (dry run)
           command: |
@@ -493,6 +500,11 @@ jobs:
               ${MAYBE_PRE_RELEASE} \
               "${CIRCLE_TAG}" \
               dist
+
+      - run:
+          name: Set NPM ID Token
+          command: |
+            export NPM_ID_TOKEN=$(circleci run oidc get --claims '{"aud": "npm:registry.npmjs.org"}')
 
       - run:
           name: Deploy to npm
