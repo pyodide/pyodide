@@ -142,10 +142,10 @@ export async function initializeNodeSockFS(connectFunc?: ConnectFunc) {
       sock.daddr = addr;
       sock.dport = port;
 
-      const wcgSocket = connect(
+      const wcgSocket = connectFunc(
         { hostname: addr, port },
         {
-          secureTransport: options?.secureTransport ?? "off",
+          secureTransport: options?.secureTransport ?? "starttls",
           allowHalfOpen: false,
         },
       );
@@ -174,6 +174,40 @@ export async function initializeNodeSockFS(connectFunc?: ConnectFunc) {
         sock.connecting = false;
         return -sock.error;
       }
+    },
+
+    startTls(sock: NodeSock): number {
+      if (!sock.wcgSocket) {
+        return -ERRNO_CODES.ENOTCONN;
+      }
+
+      if (sock.reader) {
+        sock.reader.releaseLock();
+        sock.reader = null;
+      }
+      if (sock.writer) {
+        sock.writer.releaseLock();
+        sock.writer = null;
+      }
+
+      const tlsSocket = sock.wcgSocket.startTls();
+
+      sock.wcgSocket = tlsSocket;
+      sock.reader =
+        tlsSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+      sock.writer =
+        tlsSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
+      sock.leftover = null;
+
+      tlsSocket.closed
+        .then(() => {
+          sock.closed = true;
+        })
+        .catch(() => {
+          sock.closed = true;
+        });
+
+      return 0;
     },
 
     // Node.js support synchronous sendmsg while the wintercg sockets API is
