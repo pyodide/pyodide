@@ -613,9 +613,7 @@ export class PyodideAPI_ {
     /**
      * @hidden
      */
-    options?: {
-      connect?: ConnectFunc,
-    }
+    options?: { connect?: ConnectFunc },
   ) {
     if (!RUNTIME_ENV.IN_NODE) {
       throw new Error("useNodeSockFS only works in Node");
