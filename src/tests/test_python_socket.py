@@ -988,7 +988,7 @@ def tls_server(handler, *, timeout=5.0):
 
     certfile, keyfile = _generate_self_signed_cert()
 
-    server_ctx = host_ssl.SSLContext(host_ssl.PROTOCOL_TLS_SERVER)
+    server_ctx = host_ssl.SSLContext(host_ssl.PROTOCOL_TLS_SERVER)  # type: ignore[attr-defined]
     server_ctx.load_cert_chain(certfile, keyfile)
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -1045,7 +1045,7 @@ def test_tls_starttls_send_recv(selenium_nodesock):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect((host, port))
 
-            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)  # type: ignore[attr-defined]
             ctx.check_hostname = False
 
             ss = ctx.wrap_socket(s, server_hostname="localhost")
