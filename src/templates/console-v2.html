@@ -82,42 +82,688 @@ of the stable console.
     <div id="loading"></div>
     <div id="terminal"></div>
     <script type="module">
-      async function main() {
-        const fitAddon = new FitAddon.FitAddon();
-        const term = new Terminal({
-          cursorBlink: true,
-          cursorStyle: "block",
-          convertEol: true,
-          scrollback: 2_000,
-          fontSize: 18,
-          lineHeight: 1.4,
-          fontFamily: "monospace",
-          theme: {
-            background: "#000000",
-            foreground: "rgba(255, 255, 255, 0.8)",
-            cursor: "rgba(255, 255, 255, 0.8)",
-            selection: "#404040",
-            error: "#ff0000",
-          },
-        });
-        window.term = term;
+      // ============================================================================
+      // COMMAND - Base class for all commands
+      // ============================================================================
+      class Command {
+        constructor(context) {
+          this.context = context;
+        }
 
-        term.open(document.getElementById("terminal"));
-        term.loadAddon(fitAddon);
+        execute(data) {
+          throw new Error("execute must be implemented");
+        }
 
-        fitAddon.fit();
-        term.focus();
+        canExecute(data) {
+          return true;
+        }
+      }
 
-        window.addEventListener("resize", () => {
-          setTimeout(() => fitAddon.fit(), 50);
-        });
+      // ============================================================================
+      // NORMAL MODE COMMANDS
+      // ============================================================================
+      class ExecuteCommand extends Command {
+        async execute(data) {
+          this.context.term.write("\r\n");
+          await this.context.executeCommand();
+          this.context.buffer = "";
+          this.context.cursorIndex = 0;
+          this.context.term.write(this.context.prompt);
+        }
+      }
 
-        // Re-fit after the page has fully loaded
-        window.addEventListener("load", () => {
-          setTimeout(() => fitAddon.fit(), 100);
-        });
+      class InterruptCommand extends Command {
+        execute(data) {
+          this.context.pyconsole.buffer.clear();
+          this.context.buffer = "";
+          this.context.cursorIndex = 0;
+          this.context.term.write(
+            "^C\r\nKeyboardInterrupt\r\n" + this.context.PS1
+          );
+          this.context.prompt = this.context.PS1;
+          this.context.historyIndex = null;
+        }
+      }
 
-        // Initialize Pyodide
+      class EnterReverseSearchCommand extends Command {
+        canExecute(data) {
+          return (
+            this.context.prompt === this.context.PS1 &&
+            this.context.history.length > 0
+          );
+        }
+
+        execute(data) {
+          this.context.transitionTo("reverseSearch");
+        }
+      }
+
+      class PasteCommand extends Command {
+        async execute(data) {
+          try {
+            const clipboard = await navigator.clipboard.readText();
+            this.context.insertText(clipboard);
+          } catch (e) {
+            console.error("Failed to read clipboard:", e);
+          }
+        }
+      }
+
+      class BackspaceCommand extends Command {
+        canExecute(data) {
+          return this.context.cursorIndex > 0;
+        }
+
+        execute(data) {
+          this.context.deleteChar();
+        }
+      }
+
+      class HistoryUpCommand extends Command {
+        canExecute(data) {
+          return this.context.prompt === this.context.PS1;
+        }
+
+        execute(data) {
+          this.context.navigateHistory(-1);
+        }
+      }
+
+      class HistoryDownCommand extends Command {
+        canExecute(data) {
+          return (
+            this.context.prompt === this.context.PS1 &&
+            this.context.historyIndex !== null
+          );
+        }
+
+        execute(data) {
+          this.context.navigateHistory(1);
+        }
+      }
+
+      class MoveCursorRightCommand extends Command {
+        canExecute(data) {
+          return this.context.cursorIndex < this.context.buffer.length;
+        }
+
+        execute(data) {
+          this.context.moveCursor(1);
+        }
+      }
+
+      class MoveCursorLeftCommand extends Command {
+        canExecute(data) {
+          return this.context.cursorIndex > 0;
+        }
+
+        execute(data) {
+          this.context.moveCursor(-1);
+        }
+      }
+
+      class InsertTextCommand extends Command {
+        canExecute(data) {
+          return data && data.length >= 1;
+        }
+
+        execute(data) {
+          const normalizedData = data.replace(/\u00a0/g, " ");
+          this.context.insertText(normalizedData);
+        }
+      }
+
+      // ============================================================================
+      // REVERSE SEARCH MODE COMMANDS
+      // ============================================================================
+      class AcceptSearchCommand extends Command {
+        async execute(data) {
+          this.context.transitionTo("normal");
+          this.context.term.write("\r\n");
+          await this.context.executeCommand();
+          this.context.buffer = "";
+          this.context.cursorIndex = 0;
+          this.context.term.write(this.context.prompt);
+        }
+      }
+
+      class CancelSearchWithInterruptCommand extends Command {
+        execute(data) {
+          this.context.state.cancelSearch();
+          this.context.transitionTo("normal");
+          this.context.term.write(
+            "\r\nKeyboardInterrupt\r\n" + this.context.prompt
+          );
+          this.context.refreshLine();
+        }
+      }
+
+      class CancelSearchCommand extends Command {
+        execute(data) {
+          this.context.state.cancelSearch();
+          this.context.transitionTo("normal");
+          this.context.refreshLine();
+        }
+      }
+
+      class NextSearchMatchCommand extends Command {
+        execute(data) {
+          this.context.state.findNextMatch();
+        }
+      }
+
+      class SearchBackspaceCommand extends Command {
+        canExecute(data) {
+          return (
+            this.context.state.query && this.context.state.query.length > 0
+          );
+        }
+
+        execute(data) {
+          this.context.state.removeChar();
+        }
+      }
+
+      class ExitSearchKeepResultCommand extends Command {
+        execute(data) {
+          this.context.transitionTo("normal");
+          // Clear the search line and refresh with normal prompt
+          this.context.term.write("\r\x1b[K");
+          this.context.refreshLine();
+        }
+      }
+
+      class AddSearchCharCommand extends Command {
+        canExecute(data) {
+          return data && data.length === 1 && data >= " " && data <= "~";
+        }
+
+        execute(data) {
+          this.context.state.addChar(data);
+        }
+      }
+
+      // ============================================================================
+      // COMMAND - Maps keys to commands for each state
+      // ============================================================================
+      class NormalStateCommands {
+        constructor(context) {
+          this.context = context;
+          this.commands = new Map();
+          this.setupCommands();
+        }
+
+        setupCommands() {
+          this.commands.set("\r", new ExecuteCommand(this.context)); // Enter key
+          this.commands.set("\u0003", new InterruptCommand(this.context)); // Ctrl+C
+          this.commands.set(
+            "\u0012",
+            new EnterReverseSearchCommand(this.context)
+          ); // Ctrl+R
+          this.commands.set("\u0016", new PasteCommand(this.context)); // Ctrl+V
+          this.commands.set("\u007F", new BackspaceCommand(this.context)); // Backspace
+          this.commands.set("\x1B[A", new HistoryUpCommand(this.context)); // Up arrow
+          this.commands.set("\x1B[B", new HistoryDownCommand(this.context)); // Down arrow
+          this.commands.set("\x1B[C", new MoveCursorRightCommand(this.context)); // Right arrow
+          this.commands.set("\x1B[D", new MoveCursorLeftCommand(this.context)); // Left arrow
+          this.commands.set("default", new InsertTextCommand(this.context));
+        }
+
+        async execute(data) {
+          const command =
+            this.commands.get(data) || this.commands.get("default");
+          if (command && command.canExecute(data)) {
+            await command.execute(data);
+          }
+        }
+      }
+
+      class ReverseSearchStateCommands {
+        constructor(context) {
+          this.context = context;
+          this.commands = new Map();
+          this.setupCommands();
+        }
+
+        setupCommands() {
+          this.commands.set("\r", new AcceptSearchCommand(this.context)); // Enter key
+          this.commands.set(
+            "\u0003",
+            new CancelSearchWithInterruptCommand(this.context)
+          ); // Ctrl+C
+          this.commands.set("\u0007", new CancelSearchCommand(this.context)); // Ctrl+G
+          this.commands.set("\u0012", new NextSearchMatchCommand(this.context)); // Ctrl+R
+          this.commands.set("\u007F", new SearchBackspaceCommand(this.context)); // Backspace
+          this.commands.set(
+            "\x1B[A",
+            new ExitSearchKeepResultCommand(this.context)
+          ); // Up arrow
+          this.commands.set(
+            "\x1B[B",
+            new ExitSearchKeepResultCommand(this.context)
+          ); // Down arrow
+          this.commands.set(
+            "\x1B[C",
+            new ExitSearchKeepResultCommand(this.context)
+          ); // Right arrow
+          this.commands.set(
+            "\x1B[D",
+            new ExitSearchKeepResultCommand(this.context)
+          ); // Left arrow
+          this.commands.set(
+            "\x09",
+            new ExitSearchKeepResultCommand(this.context)
+          ); // Tab key
+          this.commands.set("default", new AddSearchCharCommand(this.context));
+        }
+
+        async execute(data) {
+          const command =
+            this.commands.get(data) || this.commands.get("default");
+          if (command && command.canExecute(data)) {
+            await command.execute(data);
+          }
+        }
+      }
+
+      // ============================================================================
+      // STATE - Base class for input states
+      // ============================================================================
+      class InputState {
+        constructor(context) {
+          this.context = context;
+        }
+
+        handleInput(data) {
+          throw new Error("Not Implemented");
+        }
+
+        enter() {}
+        exit() {}
+      }
+
+      // ============================================================================
+      // NORMAL INPUT STATE
+      // ============================================================================
+      class NormalInputState extends InputState {
+        constructor(context) {
+          super(context);
+          this.commands = new NormalStateCommands(context);
+        }
+
+        async handleInput(data) {
+          await this.commands.execute(data);
+        }
+      }
+
+      // ============================================================================
+      // REVERSE SEARCH STATE
+      // ============================================================================
+      class ReverseSearchState extends InputState {
+        constructor(context) {
+          super(context);
+          this.commands = new ReverseSearchStateCommands(context);
+          this.query = "";
+          this.index = -1;
+          this.savedBuffer = context.buffer;
+        }
+
+        async handleInput(data) {
+          await this.commands.execute(data);
+        }
+
+        enter() {
+          this.savedBuffer = this.context.buffer;
+          this.query = "";
+          this.index = -1;
+          this.context.cursorIndex = 0;
+          this.updateDisplay();
+        }
+
+        addChar(char) {
+          this.query += char;
+          this.index = this.context.searchHistory(this.query);
+          if (this.index >= 0) {
+            this.context.buffer = this.context.history[this.index];
+            this.context.cursorIndex = this.context.buffer.length;
+          }
+          this.updateDisplay();
+        }
+
+        removeChar() {
+          if (this.query.length > 0) {
+            this.query = this.query.slice(0, -1);
+            if (this.query) {
+              this.index = this.context.searchHistory(this.query);
+              if (this.index >= 0) {
+                this.context.buffer = this.context.history[this.index];
+                this.context.cursorIndex = this.context.buffer.length;
+              }
+            } else {
+              this.index = -1;
+              this.context.buffer = "";
+              this.context.cursorIndex = 0;
+            }
+            this.updateDisplay();
+          }
+        }
+
+        findNextMatch() {
+          if (this.query && this.index > 0) {
+            this.index = this.context.searchHistory(this.query, this.index - 1);
+            if (this.index >= 0) {
+              this.context.buffer = this.context.history[this.index];
+              this.context.cursorIndex = this.context.buffer.length;
+            }
+            this.updateDisplay();
+          }
+        }
+
+        cancelSearch() {
+          this.context.buffer = this.savedBuffer;
+          this.context.cursorIndex = this.savedBuffer.length;
+        }
+
+        updateDisplay() {
+          const searchPrompt = `(reverse-i-search)\`${this.query}': `;
+          let displayText = this.context.buffer;
+          if (this.index >= 0) {
+            displayText = this.context.history[this.index];
+          }
+          this.context.term.write(`\r\x1b[K${searchPrompt}${displayText}`);
+        }
+      }
+
+      // ============================================================================
+      // HISTORY
+      // ============================================================================
+      class HistoryManager {
+        constructor() {
+          this.history = [];
+          this.loadFromStorage();
+        }
+
+        add(command) {
+          const trimmed = command.trimEnd();
+          if (!trimmed) return;
+
+          const last = this.history[this.history.length - 1];
+          if (last !== trimmed) {
+            this.history.push(trimmed);
+            this.saveToStorage();
+          }
+        }
+
+        get(index) {
+          return this.history[index];
+        }
+
+        get length() {
+          return this.history.length;
+        }
+
+        search(query, startIndex = -1) {
+          if (startIndex === -1) {
+            startIndex = this.history.length - 1;
+          }
+          for (let i = startIndex; i >= 0; i--) {
+            if (this.history[i].includes(query)) {
+              return i;
+            }
+          }
+          return -1;
+        }
+
+        loadFromStorage() {
+          try {
+            const saved = localStorage.getItem("0_commands");
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              if (Array.isArray(parsed)) {
+                this.history = parsed;
+              }
+            }
+          } catch (e) {
+            console.error("Failed to load history from localStorage:", e);
+          }
+        }
+
+        saveToStorage() {
+          try {
+            localStorage.setItem("0_commands", JSON.stringify(this.history));
+          } catch (e) {
+            console.error("Failed to save history to localStorage:", e);
+          }
+        }
+      }
+
+      // ============================================================================
+      // FACTORY - Terminal creation
+      // ============================================================================
+      class TerminalFactory {
+        static createXTermConfig() {
+          return {
+            cursorBlink: true,
+            cursorStyle: "block",
+            convertEol: true,
+            scrollback: 2_000,
+            fontSize: 18,
+            lineHeight: 1.4,
+            fontFamily: "monospace",
+            theme: {
+              background: "#000000",
+              foreground: "rgba(255, 255, 255, 0.8)",
+              cursor: "rgba(255, 255, 255, 0.8)",
+              selection: "#404040",
+              error: "#ff0000",
+            },
+          };
+        }
+
+        static createTerminal(element) {
+          const fitAddon = new FitAddon.FitAddon();
+          const config = this.createXTermConfig();
+          const term = new Terminal(config);
+
+          term.open(element);
+          term.loadAddon(fitAddon);
+          fitAddon.fit();
+          term.focus();
+
+          // Handle window resize
+          window.addEventListener("resize", () => {
+            setTimeout(() => fitAddon.fit(), 50);
+          });
+
+          // Re-fit after page load
+          window.addEventListener("load", () => {
+            setTimeout(() => fitAddon.fit(), 100);
+          });
+
+          return term;
+        }
+      }
+
+      // ============================================================================
+      // PyodideConsole - Main console class
+      // ============================================================================
+      class PyodideConsole {
+        constructor(term, pyodide, pyconsole, awaitFut, reprShorten) {
+          this.term = term;
+          this.pyodide = pyodide;
+          this.pyconsole = pyconsole;
+          this.awaitFut = awaitFut;
+          this.reprShorten = reprShorten;
+
+          this.PS1 = ">>> ";
+          this.PS2 = "... ";
+
+          this.buffer = "";
+          this.cursorIndex = 0;
+          this.prompt = this.PS1;
+          this.historyIndex = null;
+
+          this.historyManager = new HistoryManager();
+
+          this.states = {
+            normal: new NormalInputState(this),
+            reverseSearch: new ReverseSearchState(this),
+          };
+          this.state = this.states.normal;
+
+          this.pyconsole.stdout_callback = (s) => this.term.write(s);
+          this.pyconsole.stderr_callback = (s) =>
+            this.term.write(`\x1b[31m${s}\x1b[0m`);
+
+          this.term.write(this.prompt);
+        }
+
+        transitionTo(stateName) {
+          this.state.exit();
+          this.state = this.states[stateName];
+          this.state.enter();
+        }
+
+        async handleInput(data) {
+          await this.state.handleInput(data);
+        }
+
+        insertText(text) {
+          const before = this.buffer.slice(0, this.cursorIndex);
+          const after = this.buffer.slice(this.cursorIndex);
+          this.buffer = before + text + after;
+          this.cursorIndex += text.length;
+          this.refreshLine();
+        }
+
+        deleteChar() {
+          if (this.cursorIndex > 0) {
+            const before = this.buffer.slice(0, this.cursorIndex - 1);
+            const after = this.buffer.slice(this.cursorIndex);
+            this.buffer = before + after;
+            this.cursorIndex -= 1;
+            this.refreshLine();
+          }
+        }
+
+        moveCursor(direction) {
+          this.cursorIndex = Math.max(
+            0,
+            Math.min(this.cursorIndex + direction, this.buffer.length)
+          );
+          this.refreshLine();
+        }
+
+        refreshLine() {
+          const clearCommand = "\x1b[0K";
+          const leftPart = this.prompt + this.buffer.slice(0, this.cursorIndex);
+          const rightPart = this.buffer.slice(this.cursorIndex);
+          this.term.write(
+            `\x1b[0G${leftPart}\x1b[s${rightPart}${clearCommand}\x1b[u`
+          );
+        }
+
+        // History management
+        navigateHistory(direction) {
+          if (this.prompt === this.PS1) {
+            if (this.historyIndex === null) {
+              this.historyIndex = this.historyManager.length;
+            }
+
+            const newIndex = this.historyIndex + direction;
+            if (newIndex >= 0 && newIndex < this.historyManager.length) {
+              this.historyIndex = newIndex;
+              this.buffer = this.historyManager.get(this.historyIndex) || "";
+              this.cursorIndex = this.buffer.length;
+              this.refreshLine();
+            } else if (
+              direction > 0 &&
+              newIndex >= this.historyManager.length
+            ) {
+              this.historyIndex = null;
+              this.buffer = "";
+              this.cursorIndex = 0;
+              this.refreshLine();
+            }
+          }
+        }
+
+        searchHistory(query, startIndex = -1) {
+          return this.historyManager.search(query, startIndex);
+        }
+
+        get history() {
+          return this.historyManager.history;
+        }
+
+        // Command execution
+        async executeCommand() {
+          const line = this.buffer.replace(/\u00a0/g, " ");
+
+          if (line === "clear") {
+            this.term.clear();
+            return;
+          }
+
+          const fut = this.pyconsole.push(line);
+
+          switch (fut.syntax_check) {
+            case "syntax-error":
+              this.term.write(
+                `\x1b[31m${fut.formatted_error.trimEnd()}\x1b[0m`
+              );
+              this.term.write("\r\n");
+              this.prompt = this.PS1;
+              this.historyManager.add(line);
+              this.historyIndex = null;
+              fut.destroy();
+              break;
+
+            case "incomplete":
+              this.prompt = this.PS2;
+              this.historyManager.add(line);
+              this.historyIndex = null;
+              return;
+
+            case "complete":
+              this.prompt = this.PS1;
+              try {
+                const wrapped = this.awaitFut(fut);
+                const [value] = await wrapped;
+                if (value !== undefined) {
+                  const output = this.reprShorten.callKwargs(value, {
+                    separator: "\n<long output truncated>\n",
+                  });
+                  this.term.write(output);
+                  this.term.write("\r\n");
+                }
+                if (value instanceof this.pyodide.ffi.PyProxy) {
+                  value.destroy();
+                }
+                wrapped.destroy();
+              } catch (e) {
+                const msg = fut.formatted_error || e.message;
+                this.term.write(`\x1b[31m${String(msg).trimEnd()}\x1b[0m`);
+                this.term.write("\r\n");
+              } finally {
+                fut.destroy();
+              }
+              this.historyManager.add(line);
+              this.historyIndex = null;
+              break;
+
+            default:
+              this.term.write(
+                `\r\nUnexpected syntax_check value: ${fut.syntax_check}`
+              );
+          }
+        }
+      }
+
+      // ============================================================================
+      // INITIALIZATION
+      // ============================================================================
+      async function initializePyodide() {
         let indexURL = "{{ PYODIDE_BASE_URL }}";
         const urlParams = new URLSearchParams(window.location.search);
         const buildParam = urlParams.get("build");
@@ -129,36 +775,50 @@ of the stable console.
         const pyodide = await loadPyodide();
         globalThis.pyodide = pyodide;
 
-        // Hide loading spinner
+        return pyodide;
+      }
+
+      // ============================================================================
+      // MAIN
+      // ============================================================================
+
+      async function main() {
+        const term = TerminalFactory.createTerminal(
+          document.getElementById("terminal")
+        );
+        window.term = term;
+
+        const pyodide = await initializePyodide();
+
         document.getElementById("loading").style.display = "none";
 
-        const { repr_shorten, BANNER, PyodideConsole } =
-          pyodide.pyimport("pyodide.console");
+        const {
+          repr_shorten,
+          BANNER,
+          PyodideConsole: PythonConsole,
+        } = pyodide.pyimport("pyodide.console");
 
         term.writeln(
           `Welcome to the Pyodide ${pyodide.version} terminal emulator 🐍\n${BANNER}`
         );
 
-        const pyconsole = PyodideConsole(pyodide.globals);
+        const pyconsole = PythonConsole(pyodide.globals);
 
         const namespace = pyodide.globals.get("dict")();
-        const await_fut = pyodide.runPython(
+        const awaitFut = pyodide.runPython(
           `
-      import builtins
-      from pyodide.ffi import to_js
-      async def await_fut(fut):
-        res = await fut
-        if res is not None:
-            builtins._ = res
-        return to_js([res], depth=1)
-      await_fut
-      `,
+import builtins
+from pyodide.ffi import to_js
+async def await_fut(fut):
+  res = await fut
+  if res is not None:
+      builtins._ = res
+  return to_js([res], depth=1)
+await_fut
+        `,
           { globals: namespace }
         );
         namespace.destroy();
-
-        pyconsole.stdout_callback = (s) => term.write(s);
-        pyconsole.stderr_callback = (s) => term.write(`\x1b[31m${s}\x1b[0m`);
 
         // Handle fatal errors
         pyodide._api.on_fatal = async (e) => {
@@ -179,199 +839,20 @@ of the stable console.
           }
         };
 
-        // REPL implementation
-        const ps1 = ">>> ";
-        const ps2 = "... ";
-        let buffer = "";
-        let cursorIndex = 0; // index within buffer for in-line editing
-        let prompt = ps1;
-        const history = [];
-        let historyIndex = null; // null means not navigating history
-
-        // Load history from localStorage
-        try {
-          const savedHistory = localStorage.getItem("0_commands");
-          if (savedHistory) {
-            const parsed = JSON.parse(savedHistory);
-            if (Array.isArray(parsed)) {
-              history.push(...parsed);
-            }
-          }
-        } catch (e) {
-          console.error("Failed to load history from localStorage:", e);
-        }
-
-        term.write(prompt);
-
-        function addToHistory(command) {
-          const trimmed = command.trimEnd();
-          if (!trimmed) return;
-          const last = history[history.length - 1];
-          if (last !== trimmed) {
-            history.push(trimmed);
-            localStorage.setItem("0_commands", JSON.stringify(history));
-          }
-        }
-
-        function refreshLine() {
-          // Write left part, save cursor, write right part, clear, restore cursor.
-          const clearCommand = "\x1b[0K";
-          const leftPart = prompt + buffer.slice(0, cursorIndex);
-          const rightPart = buffer.slice(cursorIndex);
-          term.write(
-            `\x1b[0G${leftPart}\x1b[s${rightPart}${clearCommand}\x1b[u`
-          );
-        }
-
-        function setBuffer(newBuffer, newCursorIndex = null) {
-          buffer = newBuffer;
-          if (newCursorIndex === null) {
-            cursorIndex = buffer.length;
-          } else {
-            cursorIndex = Math.max(0, Math.min(newCursorIndex, buffer.length));
-          }
-          refreshLine();
-        }
-
-        async function execLine(line) {
-          // Normalize non-breaking spaces to regular spaces
-          line = line.replace(/\u00a0/g, " ");
-          // clear the terminal
-          if (line === "clear") {
-            term.clear();
-            return;
-          }
-
-          const fut = pyconsole.push(line);
-
-          switch (fut.syntax_check) {
-            case "syntax-error":
-              term.write(`\x1b[31m${fut.formatted_error.trimEnd()}\x1b[0m`);
-              term.write("\r\n");
-              prompt = ps1;
-              addToHistory(line);
-              historyIndex = null;
-              fut.destroy();
-              break;
-            case "incomplete":
-              prompt = ps2;
-              addToHistory(line);
-              historyIndex = null;
-              return;
-            case "complete":
-              prompt = ps1;
-              try {
-                const wrapped = await_fut(fut);
-                const [value] = await wrapped;
-                if (value !== undefined) {
-                  const output = repr_shorten.callKwargs(value, {
-                    separator: "\n<long output truncated>\n",
-                  });
-                  term.write(output);
-                  term.write("\r\n");
-                }
-                if (value instanceof pyodide.ffi.PyProxy) value.destroy();
-                wrapped.destroy();
-              } catch (e) {
-                const msg = fut.formatted_error || e.message;
-                term.write(`\x1b[31m${String(msg).trimEnd()}\x1b[0m`);
-                term.write("\r\n");
-              } finally {
-                fut.destroy();
-              }
-              addToHistory(line);
-              historyIndex = null;
-              break;
-            default:
-              term.write(
-                `\r\nUnexpected syntax_check value: ${fut.syntax_check}`
-              );
-          }
-        }
+        const pyodideConsole = new PyodideConsole(
+          term,
+          pyodide,
+          pyconsole,
+          awaitFut,
+          repr_shorten
+        );
+        window.pyodideConsole = pyodideConsole;
 
         term.onData(async (data) => {
-          switch (data) {
-            case "\r": // Enter
-              term.write("\r\n");
-              await execLine(buffer);
-              buffer = "";
-              cursorIndex = 0;
-              term.write(prompt);
-              break;
-            case "\u0003": // Ctrl-C
-              pyconsole.buffer.clear();
-              buffer = "";
-              cursorIndex = 0;
-              term.write("^C\r\nKeyboardInterrupt\r\n" + ps1);
-              prompt = ps1;
-              historyIndex = null;
-              break;
-            case "\u0016": // Ctrl-V
-              // paste from clipboard
-              const clipboard = await navigator.clipboard.readText();
-              const newBuf =
-                buffer.slice(0, cursorIndex) +
-                clipboard +
-                buffer.slice(cursorIndex);
-              setBuffer(newBuf, newBuf.length);
-              break;
-            case "\u007F": // Backspace
-              if (cursorIndex > 0) {
-                const before = buffer.slice(0, cursorIndex - 1);
-                const after = buffer.slice(cursorIndex);
-                cursorIndex -= 1;
-                setBuffer(before + after, cursorIndex);
-              }
-              break;
-            case "\x1B[A": // Up arrow
-              if (prompt === ps1) {
-                if (historyIndex === null) historyIndex = history.length;
-                if (historyIndex > 0) {
-                  historyIndex -= 1;
-                  const newBuf = history[historyIndex] || "";
-                  setBuffer(newBuf, newBuf.length);
-                }
-              }
-              break;
-            case "\x1B[B": // Down arrow
-              if (prompt === ps1 && historyIndex !== null) {
-                if (historyIndex < history.length - 1) {
-                  historyIndex += 1;
-                  const newBuf = history[historyIndex] || "";
-                  setBuffer(newBuf, newBuf.length);
-                } else {
-                  historyIndex = null;
-                  setBuffer("", 0);
-                }
-              }
-              break;
-            case "\x1B[C": // Right arrow
-              if (cursorIndex < buffer.length) {
-                cursorIndex += 1;
-                refreshLine();
-              }
-              break;
-            case "\x1B[D": // Left arrow
-              if (cursorIndex > 0) {
-                cursorIndex -= 1;
-                refreshLine();
-              }
-              break;
-            default:
-              if (data) {
-                // Normalize non-breaking spaces to regular spaces
-                data = data.replace(/\u00a0/g, " ");
-                // Insert arbitrary string at cursor position
-                const before = buffer.slice(0, cursorIndex);
-                const after = buffer.slice(cursorIndex);
-                const newBuf = before + data + after;
-                const newCursor = cursorIndex + data.length;
-                setBuffer(newBuf, newCursor);
-              }
-          }
+          await pyodideConsole.handleInput(data);
         });
 
-        // 4. Extra features
+        // Extra features
         let idbkvPromise;
         async function getIDBKV() {
           if (!idbkvPromise) {
@@ -403,6 +884,7 @@ of the stable console.
         }
         globalThis.mountDirectory = mountDirectory;
       }
+
       window.console_ready = main();
     </script>
   </body>
