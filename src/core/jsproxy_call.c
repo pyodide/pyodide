@@ -203,7 +203,7 @@ find_keyword(PyObject* kwarg_names, PyObject* key)
   for (Py_ssize_t i = 0; i < nkwargs; i++) {
     PyObject* kwname = PyTuple_GET_ITEM(kwarg_names, i);
     assert(PyUnicode_Check(kwname));
-    if (_PyUnicode_EQ(kwname, key)) {
+    if (PyUnicode_Equal(kwname, key)) {
       return i;
     }
   }

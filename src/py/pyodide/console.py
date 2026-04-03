@@ -163,7 +163,13 @@ class _Compile(Compile):
         self.optimize = optimize
 
     def __call__(  # type: ignore[override]
-        self, source: str, filename: str, symbol: str, *, incomplete_input: bool = True
+        self,
+        source: str,
+        filename: str,
+        symbol: str,
+        *,
+        incomplete_input: bool = True,
+        flags: int = 0x0,
     ) -> CodeRunner:
         return_mode = self.return_mode
         try:
@@ -173,7 +179,7 @@ class _Compile(Compile):
             # Invalid code, let the Python parser throw the error later.
             pass
 
-        flags = self.flags
+        flags = flags | self.flags
         if not incomplete_input:
             flags &= ~PyCF_DONT_IMPLY_DEDENT
             flags &= ~PyCF_ALLOW_INCOMPLETE_INPUT

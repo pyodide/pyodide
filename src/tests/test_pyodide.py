@@ -99,21 +99,26 @@ def test_code_runner():
     assert CodeRunner("1+1").compile().run() == 2
     assert CodeRunner("1+1\n1+1").compile().run() == 2
     assert CodeRunner("x + 7").compile().run({"x": 3}) == 10
-    cr = CodeRunner("x + 7")
 
-    # Ast transform
+    # Use constants > 255 so they are stored in co_consts rather than loaded
+    # via LOAD_SMALL_INT (Python 3.14+ loads ints 0-255 directly via opcode).
+    cr = CodeRunner("x + 700")
+
+    # Ast transform: change "x + 700" to "x * 300 + 700"
     import ast
 
     l = cr.ast.body[0].value.left  # type: ignore[attr-defined]
     cr.ast.body[0].value.left = ast.BinOp(  # type: ignore[attr-defined]
-        left=l, op=ast.Mult(), right=ast.Constant(value=2)
+        left=l, op=ast.Mult(), right=ast.Constant(value=300)
     )
-    assert cr.compile().run({"x": 3}) == 13
+    assert cr.compile().run({"x": 3}) == 1600
 
-    # Code transform
+    # Code transform: change "x * 300 + 700" to "x * 400 + 500"
     assert cr.code
-    cr.code = cr.code.replace(co_consts=(0, 3, 5, None))
-    assert cr.run({"x": 4}) == 17
+    co_consts = cr.code.co_consts
+    new_consts = tuple({300: 400, 700: 500}.get(c, c) for c in co_consts)
+    cr.code = cr.code.replace(co_consts=new_consts)
+    assert cr.run({"x": 4}) == 2100
 
 
 def test_code_runner_mode():
@@ -814,13 +819,13 @@ def test_create_once_callable(selenium):
             destroyed = True
 
     f = Square()
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     proxy = create_once_callable(f)
-    assert sys.getrefcount(f) == 3
+    assert sys.getrefcount(f) == 2
 
     call7 = run_js("(f) => f(7)")
     assert call7(proxy) == 49
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     with raises(JsException, match="can only be called once"):
         call7(proxy)
     del f
@@ -860,20 +865,20 @@ def test_create_proxy(selenium):
     f = Test()
     import sys
 
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     proxy = create_proxy(f)
-    assert sys.getrefcount(f) == 3
+    assert sys.getrefcount(f) == 2
     assert proxy() == 7
     testAddListener(proxy)
-    assert sys.getrefcount(f) == 3
-    assert testCallListener() == 7
-    assert sys.getrefcount(f) == 3
-    assert testCallListener() == 7
-    assert sys.getrefcount(f) == 3
-    assert testRemoveListener(proxy)
-    assert sys.getrefcount(f) == 3
-    proxy.destroy()
     assert sys.getrefcount(f) == 2
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 2
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 2
+    assert testRemoveListener(proxy)
+    assert sys.getrefcount(f) == 2
+    proxy.destroy()
+    assert sys.getrefcount(f) == 1
     destroyed = False
     del f
     assert destroyed
@@ -1397,27 +1402,6 @@ def test_sys_path0(selenium):
     assert sys.path[0] == ""
 
 
-@pytest.mark.requires_dynamic_linking
-def test_fullstdlib(selenium_standalone_noload):
-    selenium = selenium_standalone_noload
-    selenium.run_js(
-        """
-        let pyodide = await loadPyodide({
-            fullStdLib: true,
-        });
-
-        await pyodide.loadPackage("micropip");
-
-        pyodide.runPython(`
-            import pyodide_js
-            import micropip
-            loaded_packages = micropip.list()
-            assert all((lib in micropip.list()) for lib in pyodide_js._api.lockfile_unvendored_stdlibs)
-        `);
-        """
-    )
-
-
 def test_loadPyodide_relative_index_url(selenium_standalone_noload):
     """Check that loading Pyodide with a relative URL works"""
     selenium_standalone_noload.run_js(
@@ -1475,27 +1459,11 @@ def test_module_not_found_note(selenium_standalone):
     import pytest
 
     from _pyodide._importhook import add_note_to_module_not_found_error
-    from pyodide.code import run_js
 
-    unvendored_stdlibs = ["test"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
     lockfile_packages = [
         "micropip",
     ]
-
-    # When error is wrapped, add_note_to_module_not_found_error is called
-    with pytest.raises(ModuleNotFoundError) as e:
-        run_js("(f) => f()")(lambda: importlib.import_module("test"))
-    assert "unvendored from the Python standard library" in e.value.__notes__[0]
-    assert len(e.value.__notes__) == 1
-
-    for lib in unvendored_stdlibs:
-        with pytest.raises(ModuleNotFoundError) as e:
-            importlib.import_module(lib)
-        add_note_to_module_not_found_error(e.value)
-        add_note_to_module_not_found_error(e.value)
-        assert "unvendored from the Python standard library" in e.value.__notes__[0]
-        assert len(e.value.__notes__) == 1
 
     for lib in removed_stdlibs:
         with pytest.raises(ModuleNotFoundError) as e:
@@ -1666,7 +1634,6 @@ def test_args(selenium_standalone_noload):
             stderrStrings.push(s);
         }
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals : self,
             stdout,
             stderr,
@@ -1955,7 +1922,6 @@ def test_custom_python_stdlib_URL(selenium_standalone_noload, runtime):
         selenium.run_js(
             """
             let pyodide = await loadPyodide({
-                fullStdLib: false,
                 stdLibURL: "./python_stdlib2.zip",
             });
             // Check that we can import stdlib library modules

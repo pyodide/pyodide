@@ -370,7 +370,7 @@ class SSLContext:
         if not isinstance(value, int) or isinstance(value, bool):
             raise TypeError("'options' must be an integer")
         if value < 0:
-            raise OverflowError("options must be a non-negative integer")
+            raise ValueError("options must be a non-negative integer")
         if value >= 2**64:
             raise OverflowError("options value is too large")
         self._options = value
