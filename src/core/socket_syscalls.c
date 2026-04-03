@@ -34,6 +34,10 @@ EM_JS(JsVal, _maybe_connect_async, (int fd, intptr_t addr, int addrlen), {
 })
 
 // Returns a Promise for NodeSock fds, null for everything else.
+// recvmsgAsync may return:
+//   Uint8Array — data received
+//   null       — connection closed (EOF)
+//   number < 0 — errno (e.g. -EAGAIN for non-blocking with no data)
 EM_JS(JsVal, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
   var sock = Module.SOCKFS.getSocket(fd);
 
@@ -46,6 +50,9 @@ EM_JS(JsVal, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
     // clang-format off
     if (result === null)
       return 0;
+    // Negative number = errno (e.g. -EAGAIN from non-blocking recv)
+    if (typeof result === "number")
+      return result;
     // clang-format on
     Module.HEAPU8.set(result, buf);
     return result.length;
@@ -65,6 +72,36 @@ EM_JS(JsVal, _maybe_sendto_async, (int fd, intptr_t message, int length), {
   return sock.sock_ops.sendmsgAsync(sock, data);
 })
 
+// Emscripten's fcntl(F_SETFL) does `stream.flags |= arg` instead of
+// `stream.flags = arg`, so O_NONBLOCK can never be cleared. Override for
+// socket fds to use proper assignment.
+EM_JS(int, _try_fcntl64, (int fd, int cmd, int arg), {
+  var sock = Module.SOCKFS.getSocket(fd);
+
+  if (!sock?.sock_ops?.recvmsgAsync)
+    return 0x80000000;
+
+  // clang-format off
+  if (cmd === 3) // F_GETFL
+    return sock.stream.flags;
+  if (cmd === 4) { // F_SETFL
+    sock.stream.flags = arg;
+    return 0;
+  }
+  // clang-format on
+  return 0x80000000;
+})
+
+// Returns INT_MIN (0x80000000) for non-NodeSock fds, errno otherwise.
+EM_JS(int, _try_shutdown, (int fd, int how), {
+  var sock = Module.SOCKFS.getSocket(fd);
+
+  if (!sock?.sock_ops?.shutdown)
+    return 0x80000000;
+
+  return sock.sock_ops.shutdown(sock, how);
+})
+
 // clang-format off
 
 int _orig_syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
@@ -75,6 +112,12 @@ int _orig_syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t ad
 
 int _orig_syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addrlen)
   __attribute__((__import_module__("env"), __import_name__("__syscall_sendto"), __warn_unused_result__));
+
+int _orig_syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
+  __attribute__((__import_module__("env"), __import_name__("__syscall_shutdown"), __warn_unused_result__));
+
+int _orig_syscall_fcntl64(int fd, int cmd, intptr_t varargs)
+  __attribute__((__import_module__("env"), __import_name__("__syscall_fcntl64"), __warn_unused_result__));
 
 int __syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
 {
@@ -101,6 +144,28 @@ int __syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t a
     return _orig_syscall_sendto(fd, message, length, flags, addr, addr_len);
   }
   return syscall_syncify(p);
+}
+
+int __syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
+{
+  int result = _try_shutdown(fd, how);
+  if (result == (int)0x80000000) {
+    return _orig_syscall_shutdown(fd, how, d1, d2, d3, d4);
+  }
+  return result;
+}
+
+int __syscall_fcntl64(int fd, int cmd, intptr_t varargs)
+{
+  int arg = 0;
+  if (cmd == 4) { // F_SETFL
+    arg = *(int*)varargs;
+  }
+  int result = _try_fcntl64(fd, cmd, arg);
+  if (result == (int)0x80000000) {
+    return _orig_syscall_fcntl64(fd, cmd, varargs);
+  }
+  return result;
 }
 
 // clang-format on

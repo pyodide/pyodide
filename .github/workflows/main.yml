@@ -379,6 +379,15 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=20
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
 
     steps:
       - uses: actions/checkout@v6
@@ -405,7 +414,7 @@ jobs:
           set -e -x
           mkdir -p test-results
           python -m pip install -r requirements.txt
-          python -m pip install pymysql cryptography pg8000
+          python -m pip install pymysql cryptography pg8000 redis
           make npm-link
 
       - name: Run database integration tests (node)
@@ -419,6 +428,8 @@ jobs:
           POSTGRES_PORT: "5432"
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: test
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: "6379"
         run: |
           source pyodide_env.sh
           tools/pytest_wrapper.py \

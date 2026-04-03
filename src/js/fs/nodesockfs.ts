@@ -31,6 +31,8 @@ interface NodeSock {
   connected: boolean;
   connecting: boolean;
   closed: boolean;
+  /** Non-blocking mode flag, set via ioctl(FIONBIO) from socket.settimeout(0) */
+  nonblocking: boolean;
   stream?: any;
   daddr?: string;
   dport?: number;
@@ -74,6 +76,12 @@ export async function initializeNodeSockFS(
   const POLLRDNORM = 0x040;
 
   const FIONREAD = 0x541b;
+  const FIONBIO = 0x5421;
+  const O_NONBLOCK = 0o4000;
+
+  const SHUT_RD = 0;
+  const SHUT_WR = 1;
+  const SHUT_RDWR = 2;
 
   // Highly inspired by Emscripten's SOCKFS implementation
   // https://github.com/emscripten-core/emscripten/blob/main/src/lib/libsockfs.js
@@ -99,13 +107,24 @@ export async function initializeNodeSockFS(
       return mask;
     },
 
-    /**
-     * For now only FIONREAD is supported.
-     * TODO: support other requests?
-     */
-    ioctl(sock: NodeSock, request: number, _arg: any): number {
+    ioctl(sock: NodeSock, request: number, arg: any): number {
       if (request === FIONREAD) {
         return sock.leftover ? sock.leftover.length : 0;
+      }
+      if (request === FIONBIO) {
+        // arg is a pointer to an int; read the value from HEAP32.
+        // CPython calls ioctl(fd, FIONBIO, &nonblock) from internal_setblocking.
+        const on = Module.HEAPU32[arg >> 2];
+        sock.nonblocking = !!on;
+        // Also update stream flags so Emscripten's poll/select sees it
+        if (sock.stream) {
+          if (on) {
+            sock.stream.flags |= O_NONBLOCK;
+          } else {
+            sock.stream.flags &= ~O_NONBLOCK;
+          }
+        }
+        return 0;
       }
       return 0;
     },
@@ -200,8 +219,9 @@ export async function initializeNodeSockFS(
     async recvmsgAsync(
       sock: NodeSock,
       length: number,
-    ): Promise<Uint8Array | null> {
+    ): Promise<Uint8Array | number | null> {
       if (sock.leftover && sock.leftover.length > 0) {
+
         const bytesRead = Math.min(length, sock.leftover.length);
         const result = sock.leftover.subarray(0, bytesRead);
         sock.leftover =
@@ -209,6 +229,14 @@ export async function initializeNodeSockFS(
             ? sock.leftover.subarray(bytesRead)
             : null;
         return result;
+      }
+
+      // Non-blocking mode: return EAGAIN immediately if no buffered data.
+      // CPython's settimeout(0) sets O_NONBLOCK via fcntl(F_SETFL).
+      // Emscripten stores this in stream.flags but never acts on it;
+      // we check it here so recv returns EAGAIN instead of blocking.
+      if (sock.stream && sock.stream.flags & O_NONBLOCK) {
+        return -ERRNO_CODES.EAGAIN;
       }
 
       if (!sock.reader) {
@@ -230,6 +258,37 @@ export async function initializeNodeSockFS(
       } catch {
         return null;
       }
+    },
+
+    shutdown(sock: NodeSock, how: number): number {
+      if (!sock.wcgSocket) {
+        return -ERRNO_CODES.ENOTCONN;
+      }
+
+      if (how === SHUT_RD || how === SHUT_RDWR) {
+        if (sock.reader) {
+          sock.reader.cancel().catch(() => {});
+          sock.reader.releaseLock();
+          sock.reader = null;
+        }
+      }
+
+      if (how === SHUT_WR || how === SHUT_RDWR) {
+        if (sock.writer) {
+          sock.writer.close().catch(() => {});
+          sock.writer.releaseLock();
+          sock.writer = null;
+        }
+      }
+
+      if (how === SHUT_RDWR) {
+        sock.wcgSocket.close().catch(() => {});
+        sock.wcgSocket = null;
+        sock.connected = false;
+        sock.closed = true;
+      }
+
+      return 0;
     },
 
     /*
@@ -327,6 +386,7 @@ export async function initializeNodeSockFS(
         connected: false,
         connecting: false,
         closed: false,
+        nonblocking: false,
         sock_ops: tcp_sock_ops,
       };
 
@@ -348,6 +408,8 @@ export async function initializeNodeSockFS(
       // map the new stream to the socket structure (sockets have a 1:1
       // relationship with a stream)
       sock.stream = stream;
+
+
 
       return sock;
     },

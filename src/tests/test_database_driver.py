@@ -499,3 +499,309 @@ def test_postgresql_pg8000_features(selenium_nodesock, pg_test_db):
         ]
 
     run(selenium_nodesock, host, port, user, password, db)
+
+
+@pytest.fixture(scope="session")
+def redis_config():
+    host = os.environ.get("REDIS_HOST", "127.0.0.1")
+    port = int(os.environ.get("REDIS_PORT", "6379"))
+    password = os.environ.get("REDIS_PASSWORD", "")
+    db = int(os.environ.get("REDIS_DB", "15"))
+
+    return {
+        "host": host,
+        "port": port,
+        "password": password or None,
+        "db": db,
+    }
+
+
+@pytest.fixture()
+def redis_test_db(redis_config):
+    import redis as redis_client
+
+    deadline = time.time() + 10
+    last_err: Exception | None = None
+    while time.time() < deadline:
+        try:
+            r = redis_client.Redis(
+                host=redis_config["host"],
+                port=redis_config["port"],
+                password=redis_config["password"],
+                db=redis_config["db"],
+            )
+            r.ping()
+            r.close()
+            last_err = None
+            break
+        except Exception as e:  # noqa: BLE001
+            last_err = e
+            time.sleep(1)
+
+    if last_err is not None:
+        raise RuntimeError("Redis server not reachable within timeout") from last_err
+
+    r = redis_client.Redis(
+        host=redis_config["host"],
+        port=redis_config["port"],
+        password=redis_config["password"],
+        db=redis_config["db"],
+    )
+    r.flushdb()
+    r.close()
+
+    try:
+        yield redis_config
+    finally:
+        r = redis_client.Redis(
+            host=redis_config["host"],
+            port=redis_config["port"],
+            password=redis_config["password"],
+            db=redis_config["db"],
+        )
+        r.flushdb()
+        r.close()
+
+
+# When running this test locally, start a Redis server and install dependencies:
+#   docker run -d --name redis-server -p 6379:6379 redis:7
+#   pip install redis
+#   pytest src/tests/test_database_driver.py::test_redis_py_features -m db
+@pytest.mark.skip_refcount_check
+@pytest.mark.db
+@only_node
+def test_redis_py_features(selenium_nodesock, redis_test_db):
+    cfg = redis_test_db
+
+    host = cfg["host"]
+    port = cfg["port"]
+    password = cfg["password"] or ""
+    db = cfg["db"]
+
+    @run_in_pyodide(packages=["micropip"])
+    async def run(selenium, host, port, password, db):
+        import micropip
+
+        await micropip.install("redis")
+
+        import redis
+
+        # Pyodide's CPython is built with HAVE_SHUTDOWN=0, so the socket
+        # object lacks a shutdown() method. Patch redis-py's disconnect
+        # to handle the missing method until CPython is rebuilt.
+        import redis.connection
+
+        _orig_disconnect = redis.connection.AbstractConnection.disconnect
+
+        def _patched_disconnect(self):
+            try:
+                return _orig_disconnect(self)
+            except AttributeError:
+                if self._sock:
+                    try:
+                        self._sock.close()
+                    except Exception:
+                        pass
+                    self._sock = None
+                self._parser.on_disconnect()
+
+        redis.connection.AbstractConnection.disconnect = _patched_disconnect
+
+        def connect(**kwargs):
+            return redis.Redis(
+                host=host,
+                port=port,
+                password=password if password else None,
+                db=db,
+                decode_responses=True,
+                **kwargs,
+            )
+
+        results = {}
+
+        # 1) Connectivity + string operations
+        r = connect()
+        try:
+            assert r.ping() is True
+            r.flushdb()
+            assert r.dbsize() == 0
+
+            # SET / GET / DELETE
+            assert r.set("key1", "hello") is True
+            assert r.get("key1") == "hello"
+            assert r.get("nonexistent") is None
+            assert r.delete("key1") == 1
+            assert r.get("key1") is None
+
+            # APPEND
+            r.set("appendkey", "hello")
+            new_len = r.append("appendkey", " world")
+            assert new_len == 11
+            assert r.get("appendkey") == "hello world"
+
+            # INCR / DECR
+            r.set("counter", "10")
+            assert r.incr("counter") == 11
+            assert r.incrby("counter", 5) == 16
+            assert r.decr("counter") == 15
+            assert r.decrby("counter", 10) == 5
+
+            # MSET / MGET
+            assert r.mset({"a": "1", "b": "2", "c": "3"}) is True
+            assert r.mget(["a", "b", "c"]) == ["1", "2", "3"]
+            assert r.delete("a", "b", "c") == 3
+
+            results["strings"] = "ok"
+        finally:
+            r.close()
+
+        # 2) List operations
+        r = connect()
+        try:
+            r.delete("mylist")
+            assert r.rpush("mylist", "a", "b", "c") == 3
+            assert r.lpush("mylist", "z") == 4
+            assert r.llen("mylist") == 4
+            assert r.lrange("mylist", 0, -1) == ["z", "a", "b", "c"]
+            assert r.lpop("mylist") == "z"
+            assert r.rpop("mylist") == "c"
+            assert r.lrange("mylist", 0, -1) == ["a", "b"]
+
+            results["lists"] = "ok"
+        finally:
+            r.close()
+
+        # 3) Hash operations
+        r = connect()
+        try:
+            r.delete("myhash")
+            assert r.hset("myhash", mapping={"f1": "v1", "f2": "v2", "f3": "v3"}) == 3
+            assert r.hget("myhash", "f1") == "v1"
+            assert r.hgetall("myhash") == {"f1": "v1", "f2": "v2", "f3": "v3"}
+            assert r.hdel("myhash", "f1") == 1
+            assert r.hget("myhash", "f1") is None
+            assert r.hgetall("myhash") == {"f2": "v2", "f3": "v3"}
+
+            results["hashes"] = "ok"
+        finally:
+            r.close()
+
+        # 4) Set operations
+        r = connect()
+        try:
+            r.delete("myset")
+            assert r.sadd("myset", "a", "b", "c") == 3
+            assert r.scard("myset") == 3
+            assert r.sismember("myset", "a")
+            assert not r.sismember("myset", "z")
+            assert r.smembers("myset") == {"a", "b", "c"}
+            assert r.srem("myset", "c") == 1
+            assert r.scard("myset") == 2
+            assert r.smembers("myset") == {"a", "b"}
+
+            results["sets"] = "ok"
+        finally:
+            r.close()
+
+        # 5) Sorted set operations
+        r = connect()
+        try:
+            r.delete("myzset")
+            assert r.zadd("myzset", {"alice": 1.0, "bob": 2.0, "charlie": 3.0}) == 3
+            assert r.zcard("myzset") == 3
+            assert r.zscore("myzset", "bob") == 2.0
+            assert r.zrank("myzset", "alice") == 0
+            assert r.zrange("myzset", 0, -1) == ["alice", "bob", "charlie"]
+            scored = r.zrange("myzset", 0, -1, withscores=True)
+            assert scored == [("alice", 1.0), ("bob", 2.0), ("charlie", 3.0)]
+            assert r.zrangebyscore("myzset", 1, 2) == ["alice", "bob"]
+
+            results["sorted_sets"] = "ok"
+        finally:
+            r.close()
+
+        # 6) Key operations (EXISTS, EXPIRE, TTL, TYPE)
+        r = connect()
+        try:
+            r.set("typetest_str", "hello")
+            r.rpush("typetest_list", "a")
+            r.hset("typetest_hash", "k", "v")
+            r.sadd("typetest_set", "a")
+            r.zadd("typetest_zset", {"a": 1.0})
+
+            assert r.exists("typetest_str") == 1
+            assert r.exists("nonexistent") == 0
+            assert r.type("typetest_str") == "string"
+            assert r.type("typetest_list") == "list"
+            assert r.type("typetest_hash") == "hash"
+            assert r.type("typetest_set") == "set"
+            assert r.type("typetest_zset") == "zset"
+
+            assert r.expire("typetest_str", 10) is True
+            ttl_val = r.ttl("typetest_str")
+            assert 0 < ttl_val <= 10
+
+            # SET with EX (expiry)
+            r.set("expiring", "value", ex=60)
+            assert r.get("expiring") == "value"
+            exp_ttl = r.ttl("expiring")
+            assert 0 < exp_ttl <= 60
+
+            # SET with NX (only if not exists)
+            r.set("nxkey", "first")
+            assert r.set("nxkey", "second", nx=True) is None
+            assert r.get("nxkey") == "first"
+
+            results["keys"] = "ok"
+        finally:
+            r.close()
+
+        # 7) Pipeline (non-transactional batching)
+        r = connect()
+        try:
+            r.delete("p1", "p2")
+            pipe = r.pipeline(transaction=False)
+            pipe.set("p1", "v1")
+            pipe.set("p2", "v2")
+            pipe.get("p1")
+            pipe.get("p2")
+            pipe_results = pipe.execute()
+            assert pipe_results == [True, True, "v1", "v2"]
+
+            results["pipeline"] = "ok"
+        finally:
+            r.close()
+
+        # 8) Transaction (MULTI/EXEC)
+        r = connect()
+        try:
+            r.delete("tx1", "tx2")
+            pipe = r.pipeline()  # transaction=True by default
+            pipe.set("tx1", "a")
+            pipe.set("tx2", "b")
+            pipe.get("tx1")
+            tx_results = pipe.execute()
+            assert tx_results == [True, True, "a"]
+            assert r.get("tx1") == "a"
+            assert r.get("tx2") == "b"
+
+            results["transaction"] = "ok"
+        finally:
+            r.close()
+
+        # Verify all sections passed
+        expected = [
+            "strings",
+            "lists",
+            "hashes",
+            "sets",
+            "sorted_sets",
+            "keys",
+            "pipeline",
+            "transaction",
+        ]
+        for section in expected:
+            assert section in results, f"Section {section} did not complete"
+            assert results[section] == "ok", f"Section {section} failed"
+
+    run(selenium_nodesock, host, port, password, db)

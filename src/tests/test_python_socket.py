@@ -609,3 +609,137 @@ def test_socket_double_close(selenium_nodesock):
 
         result = run(selenium_nodesock, host, port)
         assert result == "ok", f"Expected 'ok', got {result!r}"
+
+
+def test_socket_settimeout_nonblocking(selenium_nodesock):
+    """settimeout(0) makes recv raise socket.timeout when no data is available."""
+
+    def handler(conn, _addr):
+        import time
+
+        time.sleep(2)
+        conn.sendall(b"delayed")
+        conn.close()
+
+    with tcp_server(handler) as (host, port):
+
+        @run_in_pyodide
+        def run(selenium, host, port):
+            import socket
+
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((host, port))
+
+            s.settimeout(0)
+
+            try:
+                s.recv(1024)
+                result = "no_error"
+            except BlockingIOError:
+                result = "BlockingIOError"
+            except socket.timeout:
+                result = "timeout"
+            except OSError as e:
+                result = f"OSError:{e.errno}"
+            finally:
+                s.close()
+            return result
+
+        result = run(selenium_nodesock, host, port)
+        assert result in ("BlockingIOError", "timeout", "OSError:11"), (
+            f"Expected non-blocking error, got: {result}"
+        )
+
+
+def test_socket_settimeout_restore_blocking(selenium_nodesock):
+    """settimeout(0) then settimeout(None) restores blocking mode."""
+
+    def handler(conn, _addr):
+        conn.sendall(b"hello")
+        conn.close()
+
+    with tcp_server(handler) as (host, port):
+
+        @run_in_pyodide
+        def run(selenium, host, port):
+            import socket
+
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((host, port))
+
+            s.settimeout(0)
+            s.settimeout(None)
+
+            data = s.recv(1024)
+            s.close()
+            return data.decode()
+
+        result = run(selenium_nodesock, host, port)
+        assert result == "hello", f"Expected 'hello', got {result!r}"
+
+
+@pytest.mark.skip(reason="HAVE_SHUTDOWN=0 in Pyodide's CPython build")
+def test_socket_shutdown_rdwr(selenium_nodesock):
+    """socket.shutdown(SHUT_RDWR) cleanly shuts down both directions."""
+
+    def handler(conn, _addr):
+        conn.sendall(b"data")
+        conn.recv(1024)
+
+    with tcp_server(handler) as (host, port):
+
+        @run_in_pyodide
+        def run(selenium, host, port):
+            import socket
+
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((host, port))
+
+            data = s.recv(1024)
+
+            s.shutdown(socket.SHUT_RDWR)
+            s.close()
+            return data.decode()
+
+        result = run(selenium_nodesock, host, port)
+        assert result == "data", f"Expected 'data', got {result!r}"
+
+
+@pytest.mark.skip(reason="HAVE_SHUTDOWN=0 in Pyodide's CPython build")
+def test_socket_shutdown_wr(selenium_nodesock):
+    """socket.shutdown(SHUT_WR) sends FIN; server sees EOF but we can still read."""
+
+    def handler(conn, _addr):
+        data = b""
+        while True:
+            chunk = conn.recv(1024)
+            if not chunk:
+                break
+            data += chunk
+        conn.sendall(b"got:" + data)
+        conn.close()
+
+    with tcp_server(handler) as (host, port):
+
+        @run_in_pyodide
+        def run(selenium, host, port):
+            import socket
+
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((host, port))
+
+            s.sendall(b"hello")
+            s.shutdown(socket.SHUT_WR)
+
+            resp = b""
+            while True:
+                chunk = s.recv(1024)
+                if not chunk:
+                    break
+                resp += chunk
+
+            s.close()
+            return resp.decode()
+
+        result = run(selenium_nodesock, host, port)
+        assert result == "got:hello", f"Expected 'got:hello', got {result!r}"
