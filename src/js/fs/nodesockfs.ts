@@ -200,6 +200,9 @@ export async function initializeNodeSockFS(
       }
     },
 
+    /**
+     * Start TLS on an existing socket.
+     */
     startTls(sock: NodeSock): number {
       if (!sock.wcgSocket) {
         return -ERRNO_CODES.ENOTCONN;
@@ -462,19 +465,6 @@ export async function initializeNodeSockFS(
         buf = new Uint8Array(data);
       }
       return await tcp_sock_ops.sendmsgAsync(sock, buf);
-    },
-
-    async connectTLS(fd: number, host: string, port: number): Promise<void> {
-      const sock = NodeSockFS.getSocket(fd);
-      if (!sock) {
-        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
-      }
-      const result = await tcp_sock_ops.connectAsync(sock, host, port, {
-        secureTransport: "on",
-      });
-      if (result < 0) {
-        throw new FS.ErrnoError(-result);
-      }
     },
 
     startTls(fd: number): number {
