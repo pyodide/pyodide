@@ -189,6 +189,7 @@ export type FSNode = {
   rdev: number;
   contents: Uint8Array;
   mode: number;
+  sock?: any;
 };
 
 /** @hidden */
@@ -199,7 +200,7 @@ export type FSStream = {
   seekable?: boolean;
   stream_ops: FSStreamOps;
   node: FSNode;
-};
+} & FS.FSStream;
 
 /** @hidden */
 export type FSStreamOps = FSStreamOpsGen<FSStream>;
@@ -229,20 +230,25 @@ export type FSStreamOpsGen<T> = {
  * Methods that the Emscripten filesystem provides. Most of them are already defined
  * in `@types/emscripten`, but Pyodide uses quite a lot of private APIs that are not
  * defined there as well. Hence this interface.
- *
- * @hidden
  */
-interface PyodideFSType {
-  filesystems: any;
-  registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
-  createNode(parent: any, name: string, mode: number, dev: number): any;
-  createStream(stream: any, fd?: number): any;
+declare global {
+  namespace FS {
+    let filesystems: Record<string, any>;
+    function registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
+    function createNode(
+      parent: any,
+      name: string,
+      mode: number,
+      dev: number,
+    ): any;
+    function createStream(stream: any, fd?: number): FSStream;
+  }
 }
 
 /**
  * @hidden
  */
-export type FSType = typeof FS & PyodideFSType;
+export type FSType = typeof FS;
 
 /** @hidden */
 export type PreRunFunc = (Module: PyodideModule) => void;

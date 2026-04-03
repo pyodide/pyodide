@@ -34,8 +34,8 @@ def test_asyncio_sleep(selenium):
     )
 
 
-def test_cancel_handle(selenium_standalone):
-    selenium_standalone.run_js(
+def test_cancel_handle(selenium_standalone_refresh):
+    selenium_standalone_refresh.run_js(
         """
         await pyodide.runPythonAsync(`
             import asyncio
@@ -213,8 +213,8 @@ def test_run_in_executor(selenium):
 
 
 @pytest.mark.xfail(reason="Works locally but failing in test suite as of #2022.")
-def test_webloop_exception_handler(selenium_standalone):
-    selenium = selenium_standalone
+def test_webloop_exception_handler(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     selenium.run_async(
         """
         import asyncio

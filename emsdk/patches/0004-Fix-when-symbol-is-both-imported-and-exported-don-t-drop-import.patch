@@ -1,0 +1,125 @@
+From 358299885bb6dd0f631eb7890debdbe234886402 Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <gyeongjae@cloudflare.com>
+Date: Fri, 20 Mar 2026 10:33:16 +0900
+Subject: [PATCH 4/5] Fix: When symbol is both imported and exported, don't
+ drop import
+
+Upstream PR: https://github.com/emscripten-core/emscripten/pull/26356
+---
+ src/jsifier.mjs          |  2 +-
+ src/settings_internal.js |  3 +++
+ src/utility.mjs          |  1 +
+ tools/emscripten.py      | 19 ++++++++++++++++---
+ 4 files changed, 21 insertions(+), 4 deletions(-)
+
+diff --git a/src/jsifier.mjs b/src/jsifier.mjs
+index dbe200355..77bee3f28 100644
+--- a/src/jsifier.mjs
++++ b/src/jsifier.mjs
+@@ -559,7 +559,7 @@
+ 
+       // if the function was implemented in compiled code, there is no need to
+       // include the js version
+-      if (WASM_EXPORTS.has(symbol)) {
++      if (WASM_EXPORTS.has(symbol) && !WASM_IMPORTS.has(symbol)) {
+         return;
+       }
+ 
+diff --git a/src/settings_internal.js b/src/settings_internal.js
+index e656c83fd..c5425cc57 100644
+--- a/src/settings_internal.js
++++ b/src/settings_internal.js
+@@ -16,6 +16,9 @@
+ // underscore.
+ var WASM_EXPORTS = [];
+ 
++// List of symbols imported from JavaScript
++var WASM_IMPORTS = [];
++
+ // An array of all symbols exported from all the side modules specified on the
+ // command line.
+ // These are raw symbol names and are not mangled to include the leading
+diff --git a/src/utility.mjs b/src/utility.mjs
+index 052eb86c5..99b3eeff9 100644
+--- a/src/utility.mjs
++++ b/src/utility.mjs
+@@ -334,6 +334,7 @@
+ const setLikeSettings = [
+   'EXPORTED_FUNCTIONS',
+   'WASM_EXPORTS',
++  'WASM_IMPORTS',
+   'SIDE_MODULE_EXPORTS',
+   'INCOMING_MODULE_JS_API',
+   'ALL_INCOMING_MODULE_JS_API',
+diff --git a/tools/emscripten.py b/tools/emscripten.py
+index 500bb2535..c7c0cd94c 100644
+--- a/tools/emscripten.py
++++ b/tools/emscripten.py
+@@ -114,8 +114,10 @@
+ 
+   if base_metadata:
+     settings.WASM_EXPORTS = base_metadata.all_exports
++    settings.WASM_IMPORTS = base_metadata.imports
+   else:
+     settings.WASM_EXPORTS = metadata.all_exports
++    settings.WASM_IMPORTS = metadata.imports
+   settings.HAVE_EM_ASM = bool(settings.MAIN_MODULE or len(metadata.em_asm_consts) != 0)
+ 
+   if settings.MAIN_MODULE and settings.ASYNCIFY == 1:
+@@ -685,6 +687,8 @@
+   out += 'interface WasmModule {\n'
+   for name, functype in metadata.function_exports.items():
+     mangled = asmjs_mangle(name)
++    if settings.WASM_IMPORTS is not None and name in settings.WASM_IMPORTS:
++      continue
+     should_export = settings.EXPORT_KEEPALIVE and mangled in settings.EXPORTED_FUNCTIONS
+     if not should_export:
+       continue
+@@ -950,7 +954,7 @@
+   return settings.EXPORT_ALL or (settings.EXPORT_KEEPALIVE and sym in settings.EXPORTED_FUNCTIONS)
+ 
+ 
+-def create_receiving(function_exports, other_exports, library_symbols, aliases):
++def create_receiving(function_exports, other_exports, library_symbols, aliases, wasm_imports):
+   generate_dyncall_assignment = 'dynCalls' in library_symbols
+   receiving = ['\n// Imports from the Wasm binary.']
+ 
+@@ -996,6 +1000,7 @@
+     exports[export.name] = (export, info)
+ 
+   mangled = [asmjs_mangle(s) for s in exports] + list(aliases.keys())
++  wasm_imports_mangled = {asmjs_mangle(s) for s in wasm_imports}
+   if settings.ASSERTIONS:
+     # In debug builds we generate trapping functions in case
+     # folks try to call/use a reference that was taken before the
+@@ -1004,6 +1009,8 @@
+       module_export = (settings.MODULARIZE or not settings.MINIMAL_RUNTIME) and should_export(sym) and settings.MODULARIZE != 'instance'
+       if not js_manipulation.isidentifier(sym) and not module_export:
+         continue
++      if sym in wasm_imports_mangled:
++        continue
+       assignment = f'var {sym}'
+       if module_export:
+         if js_manipulation.isidentifier(sym):
+@@ -1014,7 +1021,9 @@
+   else:
+     # Declare all exports in a single var statement
+     sep = ',\n  '
+-    receiving.append(f'var {sep.join(mangled)};\n')
++    mangled_decls = [s for s in mangled if s not in wasm_imports_mangled]
++    if mangled_decls:
++      receiving.append(f'var {sep.join(mangled_decls)};\n')
+ 
+   if settings.MODULARIZE == 'instance':
+     esm_exports = [e for e in mangled if should_export(e)]
+@@ -1081,7 +1090,7 @@
+ 
+ def create_module(metadata, function_exports, other_exports, library_symbols, aliases):
+   module = []
+-  module.append(create_receiving(function_exports, other_exports, library_symbols, aliases))
++  module.append(create_receiving(function_exports, other_exports, library_symbols, aliases, metadata.imports))
+ 
+   sending = create_sending(metadata, library_symbols)
+   if settings.WASM_ESM_INTEGRATION:
+-- 
+2.50.1 (Apple Git-155)

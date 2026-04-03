@@ -17,6 +17,9 @@
   notebook with a Pyodide kernel (currently in French).
 - [JupyterLite](https://github.com/jupyterlite/jupyterlite) is a JupyterLab
   distribution that runs entirely in the browser, based on Pyodide.
+- [PyScript](https://pyscript.net/) is an open source platform for Python in the
+  browser. It defines `<script type="py">` html elements to allow creation of
+  JavaScript-free HTML/CSS/Python web applications.
 - [futurecoder](https://futurecoder.io/) is an interactive Python
   course running on Pyodide. It includes an
   [IDE](https://futurecoder.io/course/#ide) with a REPL,

@@ -1,6 +1,6 @@
 exclude: (^.*patches|.*\.cgi$|^packages/micropip/src/micropip/externals|^benchmark/benchmarks$|^src/py/ssl.py)
 default_language_version:
-  python: "3.13"
+  python: "3.14"
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: "v6.0.0"
