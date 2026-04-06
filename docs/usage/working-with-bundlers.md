@@ -60,7 +60,7 @@ const PYODIDE_EXCLUDE = [
   "!**/*.{md,html}",
   "!**/*.d.ts",
   "!**/*.whl",
-  "!**/node_modules",
+  "!**/pyodide/node_modules",
 ];
 
 export function viteStaticCopyPyodide() {

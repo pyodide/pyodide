@@ -924,7 +924,9 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
 
 
-class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
+# TODO: asyncio's policy system is deprecated as of Python 3.14
+# we need to find an alternative way to set the event loop for pyodide
+class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore[name-defined]
     """
     A simple event loop policy for managing :py:class:`WebLoop`-based event loops.
     """
