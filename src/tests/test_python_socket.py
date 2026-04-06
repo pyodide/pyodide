@@ -609,3 +609,58 @@ def test_socket_double_close(selenium_nodesock):
 
         result = run(selenium_nodesock, host, port)
         assert result == "ok", f"Expected 'ok', got {result!r}"
+
+
+def test_socket_shutdown(selenium_nodesock):
+    """Test that shutting down a socket works."""
+
+    def handler(conn, _addr):
+        conn.recv(1024)
+        conn.sendall(b"OK")
+
+    with tcp_server(handler) as (host, port):
+
+        @run_in_pyodide
+        def run(selenium, host, port):
+            import socket
+
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((host, port))
+
+            s.sendall(b"test")
+            s.recv(1024)
+
+            s.shutdown(socket.SHUT_RDWR)
+            s.close()
+            return "ok"
+
+        result = run(selenium_nodesock, host, port)
+        assert result == "ok", f"Expected 'ok', got {result!r}"
+
+
+def test_socket_shutdown_non_nodesock(selenium_standalone):
+    """
+    Calling shutdown on a non-node socket will raise "Function not implemented"
+    """
+
+    @run_in_pyodide
+    def run(selenium):
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("127.0.0.1", 0))
+        s.listen(1)
+
+        assert hasattr(s, "shutdown"), "shutdown method should exist"
+
+        try:
+            s.shutdown(socket.SHUT_RDWR)
+        except OSError as e:
+            if "Function not implemented" in str(e):
+                return "ok"
+            raise
+        s.close()
+        return "ok"
+
+    result = run(selenium_standalone)
+    assert result == "ok", f"Expected 'ok', got {result!r}"
