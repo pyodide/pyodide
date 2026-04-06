@@ -916,6 +916,8 @@ def test_asyncio_client_close_lifecycle(selenium_nodesock):
 
             assert not transport.is_closing()
             transport.close()
+            # Give some time for the close to propagate
+            await asyncio.sleep(0.1)
             assert transport.is_closing()
 
             await asyncio.wait_for(proto.done, timeout=5.0)

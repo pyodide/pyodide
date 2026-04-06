@@ -423,7 +423,6 @@ export async function initializeNodeSockFS(
         buf = data;
       } else if (data.toJs) {
         buf = data.toJs();
-        data.destroy();
       } else {
         buf = new Uint8Array(data);
       }
