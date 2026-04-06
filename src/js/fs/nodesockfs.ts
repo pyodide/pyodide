@@ -31,8 +31,6 @@ interface NodeSock {
   connected: boolean;
   connecting: boolean;
   closed: boolean;
-  /** Non-blocking mode flag, set via ioctl(FIONBIO) from socket.settimeout(0) */
-  nonblocking: boolean;
   stream?: any;
   daddr?: string;
   dport?: number;
@@ -76,7 +74,6 @@ export async function initializeNodeSockFS(
   const POLLRDNORM = 0x040;
 
   const FIONREAD = 0x541b;
-  const FIONBIO = 0x5421;
   const O_NONBLOCK = 0o4000;
 
   const SHUT_RD = 0;
@@ -107,24 +104,9 @@ export async function initializeNodeSockFS(
       return mask;
     },
 
-    ioctl(sock: NodeSock, request: number, arg: any): number {
+    ioctl(sock: NodeSock, request: number, _arg: any): number {
       if (request === FIONREAD) {
         return sock.leftover ? sock.leftover.length : 0;
-      }
-      if (request === FIONBIO) {
-        // arg is a pointer to an int; read the value from HEAP32.
-        // CPython calls ioctl(fd, FIONBIO, &nonblock) from internal_setblocking.
-        const on = Module.HEAPU32[arg >> 2];
-        sock.nonblocking = !!on;
-        // Also update stream flags so Emscripten's poll/select sees it
-        if (sock.stream) {
-          if (on) {
-            sock.stream.flags |= O_NONBLOCK;
-          } else {
-            sock.stream.flags &= ~O_NONBLOCK;
-          }
-        }
-        return 0;
       }
       return 0;
     },
@@ -386,7 +368,6 @@ export async function initializeNodeSockFS(
         connected: false,
         connecting: false,
         closed: false,
-        nonblocking: false,
         sock_ops: tcp_sock_ops,
       };
 
