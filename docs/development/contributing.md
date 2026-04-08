@@ -45,10 +45,10 @@ To contribute code, see the following steps,
    ```
    pip install -r requirements.txt
    ```
-6. Enable [pre-commit](https://pre-commit.com/) for code style,
+6. Enable [prek](https://prek.j178.dev/) for code style,
 
    ```
-   pre-commit install
+   prek install
    ```
 
    This will run a set of linters for each commit.

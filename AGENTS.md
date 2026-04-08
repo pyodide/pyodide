@@ -70,7 +70,7 @@ These are general guidelines for working in this workspace.
 
 - Follow the development workflow outlined in `docs/development/contributing.md`.
 - Adhere to the Code of Conduct.
-- Use `pre-commit` to ensure code style consistency.
+- Use `prek` (faster alternative to `pre-commit`) to ensure code style consistency.
 
 ## Core C Code Development
 
