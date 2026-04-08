@@ -18,7 +18,7 @@ defaults: &defaults
     PYODIDE_ZIP_COMPRESSION_LEVEL: 0
     # For maintainers: set this to 0 if you are making an ABI break, and
     # reset to 1 after updating the packages to the new ABI.
-    USE_PREBUILT_PACKAGES: 0
+    USE_PREBUILT_PACKAGES: 1
 
 jobs:
   build-core:
