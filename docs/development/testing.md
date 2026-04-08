@@ -102,8 +102,8 @@ PYODIDE_PACKAGES="numpy,matplotlib" make benchmark
 
 We lint with `prek`.
 
-Python is linted with `ruff`, `black` and `mypy`.
-JavaScript, markdown, yaml, and html are linted with `prettier`.
+Python is linted with `ruff` (for linting and formatting) and `mypy`.
+JavaScript and TypeScript are linted with `biome`.
 C is linted with `clang-format`.
 
 To lint the code, run:
