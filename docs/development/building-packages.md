@@ -1,8 +1,5 @@
 (building-packages)=
 (building-packages-from-source)=
-(adding-packages-into-pyodide-distribution)=
-(building-packages-using-recipe)=
-(meta-yaml-spec)=
 
 # Building packages for Pyodide
 
