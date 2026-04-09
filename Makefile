@@ -283,7 +283,7 @@ clean-dist-dir:
 
 .PHONY: lint
 lint:
-	pre-commit run -a --show-diff-on-failure
+	prek -a --show-diff-on-failure
 
 benchmark: all
 	$(HOSTPYTHON) benchmark/benchmark.py all --output dist/benchmarks.json

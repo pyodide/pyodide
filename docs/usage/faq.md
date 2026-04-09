@@ -297,10 +297,8 @@ This can happen for two reasons,
    yourself, upload it to some temporary location and install it with micropip
    from the corresponding URL.
 2. or the package has binary extensions (e.g. C, Fortran or Rust), in which
-   case it needs to be packaged in Pyodide. Please open [an
-   issue](https://github.com/pyodide/pyodide/issues) after checking that an
-   issue for this package doesn't exist already. Then follow
-   {ref}`building-packages`.
+   case it needs to be cross-compiled for Pyodide. Please make a request to
+   the package maintainers to add Pyodide support.
 
 ## How can I change the behavior of {js:func}`~pyodide.runPython` and {js:func}`~pyodide.runPythonAsync`?
 

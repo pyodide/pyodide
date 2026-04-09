@@ -183,7 +183,7 @@ def check_clean_working_tree():
         capture_output=True,
     )
     if res.stdout.strip():
-        print("Working tree not clean, quitting")
+        print("Working tree not clean, quitting", file=sys.stderr)
         sys.exit(1)
 
 

@@ -607,14 +607,18 @@ export class PyodideAPI_ {
 
   /**
    * Use Node.js native socket filesystem instead of Emscripten's SOCKFS.
-   * @param connectFunc Optional custom connect function that satisfies WinterCG socket-api interface.
    * @experimental
    */
-  static async useNodeSockFS(connectFunc?: ConnectFunc) {
+  static async useNodeSockFS(
+    /**
+     * @hidden
+     */
+    options?: { connect?: ConnectFunc },
+  ) {
     if (!RUNTIME_ENV.IN_NODE) {
       throw new Error("useNodeSockFS only works in Node");
     }
-    await API.initializeNodeSockFS(connectFunc);
+    await API.initializeNodeSockFS(options?.connect);
   }
 
   /**
