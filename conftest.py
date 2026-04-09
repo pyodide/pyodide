@@ -70,7 +70,6 @@ def set_configs():
         "chrome",
         """
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals : self,
         });
         """,
@@ -83,7 +82,6 @@ def set_configs():
         let snap = readFileSync("snapshot.bin");
         snap = new Uint8Array(snap.buffer);
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals: self,
             _loadSnapshot: snap,
         });
@@ -204,6 +202,15 @@ def pytest_collection_modifyitems(config, items):
                     pytest.mark.skip(
                         reason="long_running test skipped (use '-m long_running' to run or set CI=1)"
                     )
+                )
+                continue
+
+        if item.get_closest_marker("db"):
+            # Skip db tests if mark not explicitly included
+            markexpr = config.getoption("-m", default="")
+            if "db" not in markexpr:
+                item.add_marker(
+                    pytest.mark.skip(reason="db test skipped (use '-m db' to run)")
                 )
                 continue
 

@@ -16,13 +16,20 @@
 import type { Duplex } from "node:stream";
 import type { ReadableStream, WritableStream } from "node:stream/web";
 
+/**
+ * @hidden
+ */
 export interface SocketOptions {
   /**
    * Specifies whether or not to use TLS when creating the TCP socket.
-   * `off` — Do not use TLS.
-   * `on` — Use TLS.
-   * `starttls` — Do not use TLS initially, but allow the socket to be
-   *   upgraded to use TLS by calling startTls().
+   *
+   * `off`
+   *    Do not use TLS.
+   * `on`
+   *    Use TLS.
+   * `starttls`
+   *    Do not use TLS initially, but allow the socket to be
+   *    upgraded to use TLS by calling startTls().
    */
   secureTransport?: "off" | "on" | "starttls";
   /**
@@ -32,6 +39,9 @@ export interface SocketOptions {
   allowHalfOpen?: boolean;
 }
 
+/**
+ * @hidden
+ */
 export interface SocketAddress {
   /** The hostname to connect to. Example: `cloudflare.com`. */
   hostname: string;
@@ -39,6 +49,9 @@ export interface SocketAddress {
   port: number;
 }
 
+/**
+ * @hidden
+ */
 export interface SocketInfo {
   remoteAddress?: string;
   localAddress?: string;
@@ -66,6 +79,8 @@ let _duplexToWeb:
  * Must be called once before using `connect()`.  Dynamically loads `node:net`,
  * `node:tls`, and `node:stream` so that this module has no top-level Node.js
  * dependencies.
+ *
+ * @hidden
  */
 export async function init(): Promise<void> {
   if (_net) return; // already initialised
@@ -99,17 +114,26 @@ function getDuplexToWeb() {
   return _duplexToWeb;
 }
 
+/**
+ * @hidden
+ */
 export class SocketError extends TypeError {
   constructor(message: string) {
     super(`SocketError: ${message}`);
   }
 }
 
+/**
+ * @hidden
+ */
 export type ConnectFunc = (
   address: SocketAddress | string,
   options?: SocketOptions,
 ) => Socket;
 
+/**
+ * @hidden
+ */
 export function connect(
   address: SocketAddress | string,
   options?: SocketOptions,
@@ -124,6 +148,9 @@ export function connect(
   return new Socket(address, options);
 }
 
+/**
+ * @hidden
+ */
 export class Socket {
   readable: ReadableStream<unknown>;
   writable: WritableStream<unknown>;

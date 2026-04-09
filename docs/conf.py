@@ -17,7 +17,7 @@ panels_add_bootstrap_css = False
 
 project = "Pyodide"
 author = "Pyodide contributors"
-copyright = "2019-2024, Pyodide contributors and Mozilla"
+copyright = "2019-2026, Pyodide contributors and Mozilla"
 
 suppress_warnings = ["config.cache"]
 nitpicky = True
@@ -83,7 +83,7 @@ autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3.13", None),
+    "python": ("https://docs.python.org/3.14", None),
     "micropip": ("https://micropip.pyodide.org/en/stable/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
 }
@@ -393,7 +393,7 @@ def setup(app):
     app.add_config_value("global_replacements", {}, True)
     app.add_config_value("CDN_URL", "", True)
     files = []
-    for dir in ["core", "js"]:
+    for dir in ["core", "js", "js/fs"]:
         files += [
             str(x)
             for x in (Path("../src") / dir).glob("*.ts")

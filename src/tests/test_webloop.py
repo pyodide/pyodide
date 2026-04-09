@@ -261,7 +261,7 @@ async def test_pyodide_future():
 
     fut = PyodideFuture()
     increment = lambda x: x + 1
-    tostring = lambda x: repr(x)
+    tostring = repr
 
     def raises(x):
         raise Exception(x)
