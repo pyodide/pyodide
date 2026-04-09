@@ -869,13 +869,14 @@ class WebLoop(asyncio.AbstractEventLoop):
                 "SSL/TLS via create_connection is not yet supported"
             )
 
-        # host + port is passed, construct socket from it
-        if host is not None or port is not None:
-            if sock is not None:
-                raise ValueError(
-                    "host/port and sock can not be specified at the same time"
-                )
-
+        if sock is None and (host is None or port is None):
+            raise ValueError("host and port must be specified if sock is not provided")
+        elif sock is not None and (host is not None or port is not None):
+            raise ValueError("host/port and sock can not be specified at the same time")
+        elif sock is not None:
+            if sock.type != socket.SOCK_STREAM:
+                raise ValueError(f"A Stream Socket was expected, got {sock!r}")
+        else:  # host + port is passed, construct socket from it
             sock = await self._construct_socket(
                 host,
                 port,
@@ -884,13 +885,6 @@ class WebLoop(asyncio.AbstractEventLoop):
                 flags=flags,
                 all_errors=all_errors,
             )
-
-        # check if socket is provided or construct from host/port
-        if sock is None:
-            raise ValueError("host and port was not specified and no sock specified")
-
-        if sock.type != socket.SOCK_STREAM:
-            raise ValueError(f"A Stream Socket was expected, got {sock!r}")
 
         sock.setblocking(False)
 
