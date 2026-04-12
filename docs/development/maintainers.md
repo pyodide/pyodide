@@ -54,7 +54,9 @@ Assume for concreteness that we are releasing version 0.20.0.
    ```
    git push upstream main 0.20.0
    ```
-5. Wait for CI to pass and release to be created.
+5. Wait for CI to pass, the release to be created, and approve the package
+   repository deployments (for `pyodide-py` to PyPI, and so on) once they
+   are ready.
 6. Rename the `stable` branch to a release branch for the previous major
    version. For instance if last release was, `0.20.0`, the corresponding
    release branch would be `0.20.X`:
@@ -155,7 +157,8 @@ Assume for concreteness that we are releasing version 0.27.2.
    ```
    git push upstream stable 0.27.2
    ```
-4. Wait for CI to pass and the release to be created.
+4. Wait for CI to pass and the release to be created, and approve the package
+   repository deployments (`pyodide-py` and so on) once they are ready.
 
 ### Making an alpha release
 
@@ -164,7 +167,9 @@ Assume for concreteness that we are releasing 0.28.0a1.
 #### Preparation
 
 Any single maintainer can decide on their own to make an alpha release, it is
-not required to discuss it with other maintainers.
+not required to discuss it with other maintainers. The only approval needed
+is for the release deployments to the package repositories (for the `pyodide-py`
+package to PyPI, etc.) once they are ready.
 
 Name the first alpha release `x.x.xa1` and in subsequent alphas increment the
 final number. No preparation is necessary. Do not make any changes to the
@@ -188,7 +193,8 @@ changelog.
    git revert 0.28.0a1 -n && git commit -m "Back to development version"
    git push upstream main
    ```
-5. Wait for CI to pass and the release to be created.
+5. Wait for CI to pass and the release to be created, and approve the package
+   repository deployments (`pyodide-py` and so on) once they are ready.
 
 ## Fixing documentation for a released version
 
