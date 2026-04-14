@@ -11,6 +11,7 @@ import sys
 from ast import Constant
 from collections import namedtuple
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any
 
 CORE_VERSION_REGEX = r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)"
@@ -35,6 +36,8 @@ def build_version_pattern(pattern):
 
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+CHANGELOG = ROOT / "docs/project/changelog.md"
+
 Target = namedtuple("target", ("file", "pattern", "prerelease"))
 PYTHON_TARGETS = [
     Target(
@@ -115,6 +118,87 @@ def is_core_version(version: str) -> bool:
         return False
 
     return True
+
+
+def is_valid_date(date_string):
+    try:
+        datetime.strptime(date_string, "_%B %d, %Y_")
+        return True
+    except ValueError:
+        return False
+
+
+def check_changelog(new_version: str):
+    content = CHANGELOG.read_text()
+
+    unreleased_header = "## Unreleased"
+    version_header = f"## Version {new_version}"
+
+    has_version_header = version_header in content
+    has_unreleased_header = unreleased_header in content
+
+    if has_unreleased_header:
+        print(
+            "Error: unreleased header found in changelog when releasing",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    if not has_version_header:
+        print(
+            f"Error: '{version_header}' section not found in changelog",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    version_pos = content.find(version_header)
+    after_version = content[version_pos + len(version_header) :]
+    if not after_version.startswith("\n\n"):
+        print(
+            f"Error: No blank line found after '{version_header}' in changelog",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    date_line = after_version.split("\n", 3)[2]
+    if not is_valid_date(date_line):
+        print(
+            f"Error: Date line '{date_line}' does not match expected format '_January 28, 2026_'",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
+def update_changelog(new_version: str) -> str | None:
+    # Only update changelog for X.Y.0 versions, patch releases should already
+    # have correct changelog
+    if not new_version.endswith(".0"):
+        return None
+
+    content = CHANGELOG.read_text()
+
+    unreleased_header = "## Unreleased"
+    version_header = f"## Version {new_version}"
+    has_new_version = version_header in content
+    has_unreleased = unreleased_header in content
+
+    if not has_unreleased:
+        print("Error: No '## Unreleased' section found in changelog", file=sys.stderr)
+        sys.exit(1)
+    if has_new_version:
+        print(f"Error: '{version_header}' section found in changelog", file=sys.stderr)
+        sys.exit(1)
+
+    # Replace ## Unreleased with ## Version X.Y.Z followed by date
+    date_str = datetime.now().strftime("_%B %d, %Y_")
+    new_header = f"{version_header}\n\n{date_str}"
+    new_content = content.replace(unreleased_header, new_header, 1)
+
+    if new_content == content:
+        return None
+
+    show_diff(content, new_content, CHANGELOG)
+    return new_content
 
 
 def parse_current_version(target: Target) -> str:
@@ -260,7 +344,14 @@ def main():
         current_version = parse_current_version(target)
         new_content = generate_updated_content(target, current_version, new_version)
         if new_content is not None:
-            update_queue.append((target, new_content))
+            update_queue.append((target.file, new_content))
+
+    if args.check:
+        check_changelog(new_version)
+    else:
+        new_content = update_changelog(new_version)
+        if new_content is not None:
+            update_queue.append((CHANGELOG, new_content))
 
     if args.check:
         if update_queue:
@@ -270,8 +361,8 @@ def main():
     if args.dry_run:
         return 0
 
-    for target, content in update_queue:
-        target.file.write_text(content)
+    for file, content in update_queue:
+        file.write_text(content)
 
     if args.tag or args.dev:
         commit(args.new_version, args.dev)

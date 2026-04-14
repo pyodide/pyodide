@@ -24,6 +24,7 @@ XFAIL_PACKAGES: dict[str, str] = {
     "test-cpp-exceptions2": "Intentional",
     "matplotlib-inline": "circular dependency with IPython",
     "numpy-tests": "test only package",
+    "coolprop": "slow",
 }
 
 LOCKFILE_PATH = PYODIDE_ROOT / "dist" / "pyodide-lock.json"
