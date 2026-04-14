@@ -428,7 +428,6 @@ The desired version of CPython must be available at:
 
 | version | pr         |
 | ------- | ---------- |
-| 3.14    | {pr}`5995` |
 | 3.13    | {pr}`5498` |
 | 3.12    | {pr}`4435` |
 | 3.11    | {pr}`3252` |
