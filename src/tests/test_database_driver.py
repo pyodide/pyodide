@@ -586,27 +586,6 @@ def test_redis_py_features(selenium_nodesock, redis_test_db):
 
         import redis
 
-        # Pyodide's CPython is built with HAVE_SHUTDOWN=0, so the socket
-        # object lacks a shutdown() method. Patch redis-py's disconnect
-        # to handle the missing method until CPython is rebuilt.
-        import redis.connection
-
-        _orig_disconnect = redis.connection.AbstractConnection.disconnect
-
-        def _patched_disconnect(self):
-            try:
-                return _orig_disconnect(self)
-            except AttributeError:
-                if self._sock:
-                    try:
-                        self._sock.close()
-                    except Exception:
-                        pass
-                    self._sock = None
-                self._parser.on_disconnect()
-
-        redis.connection.AbstractConnection.disconnect = _patched_disconnect
-
         def connect(**kwargs):
             return redis.Redis(
                 host=host,

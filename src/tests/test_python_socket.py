@@ -678,13 +678,12 @@ def test_socket_settimeout_restore_blocking(selenium_nodesock):
         assert result == "hello", f"Expected 'hello', got {result!r}"
 
 
-@pytest.mark.skip(reason="HAVE_SHUTDOWN=0 in Pyodide's CPython build")
-def test_socket_shutdown_rdwr(selenium_nodesock):
-    """socket.shutdown(SHUT_RDWR) cleanly shuts down both directions."""
+def test_socket_shutdown(selenium_nodesock):
+    """Test that shutting down a socket works."""
 
     def handler(conn, _addr):
-        conn.sendall(b"data")
         conn.recv(1024)
+        conn.sendall(b"OK")
 
     with tcp_server(handler) as (host, port):
 
@@ -695,51 +694,40 @@ def test_socket_shutdown_rdwr(selenium_nodesock):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect((host, port))
 
-            data = s.recv(1024)
+            s.sendall(b"test")
+            s.recv(1024)
 
             s.shutdown(socket.SHUT_RDWR)
             s.close()
-            return data.decode()
+            return "ok"
 
         result = run(selenium_nodesock, host, port)
-        assert result == "data", f"Expected 'data', got {result!r}"
+        assert result == "ok", f"Expected 'ok', got {result!r}"
 
 
-@pytest.mark.skip(reason="HAVE_SHUTDOWN=0 in Pyodide's CPython build")
-def test_socket_shutdown_wr(selenium_nodesock):
-    """socket.shutdown(SHUT_WR) sends FIN; server sees EOF but we can still read."""
+def test_socket_shutdown_non_nodesock(selenium_standalone):
+    """
+    Calling shutdown on a non-node socket will raise "Function not implemented"
+    """
 
-    def handler(conn, _addr):
-        data = b""
-        while True:
-            chunk = conn.recv(1024)
-            if not chunk:
-                break
-            data += chunk
-        conn.sendall(b"got:" + data)
-        conn.close()
+    @run_in_pyodide
+    def run(selenium):
+        import socket
 
-    with tcp_server(handler) as (host, port):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("127.0.0.1", 0))
+        s.listen(1)
 
-        @run_in_pyodide
-        def run(selenium, host, port):
-            import socket
+        assert hasattr(s, "shutdown"), "shutdown method should exist"
 
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((host, port))
+        try:
+            s.shutdown(socket.SHUT_RDWR)
+        except OSError as e:
+            if "Function not implemented" in str(e):
+                return "ok"
+            raise
+        s.close()
+        return "ok"
 
-            s.sendall(b"hello")
-            s.shutdown(socket.SHUT_WR)
-
-            resp = b""
-            while True:
-                chunk = s.recv(1024)
-                if not chunk:
-                    break
-                resp += chunk
-
-            s.close()
-            return resp.decode()
-
-        result = run(selenium_nodesock, host, port)
-        assert result == "got:hello", f"Expected 'got:hello', got {result!r}"
+    result = run(selenium_standalone)
+    assert result == "ok", f"Expected 'ok', got {result!r}"

@@ -92,12 +92,12 @@ EM_JS(int, _try_fcntl64, (int fd, int cmd, int arg), {
   return 0x80000000;
 })
 
-// Returns INT_MIN (0x80000000) for non-NodeSock fds, errno otherwise.
+// Returns const for non-NodeSock fds, errno otherwise.
 EM_JS(int, _try_shutdown, (int fd, int how), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   if (!sock?.sock_ops?.shutdown)
-    return 0x80000000;
+    return 0xDEADBEEF;
 
   return sock.sock_ops.shutdown(sock, how);
 })
@@ -149,7 +149,8 @@ int __syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t a
 int __syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
 {
   int result = _try_shutdown(fd, how);
-  if (result == (int)0x80000000) {
+  if (result == (int)0xDEADBEEF) {
+    // https://github.com/emscripten-core/emscripten/issues/13393
     return _orig_syscall_shutdown(fd, how, d1, d2, d3, d4);
   }
   return result;

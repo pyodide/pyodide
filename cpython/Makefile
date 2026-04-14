@@ -201,6 +201,8 @@ $(PYINSTALL)/lib/libsqlite3.a:
 
 python-makefile: $(PYBUILD)/Makefile
 
+CONFIG_SITE_FILE=./Tools/wasm/emscripten/config.site-wasm32-emscripten
+
 $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 	# --enable-big-digits=30 :
 	#   Python integers have "digits" of size 15 by default on systems with 32
@@ -209,9 +211,13 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 	#   30 on systems with 16 bit pointers. WASM has 32 bit pointers so Python
 	#   will default to the size 15 digits but WASM has native 64 bit arithmetic
 	#   so it is more efficient to use 30 bit digits.
+	# ac_cv_func_shutdown :
+	#   Emscripten does not support shutdown syscall, but we want to enable it
+	#   to enable shutdown method in NodeSockFS.
+	cd $(PYBUILD) && $(SED) -i 's/^ac_cv_func_shutdown=no/ac_cv_func_shutdown=yes/' $(CONFIG_SITE_FILE)
 	( \
 		cd $(PYBUILD); \
-		CONFIG_SITE=./Tools/wasm/emscripten/config.site-wasm32-emscripten READELF=true emconfigure \
+		CONFIG_SITE=$(CONFIG_SITE_FILE) READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
 			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1" \
