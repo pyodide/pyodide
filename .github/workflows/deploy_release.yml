@@ -43,6 +43,7 @@ jobs:
     environment:
       name: PyPi
       url: https://pypi.org/p/pyodide-py
+      deployment: false
     permissions:
       id-token: write # for OIDC trusted publishing
 
