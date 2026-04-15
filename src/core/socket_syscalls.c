@@ -72,14 +72,13 @@ EM_JS(JsVal, _maybe_sendto_async, (int fd, intptr_t message, int length), {
   return sock.sock_ops.sendmsgAsync(sock, data);
 })
 
-// Emscripten's fcntl(F_SETFL) does `stream.flags |= arg` instead of
-// `stream.flags = arg`, so O_NONBLOCK can never be cleared. Override for
-// socket fds to use proper assignment.
+// Emscripten's __syscall_fcntl64(F_SETFL) is noop for F_GETFL and F_SETFL
+// but we would like to allow setting and getting the flags
 EM_JS(int, _try_fcntl64, (int fd, int cmd, int arg), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   if (!sock?.sock_ops?.recvmsgAsync)
-    return 0x80000000;
+    return 0xDEADBEEF;
 
   // clang-format off
   if (cmd === 3) // F_GETFL
@@ -89,7 +88,8 @@ EM_JS(int, _try_fcntl64, (int fd, int cmd, int arg), {
     return 0;
   }
   // clang-format on
-  return 0x80000000;
+  // other commands are fallback to emscripten's implementation
+  return 0xDEADBEEF;
 })
 
 // Returns const for non-NodeSock fds, errno otherwise.
@@ -163,7 +163,7 @@ int __syscall_fcntl64(int fd, int cmd, intptr_t varargs)
     arg = *(int*)varargs;
   }
   int result = _try_fcntl64(fd, cmd, arg);
-  if (result == (int)0x80000000) {
+  if (result == (int)0xDEADBEEF) {
     return _orig_syscall_fcntl64(fd, cmd, varargs);
   }
   return result;

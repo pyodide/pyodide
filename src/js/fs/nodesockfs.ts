@@ -104,6 +104,10 @@ export async function initializeNodeSockFS(
       return mask;
     },
 
+    /**
+     * For now only FIONREAD is supported.
+     * TODO: support other requests?
+     */
     ioctl(sock: NodeSock, request: number, _arg: any): number {
       if (request === FIONREAD) {
         return sock.leftover ? sock.leftover.length : 0;
@@ -214,9 +218,6 @@ export async function initializeNodeSockFS(
       }
 
       // Non-blocking mode: return EAGAIN immediately if no buffered data.
-      // CPython's settimeout(0) sets O_NONBLOCK via fcntl(F_SETFL).
-      // Emscripten stores this in stream.flags but never acts on it;
-      // we check it here so recv returns EAGAIN instead of blocking.
       if (sock.stream && sock.stream.flags & O_NONBLOCK) {
         return -ERRNO_CODES.EAGAIN;
       }
@@ -389,8 +390,6 @@ export async function initializeNodeSockFS(
       // map the new stream to the socket structure (sockets have a 1:1
       // relationship with a stream)
       sock.stream = stream;
-
-
 
       return sock;
     },
