@@ -7,6 +7,7 @@ All the tests are disabled by default and need to be run manually with `-m db` f
 import os
 import time
 import uuid
+from typing import Any
 
 import pytest
 from pytest_pyodide import run_in_pyodide
@@ -133,7 +134,7 @@ def mysql_test_db(mysql_admin_config):
 
 
 # When running mysql test locally, run MySQL server in a Docker container:
-#   docker run -d --name mysql-server -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -p 3306:3306 mysql:8.0.0
+#   docker run -d --name mysql-server -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -p 3306:3306 mysql:8.0.45
 #   pip install pymysql cryptography
 #   pytest src/tests/test_database_driver.py::test_mysql_pymysql_features -m db
 # Using MySQL 8.0 is helpful to use Native Pluggable Authentication which simplifies testing.
@@ -265,6 +266,137 @@ def test_mysql_pymysql_features(selenium_nodesock, mysql_test_db):
         assert results["bulk"]["out"][1]["v"] == 2
         assert results["bulk"]["out"][2]["k"] == "c"
         assert results["bulk"]["out"][2]["v"] == 3
+
+    run(selenium_nodesock, host, port, user, password, db)
+
+
+# SQLAlchemy ORM test — reuses the same MySQL fixture as above.
+#   pytest src/tests/test_database_driver.py::test_sqlalchemy_mysql -m db
+@pytest.mark.skip_refcount_check
+@pytest.mark.db
+@only_node
+def test_sqlalchemy_mysql(selenium_nodesock, mysql_test_db):
+    cfg = mysql_test_db
+
+    host = cfg["host"]
+    port = cfg["port"]
+    user = cfg["user"]
+    password = cfg["password"]
+    db = cfg["db"]
+
+    @run_in_pyodide(packages=["micropip"])
+    async def run(selenium, host, port, user, password, db):
+        import micropip
+
+        await micropip.install(["sqlalchemy", "pymysql==1.1.0"])
+
+        from sqlalchemy import ForeignKey, String, create_engine, func, select
+        from sqlalchemy.orm import (
+            DeclarativeBase,
+            Mapped,
+            Session,
+            mapped_column,
+            relationship,
+        )
+
+        url = f"mysql+pymysql://{user}:{password}@{host}:{port}/{db}"
+        engine = create_engine(url, connect_args={"unix_socket": False})
+
+        class Base(DeclarativeBase):
+            pass
+
+        class User(Base):
+            __tablename__ = "sa_users"
+            id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+            name: Mapped[str] = mapped_column(String(100))
+            addresses: Mapped[list["Address"]] = relationship(
+                back_populates="user", cascade="all, delete-orphan"
+            )
+
+        class Address(Base):
+            __tablename__ = "sa_addresses"
+            id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+            email: Mapped[str] = mapped_column(String(200))
+            user_id: Mapped[int] = mapped_column(ForeignKey("sa_users.id"))
+            user: Mapped["User"] = relationship(back_populates="addresses")
+
+        Base.metadata.drop_all(engine)
+        Base.metadata.create_all(engine)
+
+        results: dict[str, Any] = {}
+
+        # 1) Insert with relationships
+        with Session(engine) as s:
+            s.add_all(
+                [
+                    User(
+                        name="alice",
+                        addresses=[
+                            Address(email="alice@example.com"),
+                            Address(email="alice@work.com"),
+                        ],
+                    ),
+                    User(
+                        name="bob",
+                        addresses=[
+                            Address(email="bob@example.com"),
+                        ],
+                    ),
+                ]
+            )
+            s.commit()
+
+            users = s.scalars(select(User).order_by(User.name)).all()
+            results["insert"] = [(u.name, len(u.addresses)) for u in users]
+
+        # 2) Update
+        with Session(engine) as s:
+            alice = s.scalars(select(User).where(User.name == "alice")).one()
+            alice.name = "alice_updated"
+            s.commit()
+
+            updated = s.scalars(select(User).where(User.name == "alice_updated")).one()
+            results["update"] = updated.name
+
+        # 3) Delete with cascade
+        with Session(engine) as s:
+            bob = s.scalars(select(User).where(User.name == "bob")).one()
+            s.delete(bob)
+            s.commit()
+
+            user_count = s.scalar(select(func.count()).select_from(User))
+            addr_count = s.scalar(select(func.count()).select_from(Address))
+            results["after_delete"] = {"users": user_count, "addresses": addr_count}
+
+        # 4) Rollback
+        with Session(engine) as s:
+            s.add(User(name="should_not_exist"))
+            s.flush()
+            s.rollback()
+
+            count = s.scalar(select(func.count()).select_from(User))
+            results["after_rollback"] = count
+
+        # 5) Join query
+        with Session(engine) as s:
+            rows = s.execute(
+                select(User.name, Address.email)
+                .join(Address)
+                .order_by(User.name, Address.email)
+            ).all()
+            results["join"] = [(name, email) for name, email in rows]
+
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+        assert results["insert"] == [("alice", 2), ("bob", 1)]
+        assert results["update"] == "alice_updated"
+        assert results["after_delete"] == {"users": 1, "addresses": 2}
+        assert results["after_rollback"] == 1
+        assert results["join"] == [
+            ("alice_updated", "alice@example.com"),
+            ("alice_updated", "alice@work.com"),
+        ]
 
     run(selenium_nodesock, host, port, user, password, db)
 
@@ -496,6 +628,137 @@ def test_postgresql_pg8000_features(selenium_nodesock, pg_test_db):
             {"k": "a", "v": 1},
             {"k": "b", "v": 2},
             {"k": "c", "v": 3},
+        ]
+
+    run(selenium_nodesock, host, port, user, password, db)
+
+
+# SQLAlchemy ORM test — reuses the same PostgreSQL fixture as above.
+#   pytest src/tests/test_database_driver.py::test_sqlalchemy_pg8000 -m db
+@pytest.mark.skip_refcount_check
+@pytest.mark.db
+@only_node
+def test_sqlalchemy_pg8000(selenium_nodesock, pg_test_db):
+    cfg = pg_test_db
+
+    host = cfg["host"]
+    port = cfg["port"]
+    user = cfg["user"]
+    password = cfg["password"]
+    db = cfg["db"]
+
+    @run_in_pyodide(packages=["micropip"])
+    async def run(selenium, host, port, user, password, db):
+        import micropip
+
+        await micropip.install(["sqlalchemy", "pg8000"])
+
+        from sqlalchemy import ForeignKey, String, create_engine, func, select
+        from sqlalchemy.orm import (
+            DeclarativeBase,
+            Mapped,
+            Session,
+            mapped_column,
+            relationship,
+        )
+
+        url = f"postgresql+pg8000://{user}:{password}@{host}:{port}/{db}"
+        engine = create_engine(url)
+
+        class Base(DeclarativeBase):
+            pass
+
+        class User(Base):
+            __tablename__ = "sa_users"
+            id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+            name: Mapped[str] = mapped_column(String(100))
+            addresses: Mapped[list["Address"]] = relationship(
+                back_populates="user", cascade="all, delete-orphan"
+            )
+
+        class Address(Base):
+            __tablename__ = "sa_addresses"
+            id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+            email: Mapped[str] = mapped_column(String(200))
+            user_id: Mapped[int] = mapped_column(ForeignKey("sa_users.id"))
+            user: Mapped["User"] = relationship(back_populates="addresses")
+
+        Base.metadata.drop_all(engine)
+        Base.metadata.create_all(engine)
+
+        results: dict[str, Any] = {}
+
+        # 1) Insert with relationships
+        with Session(engine) as s:
+            s.add_all(
+                [
+                    User(
+                        name="alice",
+                        addresses=[
+                            Address(email="alice@example.com"),
+                            Address(email="alice@work.com"),
+                        ],
+                    ),
+                    User(
+                        name="bob",
+                        addresses=[
+                            Address(email="bob@example.com"),
+                        ],
+                    ),
+                ]
+            )
+            s.commit()
+
+            users = s.scalars(select(User).order_by(User.name)).all()
+            results["insert"] = [(u.name, len(u.addresses)) for u in users]
+
+        # 2) Update
+        with Session(engine) as s:
+            alice = s.scalars(select(User).where(User.name == "alice")).one()
+            alice.name = "alice_updated"
+            s.commit()
+
+            updated = s.scalars(select(User).where(User.name == "alice_updated")).one()
+            results["update"] = updated.name
+
+        # 3) Delete with cascade
+        with Session(engine) as s:
+            bob = s.scalars(select(User).where(User.name == "bob")).one()
+            s.delete(bob)
+            s.commit()
+
+            user_count = s.scalar(select(func.count()).select_from(User))
+            addr_count = s.scalar(select(func.count()).select_from(Address))
+            results["after_delete"] = {"users": user_count, "addresses": addr_count}
+
+        # 4) Rollback
+        with Session(engine) as s:
+            s.add(User(name="should_not_exist"))
+            s.flush()
+            s.rollback()
+
+            count = s.scalar(select(func.count()).select_from(User))
+            results["after_rollback"] = count
+
+        # 5) Join query
+        with Session(engine) as s:
+            rows = s.execute(
+                select(User.name, Address.email)
+                .join(Address)
+                .order_by(User.name, Address.email)
+            ).all()
+            results["join"] = [(name, email) for name, email in rows]
+
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+        assert results["insert"] == [("alice", 2), ("bob", 1)]
+        assert results["update"] == "alice_updated"
+        assert results["after_delete"] == {"users": 1, "addresses": 2}
+        assert results["after_rollback"] == 1
+        assert results["join"] == [
+            ("alice_updated", "alice@example.com"),
+            ("alice_updated", "alice@work.com"),
         ]
 
     run(selenium_nodesock, host, port, user, password, db)
