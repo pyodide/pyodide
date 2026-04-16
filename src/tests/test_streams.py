@@ -1,7 +1,9 @@
+import subprocess
+
 import pytest
 from pytest_pyodide import run_in_pyodide
 
-from conftest import strip_assertions_stderr
+from conftest import DIST_PATH, strip_assertions_stderr
 
 
 @pytest.mark.skip_refcount_check
@@ -622,3 +624,67 @@ def test_node_eagain(selenium):
             pyodide.setStdin();
             """
         )
+
+
+@run_in_pyodide
+def test_get_terminal_size(selenium):
+    import shutil
+
+    from pyodide.code import run_js
+
+    run_js(
+        """
+        pyodide.setStdout({
+            isatty: true,
+            write(a) {},
+            getTerminalSize() {
+                return {rows: 80, columns: 150};
+            }
+        });
+        """
+    )
+    try:
+        assert (
+            str(shutil.get_terminal_size()) == "os.terminal_size(columns=150, lines=80)"
+        )
+    finally:
+        run_js(
+            """
+            pyodide.setStdout();
+            """
+        )
+
+
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
+def test_get_terminal_size_node(tmp_path):
+    target_path = DIST_PATH / "pyodide.mjs"
+    script = (
+        """
+        import { loadPyodide } from "%s";
+        import * as tty from "node:tty";
+        import * as fs from "node:fs";
+
+        fs.closeSync(1);
+        fs.openSync("/dev/tty", 1);
+
+        globalThis.process = Object.assign({}, process, {stdout: new tty.WriteStream(1)});
+        process.stdout.fd = 1;
+        process.stdout.columns = 180;
+        process.stdout.rows = 50;
+
+        const pyodide = await loadPyodide();
+        pyodide.runPython(`
+            import shutil
+            import sys
+
+            print(shutil.get_terminal_size(), file=sys.stderr)
+        `);
+        """
+        % target_path
+    )
+    script_path = tmp_path / "script.mjs"
+    script_path.write_text(script)
+    res = subprocess.run(
+        ["node", script_path], text=True, check=True, capture_output=True
+    )
+    assert res.stderr.strip() == "os.terminal_size(columns=180, lines=50)"

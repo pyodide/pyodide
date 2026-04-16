@@ -75,6 +75,13 @@ myst:
   limited backwards incompatibility.
   {pr}`6022`
 
+- {{ Enhancement }} If `isatty` is set to true on `stdout` or `stderr` it is now
+  possible to set the window size by providing a stdout/stderr handler which
+  implements the `getTerminalSize()` method. In particular, the default `stdout`
+  and `stderr` in Node now define this handler. These terminal sizes are
+  reported by `os.get_terminal_size()` and `shutil.get_terminal_size()`.
+  {pr}`6157`
+
 ## Version 0.29.3
 
 _January 28, 2026_
