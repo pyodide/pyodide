@@ -55,30 +55,9 @@ export async function initializeNodeSockFS(
 
   const module = Module;
   const FS = module.FS;
-  const ERRNO_CODES = module.ERRNO_CODES;
 
-  // Values copied from Emscripten
-  const AF_INET = 2;
-  const SOCK_STREAM = 1;
-  const SOCK_DGRAM = 2;
-  const SOCK_CLOEXEC = 0o2000000;
-  const SOCK_NONBLOCK = 0o4000;
-  const IPPROTO_TCP = 6;
-  const S_IFSOCK = 0o140000;
-  const O_RDWR = 0o2;
-  const DIR_MODE = 16384 | 0o777;
-
-  const POLLIN = 0x001;
-  const POLLOUT = 0x004;
-  const POLLHUP = 0x010;
-  const POLLRDNORM = 0x040;
-
-  const FIONREAD = 0x541b;
-  const O_NONBLOCK = 0o4000;
-
-  const SHUT_RD = 0;
-  const SHUT_WR = 1;
-  const SHUT_RDWR = 2;
+  // following Emscripten's other FS implementations
+  const DIR_MODE = cDefs.S_IFDIR | 0o777;
 
   // Highly inspired by Emscripten's SOCKFS implementation
   // https://github.com/emscripten-core/emscripten/blob/main/src/lib/libsockfs.js
@@ -88,17 +67,17 @@ export async function initializeNodeSockFS(
 
       // Readable: we have buffered leftover data ready to return
       if (sock.leftover && sock.leftover.length > 0) {
-        mask |= POLLRDNORM | POLLIN;
+        mask |= cDefs.POLLRDNORM | cDefs.POLLIN;
       }
 
       // Writable: connected and writer is available
       if (sock.connected && sock.writer) {
-        mask |= POLLOUT;
+        mask |= cDefs.POLLOUT;
       }
 
       // Hangup: the underlying transport has closed
       if (sock.closed) {
-        mask |= POLLHUP;
+        mask |= cDefs.POLLHUP;
       }
 
       return mask;
@@ -109,10 +88,29 @@ export async function initializeNodeSockFS(
      * TODO: support other requests?
      */
     ioctl(sock: NodeSock, request: number, _arg: any): number {
-      if (request === FIONREAD) {
+      if (request === cDefs.FIONREAD) {
         return sock.leftover ? sock.leftover.length : 0;
       }
       return 0;
+    },
+
+    /**
+     * fnctl64 for NodeSock
+     * Emscripten's __syscall_fcntl64(F_SETFL) is noop for F_GETFL and F_SETFL
+     * but we would like to allow setting and getting the flags so that
+     * Python's socket module can work properly.
+     * Other commands are fallback to emscripten's implementation.
+     * (see socket_syscalls.c)
+     */
+    fcntl64(sock: NodeSock, cmd: number, arg: any): number {
+      if (cmd === cDefs.F_GETFL) {
+        return sock.stream.flags;
+      }
+      if (cmd === cDefs.F_SETFL) {
+        sock.stream.flags = arg;
+        return 0;
+      }
+      return cDefs.EINVAL;
     },
 
     close(sock: NodeSock): number {
@@ -142,7 +140,7 @@ export async function initializeNodeSockFS(
       options?: SocketOptions,
     ): Promise<number> {
       if (sock.wcgSocket) {
-        return -ERRNO_CODES.EISCONN;
+        return -cDefs.EISCONN;
       }
 
       sock.connecting = true;
@@ -177,7 +175,7 @@ export async function initializeNodeSockFS(
           });
         return 0;
       } catch (err: unknown) {
-        sock.error = ERRNO_CODES.ECONNREFUSED;
+        sock.error = cDefs.ECONNREFUSED;
         sock.connecting = false;
         return -sock.error;
       }
@@ -187,7 +185,7 @@ export async function initializeNodeSockFS(
     // asynchronous.
     async sendmsgAsync(sock: NodeSock, data: Uint8Array): Promise<number> {
       if (!sock.writer) {
-        return -ERRNO_CODES.ENOTCONN;
+        return -cDefs.ENOTCONN;
       }
 
       try {
@@ -196,16 +194,16 @@ export async function initializeNodeSockFS(
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes("EPIPE") || msg.includes("ECONNRESET")) {
-          return -ERRNO_CODES.EPIPE;
+          return -cDefs.EPIPE;
         }
-        return -ERRNO_CODES.EIO;
+        return -cDefs.EIO;
       }
     },
 
     async recvmsgAsync(
       sock: NodeSock,
       length: number,
-    ): Promise<Uint8Array | number | null> {
+    ): Promise<Uint8Array | number> {
       if (sock.leftover && sock.leftover.length > 0) {
         const bytesRead = Math.min(length, sock.leftover.length);
         const result = sock.leftover.subarray(0, bytesRead);
@@ -217,18 +215,18 @@ export async function initializeNodeSockFS(
       }
 
       // Non-blocking mode: return EAGAIN immediately if no buffered data.
-      if (sock.stream && sock.stream.flags & O_NONBLOCK) {
-        return -ERRNO_CODES.EAGAIN;
+      if (sock.stream?.flags & cDefs.O_NONBLOCK) {
+        return -cDefs.EAGAIN;
       }
 
       if (!sock.reader) {
-        return null;
+        return 0;
       }
 
       try {
         const { value, done } = await sock.reader.read();
         if (done || !value) {
-          return null;
+          return 0;
         }
 
         if (value.length <= length) {
@@ -238,16 +236,24 @@ export async function initializeNodeSockFS(
         sock.leftover = value.subarray(length);
         return value.subarray(0, length);
       } catch {
-        return null;
+        return 0;
       }
     },
 
     shutdown(sock: NodeSock, how: number): number {
-      if (!sock.wcgSocket) {
-        return -ERRNO_CODES.ENOTCONN;
+      if (sock.closed) {
+        return -cDefs.ENOTCONN;
       }
 
-      if (how === SHUT_RD || how === SHUT_RDWR) {
+      if (
+        how !== cDefs.SHUT_RD &&
+        how !== cDefs.SHUT_WR &&
+        how !== cDefs.SHUT_RDWR
+      ) {
+        return -cDefs.EINVAL;
+      }
+
+      if (how === cDefs.SHUT_RD || how === cDefs.SHUT_RDWR) {
         if (sock.reader) {
           sock.reader.cancel().catch(() => {});
           sock.reader.releaseLock();
@@ -255,7 +261,7 @@ export async function initializeNodeSockFS(
         }
       }
 
-      if (how === SHUT_WR || how === SHUT_RDWR) {
+      if (how === cDefs.SHUT_WR || how === cDefs.SHUT_RDWR) {
         if (sock.writer) {
           sock.writer.close().catch(() => {});
           sock.writer.releaseLock();
@@ -263,8 +269,8 @@ export async function initializeNodeSockFS(
         }
       }
 
-      if (how === SHUT_RDWR) {
-        sock.wcgSocket.close().catch(() => {});
+      if (sock.reader === null && sock.writer === null) {
+        sock.wcgSocket?.close().catch(() => {});
         sock.wcgSocket = null;
         sock.connected = false;
         sock.closed = true;
@@ -278,15 +284,15 @@ export async function initializeNodeSockFS(
      */
 
     bind(_sock: NodeSock, _addr: string, _port: number): void {
-      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
+      throw new FS.ErrnoError(cDefs.EOPNOTSUPP);
     },
 
     listen(_sock: NodeSock, _backlog: number): void {
-      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
+      throw new FS.ErrnoError(cDefs.EOPNOTSUPP);
     },
 
     accept(_sock: NodeSock): never {
-      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
+      throw new FS.ErrnoError(cDefs.EOPNOTSUPP);
     },
   };
 
@@ -303,7 +309,7 @@ export async function initializeNodeSockFS(
 
     write(): number {
       // All sends go through __syscall_sendto → sendmsgAsync.
-      throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
+      throw new FS.ErrnoError(cDefs.EOPNOTSUPP);
     },
 
     close(stream: any): void {
@@ -333,25 +339,25 @@ export async function initializeNodeSockFS(
      */
     createSocket(family: number, type: number, protocol: number): NodeSock {
       // Validate family - only AF_INET supported
-      if (family !== AF_INET) {
-        throw new FS.ErrnoError(ERRNO_CODES.EAFNOSUPPORT);
+      if (family !== cDefs.AF_INET) {
+        throw new FS.ErrnoError(cDefs.EAFNOSUPPORT);
       }
 
       // Some applications may pass it; it makes no sense for a single process.
-      //github.com/emscripten-core/emscripten/blob/af01558779231dcf3524438e904b688a5576432c/src/lib/libsockfs.js#L51C66-L51C139
-      https: type &= ~(SOCK_CLOEXEC | SOCK_NONBLOCK);
+      // https://github.com/emscripten-core/emscripten/blob/af01558779231dcf3524438e904b688a5576432c/src/lib/libsockfs.js#L51C66-L51C139
+      type &= ~(cDefs.SOCK_CLOEXEC | cDefs.SOCK_NONBLOCK);
 
       // Validate type - only SOCK_STREAM supported for now
-      if (type !== SOCK_STREAM) {
-        if (type === SOCK_DGRAM) {
-          throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP); // UDP not implemented
+      if (type !== cDefs.SOCK_STREAM) {
+        if (type === cDefs.SOCK_DGRAM) {
+          throw new FS.ErrnoError(cDefs.EOPNOTSUPP); // UDP not implemented
         }
-        throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
+        throw new FS.ErrnoError(cDefs.EINVAL);
       }
 
       // Validate protocol for TCP
-      if (protocol && protocol !== IPPROTO_TCP) {
-        throw new FS.ErrnoError(ERRNO_CODES.EPROTONOSUPPORT);
+      if (protocol && protocol !== cDefs.IPPROTO_TCP) {
+        throw new FS.ErrnoError(cDefs.EPROTONOSUPPORT);
       }
 
       // create our internal socket structure
@@ -373,7 +379,7 @@ export async function initializeNodeSockFS(
 
       // create the filesystem node to store the socket structure
       const name = `socket[${socketCounter++}]`;
-      const node = FS.createNode(NodeSockFS.root, name, S_IFSOCK, 0);
+      const node = FS.createNode(NodeSockFS.root, name, cDefs.S_IFSOCK, 0);
       node.sock = sock;
 
       // and the wrapping stream that enables library functions such
@@ -381,7 +387,7 @@ export async function initializeNodeSockFS(
       const stream = FS.createStream({
         path: name,
         node,
-        flags: O_RDWR,
+        flags: cDefs.O_RDWR,
         seekable: false,
         stream_ops,
       });

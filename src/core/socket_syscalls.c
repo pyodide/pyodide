@@ -1,4 +1,5 @@
 #include "emscripten.h"
+#include "error_handling.h"
 #include "jslib.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -36,7 +37,7 @@ EM_JS(JsVal, _maybe_connect_async, (int fd, intptr_t addr, int addrlen), {
 // Returns a Promise for NodeSock fds, null for everything else.
 // recvmsgAsync may return:
 //   Uint8Array — data received
-//   null       — connection closed (EOF)
+//   0       — connection closed (EOF)
 //   number < 0 — errno (e.g. -EAGAIN for non-blocking with no data)
 EM_JS(JsVal, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
   var sock = Module.SOCKFS.getSocket(fd);
@@ -48,9 +49,6 @@ EM_JS(JsVal, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
   return (async function() {
     var result = await sock.sock_ops.recvmsgAsync(sock, len);
     // clang-format off
-    if (result === null)
-      return 0;
-    // Negative number = errno (e.g. -EAGAIN from non-blocking recv)
     if (typeof result === "number")
       return result;
     // clang-format on
@@ -74,32 +72,33 @@ EM_JS(JsVal, _maybe_sendto_async, (int fd, intptr_t message, int length), {
 
 // Emscripten's __syscall_fcntl64(F_SETFL) is noop for F_GETFL and F_SETFL
 // but we would like to allow setting and getting the flags
-EM_JS(int, _try_fcntl64, (int fd, int cmd, int arg), {
+// The return value indicates whether the operation was handled by this function
+// If true, the result is stored in *result
+EM_JS_MACROS(bool, _try_fcntl64, (int fd, int cmd, int arg, int* result), {
   var sock = Module.SOCKFS.getSocket(fd);
 
-  if (!sock?.sock_ops?.recvmsgAsync)
-    return 0xDEADBEEF;
+  if (!sock?.sock_ops?.fcntl64)
+    return false;
 
-  // clang-format off
-  if (cmd === 3) // F_GETFL
-    return sock.stream.flags;
-  if (cmd === 4) { // F_SETFL
-    sock.stream.flags = arg;
-    return 0;
-  }
-  // clang-format on
+  Module.HEAP32[result >> 2] = sock.sock_ops.fcntl64(sock, cmd, arg);
+  if (Module.HEAP32[result >> 2] < 0)
+    return false;
+
   // other commands are fallback to emscripten's implementation
-  return 0xDEADBEEF;
+  return true;
 })
 
-// Returns const for non-NodeSock fds, errno otherwise.
-EM_JS(int, _try_shutdown, (int fd, int how), {
+// Try to handle shutdown syscall for NodeSock fds.
+// Returns true if the operation was handled, false otherwise.
+// If true, the result is stored in *result
+EM_JS(bool, _try_shutdown, (int fd, int how, int* result), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   if (!sock?.sock_ops?.shutdown)
-    return 0xDEADBEEF;
+    return false;
 
-  return sock.sock_ops.shutdown(sock, how);
+  Module.HEAP32[result >> 2] = sock.sock_ops.shutdown(sock, how);
+  return true;
 })
 
 // clang-format off
@@ -148,8 +147,11 @@ int __syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t a
 
 int __syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
 {
-  int result = _try_shutdown(fd, how);
-  if (result == (int)0xDEADBEEF) {
+  int result = 0;
+  bool handled = _try_shutdown(fd, how, &result);
+  if (!handled) {
+    // Emscripten does not support shutdown so this would fail anyways, but
+    // we still want to return a meaningful error code
     // https://github.com/emscripten-core/emscripten/issues/13393
     return _orig_syscall_shutdown(fd, how, d1, d2, d3, d4);
   }
@@ -162,8 +164,9 @@ int __syscall_fcntl64(int fd, int cmd, intptr_t varargs)
   if (cmd == 4) { // F_SETFL
     arg = *(int*)varargs;
   }
-  int result = _try_fcntl64(fd, cmd, arg);
-  if (result == (int)0xDEADBEEF) {
+  int result = 0;
+  bool handled = _try_fcntl64(fd, cmd, arg, &result);
+  if (!handled) {
     return _orig_syscall_fcntl64(fd, cmd, varargs);
   }
   return result;

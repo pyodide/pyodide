@@ -764,7 +764,6 @@ def test_sqlalchemy_pg8000(selenium_nodesock, pg_test_db):
     run(selenium_nodesock, host, port, user, password, db)
 
 
-
 @pytest.fixture(scope="session")
 def redis_config():
     host = os.environ.get("REDIS_HOST", "127.0.0.1")
