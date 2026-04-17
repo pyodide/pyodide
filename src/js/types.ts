@@ -306,6 +306,7 @@ export interface EmscriptenModule {
     maxBytesToRead: number,
     ignoreNul?: boolean,
   ) => string;
+  syscallGetVarargI(): number;
 }
 
 /** @hidden */

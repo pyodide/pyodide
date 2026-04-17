@@ -160,12 +160,8 @@ int __syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
 
 int __syscall_fcntl64(int fd, int cmd, intptr_t varargs)
 {
-  int arg = 0;
-  if (cmd == 4) { // F_SETFL
-    arg = *(int*)varargs;
-  }
   int result = 0;
-  bool handled = _try_fcntl64(fd, cmd, arg, &result);
+  bool handled = _try_fcntl64(fd, cmd, varargs, &result);
   if (!handled) {
     return _orig_syscall_fcntl64(fd, cmd, varargs);
   }
