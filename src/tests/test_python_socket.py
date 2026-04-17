@@ -570,6 +570,8 @@ def test_socket_shutdown_non_nodesock(selenium_standalone):
     def run(selenium):
         import socket
 
+        import pytest
+
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind(("127.0.0.1", 0))
         s.listen(1)
