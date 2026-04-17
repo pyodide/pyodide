@@ -58,7 +58,7 @@ export interface Writer {
   fsync?: () => void;
   write(buffer: Uint8Array): number;
   getTerminalSize?: () => { rows: number; columns: number } | undefined;
-};
+}
 
 type Stream = FSStream & {
   stream_ops: StreamOps;
@@ -435,7 +435,7 @@ export function setStdin(
  */
 export interface BatchedWriteHandler {
   batched: (output: string) => void;
-};
+}
 
 /**
  * A raw handler to provide to :js:func:`~pyodide.setStdout` or
@@ -456,7 +456,7 @@ export interface RawWriteHandler {
   raw: (charCode: number) => void;
   isatty?: boolean;
   getTerminalSize?: () => { rows: number; columns: number } | undefined;
-};
+}
 
 type StdWriteOpts = BatchedWriteHandler | RawWriteHandler | Writer;
 type StdWriteOptsAll = Partial<BatchedWriteHandler & RawWriteHandler & Writer>;
