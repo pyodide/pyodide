@@ -346,3 +346,25 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
             continue
         res.append(msg)
     return res
+
+
+@pytest.fixture(scope="function")
+def selenium_nodesock(selenium_standalone_refresh, runtime):
+    """
+    Fixture for testing NodeSockFS functionality.
+    """
+    # only_node marker doesn't work in fixture level...
+    if runtime != "node":
+        pytest.skip("Only works in node")
+
+    selenium = selenium_standalone_refresh
+
+    selenium.run_js(
+        """
+        await pyodide.useNodeSockFS();
+        """
+    )
+    try:
+        yield selenium
+    finally:
+        pass
