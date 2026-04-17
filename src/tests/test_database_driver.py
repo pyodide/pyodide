@@ -284,7 +284,6 @@ def test_sqlalchemy_mysql(selenium_nodesock, mysql_test_db):
                 ("bob", 1),
             ]
 
-
         # 2) Update
         with Session(engine) as s:
             alice = s.scalars(select(User).where(User.name == "alice")).one()
