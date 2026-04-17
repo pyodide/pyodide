@@ -207,7 +207,6 @@ export async function initializeNodeSockFS(
       length: number,
     ): Promise<Uint8Array | number | null> {
       if (sock.leftover && sock.leftover.length > 0) {
-
         const bytesRead = Math.min(length, sock.leftover.length);
         const result = sock.leftover.subarray(0, bytesRead);
         sock.leftover =

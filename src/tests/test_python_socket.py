@@ -637,7 +637,7 @@ def test_socket_settimeout_nonblocking(selenium_nodesock):
                 result = "no_error"
             except BlockingIOError:
                 result = "BlockingIOError"
-            except socket.timeout:
+            except TimeoutError:
                 result = "timeout"
             except OSError as e:
                 result = f"OSError:{e.errno}"
