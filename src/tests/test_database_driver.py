@@ -152,7 +152,7 @@ def test_mysql_pymysql_features(selenium_nodesock, mysql_test_db):
                 cur.execute("SELECT name, value FROM pyodide_mysql_test ORDER BY id")
                 result = cur.fetchall()
 
-            assert result == (["alpha", 11], ["beta", 2])
+            assert result == (("alpha", 11), ("beta", 2))
 
         # 2) Transactions + savepoints
         with connect(autocommit=False) as conn:
@@ -279,10 +279,11 @@ def test_sqlalchemy_mysql(selenium_nodesock, mysql_test_db):
             s.commit()
 
             users = s.scalars(select(User).order_by(User.name)).all()
-            assert users == [
-                {"name": "alice", "addresses": 2},
-                {"name": "bob", "addresses": 1},
+            assert [(u.name, len(u.addresses)) for u in users] == [
+                ("alice", 2),
+                ("bob", 1),
             ]
+
 
         # 2) Update
         with Session(engine) as s:
