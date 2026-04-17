@@ -656,7 +656,7 @@ def test_get_terminal_size(selenium):
 
 
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
-def test_get_terminal_size_node(tmp_path):
+def test_get_terminal_size_node(selenium, tmp_path):
     target_path = DIST_PATH / "pyodide.mjs"
     script = (
         """
