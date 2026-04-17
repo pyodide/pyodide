@@ -287,6 +287,7 @@ export interface EmscriptenModule {
   stringToUTF8OnStack: (str: string) => number;
   HEAP8: Uint8Array;
   HEAPU8: Uint8Array;
+  HEAP32: Int32Array;
   HEAPU32: Uint32Array;
   SOCKFS: any;
   getSocketAddress: (addr: number, addrlen: number) => any;
@@ -306,7 +307,6 @@ export interface EmscriptenModule {
     maxBytesToRead: number,
     ignoreNul?: boolean,
   ) => string;
-  syscallGetVarargI(): number;
 }
 
 /** @hidden */

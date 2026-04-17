@@ -74,14 +74,14 @@ EM_JS(JsVal, _maybe_sendto_async, (int fd, intptr_t message, int length), {
 // but we would like to allow setting and getting the flags
 // The return value indicates whether the operation was handled by this function
 // If true, the result is stored in *result
-EM_JS_MACROS(bool, _try_fcntl64, (int fd, int cmd, int arg, int* result), {
+EM_JS(bool, _try_fcntl64, (int fd, int cmd, int arg, int* result), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   if (!sock?.sock_ops?.fcntl64)
     return false;
 
-  Module.HEAP32[result >> 2] = sock.sock_ops.fcntl64(sock, cmd, arg);
-  if (Module.HEAP32[result >> 2] < 0)
+  Module.HEAP32[result / 4] = sock.sock_ops.fcntl64(sock, cmd, arg);
+  if (Module.HEAP32[result / 4] < 0)
     return false;
 
   // other commands are fallback to emscripten's implementation
@@ -97,7 +97,7 @@ EM_JS(bool, _try_shutdown, (int fd, int how, int* result), {
   if (!sock?.sock_ops?.shutdown)
     return false;
 
-  Module.HEAP32[result >> 2] = sock.sock_ops.shutdown(sock, how);
+  Module.HEAP32[result / 4] = sock.sock_ops.shutdown(sock, how);
   return true;
 })
 

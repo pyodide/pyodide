@@ -107,13 +107,12 @@ export async function initializeNodeSockFS(
      * Other commands are fallbacked to emscripten's implementation.
      * (see socket_syscalls.c)
      */
-    fcntl64(sock: NodeSock, cmd: number, _varargs: number): number {
+    fcntl64(sock: NodeSock, cmd: number, varargs: number): number {
       if (cmd === cDefs.F_GETFL) {
         return sock.stream.flags;
       }
       if (cmd === cDefs.F_SETFL) {
-        var arg = module.syscallGetVarargI();
-        sock.stream.flags = arg;
+        sock.stream.flags = module.HEAP32[varargs / 4];
         return 0;
       }
       return cDefs.EINVAL;
