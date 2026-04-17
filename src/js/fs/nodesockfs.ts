@@ -263,7 +263,7 @@ export async function initializeNodeSockFS(
         }
       }
 
-      if (how === cDefs.SHUT_WR || how === cDefs.SHUT_RDWR) {
+      if (how === SHUT_WR || how === SHUT_RDWR) {
         if (sock.writer) {
           sock.writer.close().catch(() => {});
           sock.writer.releaseLock();
