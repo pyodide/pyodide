@@ -546,10 +546,11 @@ class WebLoop(asyncio.AbstractEventLoop):
 
     def create_task(
         self,
-        coro: Coroutine[T, Any, Any],
+        coro: Coroutine[Any, Any, T],
         *,
         name: str | None = None,
         context: contextvars.Context | None = None,
+        eager_start: bool | None = None,
     ) -> Task[T]:
         """Schedule a coroutine object.
 

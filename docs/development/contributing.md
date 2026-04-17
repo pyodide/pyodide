@@ -45,10 +45,10 @@ To contribute code, see the following steps,
    ```
    pip install -r requirements.txt
    ```
-6. Enable [pre-commit](https://pre-commit.com/) for code style,
+6. Enable [prek](https://prek.j178.dev/) for code style,
 
    ```
-   pre-commit install
+   prek install
    ```
 
    This will run a set of linters for each commit.
@@ -133,9 +133,9 @@ everyone to assess. Take a moment and look through how we’ve written our tests
 and try to make your tests match. If you are having trouble, we can help you get
 started on our test-writing journey.
 
-All code submissions should pass `make lint`. Python is checked with `flake8`,
-`black` and `mypy`. JavaScript is checked with `prettier`.
-C is checked against the Mozilla style in `clang-format`.
+All code submissions should pass `make lint`. Python is checked with `ruff` (for
+linting and formatting) and `mypy`. JavaScript and TypeScript are checked with
+`biome`. C is checked with `clang-format`.
 
 ### Contributing to the “core” C Code
 

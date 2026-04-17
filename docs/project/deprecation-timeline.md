@@ -10,7 +10,7 @@ state, this list is subject to change and some features can be removed without
 deprecation warnings. More details about each item can often be found in the
 {ref}`changelog`.
 
-## 0.31.0
+## 314.1.0
 
 - `jsproxy.as_object_map()` will be removed. Use `jsproxy.as_py_json()` instead.
 
