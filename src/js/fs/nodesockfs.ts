@@ -75,10 +75,6 @@ export async function initializeNodeSockFS(
 
   const FIONREAD = 0x541b;
 
-  const SHUT_RD = 0;
-  const SHUT_WR = 1;
-  const SHUT_RDWR = 2;
-
   // Highly inspired by Emscripten's SOCKFS implementation
   // https://github.com/emscripten-core/emscripten/blob/main/src/lib/libsockfs.js
   const tcp_sock_ops = {
@@ -237,11 +233,19 @@ export async function initializeNodeSockFS(
     },
 
     shutdown(sock: NodeSock, how: number): number {
-      if (!sock.wcgSocket) {
-        return -ERRNO_CODES.ENOTCONN;
+      if (sock.closed) {
+        return -cDefs.ENOTCONN;
       }
 
-      if (how === SHUT_RD || how === SHUT_RDWR) {
+      if (
+        how !== cDefs.SHUT_RD &&
+        how !== cDefs.SHUT_WR &&
+        how !== cDefs.SHUT_RDWR
+      ) {
+        return -cDefs.EINVAL;
+      }
+
+      if (how === cDefs.SHUT_RD || how === cDefs.SHUT_RDWR) {
         if (sock.reader) {
           sock.reader.cancel().catch(() => {});
           sock.reader.releaseLock();
@@ -249,7 +253,7 @@ export async function initializeNodeSockFS(
         }
       }
 
-      if (how === SHUT_WR || how === SHUT_RDWR) {
+      if (how === cDefs.SHUT_WR || how === cDefs.SHUT_RDWR) {
         if (sock.writer) {
           sock.writer.close().catch(() => {});
           sock.writer.releaseLock();
@@ -257,8 +261,8 @@ export async function initializeNodeSockFS(
         }
       }
 
-      if (how === SHUT_RDWR) {
-        sock.wcgSocket.close().catch(() => {});
+      if (sock.reader === null && sock.writer === null) {
+        sock.wcgSocket?.close().catch(() => {});
         sock.wcgSocket = null;
         sock.connected = false;
         sock.closed = true;

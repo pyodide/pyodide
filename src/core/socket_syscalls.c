@@ -65,14 +65,17 @@ EM_JS(JsVal, _maybe_sendto_async, (int fd, intptr_t message, int length), {
   return sock.sock_ops.sendmsgAsync(sock, data);
 })
 
-// Returns const for non-NodeSock fds, errno otherwise.
-EM_JS(int, _try_shutdown, (int fd, int how), {
+// Try to handle shutdown syscall for NodeSock fds.
+// Returns true if the operation was handled, false otherwise.
+// If true, the result is stored in *result
+EM_JS(bool, _try_shutdown, (int fd, int how, int* result), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   if (!sock?.sock_ops?.shutdown)
-    return 0xDEADBEEF;
+    return false;
 
-  return sock.sock_ops.shutdown(sock, how);
+  Module.HEAP32[result >> 2] = sock.sock_ops.shutdown(sock, how);
+  return true;
 })
 
 // clang-format off
@@ -118,9 +121,11 @@ int __syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t a
 
 int __syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
 {
-  int result = _try_shutdown(fd, how);
-  if (result == 0xDEADBEEF) {
-    // will fail with ENOSYS, but call it anyways.
+  int result = 0;
+  bool handled = _try_shutdown(fd, how, &result);
+  if (!handled) {
+    // Emscripten does not support shutdown so this would fail anyways, but
+    // we still want to return a meaningful error code
     // https://github.com/emscripten-core/emscripten/issues/13393
     return _orig_syscall_shutdown(fd, how, d1, d2, d3, d4);
   }
