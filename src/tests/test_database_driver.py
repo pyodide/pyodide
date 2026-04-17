@@ -659,49 +659,19 @@ def redis_config():
 
 @pytest.fixture()
 def redis_test_db(redis_config):
-    import redis as redis_client
+    import redis
 
-    deadline = time.time() + 10
-    last_err: Exception | None = None
-    while time.time() < deadline:
-        try:
-            r = redis_client.Redis(
-                host=redis_config["host"],
-                port=redis_config["port"],
-                password=redis_config["password"],
-                db=redis_config["db"],
-            )
-            r.ping()
-            r.close()
-            last_err = None
-            break
-        except Exception as e:  # noqa: BLE001
-            last_err = e
-            time.sleep(1)
+    def cleanup_db():
+        r = redis.Redis(**redis_config)
+        r.flushdb()
+        r.close()
 
-    if last_err is not None:
-        raise RuntimeError("Redis server not reachable within timeout") from last_err
-
-    r = redis_client.Redis(
-        host=redis_config["host"],
-        port=redis_config["port"],
-        password=redis_config["password"],
-        db=redis_config["db"],
-    )
-    r.flushdb()
-    r.close()
+    cleanup_db()
 
     try:
         yield redis_config
     finally:
-        r = redis_client.Redis(
-            host=redis_config["host"],
-            port=redis_config["port"],
-            password=redis_config["password"],
-            db=redis_config["db"],
-        )
-        r.flushdb()
-        r.close()
+        cleanup_db()
 
 
 # When running this test locally, start a Redis server and install dependencies:
@@ -721,6 +691,8 @@ def test_redis_py_features(selenium_nodesock, redis_test_db):
 
     @run_in_pyodide(packages=["micropip"])
     async def run(selenium, host, port, password, db):
+        import contextlib
+
         import micropip
 
         await micropip.install("redis")
@@ -728,7 +700,7 @@ def test_redis_py_features(selenium_nodesock, redis_test_db):
         import redis
 
         def connect(**kwargs):
-            return redis.Redis(
+            conn = redis.Redis(
                 host=host,
                 port=port,
                 password=password if password else None,
@@ -737,11 +709,10 @@ def test_redis_py_features(selenium_nodesock, redis_test_db):
                 **kwargs,
             )
 
-        results = {}
+            return contextlib.closing(conn)
 
         # 1) Connectivity + string operations
-        r = connect()
-        try:
+        with connect() as r:
             assert r.ping() is True
             r.flushdb()
             assert r.dbsize() == 0
@@ -770,14 +741,8 @@ def test_redis_py_features(selenium_nodesock, redis_test_db):
             assert r.mset({"a": "1", "b": "2", "c": "3"}) is True
             assert r.mget(["a", "b", "c"]) == ["1", "2", "3"]
             assert r.delete("a", "b", "c") == 3
-
-            results["strings"] = "ok"
-        finally:
-            r.close()
-
         # 2) List operations
-        r = connect()
-        try:
+        with connect() as r:
             r.delete("mylist")
             assert r.rpush("mylist", "a", "b", "c") == 3
             assert r.lpush("mylist", "z") == 4
@@ -787,13 +752,8 @@ def test_redis_py_features(selenium_nodesock, redis_test_db):
             assert r.rpop("mylist") == "c"
             assert r.lrange("mylist", 0, -1) == ["a", "b"]
 
-            results["lists"] = "ok"
-        finally:
-            r.close()
-
         # 3) Hash operations
-        r = connect()
-        try:
+        with connect() as r:
             r.delete("myhash")
             assert r.hset("myhash", mapping={"f1": "v1", "f2": "v2", "f3": "v3"}) == 3
             assert r.hget("myhash", "f1") == "v1"
@@ -802,13 +762,8 @@ def test_redis_py_features(selenium_nodesock, redis_test_db):
             assert r.hget("myhash", "f1") is None
             assert r.hgetall("myhash") == {"f2": "v2", "f3": "v3"}
 
-            results["hashes"] = "ok"
-        finally:
-            r.close()
-
         # 4) Set operations
-        r = connect()
-        try:
+        with connect() as r:
             r.delete("myset")
             assert r.sadd("myset", "a", "b", "c") == 3
             assert r.scard("myset") == 3
@@ -819,13 +774,8 @@ def test_redis_py_features(selenium_nodesock, redis_test_db):
             assert r.scard("myset") == 2
             assert r.smembers("myset") == {"a", "b"}
 
-            results["sets"] = "ok"
-        finally:
-            r.close()
-
         # 5) Sorted set operations
-        r = connect()
-        try:
+        with connect() as r:
             r.delete("myzset")
             assert r.zadd("myzset", {"alice": 1.0, "bob": 2.0, "charlie": 3.0}) == 3
             assert r.zcard("myzset") == 3
@@ -836,13 +786,8 @@ def test_redis_py_features(selenium_nodesock, redis_test_db):
             assert scored == [("alice", 1.0), ("bob", 2.0), ("charlie", 3.0)]
             assert r.zrangebyscore("myzset", 1, 2) == ["alice", "bob"]
 
-            results["sorted_sets"] = "ok"
-        finally:
-            r.close()
-
         # 6) Key operations (EXISTS, EXPIRE, TTL, TYPE)
-        r = connect()
-        try:
+        with connect() as r:
             r.set("typetest_str", "hello")
             r.rpush("typetest_list", "a")
             r.hset("typetest_hash", "k", "v")
@@ -872,13 +817,8 @@ def test_redis_py_features(selenium_nodesock, redis_test_db):
             assert r.set("nxkey", "second", nx=True) is None
             assert r.get("nxkey") == "first"
 
-            results["keys"] = "ok"
-        finally:
-            r.close()
-
         # 7) Pipeline (non-transactional batching)
-        r = connect()
-        try:
+        with connect() as r:
             r.delete("p1", "p2")
             pipe = r.pipeline(transaction=False)
             pipe.set("p1", "v1")
@@ -888,13 +828,8 @@ def test_redis_py_features(selenium_nodesock, redis_test_db):
             pipe_results = pipe.execute()
             assert pipe_results == [True, True, "v1", "v2"]
 
-            results["pipeline"] = "ok"
-        finally:
-            r.close()
-
         # 8) Transaction (MULTI/EXEC)
-        r = connect()
-        try:
+        with connect() as r:
             r.delete("tx1", "tx2")
             pipe = r.pipeline()  # transaction=True by default
             pipe.set("tx1", "a")
@@ -904,24 +839,5 @@ def test_redis_py_features(selenium_nodesock, redis_test_db):
             assert tx_results == [True, True, "a"]
             assert r.get("tx1") == "a"
             assert r.get("tx2") == "b"
-
-            results["transaction"] = "ok"
-        finally:
-            r.close()
-
-        # Verify all sections passed
-        expected = [
-            "strings",
-            "lists",
-            "hashes",
-            "sets",
-            "sorted_sets",
-            "keys",
-            "pipeline",
-            "transaction",
-        ]
-        for section in expected:
-            assert section in results, f"Section {section} did not complete"
-            assert results[section] == "ok", f"Section {section} failed"
 
     run(selenium_nodesock, host, port, password, db)

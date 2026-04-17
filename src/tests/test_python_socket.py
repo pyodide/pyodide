@@ -535,3 +535,101 @@ def test_socket_double_close(selenium_nodesock):
 
     with tcp_server(handler) as (host, port):
         run(selenium_nodesock, host, port)
+
+
+def test_socket_settimeout_nonblocking(selenium_nodesock):
+    """settimeout(0) makes recv raise socket.timeout when no data is available."""
+
+    def handler(conn, _addr):
+        import time
+
+        time.sleep(2)
+        conn.sendall(b"delayed")
+        conn.close()
+
+    @run_in_pyodide(packages=["pytest"])
+    def run(selenium, host, port):
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        s.settimeout(0)
+
+        with pytest.raises(OSError):
+            s.recv(1024)
+
+    with tcp_server(handler) as (host, port):
+        run(selenium_nodesock, host, port)
+
+def test_socket_settimeout_restore_blocking(selenium_nodesock):
+    """settimeout(0) then settimeout(None) restores blocking mode."""
+
+    def handler(conn, _addr):
+        conn.sendall(b"hello")
+        conn.close()
+
+    @run_in_pyodide
+    def run(selenium, host, port):
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        s.settimeout(0)
+        s.settimeout(None)
+
+        data = s.recv(1024)
+        s.close()
+        return data.decode()
+
+    with tcp_server(handler) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert result == "hello"
+
+
+def test_socket_shutdown(selenium_nodesock):
+    """Test that shutting down a socket works."""
+
+    def handler(conn, _addr):
+        conn.recv(1024)
+        conn.sendall(b"OK")
+
+    @run_in_pyodide
+    def run(selenium, host, port):
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        s.sendall(b"test")
+        s.recv(1024)
+
+        s.shutdown(socket.SHUT_RDWR)
+        s.close()
+
+    with tcp_server(handler) as (host, port):
+        run(selenium_nodesock, host, port)
+
+
+def test_socket_shutdown_non_nodesock(selenium_standalone):
+    """
+    Calling shutdown on a non-node socket will raise "Function not implemented"
+    """
+
+    @run_in_pyodide(packages=["pytest"])
+    def run(selenium):
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("127.0.0.1", 0))
+        s.listen(1)
+
+        assert hasattr(s, "shutdown"), "shutdown method should exist"
+
+        with pytest.raises(OSError, match="Function not implemented"):
+            s.shutdown(socket.SHUT_RDWR)
+
+        s.close()
+
+    run(selenium_standalone)
