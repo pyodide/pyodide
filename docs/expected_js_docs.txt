@@ -8,10 +8,13 @@ js:typealias
   pyodide.ffi.TypedArray
 js:interface
   exports.PyodideConfig
+  pyodide.BatchedWriteHandler
   pyodide.Lockfile
   pyodide.LockfileInfo
   pyodide.LockfilePackage
   pyodide.PackageData
+  pyodide.RawWriteHandler
+  pyodide.Writer
 js:attribute
   exports.PyodideConfig.args?
   exports.PyodideConfig.checkAPIVersion?
@@ -53,6 +56,8 @@ js:attribute
   pyodide.PackageData.name
   pyodide.PackageData.packageType
   pyodide.PackageData.version
+  pyodide.RawWriteHandler.isatty?
+  pyodide.Writer.isatty?
   pyodide.ffi.PyBufferView.c_contiguous
   pyodide.ffi.PyBufferView.data
   pyodide.ffi.PyBufferView.f_contiguous
@@ -79,6 +84,12 @@ js:function
   exports.PyodideConfig.stdin?
   exports.PyodideConfig.stdout?
   exports.loadPyodide
+  pyodide.BatchedWriteHandler.batched
+  pyodide.RawWriteHandler.getTerminalSize?
+  pyodide.RawWriteHandler.raw
+  pyodide.Writer.fsync?
+  pyodide.Writer.getTerminalSize?
+  pyodide.Writer.write
   pyodide.canvas.getCanvas2D
   pyodide.canvas.getCanvas3D
   pyodide.canvas.setCanvas2D

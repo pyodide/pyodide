@@ -53,7 +53,7 @@ type Reader = {
  *
  * If provided, `fsync` is called when the stream is fsync'd.
  */
-export type Writer = {
+export interface Writer {
   isatty?: boolean;
   fsync?: () => void;
   write(buffer: Uint8Array): number;
@@ -433,8 +433,8 @@ export function setStdin(
  * line will end with a newline, in the latter case it will not. Streams
  * implemented with a batched handlers cannot be a tty.
  */
-export type BatchedWriteHandler = {
-  batched: (a: string) => void;
+export interface BatchedWriteHandler {
+  batched: (output: string) => void;
 };
 
 /**
@@ -452,17 +452,17 @@ export type BatchedWriteHandler = {
  * `os.get_terminal_size()`. If absent, the terminal size is reported as 24 rows
  * by 80 columns.
  */
-export type RawWriteHandler = {
-  raw: (a: number) => void;
+export interface RawWriteHandler {
+  raw: (charCode: number) => void;
   isatty?: boolean;
   getTerminalSize?: () => { rows: number; columns: number } | undefined;
 };
 
-type StdWriteOpts = BatchedWriteHandler | RawWriteHandler | Writer | {};
+type StdWriteOpts = BatchedWriteHandler | RawWriteHandler | Writer;
 type StdWriteOptsAll = Partial<BatchedWriteHandler & RawWriteHandler & Writer>;
 
 function _setStdwrite(
-  options: StdWriteOpts,
+  options: StdWriteOpts | {},
   setOps: (ops: Writer) => void,
   getDefaults: () => StdWriteOpts,
 ) {
@@ -543,19 +543,19 @@ function _getStderrDefaults(): StdWriteOpts {
  * }
  * main();
  */
-export function setStdout(options: StdWriteOpts = {}) {
-  _setStdwrite(options, _setStdoutOps, _getStdoutDefaults);
+export function setStdout(options?: StdWriteOpts | {}) {
+  _setStdwrite(options ?? {}, _setStdoutOps, _getStdoutDefaults);
 }
 
 /**
- * Sets the standard error handler. A :js:type:`BatchedWriteHandler`, a
- * :js:type:`RawWriteHandler`, or a :js:type:`Writer` can be provided. See the
- * documentation for these types for more information about how each works. If
- * no handler is provided, we restore the default handler. Passing a `Writer`
- * provides the most flexibility and the best performance.
+ * Sets the standard error handler. A :js:typealias:`BatchedWriteHandler`, a
+ * :js:typealias:`RawWriteHandler`, or a :js:typealias:`Writer` can be provided.
+ * See the documentation for these types for more information about how each
+ * works. If no handler is provided, we restore the default handler. Passing a
+ * `Writer` provides the most flexibility and the best performance.
  */
-export function setStderr(options: StdWriteOpts = {}) {
-  _setStdwrite(options, _setStderrOps, _getStderrDefaults);
+export function setStderr(options?: StdWriteOpts | {}) {
+  _setStdwrite(options ?? {}, _setStderrOps, _getStderrDefaults);
 }
 
 const _TextEncoder = globalThis.TextEncoder ?? function () {};
