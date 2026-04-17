@@ -214,7 +214,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 	# ac_cv_func_shutdown :
 	#   Emscripten does not support shutdown syscall, but we want to enable it
 	#   to enable shutdown method in NodeSockFS.
-	cd $(PYBUILD) && $(SED) -i 's/^ac_cv_func_shutdown=no/ac_cv_func_shutdown=yes/' $(CONFIG_SITE_FILE)
+	cd $(PYBUILD) && $(SED) -i 's/^ac_cv_func_shutdown=no//' $(CONFIG_SITE_FILE)
 	( \
 		cd $(PYBUILD); \
 		CONFIG_SITE=$(CONFIG_SITE_FILE) READELF=true emconfigure \
