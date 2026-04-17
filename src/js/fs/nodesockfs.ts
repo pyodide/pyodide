@@ -96,13 +96,13 @@ export async function initializeNodeSockFS(
 
     /**
      * fnctl64 for NodeSock
-     * Emscripten's __syscall_fcntl64(F_SETFL) is noop for F_GETFL and F_SETFL
-     * but we would like to allow setting and getting the flags so that
-     * Python's socket module can work properly.
-     * Other commands are fallback to emscripten's implementation.
+     * Emscripten's __syscall_fcntl64(F_SETFL) does not handle cleaning up the
+     * flags with F_SETFL properly, so we need to do it here.
+     * TODO: Upstream this fix to Emscripten
+     * Other commands are fallbacked to emscripten's implementation.
      * (see socket_syscalls.c)
      */
-    fcntl64(sock: NodeSock, cmd: number, varargs: number): number {
+    fcntl64(sock: NodeSock, cmd: number, _varargs: number): number {
       if (cmd === cDefs.F_GETFL) {
         return sock.stream.flags;
       }
