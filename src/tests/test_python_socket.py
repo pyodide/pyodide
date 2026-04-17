@@ -562,6 +562,7 @@ def test_socket_settimeout_nonblocking(selenium_nodesock):
     with tcp_server(handler) as (host, port):
         run(selenium_nodesock, host, port)
 
+
 def test_socket_settimeout_restore_blocking(selenium_nodesock):
     """settimeout(0) then settimeout(None) restores blocking mode."""
 
