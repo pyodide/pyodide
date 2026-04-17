@@ -192,17 +192,10 @@ export type FSNode = {
 };
 
 /** @hidden */
-export type TtyOps<T> = {
-  ioctl_tiocgwinsz(tty: T): readonly [number, number];
-};
-
-type FSTty = {
-  ops: TtyOps<FSTty>;
-} & Record<string, unknown>;
-
-/** @hidden */
 export type FSStream = {
-  tty: FSTty | undefined;
+  tty?: {
+    ops: object;
+  };
   seekable?: boolean;
   stream_ops: FSStreamOps;
   node: FSNode;

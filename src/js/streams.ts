@@ -1,13 +1,9 @@
 import { RUNTIME_ENV } from "./environments.js";
 import "./constants";
 
-import type { FSStream, FSStreamOpsGen, TtyOps } from "./types";
-const fs: typeof import("node:fs") = RUNTIME_ENV.IN_NODE
-  ? require("node:fs")
-  : undefined;
-const tty: typeof import("node:tty") = RUNTIME_ENV.IN_NODE
-  ? require("node:tty")
-  : undefined;
+import type { FSStream, FSStreamOpsGen } from "./types";
+const fs: any = RUNTIME_ENV.IN_NODE ? require("node:fs") : undefined;
+const tty: any = RUNTIME_ENV.IN_NODE ? require("node:tty") : undefined;
 
 function nodeFsync(fd: number): void {
   try {
@@ -35,29 +31,10 @@ type Reader = {
   fsync?: () => void;
   read(buffer: Uint8Array): number;
 };
-
-/**
- * A Writer to provide to :js:func:`~pyodide.setStdout` or
- * :js:func:`~pyodide.setStderr`.
- *
- * ``Writer.write`` is called with a series of `Uint8Array` buffers containing
- * bytes to write to the stream.
- *
- * ``isatty`` controls whether `isatty()` returns `true` or `false` for the
- * stream. It defaults to `false`.
- *
- * If present, and `isatty` is `true`, `getTerminalSize()` controls the size of
- * the terminal reported by the tiocgwinsz ioctl, which propagates to
- * `os.get_terminal_size()`. If absent, the terminal size is reported as 24 rows
- * by 80 columns.
- *
- * If provided, `fsync` is called when the stream is fsync'd.
- */
-export type Writer = {
+type Writer = {
   isatty?: boolean;
   fsync?: () => void;
   write(buffer: Uint8Array): number;
-  getTerminalSize?: () => { rows: number; columns: number } | undefined;
 };
 
 type Stream = FSStream & {
@@ -177,7 +154,7 @@ function readWriteHelper(stream: Stream, cb: () => number, method: string) {
       // the handler set an errno, propagate it
       throw e;
     }
-    console.error(`Error thrown in ${method}:`);
+    console.error("Error thrown in read:");
     console.error(e);
     throw new FS.ErrnoError(cDefs.EIO);
   }
@@ -203,18 +180,6 @@ const prepareBuffer = (
 ): Uint8Array =>
   API.typedArrayAsUint8Array(buffer).subarray(offset, offset + length);
 
-type FSTty = {
-  ops: TtyOps<FSTty>;
-  devops: Reader & Writer;
-};
-
-const TTY_OPS = {
-  ioctl_tiocgwinsz(tty: FSTty): readonly [number, number] {
-    const { rows = 24, columns = 80 } = tty.devops.getTerminalSize?.() ?? {};
-    return [rows, columns];
-  },
-};
-
 const stream_ops: StreamOps = {
   open: function (stream) {
     const devops = DEVOPS[stream.node.rdev];
@@ -224,8 +189,7 @@ const stream_ops: StreamOps = {
     stream.devops = devops;
     stream.tty = stream.devops.isatty
       ? {
-          ops: TTY_OPS,
-          devops,
+          ops: {},
         }
       : undefined;
     stream.seekable = false;
@@ -309,7 +273,7 @@ API.initializeStreams = function (
  */
 function setDefaultStdin() {
   if (RUNTIME_ENV.IN_NODE) {
-    setStdin(new NodeReader(process.stdin));
+    setStdin(new NodeReader(process.stdin.fd));
   } else {
     setStdin({ stdin: () => prompt() });
   }
@@ -424,67 +388,36 @@ export function setStdin(
   refreshStreams();
 }
 
-/**
- * A batched handler to provide to :js:func:`~pyodide.setStdout` or
- * :js:func:`~pyodide.setStderr`.
- *
- * The ``handler.batched()`` handler is called with a string whenever a newline
- * character is written or stdout is flushed. In the former case, the received
- * line will end with a newline, in the latter case it will not. Streams
- * implemented with a batched handlers cannot be a tty.
- */
-export type BatchedWriteHandler = {
-  batched: (a: string) => void;
-};
-
-/**
- * A raw handler to provide to :js:func:`~pyodide.setStdout` or
- * :js:func:`~pyodide.setStderr`.
- *
- * The ``handler.raw()`` function is called once with each byte written to the
- * stream as an argument.
- *
- * ``isatty`` controls whether `isatty()` returns `true` or `false` for the
- * stream. It defaults to `false`.
- *
- * If present, and `isatty` is `true`, `getTerminalSize()` controls the size of
- * the terminal reported by the tiocgwinsz ioctl, which propagates to
- * `os.get_terminal_size()`. If absent, the terminal size is reported as 24 rows
- * by 80 columns.
- */
-export type RawWriteHandler = {
-  raw: (a: number) => void;
+type StdwriteOpts = {
+  batched?: (a: string) => void;
+  raw?: (a: number) => void;
   isatty?: boolean;
-  getTerminalSize?: () => { rows: number; columns: number } | undefined;
 };
-
-type StdWriteOpts = BatchedWriteHandler | RawWriteHandler | Writer | {};
-type StdWriteOptsAll = Partial<BatchedWriteHandler & RawWriteHandler & Writer>;
 
 function _setStdwrite(
-  options: StdWriteOpts,
+  options: StdwriteOpts & Partial<Writer>,
   setOps: (ops: Writer) => void,
-  getDefaults: () => StdWriteOpts,
+  getDefaults: () => StdwriteOpts & Partial<Writer>,
 ) {
-  let opts = options as StdWriteOptsAll;
-  let { raw, isatty, batched, write } = opts;
-  if (!raw && !write && isatty) {
-    throw new TypeError(
-      "Cannot set 'isatty' to true unless 'raw' or 'write' is provided",
-    );
-  }
+  let { raw, isatty, batched, write } = options as StdwriteOpts &
+    Partial<Writer>;
   let nset = +!!raw + +!!batched + +!!write;
+  if (nset === 0) {
+    options = getDefaults();
+    ({ raw, isatty, batched, write } = options);
+  }
   if (nset > 1) {
     throw new TypeError(
       "At most one of 'raw', 'batched', and 'write' must be passed",
     );
   }
-  if (nset === 0) {
-    opts = getDefaults();
-    ({ raw, isatty, batched, write } = opts);
+  if (!raw && !write && isatty) {
+    throw new TypeError(
+      "Cannot set 'isatty' to true unless 'raw' or 'write' is provided",
+    );
   }
   if (raw) {
-    setOps(new CharacterCodeWriter(options as RawWriteHandler));
+    setOps(new CharacterCodeWriter(raw.bind(options), !!isatty));
   }
   if (batched) {
     setOps(new StringWriter(batched.bind(options)));
@@ -500,9 +433,9 @@ function _setStdwrite(
  * to tty.isatty(process.stdout.fd).
  * If in a browser, sets stdout to write to console.log and sets isatty(stdout) to false.
  */
-function _getStdoutDefaults(): StdWriteOpts {
+function _getStdoutDefaults(): StdwriteOpts & Partial<Writer> {
   if (RUNTIME_ENV.IN_NODE) {
-    return new NodeWriter(process.stdout);
+    return new NodeWriter(process.stdout.fd);
   } else {
     return { batched: (x) => console.log(x) };
   }
@@ -513,20 +446,34 @@ function _getStdoutDefaults(): StdWriteOpts {
  * to tty.isatty(process.stdout.fd).
  * If in a browser, sets stdout to write to console.log and sets isatty(stdout) to false.
  */
-function _getStderrDefaults(): StdWriteOpts {
+function _getStderrDefaults(): StdwriteOpts & Partial<Writer> {
   if (RUNTIME_ENV.IN_NODE) {
-    return new NodeWriter(process.stderr);
+    return new NodeWriter(process.stderr.fd);
   } else {
     return { batched: (x) => console.warn(x) };
   }
 }
 
 /**
- * Sets the standard out handler. A :js:class:`BatchedWriteHandler`, a
- * :js:class:`RawWriteHandler`, or a :js:class:`Writer` can be provided. See the
- * documentation for these types for more information about how each works. If
- * no handler is provided, we restore the default handler. Passing a `Writer`
- * provides the most flexibility and the best performance.
+ * Sets the standard out handler. A batched handler, a raw handler, or a write
+ * function can be provided. If no handler is provided, we restore the default
+ * handler.
+ *
+ * The functions on the ``options`` argument will be called with ``options``
+ * bound to ``this`` so passing an instance of a class as the ``options`` object
+ * works as expected.
+ *
+ * @param options.batched A batched handler is called with a string whenever a
+ * newline character is written or stdout is flushed. In the former
+ * case, the received line will end with a newline, in the latter case it will
+ * not.
+ * @param options.raw A raw handler is called with the handler is called with a
+ * `number` for each byte of the output to stdout.
+ * @param options.write A write handler is called with a buffer that contains
+ * the utf8 encoded binary data
+ * @param options.isatty Should :py:func:`isatty(stdout) <os.isatty>` return
+ * ``true`` or ``false``. Must be ``false`` if a batched handler is used.
+ * (default ``false``).
  *
  * @example
  * async function main(){
@@ -543,18 +490,29 @@ function _getStderrDefaults(): StdWriteOpts {
  * }
  * main();
  */
-export function setStdout(options: StdWriteOpts = {}) {
+export function setStdout(
+  options: {
+    batched?: (output: string) => void;
+    raw?: (charCode: number) => void;
+    write?: (buffer: Uint8Array) => number;
+    isatty?: boolean;
+  } = {},
+) {
   _setStdwrite(options, _setStdoutOps, _getStdoutDefaults);
 }
 
 /**
- * Sets the standard error handler. A :js:type:`BatchedWriteHandler`, a
- * :js:type:`RawWriteHandler`, or a :js:type:`Writer` can be provided. See the
- * documentation for these types for more information about how each works. If
- * no handler is provided, we restore the default handler. Passing a `Writer`
- * provides the most flexibility and the best performance.
+ * Sets the standard error handler. See the documentation for
+ * :js:func:`pyodide.setStdout`.
  */
-export function setStderr(options: StdWriteOpts = {}) {
+export function setStderr(
+  options: {
+    batched?: (output: string) => void;
+    raw?: (charCode: number) => void;
+    write?: (buffer: Uint8Array) => number;
+    isatty?: boolean;
+  } = {},
+) {
   _setStdwrite(options, _setStderrOps, _getStderrDefaults);
 }
 
@@ -570,20 +528,18 @@ class ErrorReader {
   }
 }
 
-type NodeReadStream = NodeJS.ReadStream & { fd: number };
-
-class NodeReader implements Reader {
-  stream: NodeReadStream;
+class NodeReader {
+  fd: number;
   isatty: boolean;
 
-  constructor(stream: NodeReadStream) {
-    this.stream = stream;
-    this.isatty = tty.isatty(stream.fd);
+  constructor(fd: number) {
+    this.fd = fd;
+    this.isatty = tty.isatty(fd);
   }
 
   read(buffer: Uint8Array): number {
     try {
-      return fs.readSync(this.stream.fd, buffer);
+      return fs.readSync(this.fd, buffer);
     } catch (e) {
       // Platform differences: on Windows, reading EOF throws an exception,
       // but on other OSes, reading EOF returns 0. Uniformize behavior by
@@ -596,7 +552,7 @@ class NodeReader implements Reader {
   }
 
   fsync() {
-    nodeFsync(this.stream.fd);
+    nodeFsync(this.fd);
   }
 }
 
@@ -702,28 +658,24 @@ class LegacyReader {
 
 // Writer implementations
 
-class CharacterCodeWriter implements Writer {
-  options: RawWriteHandler;
+class CharacterCodeWriter {
+  out: (a: number) => void;
   isatty: boolean;
 
-  constructor(options: RawWriteHandler) {
-    this.options = options;
-    this.isatty = !!options.isatty;
+  constructor(out: (a: number) => void, isatty: boolean) {
+    this.out = out;
+    this.isatty = isatty;
   }
 
   write(buffer: Uint8Array) {
     for (let i of buffer) {
-      this.options.raw(i);
+      this.out(i);
     }
     return buffer.length;
   }
-
-  getTerminalSize() {
-    return this.options.getTerminalSize?.();
-  }
 }
 
-class StringWriter implements Writer {
+class StringWriter {
   out: (a: string) => void;
   isatty: boolean = false;
   output: number[];
@@ -754,25 +706,19 @@ class StringWriter implements Writer {
   }
 }
 
-type NodeWriteStream = NodeJS.WriteStream & { fd: number };
-
-class NodeWriter implements Writer {
-  stream: NodeWriteStream;
+class NodeWriter {
+  fd: number;
   isatty: boolean;
-  constructor(stream: NodeWriteStream) {
-    this.stream = stream;
-    this.isatty = tty.isatty(stream.fd);
+  constructor(fd: number) {
+    this.fd = fd;
+    this.isatty = tty.isatty(fd);
   }
 
   write(buffer: Uint8Array): number {
-    return fs.writeSync(this.stream.fd, buffer);
+    return fs.writeSync(this.fd, buffer);
   }
 
   fsync() {
-    nodeFsync(this.stream.fd);
-  }
-
-  getTerminalSize() {
-    return this.stream;
+    nodeFsync(this.fd);
   }
 }
