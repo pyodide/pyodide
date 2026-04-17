@@ -355,7 +355,7 @@ jobs:
     needs: [build-core, get_python_version]
     services:
       mysql:
-        image: mysql:8.0
+        image: mysql:8.0.45
         ports:
           - 3306:3306
         env:
@@ -398,12 +398,12 @@ jobs:
         with:
           python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "24"
 
       - name: Download build artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: core-build-Linux
           path: ./dist/
