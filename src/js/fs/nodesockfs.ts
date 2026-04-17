@@ -56,6 +56,11 @@ export async function initializeNodeSockFS(
   const module = Module;
   const FS = module.FS;
 
+  // https://linux.die.net/man/2/shutdown
+  const SHUT_RD = 0;
+  const SHUT_WR = 1;
+  const SHUT_RDWR = 2;
+
   // following Emscripten's other FS implementations
   const DIR_MODE = cDefs.S_IFDIR | 0o777;
 
@@ -246,15 +251,11 @@ export async function initializeNodeSockFS(
         return -cDefs.ENOTCONN;
       }
 
-      if (
-        how !== cDefs.SHUT_RD &&
-        how !== cDefs.SHUT_WR &&
-        how !== cDefs.SHUT_RDWR
-      ) {
+      if (how !== SHUT_RD && how !== SHUT_WR && how !== SHUT_RDWR) {
         return -cDefs.EINVAL;
       }
 
-      if (how === cDefs.SHUT_RD || how === cDefs.SHUT_RDWR) {
+      if (how === SHUT_RD || how === SHUT_RDWR) {
         if (sock.reader) {
           sock.reader.cancel().catch(() => {});
           sock.reader.releaseLock();
