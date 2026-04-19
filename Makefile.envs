@@ -159,7 +159,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s LZ4=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
-	-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
+	-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES,__stack_low,__stack_high' \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
 	-s FORCE_FILESYSTEM=1 \
