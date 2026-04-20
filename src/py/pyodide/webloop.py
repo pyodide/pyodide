@@ -546,10 +546,11 @@ class WebLoop(asyncio.AbstractEventLoop):
 
     def create_task(
         self,
-        coro: Coroutine[T, Any, Any],
+        coro: Coroutine[Any, Any, T],
         *,
         name: str | None = None,
         context: contextvars.Context | None = None,
+        eager_start: bool | None = None,
     ) -> Task[T]:
         """Schedule a coroutine object.
 
@@ -924,7 +925,9 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
 
 
-class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
+# TODO: asyncio's policy system is deprecated as of Python 3.14
+# we need to find an alternative way to set the event loop for pyodide
+class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore[name-defined]
     """
     A simple event loop policy for managing :py:class:`WebLoop`-based event loops.
     """

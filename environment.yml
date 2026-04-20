@@ -2,7 +2,7 @@ name: pyodide-env
 channels:
   - conda-forge
 dependencies:
-  - python=3.13
+  - python=3.14
   - nodejs>=18,<22.5 # Node.js 22.5 has some issues with installing packages https://github.com/nodejs/node/issues/53902
   - ccache
   - f2c

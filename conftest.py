@@ -70,7 +70,6 @@ def set_configs():
         "chrome",
         """
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals : self,
         });
         """,
@@ -83,7 +82,6 @@ def set_configs():
         let snap = readFileSync("snapshot.bin");
         snap = new Uint8Array(snap.buffer);
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals: self,
             _loadSnapshot: snap,
         });
@@ -204,6 +202,15 @@ def pytest_collection_modifyitems(config, items):
                     pytest.mark.skip(
                         reason="long_running test skipped (use '-m long_running' to run or set CI=1)"
                     )
+                )
+                continue
+
+        if item.get_closest_marker("db"):
+            # Skip db tests if mark not explicitly included
+            markexpr = config.getoption("-m", default="")
+            if "db" not in markexpr:
+                item.add_marker(
+                    pytest.mark.skip(reason="db test skipped (use '-m db' to run)")
                 )
                 continue
 
@@ -339,3 +346,25 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
             continue
         res.append(msg)
     return res
+
+
+@pytest.fixture(scope="function")
+def selenium_nodesock(selenium_standalone_refresh, runtime):
+    """
+    Fixture for testing NodeSockFS functionality.
+    """
+    # only_node marker doesn't work in fixture level...
+    if runtime != "node":
+        pytest.skip("Only works in node")
+
+    selenium = selenium_standalone_refresh
+
+    selenium.run_js(
+        """
+        await pyodide.useNodeSockFS();
+        """
+    )
+    try:
+        yield selenium
+    finally:
+        pass

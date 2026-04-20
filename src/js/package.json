@@ -1,6 +1,6 @@
 {
   "name": "pyodide",
-  "version": "0.30.0-dev.0",
+  "version": "314.0.0-dev.0",
   "description": "The Pyodide JavaScript package",
   "keywords": [
     "python",
@@ -9,7 +9,7 @@
   "homepage": "https://github.com/pyodide/pyodide",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pyodide/pyodide"
+    "url": "git+https://github.com/pyodide/pyodide.git"
   },
   "bugs": {
     "url": "https://github.com/pyodide/pyodide/issues"

@@ -45,7 +45,9 @@ interface NodeSock {
  * The conndctFunc should satisfy the WinterCG socket-api interface (https://github.com/WinterTC55/proposal-sockets-api),
  * and it is designed to be used in Cloudflare Workers
  */
-export async function initializeNodeSockFS(connectFunc?: ConnectFunc) {
+export async function initializeNodeSockFS(
+  connectFunc?: ConnectFunc,
+): Promise<void> {
   if (!connectFunc) {
     await initWinterCGSockets();
     connectFunc = connect;
@@ -72,6 +74,10 @@ export async function initializeNodeSockFS(connectFunc?: ConnectFunc) {
   const POLLRDNORM = 0x040;
 
   const FIONREAD = 0x541b;
+
+  const SHUT_RD = 0;
+  const SHUT_WR = 1;
+  const SHUT_RDWR = 2;
 
   // Highly inspired by Emscripten's SOCKFS implementation
   // https://github.com/emscripten-core/emscripten/blob/main/src/lib/libsockfs.js
@@ -228,6 +234,41 @@ export async function initializeNodeSockFS(connectFunc?: ConnectFunc) {
       } catch {
         return null;
       }
+    },
+
+    shutdown(sock: NodeSock, how: number): number {
+      if (sock.closed) {
+        return -cDefs.ENOTCONN;
+      }
+
+      if (how !== SHUT_RD && how !== SHUT_WR && how !== SHUT_RDWR) {
+        return -cDefs.EINVAL;
+      }
+
+      if (how === SHUT_RD || how === SHUT_RDWR) {
+        if (sock.reader) {
+          sock.reader.cancel().catch(() => {});
+          sock.reader.releaseLock();
+          sock.reader = null;
+        }
+      }
+
+      if (how === SHUT_WR || how === SHUT_RDWR) {
+        if (sock.writer) {
+          sock.writer.close().catch(() => {});
+          sock.writer.releaseLock();
+          sock.writer = null;
+        }
+      }
+
+      if (sock.reader === null && sock.writer === null) {
+        sock.wcgSocket?.close().catch(() => {});
+        sock.wcgSocket = null;
+        sock.connected = false;
+        sock.closed = true;
+      }
+
+      return 0;
     },
 
     /*

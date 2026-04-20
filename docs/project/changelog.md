@@ -40,6 +40,11 @@ myst:
   - Bundlers: Update configuration to reference the new filename
   {pr}`6111`
 
+- {{ Breaking }} We do not unvendor stdlibs anymore. `sqlite3` and `lzma` are now bundled into Pyodide by default. `pydecimal` and `test` package is removed from the distribution.
+  `pydoc_data` package is still in the distribution but needs to be explicitly loaded with
+  `loadPackage("pydoc_data")` to use. The `fullstdlib` option in loadPyodide is deprecated and a no-op.
+  {pr}`6151`
+
 
 - {{ Enhancement }} A JavaScript object is now treated as an array-like object
   if it has a `length` property and is iterable. Every JsProxy of an array-like
@@ -72,10 +77,14 @@ myst:
 
 ## Version 0.29.3
 
+_January 28, 2026_
+
 - {{ Enhancement }} Improved support for Windows platform in the `python` CLI entrypoint.
   {pr}`6087`
 
 ## Version 0.29.2
+
+_January 21, 2026_
 
 - {{ Enhancement }} Improved support for Windows platform in the `python` CLI entrypoint.
   {pr}`6059` {pr}`6058`
@@ -99,10 +108,14 @@ myst:
 
 ## Version 0.29.1
 
+_January 7, 2026_
+
 - {{ Enhancement }} Improved support for Windows/MacOS platform in the `python` CLI entrypoint.
   {pr}`6018` {pr}`6012` {pr}`6026` {pr}`6034` {pr}`6025`
 
 ## Version 0.29.0
+
+_October 20, 2025_
 
 - {{ Feature }} Added `pyxhr`, a synchronous HTTP client using XMLHttpRequest
   that provides a requests-like API for making synchronous HTTP requests in

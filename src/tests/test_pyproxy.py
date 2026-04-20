@@ -1093,9 +1093,9 @@ def test_nogil(selenium):
 
 
 @pytest.mark.skip_pyproxy_check
-def test_fatal_error(selenium_standalone):
+def test_fatal_error(selenium_standalone_refresh):
     """Inject fatal errors in all the reasonable entrypoints"""
-    selenium_standalone.run_js(
+    selenium_standalone_refresh.run_js(
         """
         let fatal_error = false;
         let old_fatal_error = pyodide._api.fatal_error;

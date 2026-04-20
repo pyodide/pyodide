@@ -5,6 +5,7 @@ from conftest import requires_jspi
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 def test_syncify_awaitable_types_accept(selenium):
     from asyncio import create_task, gather, sleep
@@ -28,6 +29,7 @@ def test_syncify_awaitable_types_accept(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 def test_syncify_awaitable_type_errors(selenium):
     import pytest
@@ -79,6 +81,7 @@ def test_syncify_not_supported(selenium_standalone_noload):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 def test_syncify1(selenium):
     from pyodide.code import run_js
@@ -96,6 +99,7 @@ def test_syncify1(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide(packages=["pytest"])
 def test_syncify2(selenium):
     import importlib.metadata
@@ -114,6 +118,7 @@ def test_syncify2(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide(packages=["pytest"])
 def test_syncify_error(selenium):
     import pytest
@@ -134,6 +139,7 @@ def test_syncify_error(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 def test_syncify_null(selenium):
     from pyodide.code import run_js
@@ -151,6 +157,7 @@ def test_syncify_null(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_syncify_no_suspender(selenium):
     selenium.run_js(
         """
@@ -279,6 +286,7 @@ def test_cpp_exceptions_and_syncify(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_two_way_transfer(selenium):
     res = selenium.run_js(
         """
@@ -315,6 +323,7 @@ def test_two_way_transfer(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_sync_async_mix(selenium):
     res = selenium.run_js(
         """
@@ -361,6 +370,7 @@ def test_sync_async_mix(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_nested_syncify(selenium):
     res = selenium.run_js(
         """
@@ -421,6 +431,7 @@ def test_nested_syncify(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 async def test_promise_methods(selenium):
     from asyncio import sleep
@@ -455,6 +466,7 @@ async def test_promise_methods(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_throw_from_switcher(selenium):
     """
     This used to fail because because a()'s error status got stolen by b(). This
@@ -502,6 +514,7 @@ def test_throw_from_switcher(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_switch_from_except_block(selenium):
     """Test for issue #4566"""
     result = selenium.run_js(
@@ -590,6 +603,7 @@ def test(n):
 
 
 @pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.parametrize(
     "script", [LEAK_SCRIPT1, LEAK_SCRIPT2, LEAK_SCRIPT3, LEAK_SCRIPT4]
 )
@@ -624,6 +638,7 @@ def test_memory_leak(selenium, script):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 def test_run_until_complete(selenium):
     from asyncio import create_task, gather, get_event_loop, sleep
@@ -650,6 +665,7 @@ def test_run_until_complete(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_can_run_sync(selenium):
     results = selenium.run_js(
         """
@@ -720,6 +736,7 @@ def test_can_run_sync(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_async_promising_sync_error(selenium):
     import pytest
 
@@ -746,6 +763,7 @@ def test_async_promising_sync_error(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_async_promising_async_error(selenium):
     import pytest
 

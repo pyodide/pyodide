@@ -52,19 +52,20 @@ sysconfigdata:
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(PYINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
 
-LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS) $$(LIBHACL_SHA2_OBJS)
+LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS)
 
 $(PYBUILD)/.patched_makefile:
 	# Clear out libinstall deps (we build what we want explicitly first)
 	cd $(PYBUILD) && $(SED) -i -e 's/libinstall:.*/libinstall:/' Makefile;
-	# Inject extra objects into libpython3.13.a so we don't have to link them
-	# separately
 	cd $(PYBUILD) && $(SED) -i '/MODOBJS=/s/$$/ $(LIBPYTHON_EXTRA_OBJECTS)/' Makefile
 	touch $(PYBUILD)/.patched_makefile
 
 $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched_makefile
 	# touch libpython3.13.a so we don't remake it due to modified Makefile(??)
 	touch $(PYBUILD)/$(PYLIB)
+	# Ensure build-details.json is present before installing the library
+	# This is included in the CPython `build_wasm` target, but not in our custom build
+	emmake make -C $(PYBUILD) build-details.json
 	CFLAGS="$(CFLAGS_BASE)" emmake make -C $(PYBUILD) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
 	cp $(PYBUILD)/$(PYLIB) $(PYINSTALL)/lib/
 
@@ -200,7 +201,14 @@ $(PYINSTALL)/lib/libsqlite3.a:
 
 python-makefile: $(PYBUILD)/Makefile
 
+CONFIG_SITE_FILE=./Tools/wasm/emscripten/config.site-wasm32-emscripten
+
 $(PYBUILD)/Makefile: $(PYBUILD)/.patched
+	# ac_cv_func_shutdown :
+	#   Emscripten does not support shutdown syscall, but we want to enable it
+	#   to enable shutdown method in NodeSockFS.
+	cd $(PYBUILD) && $(SED) -i 's/^ac_cv_func_shutdown=no//' $(CONFIG_SITE_FILE)
+
 	# --enable-big-digits=30 :
 	#   Python integers have "digits" of size 15 by default on systems with 32
 	#   bit pointers and size 30 on systems with 16 bit pointers. Python uses
@@ -210,7 +218,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 	#   so it is more efficient to use 30 bit digits.
 	( \
 		cd $(PYBUILD); \
-		CONFIG_SITE=./Tools/wasm/config.site-wasm32-emscripten READELF=true emconfigure \
+		CONFIG_SITE=$(CONFIG_SITE_FILE) READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
 			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1" \

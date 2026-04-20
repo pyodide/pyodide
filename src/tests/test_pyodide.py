@@ -99,21 +99,26 @@ def test_code_runner():
     assert CodeRunner("1+1").compile().run() == 2
     assert CodeRunner("1+1\n1+1").compile().run() == 2
     assert CodeRunner("x + 7").compile().run({"x": 3}) == 10
-    cr = CodeRunner("x + 7")
 
-    # Ast transform
+    # Use constants > 255 so they are stored in co_consts rather than loaded
+    # via LOAD_SMALL_INT (Python 3.14+ loads ints 0-255 directly via opcode).
+    cr = CodeRunner("x + 700")
+
+    # Ast transform: change "x + 700" to "x * 300 + 700"
     import ast
 
     l = cr.ast.body[0].value.left  # type: ignore[attr-defined]
     cr.ast.body[0].value.left = ast.BinOp(  # type: ignore[attr-defined]
-        left=l, op=ast.Mult(), right=ast.Constant(value=2)
+        left=l, op=ast.Mult(), right=ast.Constant(value=300)
     )
-    assert cr.compile().run({"x": 3}) == 13
+    assert cr.compile().run({"x": 3}) == 1600
 
-    # Code transform
+    # Code transform: change "x * 300 + 700" to "x * 400 + 500"
     assert cr.code
-    cr.code = cr.code.replace(co_consts=(0, 3, 5, None))
-    assert cr.run({"x": 4}) == 17
+    co_consts = cr.code.co_consts
+    new_consts = tuple({300: 400, 700: 500}.get(c, c) for c in co_consts)
+    cr.code = cr.code.replace(co_consts=new_consts)
+    assert cr.run({"x": 4}) == 2100
 
 
 def test_code_runner_mode():
@@ -349,8 +354,8 @@ def test_relaxed_wrap():
     assert f5(1, 2, 3, 4, b=7, c=9) == [1, (2, 3, 4), 7, {"c": 9}]
 
 
-def test_unpack_archive(selenium_standalone):
-    selenium = selenium_standalone
+def test_unpack_archive(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     js_error = selenium.run_js(
         """
         var error = "";
@@ -814,13 +819,13 @@ def test_create_once_callable(selenium):
             destroyed = True
 
     f = Square()
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     proxy = create_once_callable(f)
-    assert sys.getrefcount(f) == 3
+    assert sys.getrefcount(f) == 2
 
     call7 = run_js("(f) => f(7)")
     assert call7(proxy) == 49
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     with raises(JsException, match="can only be called once"):
         call7(proxy)
     del f
@@ -860,20 +865,20 @@ def test_create_proxy(selenium):
     f = Test()
     import sys
 
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     proxy = create_proxy(f)
-    assert sys.getrefcount(f) == 3
+    assert sys.getrefcount(f) == 2
     assert proxy() == 7
     testAddListener(proxy)
-    assert sys.getrefcount(f) == 3
-    assert testCallListener() == 7
-    assert sys.getrefcount(f) == 3
-    assert testCallListener() == 7
-    assert sys.getrefcount(f) == 3
-    assert testRemoveListener(proxy)
-    assert sys.getrefcount(f) == 3
-    proxy.destroy()
     assert sys.getrefcount(f) == 2
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 2
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 2
+    assert testRemoveListener(proxy)
+    assert sys.getrefcount(f) == 2
+    proxy.destroy()
+    assert sys.getrefcount(f) == 1
     destroyed = False
     del f
     assert destroyed
@@ -1004,8 +1009,8 @@ def test_restore_state(selenium):
 
 @pytest.mark.xfail_browsers(safari="TODO: traceback is not the same on Safari")
 @pytest.mark.skip_refcount_check
-def test_fatal_error(selenium_standalone):
-    assert selenium_standalone.run_js(
+def test_fatal_error(selenium_standalone_refresh):
+    assert selenium_standalone_refresh.run_js(
         """
         try {
             pyodide.runPython(`
@@ -1041,7 +1046,7 @@ def test_fatal_error(selenium_standalone):
         x = x.replace("\n\n", "\n")
         return x
 
-    err_msg = strip_stack_trace(selenium_standalone.logs)
+    err_msg = strip_stack_trace(selenium_standalone_refresh.logs)
     err_msg = "".join(strip_assertions_stderr(err_msg.splitlines(keepends=True)))
     assert (
         err_msg
@@ -1061,7 +1066,7 @@ def test_fatal_error(selenium_standalone):
             )
         ).strip()
     )
-    selenium_standalone.run_js(
+    selenium_standalone_refresh.run_js(
         """
         assertThrows(() => pyodide.runPython, "Error", "Pyodide already fatally failed and can no longer be used.")
         assertThrows(() => pyodide.globals, "Error", "Pyodide already fatally failed and can no longer be used.")
@@ -1070,8 +1075,8 @@ def test_fatal_error(selenium_standalone):
 
 
 @pytest.mark.skip_refcount_check
-def test_exit_error(selenium_standalone):
-    x = selenium_standalone.run_js(
+def test_exit_error(selenium_standalone_refresh):
+    x = selenium_standalone_refresh.run_js(
         """
         try {
             pyodide.runPython(`
@@ -1193,8 +1198,8 @@ def test_js_stackframes(selenium):
     assert normalize_tb(res[: len(frames)]) == frames
 
 
-def test_reentrant_fatal(selenium_standalone):
-    selenium = selenium_standalone
+def test_reentrant_fatal(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     assert selenium.run_js(
         """
         function f(){
@@ -1258,13 +1263,13 @@ def test_weird_throws(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.parametrize("to_throw", ["Object.create(null);", "'Some message'", "null"])
-def test_weird_fatals(selenium_standalone, to_throw):
+def test_weird_fatals(selenium_standalone_refresh, to_throw):
     expected_message = {
         "Object.create(null);": "Error: A value of type object with tag [object Object] was thrown as an error!",
         "'Some message'": "Error: Some message",
         "null": "Error: A value of type object with tag [object Null] was thrown as an error!",
     }[to_throw]
-    msg = selenium_standalone.run_js(
+    msg = selenium_standalone_refresh.run_js(
         f"""
         self.f = function(){{ throw {to_throw} }};
         """
@@ -1366,8 +1371,20 @@ def test_abiVersion_variable(selenium):
         get_config_var("PYODIDE_ABI_VERSION")
         """
     )
+    pyemscripten_platform_version = selenium.run(
+        """
+        from sysconfig import get_config_var
 
-    assert lockfile_abi_version == py_abi_version == core_abi_version
+        get_config_var("PYEMSCRIPTEN_PLATFORM_VERSION")  # PEP 783
+        """
+    )
+
+    assert (
+        lockfile_abi_version
+        == py_abi_version
+        == core_abi_version
+        == pyemscripten_platform_version
+    )
 
 
 @run_in_pyodide
@@ -1395,27 +1412,6 @@ def test_sys_path0(selenium):
     import sys
 
     assert sys.path[0] == ""
-
-
-@pytest.mark.requires_dynamic_linking
-def test_fullstdlib(selenium_standalone_noload):
-    selenium = selenium_standalone_noload
-    selenium.run_js(
-        """
-        let pyodide = await loadPyodide({
-            fullStdLib: true,
-        });
-
-        await pyodide.loadPackage("micropip");
-
-        pyodide.runPython(`
-            import pyodide_js
-            import micropip
-            loaded_packages = micropip.list()
-            assert all((lib in micropip.list()) for lib in pyodide_js._api.lockfile_unvendored_stdlibs)
-        `);
-        """
-    )
 
 
 def test_loadPyodide_relative_index_url(selenium_standalone_noload):
@@ -1475,27 +1471,11 @@ def test_module_not_found_note(selenium_standalone):
     import pytest
 
     from _pyodide._importhook import add_note_to_module_not_found_error
-    from pyodide.code import run_js
 
-    unvendored_stdlibs = ["test"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
     lockfile_packages = [
         "micropip",
     ]
-
-    # When error is wrapped, add_note_to_module_not_found_error is called
-    with pytest.raises(ModuleNotFoundError) as e:
-        run_js("(f) => f()")(lambda: importlib.import_module("test"))
-    assert "unvendored from the Python standard library" in e.value.__notes__[0]
-    assert len(e.value.__notes__) == 1
-
-    for lib in unvendored_stdlibs:
-        with pytest.raises(ModuleNotFoundError) as e:
-            importlib.import_module(lib)
-        add_note_to_module_not_found_error(e.value)
-        add_note_to_module_not_found_error(e.value)
-        assert "unvendored from the Python standard library" in e.value.__notes__[0]
-        assert len(e.value.__notes__) == 1
 
     for lib in removed_stdlibs:
         with pytest.raises(ModuleNotFoundError) as e:
@@ -1666,7 +1646,6 @@ def test_args(selenium_standalone_noload):
             stderrStrings.push(s);
         }
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals : self,
             stdout,
             stderr,
@@ -1955,7 +1934,6 @@ def test_custom_python_stdlib_URL(selenium_standalone_noload, runtime):
         selenium.run_js(
             """
             let pyodide = await loadPyodide({
-                fullStdLib: false,
                 stdLibURL: "./python_stdlib2.zip",
             });
             // Check that we can import stdlib library modules
@@ -2069,17 +2047,20 @@ def test_hiwire_invalid_ref(selenium):
             }
             """
         )
-    msg = "hiwire_{} on invalid reference 77. This is most likely due to use after free. It may also be due to memory corruption."
+    # Index 0 is never allocated in libhiwire. Thus, ref=1 is guaranteed
+    # to be an invalid reference, preventing test flakiness.
+    ref = 1
+    msg = f"hiwire_{{}} on invalid reference {ref}. This is most likely due to use after free. It may also be due to memory corruption."
     with pytest.raises(JsException, match=msg.format("get")):
-        _hiwire_get(77)
+        _hiwire_get(ref)
     assert _api.fail_test
     _api.fail_test = False
     with pytest.raises(JsException, match=msg.format("incref")):
-        _hiwire_incref(77)
+        _hiwire_incref(ref)
     assert _api.fail_test
     _api.fail_test = False
     with pytest.raises(JsException, match=msg.format("decref")):
-        _hiwire_decref(77)
+        _hiwire_decref(ref)
     assert _api.fail_test
     _api.fail_test = False
 
