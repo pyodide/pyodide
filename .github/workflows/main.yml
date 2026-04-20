@@ -355,7 +355,7 @@ jobs:
     needs: [build-core, get_python_version]
     services:
       mysql:
-        image: mysql:8.0
+        image: mysql:8.0.45
         ports:
           - 3306:3306
         env:

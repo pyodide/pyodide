@@ -65,6 +65,19 @@ EM_JS(JsVal, _maybe_sendto_async, (int fd, intptr_t message, int length), {
   return sock.sock_ops.sendmsgAsync(sock, data);
 })
 
+// Try to handle shutdown syscall for NodeSock fds.
+// Returns true if the operation was handled, false otherwise.
+// If true, the result is stored in *result
+EM_JS(bool, _try_shutdown, (int fd, int how, int* result), {
+  var sock = Module.SOCKFS.getSocket(fd);
+
+  if (!sock?.sock_ops?.shutdown)
+    return false;
+
+  Module.HEAP32[result >> 2] = sock.sock_ops.shutdown(sock, how);
+  return true;
+})
+
 // clang-format off
 
 int _orig_syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
@@ -75,6 +88,9 @@ int _orig_syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t ad
 
 int _orig_syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addrlen)
   __attribute__((__import_module__("env"), __import_name__("__syscall_sendto"), __warn_unused_result__));
+
+int _orig_syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
+  __attribute__((__import_module__("env"), __import_name__("__syscall_shutdown"), __warn_unused_result__));
 
 int __syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
 {
@@ -101,6 +117,19 @@ int __syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t a
     return _orig_syscall_sendto(fd, message, length, flags, addr, addr_len);
   }
   return syscall_syncify(p);
+}
+
+int __syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
+{
+  int result = 0;
+  bool handled = _try_shutdown(fd, how, &result);
+  if (!handled) {
+    // Emscripten does not support shutdown so this would fail anyways, but
+    // we still want to return a meaningful error code
+    // https://github.com/emscripten-core/emscripten/issues/13393
+    return _orig_syscall_shutdown(fd, how, d1, d2, d3, d4);
+  }
+  return result;
 }
 
 // clang-format on
