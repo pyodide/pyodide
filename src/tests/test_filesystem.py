@@ -298,7 +298,7 @@ def test_opfs_basic(request, selenium_webworker_standalone):
         content = pathlib.Path("/mnt/opfs/opfs_test/test_read").read_text()
         assert content == "hello_read", content
 
-        # Size chck
+        # Size check
         size = os.path.getsize("/mnt/opfs/opfs_test/test_read")
         assert size == len("hello_read"), size
 
