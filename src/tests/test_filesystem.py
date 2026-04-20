@@ -256,6 +256,7 @@ def test_nativefs_dir(request, selenium_standalone):
         """
     )
 
+
 @pytest.mark.requires_dynamic_linking
 @only_chrome
 def test_opfs_basic(request, selenium_webworker_standalone):
@@ -321,12 +322,13 @@ def test_opfs_basic(request, selenium_webworker_standalone):
     )
     assert "test_read" in entries
 
+
 @pytest.mark.requires_dynamic_linking
 @only_chrome
 def test_opfs_readdir(request, selenium_webworker_standalone):
     if request.config.option.runner == "playwright":
         pytest.xfail("Playwright doesn't support file system access APIs")
-    
+
     selenium = selenium_webworker_standalone
 
     # Setup: create nested directory structure in OPFS
@@ -393,6 +395,7 @@ def test_opfs_readdir(request, selenium_webworker_standalone):
         """
     )
     assert result == "ok"
+
 
 @pytest.mark.requires_dynamic_linking
 @only_chrome
@@ -476,7 +479,8 @@ def test_opfs_large_file(request, selenium_webworker_standalone):
         {"size": size, "growth": growth}
         """
     )
-    assert result["size"] == 10 * 1024 * 1024    
+    assert result["size"] == 10 * 1024 * 1024
+
 
 @pytest.mark.requires_dynamic_linking
 @only_chrome
@@ -517,7 +521,7 @@ def test_opfs_pandas_compatibility(request, selenium_webworker_standalone):
 
         await pyodide.mountOPFS("/mnt/opfs")
 
-        import pandas as pd 
+        import pandas as pd
         df = pd.read_csv("/mnt/opfs/opfs_pandas_test/test.csv")
 
         # Verify end-to-end : header, row count, numeric parsing, string parsing
@@ -531,6 +535,7 @@ def test_opfs_pandas_compatibility(request, selenium_webworker_standalone):
         """
     )
     assert result["rows"] == 1000
+
 
 @pytest.mark.requires_dynamic_linking
 @only_chrome
@@ -613,6 +618,7 @@ def test_opfs_parquet_partial_read(request, selenium_webworker_standalone):
         """
     )
     assert result["rows"] == 10000
+
 
 @only_chrome
 def test_nativefs_errors(selenium):
