@@ -560,6 +560,10 @@ export interface API {
   LiteralMap: any;
   sitePackages: string;
   initializeNodeSockFS: typeof initializeNodeSockFS;
+  loadOPFS: (
+    mount: any,
+    opfsHandle: FileSystemDirectoryHandle,
+  ) => Promise<void>;
 }
 
 // Subset of the API and Module that the package manager needs
