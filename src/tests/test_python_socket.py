@@ -546,7 +546,6 @@ def test_socket_shutdown(selenium_nodesock):
 
     @run_in_pyodide
     def run(selenium, host, port):
-        import socket
 
         result = run(selenium_nodesock, host, port)
         assert result == "ok", f"Expected 'ok', got {result!r}"
