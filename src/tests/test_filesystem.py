@@ -321,6 +321,79 @@ def test_opfs_basic(request, selenium_webworker_standalone):
     )
     assert "test_read" in entries
 
+@pytest.mark.requires_dynamic_linking
+@only_chrome
+def test_opfs_readdir(request, selenium_webworker_standalone):
+    if request.config.option.runner == "playwright":
+        pytest.xfail("Playwright doesn't support file system access APIs")
+    
+    selenium = selenium_webworker_standalone
+
+    # Setup: create nested directory structure in OPFS
+    # /opfs_readdir_test/
+    #   ├── a.txt
+    #   ├── b.txt
+    #   └── nested/
+    #       └── c.txt
+    selenium.run_js(
+        """
+        const root = await navigator.storage.getDirectory();
+        const testDir = await root.getDirectoryHandle('opfs_readdir_test', {create: true});
+
+        for (const name of ['a.txt', 'b.txt']) {
+            const fileHandle = await testDir.getFileHandle(name, {create: true});
+            const writable = await fileHandle.createWritable();
+            await writable.write(`content of ${name}`);
+            await writable.close();
+        }
+
+        const nestedDir = await testDir.getDirectoryHandle('nested', {create: true});
+        const nestedFileHandle = await nestedDir.getFileHandle('c.txt', {create: true});
+        const nestedWritable = await nestedFileHandle.createWritable();
+        await nestedWritable.write("content of c.txt");
+        await nestedWritable.close();
+        """
+    )
+
+    result = selenium.run_webworker(
+        """
+        from js import pyodide
+        await pyodide.mountOPFS("/mnt/opfs")
+
+        import os
+
+        # readdir - top level
+        top = sorted(os.listdir("/mnt/opfs/opfs_readdir_test"))
+        assert top == ["a.txt", "b.txt", "nested"], top
+
+        # readdir - nested
+        nested = sorted(os.listdir("/mnt/opfs/opfs_readdir_test/nested"))
+        assert nested == ["c.txt"], nested
+
+        # os.walk
+        walked = []
+        for dirpath, dirnames, filenames in os.walk("/mnt/opfs/opfs_readdir_test"):
+            walked.append((dirpath, sorted(dirnames), sorted(filenames)))
+
+        # os.path.isfile / isdir
+        assert os.path.isfile("/mnt/opfs/opfs_readdir_test/a.txt")
+        assert os.path.isfile("/mnt/opfs/opfs_readdir_test/b.txt")
+        assert os.path.isfile("/mnt/opfs/opfs_readdir_test/nested/c.txt")
+        assert not os.path.isfile("/mnt/opfs/opfs_readdir_test/nested")
+        assert os.path.isdir("/mnt/opfs/opfs_readdir_test/nested")
+        assert os.path.isdir("/mnt/opfs/opfs_readdir_test")
+        assert not os.path.isdir("/mnt/opfs/opfs_readdir_test/a.txt")
+
+        # Non-existent paths
+        assert not os.path.exists("/mnt/opfs/opfs_readdir_test/nonexistent.txt")
+        assert not os.path.isfile("/mnt/opfs/opfs_readdir_test/nonexistent.txt")
+        assert not os.path.isdir("/mnt/opfs/opfs_readdir_test/nonexistent.txt")
+
+        "ok"
+        """
+    )
+    assert result == "ok"
+
 @only_chrome
 def test_nativefs_errors(selenium):
     selenium.run_js(
