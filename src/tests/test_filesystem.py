@@ -256,6 +256,70 @@ def test_nativefs_dir(request, selenium_standalone):
         """
     )
 
+@pytest.mark.requires_dynamic_linking
+@only_chrome
+def test_opfs_basic(request, selenium_webworker_standalone):
+    # OPFS is only accessible in dedicated Web Worker contexts so we use
+    # selenium_webworker_standalone. FileSystemSyncAccessHandle is only
+    # available in workers.
+
+    if request.config.option.runner == "playwright":
+        pytest.xfail("Playwright doesn't support file system access APIs")
+
+    selenium = selenium_webworker_standalone
+
+    # SetUp: create tet files in OPFS from the main thread.
+    # OPFS is origin-scoped so the worker will see these files.
+    selenium.run_js(
+        """
+        const root = await.navigator.storage.getDirectory();
+        const testdir = await root.getDirectoryHandle('opfs_test', {create: true });
+        const fileHandle = await testDir.getFileHandle('test_read', {create: true});
+        const writable = await fileHandle.createWritable();
+        await writable.write("hello_read");
+        await writable.close();
+        """
+    )
+
+    # Mount OPFS in the worker and read the file
+    result = selenium.run_webworker(
+        """
+        from js import pyodide
+        await pyodide.mountOPFS("/mnt/opfs")
+
+        import os
+        import pathlib
+
+        # Read
+        assert "opfs_test" in os.listdir("/mnt/opfs"), str(os.listdir("/mnt/opfs"))
+        assert "test_read" in os.listdir("/mnt/opfs/opfs_test")
+
+        content = pathlib.Path("/mnt/opfs/opfs_test/test_read").read_text()
+        assert content == "hello_read", content
+
+        # Size chck
+        size = os.path.getsize("/mnt/opfs/opfs_test/test_read")
+        assert size == len("hello_read"), size
+
+        "ok"
+        """
+    )
+
+    assert result == "ok"
+
+    # Verify from main thread: file should still exist in OPFS
+    entries = selenium.run_js(
+        """
+        const root = await navigator.storage.getDirectory();
+        const testDir = await root.getDirectoryHandle('opfs_test');
+        const result = {};
+        for await (const [key, value] of testDir.entries()) {
+            result[key] = value;
+        }
+        return result;
+        """
+    )
+    assert "test_read" in entries
 
 @only_chrome
 def test_nativefs_errors(selenium):
