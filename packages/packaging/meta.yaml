@@ -1,16 +1,14 @@
 package:
   name: packaging
-  version: "24.2"
+  version: "26.1"
   tag:
     - pytest
     - core
   top-level:
     - packaging
 source:
-  sha256: c228a6dc5e932d346bc5739379109d49e8853dd8223571c7c5b55260edc0b97f
-  url: https://files.pythonhosted.org/packages/d0/63/68dbb6eb2de9cb10ee4c9c14a0148804425e13c4fb20d61cce69f53106da/packaging-24.2.tar.gz
-  patches:
-    - patches/0001-Add-Pyodide-compatibility.patch
+  sha256: f042152b681c4bfac5cae2742a55e103d27ab2ec0f3d88037136b6bfe7c9c5de
+  url: https://files.pythonhosted.org/packages/source/p/packaging/packaging-26.1.tar.gz
 about:
   home: https://github.com/pypa/packaging
   PyPI: https://pypi.org/project/packaging
