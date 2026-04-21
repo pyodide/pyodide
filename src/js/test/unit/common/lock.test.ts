@@ -1,16 +1,17 @@
-import * as chai from "chai";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { createLock } from "../../../common/lock";
 
 describe("createLock", () => {
   it("should create a lock", () => {
     const lock = createLock();
-    chai.assert.isFunction(lock);
+    assert.ok(lock instanceof Function);
   });
 
   it("should acquire the lock", async () => {
     const lock = createLock();
     const release = await lock();
-    chai.assert.isFunction(release);
+    assert.ok(release instanceof Function);
   });
 
   it("should release the lock", async () => {
@@ -25,14 +26,14 @@ describe("createLock", () => {
     const release = await lock();
 
     setTimeout(() => {
-      chai.assert.isFalse(released);
+      assert.ok(released === false);
       release();
       released = true;
     }, 100);
 
-    chai.assert.isFalse(released);
+    assert.ok(released === false);
     const release2 = await lock();
-    chai.assert.isTrue(released);
+    assert.ok(released);
 
     release2();
   });

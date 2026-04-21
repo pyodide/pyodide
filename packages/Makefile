@@ -1,7 +1,11 @@
-.PHONY=pyodide-build
+.PHONY: pyodide-build
 
 export PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
+
+# Set default packages if not specified
+# These are enough to run the core test suite
+PYODIDE_PACKAGES ?= tag:pytest,tag:pyodide.test
 
 all:
 ifeq ($(ENABLE_PREBUILT_PACKAGES),1)

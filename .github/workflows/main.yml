@@ -17,19 +17,47 @@ jobs:
     outputs:
       PYVERSION: ${{ steps.get_python_version.outputs.PYVERSION }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Read the Python version from Makefile.envs
         id: get_python_version
         run: |
           echo "PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)"  >> "$GITHUB_OUTPUT"
+
+  check-docs:
+    runs-on: ubuntu-latest
+    needs: get_python_version
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+      - name: Install Python requirements
+        shell: bash -l {0}
+        run: |
+          python3 -m pip install -r docs/requirements-doc.txt
+      - name: Install node requirements
+        shell: bash -l {0}
+        run: |
+          cd src/js && npm i
+      - name: Build docs
+        shell: bash -l {0}
+        run: |
+          make -C docs/ html
+      - name: Check docs
+        shell: bash -l {0}
+        run: |
+          ./tools/check_documented_functions.py --check
+
   test-python:
     runs-on: ubuntu-latest
     needs: get_python_version
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
       - name: Install requirements
@@ -51,7 +79,7 @@ jobs:
               --runtime=host \
               --cov=pyodide \
               src tools/
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         with:
           fail_ci_if_error: false
 
@@ -61,9 +89,9 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            pyodide_packages: "tag:core,numpy${{ needs.test-scipy-trigger.outputs.test-scipy == 'true' && ',scipy' || '' }}"
+            pyodide_packages: "tag:core,tag:pyodide.test,numpy${{ needs.test-scipy-trigger.outputs.test-scipy == 'true' && ',scipy' || '' }}"
           - os: macos-14
-            pyodide_packages: "tag:core,numpy"
+            pyodide_packages: "tag:core,tag:pyodide.test,numpy"
     runs-on: ${{ matrix.os }}
     needs: [test-scipy-trigger]
     env:
@@ -73,15 +101,19 @@ jobs:
       CCACHE_DIR: /tmp/ccache
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Cache ccache output
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             /tmp/ccache
           key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.21'
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
@@ -98,6 +130,7 @@ jobs:
           which python
           which node
           which npm
+          which go
 
       - name: Install dependencies (ubuntu)
         shell: bash -l {0}
@@ -143,8 +176,13 @@ jobs:
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           ccache -z
-          PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make
+          PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make -j${{ env.PYODIDE_JOBS }}
           ccache -s
+
+      - name: Build windows python.exe
+        shell: bash -l {0}
+        run: |
+          make dist/python.exe
 
       - name: check-size
         shell: bash -l {0}
@@ -155,10 +193,17 @@ jobs:
           ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
       - name: Store artifacts build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
+          retention-days: 60
+
+      - name: Store sysconfig
+        uses: actions/upload-artifact@v7
+        with:
+          name: core-sysconfig-${{ runner.os }}
+          path: ./cpython/installs/
           retention-days: 60
 
   test-core:
@@ -175,12 +220,12 @@ jobs:
         browser: [safari]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
 
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
@@ -188,7 +233,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: pyodide-env
-          python-version: "3.13"
+          python-version: "3.14"
           channels: conda-forge
 
       - name: install test requirements
@@ -202,6 +247,32 @@ jobs:
           runner: ${{ matrix.runner }}
           browser: ${{ matrix.browser }}
 
+      - name: Safari pre-test cleanup
+        if: matrix.browser == 'safari'
+        shell: bash -l {0}
+        run: |
+          # Kill any stale Safari/safaridriver processes
+          pkill -9 Safari 2>/dev/null || true
+          pkill -9 safaridriver 2>/dev/null || true
+          sleep 3
+
+          # Verify safaridriver can start and respond
+          safaridriver --port 14444 &
+          DRIVER_PID=$!
+
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:14444/status > /dev/null 2>&1; then
+              echo "✓ SafariDriver responding"
+              kill $DRIVER_PID 2>/dev/null || true
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "✗ SafariDriver failed to respond"
+          kill $DRIVER_PID 2>/dev/null || true
+          exit 1
+
       - name: run core tests
         env:
           BROWSER: ${{ matrix.browser }}
@@ -210,7 +281,7 @@ jobs:
         run: |
           ls -lh
           ls -lh dist/
-          tools/pytest_wrapper.py src packages/micropip/ tools/ \
+          tools/pytest_wrapper.py src \
             -v \
             -k "not webworker" \
             --runtime="${BROWSER}-no-host" \
@@ -240,6 +311,122 @@ jobs:
           paths: "test-results/*.xml"
         if: always()
 
+  test-cmdline-runner:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    needs: [build-core, get_python_version]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v8
+        with:
+          # To test Windows cmdline runner we always use the Linux build artifact
+          name: core-build-Linux
+          path: ./dist/
+
+      - name: Download sysconfig artifact
+        uses: actions/download-artifact@v8
+        with:
+          # To test Windows cmdline runner we always use the Linux artifact
+          name: core-sysconfig-Linux
+          path: ./cpython/installs/
+
+      - name: Run cmdline-runner tests
+        shell: bash -l {0}
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            ./tools/cmdline_runner_test/run.bat
+          else
+            ./tools/cmdline_runner_test/run
+          fi
+
+  test-db-integration:
+    runs-on: ubuntu-latest
+    needs: [build-core, get_python_version]
+    services:
+      mysql:
+        image: mysql:8.0.45
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: rootpw
+          MYSQL_ROOT_HOST: "%"
+        options: >-
+          --health-cmd="mysqladmin ping -prootpw --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+      postgres:
+        image: postgres:16
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_HOST_AUTH_METHOD: md5
+          POSTGRES_INITDB_ARGS: "--auth-host=md5"
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: core-build-Linux
+          path: ./dist/
+
+      - name: Install test requirements
+        shell: bash -l {0}
+        run: |
+          set -e -x
+          mkdir -p test-results
+          python -m pip install -r requirements.txt
+          python -m pip install pymysql cryptography pg8000
+          make npm-link
+
+      - name: Run database integration tests (node)
+        shell: bash -l {0}
+        env:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: "3306"
+          MYSQL_ROOT_USER: root
+          MYSQL_ROOT_PASSWORD: rootpw
+          POSTGRES_HOST: 127.0.0.1
+          POSTGRES_PORT: "5432"
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test
+        run: |
+          source pyodide_env.sh
+          tools/pytest_wrapper.py \
+            --verbose \
+            --runtime=node-no-host \
+            -m db \
+            src/tests/test_database_driver.py
+
   test-scipy-trigger:
     name: test-scipy-trigger
     runs-on: ubuntu-latest
@@ -247,7 +434,7 @@ jobs:
       test-scipy: ${{ steps.check-build-trigger.outputs.trigger }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -260,9 +447,10 @@ jobs:
           COMMIT_MSG=$(git log --no-merges -1 --oneline)
 
           # The scipy tests will be triggered on push or on pull_request when the commit
-          # message contains "[scipy]"
+          # message contains "[scipy]" or when the PR has `scipy` label
           if [[ "$GITHUB_EVENT_NAME" == push ||
-                "$COMMIT_MSG" =~ \[scipy\] ]]; then
+                "$COMMIT_MSG" =~ \[scipy\] ||
+                "${{ contains(github.event.pull_request.labels.*.name, 'scipy') }}" == "true" ]]; then
               echo "trigger=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -276,10 +464,10 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
@@ -309,10 +497,10 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
@@ -339,10 +527,10 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/

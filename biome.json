@@ -1,0 +1,53 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.1.1/schema.json",
+	"vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
+	"files": {
+		"includes": [
+			"**/*",
+			"!**/*.gen.*",
+			"!**/_build/**",
+			"!**/build/**",
+			"!**/.artifacts/**",
+			"!**/.docker_home/**",
+			"!**/.mypy_cache/**",
+			"!**/emsdk/**",
+			"!**/cpython/**",
+			"!**/.vscode/**",
+			"!**/.pytest_cache/**",
+			"!**/.clang-format",
+			"!**/packages/libf2c/extras/make.inc",
+			"!**/src/js/struct_info_generated.json"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"formatWithErrors": false,
+		"indentStyle": "space",
+		"indentWidth": 2,
+		"lineEnding": "lf",
+		"lineWidth": 80,
+		"attributePosition": "auto",
+		"bracketSameLine": false,
+		"bracketSpacing": true,
+		"expand": "auto",
+		"useEditorconfig": true
+	},
+	"linter": { "enabled": false, "rules": { "recommended": true } },
+	"javascript": {
+		"formatter": {
+			"quoteProperties": "asNeeded",
+			"trailingCommas": "all",
+			"semicolons": "always",
+			"arrowParentheses": "always",
+			"bracketSameLine": false,
+			"quoteStyle": "double",
+			"attributePosition": "auto",
+			"bracketSpacing": true
+		}
+	},
+	"html": { "formatter": { "selfCloseVoidElements": "always" } },
+	"assist": {
+		"enabled": false,
+		"actions": { "source": { "organizeImports": "on" } }
+	}
+}

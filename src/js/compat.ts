@@ -1,14 +1,6 @@
 import ErrorStackParser from "./vendor/stackframe/error-stack-parser";
-import {
-  IN_NODE,
-  IN_NODE_ESM,
-  IN_BROWSER_MAIN_THREAD,
-  IN_BROWSER_WEB_WORKER,
-  IN_NODE_COMMONJS,
-  IN_SHELL,
-} from "./environments";
+import { RUNTIME_ENV } from "./environments";
 import { Lockfile } from "./types";
-
 let nodeUrlMod: typeof import("node:url");
 let nodePath: typeof import("node:path");
 let nodeVmMod: typeof import("node:vm");
@@ -17,14 +9,14 @@ export let nodeFSMod: typeof import("node:fs");
 /** @private */
 export let nodeFsPromisesMod: typeof import("node:fs/promises");
 
-declare function load(a: string): Promise<void>;
 declare function read(a: string): string;
 declare function readbuffer(a: string): ArrayBuffer;
 
 declare var globalThis: {
-  importScripts: (url: string) => void;
+  importScripts?: (url: string) => void;
   document?: typeof document;
   fetch?: typeof fetch;
+  location?: URL;
 };
 
 /**
@@ -33,7 +25,7 @@ declare var globalThis: {
  * @private
  */
 export async function initNodeModules() {
-  if (!IN_NODE) {
+  if (!RUNTIME_ENV.IN_NODE) {
     return;
   }
   // @ts-ignore
@@ -54,9 +46,9 @@ export async function initNodeModules() {
   if (typeof require !== "undefined") {
     return;
   }
-  // These are all the packages required in pyodide.asm.js. You can get this
+  // These are all the packages required in pyodide.asm.mjs. You can get this
   // list with:
-  // $ grep -o 'require("[a-z]*")' pyodide.asm.js  | sort -u
+  // $ grep -o 'require("[a-z]*")' pyodide.asm.mjs  | sort -u
   const fs = nodeFSMod;
   const crypto = await import("node:crypto");
   const ws = await import("ws");
@@ -74,6 +66,10 @@ export async function initNodeModules() {
   };
 }
 
+export function isAbsolute(path: string): boolean {
+  return path.includes("://") || path.startsWith("/");
+}
+
 function node_resolvePath(path: string, base?: string): string {
   return nodePath.resolve(base || ".", path);
 }
@@ -87,9 +83,9 @@ function browser_resolvePath(path: string, base?: string): string {
 }
 
 export let resolvePath: (rest: string, base?: string) => string;
-if (IN_NODE) {
+if (RUNTIME_ENV.IN_NODE) {
   resolvePath = node_resolvePath;
-} else if (IN_SHELL) {
+} else if (RUNTIME_ENV.IN_SHELL) {
   resolvePath = (x) => x;
 } else {
   resolvePath = browser_resolvePath;
@@ -102,7 +98,7 @@ if (IN_NODE) {
  */
 export let pathSep: string;
 
-if (!IN_NODE) {
+if (!RUNTIME_ENV.IN_NODE) {
   pathSep = "/";
 }
 
@@ -187,9 +183,9 @@ export let getBinaryResponse: (
 ) =>
   | { response: Promise<Response>; binary?: undefined }
   | { response?: undefined; binary: Promise<Uint8Array> };
-if (IN_NODE) {
+if (RUNTIME_ENV.IN_NODE) {
   getBinaryResponse = node_getBinaryResponse;
-} else if (IN_SHELL) {
+} else if (RUNTIME_ENV.IN_SHELL) {
   getBinaryResponse = shell_getBinaryResponse;
 } else {
   getBinaryResponse = browser_getBinaryResponse;
@@ -211,40 +207,21 @@ export async function loadBinaryFile(
 }
 
 /**
- * Currently loadScript is only used once to load `pyodide.asm.js`.
+ * Load the pyodide.asm.mjs ES6 module
  * @param url
  * @private
  */
-export let loadScript: (url: string) => Promise<void>;
-
-if (IN_BROWSER_MAIN_THREAD) {
-  // browser
-  loadScript = async (url) => await import(/* webpackIgnore: true */ url);
-} else if (IN_BROWSER_WEB_WORKER) {
-  // webworker
-  loadScript = async (url) => {
-    try {
-      // use importScripts in classic web worker
-      globalThis.importScripts(url);
-    } catch (e) {
-      // importScripts throws TypeError in a module type web worker, use import instead
-      if (e instanceof TypeError) {
-        await import(/* webpackIgnore: true */ url);
-      } else {
-        throw e;
-      }
-    }
-  };
-} else if (IN_NODE) {
+export let loadScript: (url: string) => Promise<any>;
+if (RUNTIME_ENV.IN_NODE) {
   loadScript = nodeLoadScript;
-} else if (IN_SHELL) {
-  loadScript = load;
 } else {
-  throw new Error("Cannot determine runtime environment");
+  loadScript = async (url) => {
+    return await import(/* webpackIgnore: true */ url);
+  };
 }
 
 /**
- * Load a text file and executes it as Javascript
+ * Load the pyodide.asm.mjs ES6 module in Node.js.
  * @param url The path to load. May be a url or a relative file system path.
  * @private
  */
@@ -254,23 +231,25 @@ async function nodeLoadScript(url: string) {
     url = url.slice("file://".length);
   }
   if (url.includes("://")) {
-    // If it's a url, load it with fetch then eval it.
-    nodeVmMod.runInThisContext(await (await fetch(url)).text());
+    // If it's a url, use dynamic import.
+    return await import(/* webpackIgnore: true */ url);
   } else {
     // Otherwise, hopefully it is a relative path we can load from the file
     // system.
-    await import(/* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href);
+    return await import(
+      /* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href
+    );
   }
 }
 
 export async function loadLockFile(lockFileURL: string): Promise<Lockfile> {
-  if (IN_NODE) {
+  if (RUNTIME_ENV.IN_NODE) {
     await initNodeModules();
     const package_string = await nodeFsPromisesMod.readFile(lockFileURL, {
       encoding: "utf8",
     });
     return JSON.parse(package_string);
-  } else if (IN_SHELL) {
+  } else if (RUNTIME_ENV.IN_SHELL) {
     const package_string = read(lockFileURL);
     return JSON.parse(package_string);
   } else {
@@ -284,7 +263,7 @@ export async function loadLockFile(lockFileURL: string): Promise<Lockfile> {
  * This is used to guess the indexURL when it is not provided.
  */
 export async function calculateDirname(): Promise<string> {
-  if (IN_NODE_COMMONJS) {
+  if (RUNTIME_ENV.IN_NODE_COMMONJS) {
     return __dirname;
   }
 
@@ -296,11 +275,11 @@ export async function calculateDirname(): Promise<string> {
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
 
-  if (IN_NODE && !fileName.startsWith("file://")) {
+  if (RUNTIME_ENV.IN_NODE && !fileName.startsWith("file://")) {
     fileName = `file://${fileName}`; // Error stack filenames are not starting with `file://` in `Bun`
   }
 
-  if (IN_NODE_ESM) {
+  if (RUNTIME_ENV.IN_NODE_ESM) {
     const nodePath = await import("node:path");
     const nodeUrl = await import("node:url");
 
@@ -312,7 +291,7 @@ export async function calculateDirname(): Promise<string> {
   const indexOfLastSlash = fileName.lastIndexOf(pathSep);
   if (indexOfLastSlash === -1) {
     throw new Error(
-      "Could not extract indexURL path from pyodide module location",
+      "Could not extract indexURL path from pyodide module location. Please pass the indexURL explicitly to loadPyodide.",
     );
   }
   return fileName.slice(0, indexOfLastSlash);
@@ -322,8 +301,11 @@ export async function calculateDirname(): Promise<string> {
  * Ensure that the directory exists before trying to download files into it (Node.js only).
  * @param dir The directory to ensure exists
  */
-export async function ensureDirNode(dir: string) {
-  if (!IN_NODE) {
+export async function ensureDirNode(dir?: string) {
+  if (!RUNTIME_ENV.IN_NODE) {
+    return;
+  }
+  if (!dir) {
     return;
   }
 
@@ -336,4 +318,23 @@ export async function ensureDirNode(dir: string) {
       recursive: true,
     });
   }
+}
+
+/**
+ * Calculates the install base url for the package manager.
+ * exported for testing
+ * @param lockFileURL
+ * @returns the install base url
+ * @private
+ */
+export function calculateInstallBaseUrl(lockFileURL: string) {
+  // 1. If the lockfile URL includes a path with slash (file url in Node.js or http url in browser), use the directory of the lockfile URL
+  // 2. Otherwise, fallback to the current location
+  //    2.1. In the browser, use `location` to get the current location
+  //    2.2. In Node.js just use the pwd
+  return (
+    lockFileURL.substring(0, lockFileURL.lastIndexOf("/") + 1) ||
+    globalThis.location?.toString() ||
+    "."
+  );
 }

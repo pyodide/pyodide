@@ -1,48 +1,52 @@
-const chai = require("chai");
+import { expect, test } from "./fixture";
 
 // for a persistence-related browser test see /src/tests/test_filesystem.py
 
-describe("FS", () => {
-  it("no directory", async () => {
+test.describe("FS", () => {
+  test("no directory", async ({ page }) => {
     const factory = async () => {
       const result = pyodide.runPython(
         "import os; os.path.exists('/tmp/js-test')",
       );
       return result;
     };
-    const result = await chai.assert.isFulfilled(page.evaluate(factory));
-    chai.assert.isFalse(result);
+    const result = await page.evaluate(factory);
+    expect(result).toBeFalsy();
   });
-  it("has directory", async () => {
+  test("has directory", async ({ page }) => {
     const factory = async () => {
-      pyodide.FS.mkdir("/tmp/js-test");
+      await pyodide.FS.mkdir("/tmp/js-test");
       const result = pyodide.runPython(
         "import os; os.path.exists('/tmp/js-test')",
       );
       return result;
     };
-    const result = await chai.assert.isFulfilled(page.evaluate(factory));
-    chai.assert.isTrue(result);
+    const result = await page.evaluate(factory);
+    expect(result).toBeTruthy();
   });
 });
 
-describe("PATH", () => {
-  it("exists", async () => {
-    chai.assert.exists(await page.evaluate(() => pyodide.PATH));
+test.describe("PATH", () => {
+  test("exists", async ({ page }) => {
+    expect(await page.evaluate(() => pyodide.PATH)).toBeDefined();
   });
-  it("has expected keys", async () => {
-    chai.assert.exists(await page.evaluate(() => pyodide.PATH.dirname));
-    chai.assert.exists(await page.evaluate(() => pyodide.PATH.normalize));
+  test("has expected keys", async ({ page }) => {
+    expect(
+      await page.evaluate(() => typeof pyodide.PATH.dirname === "function"),
+    ).toBeDefined();
+    expect(
+      await page.evaluate(() => typeof pyodide.PATH.normalize === "function"),
+    ).toBeDefined();
   });
 });
 
-describe("ERRNO_CODES", () => {
-  it("exists", async () => {
-    chai.assert.exists(await page.evaluate(() => pyodide.ERRNO_CODES));
+test.describe("ERRNO_CODES", () => {
+  test("exists", async ({ page }) => {
+    expect(await page.evaluate(() => pyodide.ERRNO_CODES)).toBeDefined();
   });
-  it("has expected keys", async () => {
-    chai.assert.exists(await page.evaluate(() => pyodide.ERRNO_CODES.ENOENT));
-    chai.assert.exists(await page.evaluate(() => pyodide.ERRNO_CODES.EPERM));
-    chai.assert.exists(await page.evaluate(() => pyodide.ERRNO_CODES.EEXIST));
+  test("has expected keys", async ({ page }) => {
+    expect(await page.evaluate(() => pyodide.ERRNO_CODES.ENOENT)).toBeDefined();
+    expect(await page.evaluate(() => pyodide.ERRNO_CODES.EPERM)).toBeDefined();
+    expect(await page.evaluate(() => pyodide.ERRNO_CODES.EEXIST)).toBeDefined();
   });
 });

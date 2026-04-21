@@ -1,16 +1,14 @@
 package:
   name: numpy
-  version: 2.2.5
+  version: 2.4.3
   tag:
     - cross-build
     - min-scipy-stack
   top-level:
     - numpy
 source:
-  url: https://files.pythonhosted.org/packages/source/n/numpy/numpy-2.2.5.tar.gz
-  sha256: a9c0d994680cd991b1cb772e8b297340085466a6fe964bc9d4e80f5e2f43c291
-  patches:
-    - patches/0001-TST-Prevent-import-error-when-tests-are-not-included.patch
+  url: https://files.pythonhosted.org/packages/source/n/numpy/numpy-2.4.3.tar.gz
+  sha256: 483a201202b73495f00dbc83796c6ae63137a9bdade074f7648b3e32613412dd
 
 build:
   unvendor-tests: false # we do this on our own using Meson's install tags
@@ -19,6 +17,7 @@ build:
     setup-args=-Dallow-noblas=true
     setup-args=--cross-file=${MESON_CROSS_FILE}
     install-args=--tags=runtime,python-runtime,devel
+    build-dir=build
   # numpy creates numpy/distutils/__pycache__ directory during the build.
   # It breaks our test because there is a .pyc in the directory.
   post: |

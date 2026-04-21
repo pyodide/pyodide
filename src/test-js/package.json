@@ -1,17 +1,13 @@
 {
   "name": "test",
   "devDependencies": {
-    "mocha": "^9.0.2",
     "ts-node": "^10.4.0"
   },
   "scripts": {
-    "test": "mocha --loader node_modules/ts-node/dist/esm.js",
     "test-types": "tsd"
   },
-  "mocha": {
-    "timeout": 30000
-  },
   "dependencies": {
-    "tsd": "^0.20.0"
+    "tsd": "^0.33.0",
+    "typescript": "5.8"
   }
 }

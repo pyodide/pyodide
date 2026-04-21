@@ -11,10 +11,10 @@ Toolkit](https://github.com/WebAssembly/wabt) is super helpful for analyzing
 Also whenever you can reproduce a bug in chromium make sure to use a
 chromium-based browser (e.g., chrome) for debugging. They are better at it.
 
-## Run `prettier` on `pyodide.asm.js`
+## Run `prettier` on `pyodide.asm.mjs`
 
 Before doing any debugger I strongly recommend running
-`npx prettier -w pyodide.asm.js`. This makes everything much easier.
+`npx prettier -w pyodide.asm.mjs`. This makes everything much easier.
 
 (build-with-symbols)=
 

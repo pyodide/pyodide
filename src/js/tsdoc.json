@@ -18,6 +18,10 @@
     {
       "tagName": "@dockind",
       "syntaxKind": "block"
+    },
+    {
+      "tagName": "@docgroup",
+      "syntaxKind": "block"
     }
   ]
 }

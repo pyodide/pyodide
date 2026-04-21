@@ -1,7 +1,7 @@
-import * as chai from "chai";
-import sinon from "sinon";
-import { genMockAPI, genMockModule } from "./test-helper.ts";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { Installer } from "../../installer.ts";
+import { genMockAPI, genMockModule } from "./test-helper.ts";
 
 describe("Installer", () => {
   it("should initialize with API and Module", () => {
@@ -10,7 +10,7 @@ describe("Installer", () => {
     const _ = new Installer(mockApi, mockMod);
   });
 
-  it("should call package_loader.unpack_buffer.callKwargs", async () => {
+  it("should call package_loader.unpack_buffer.callKwargs", async (t) => {
     // @ts-ignore
     globalThis.DEBUG = false;
 
@@ -18,9 +18,11 @@ describe("Installer", () => {
     const mockMod = genMockModule();
     const installer = new Installer(mockApi, mockMod);
 
-    const unpackBufferSpy = sinon
-      .stub(mockApi.package_loader.unpack_buffer, "callKwargs")
-      .returns([]);
+    const unpackBufferSpy = t.mock.method(
+      mockApi.package_loader.unpack_buffer,
+      "callKwargs",
+      () => [],
+    );
 
     const metadata = new Map<string, string>();
     metadata.set("key", "value");
@@ -31,17 +33,13 @@ describe("Installer", () => {
       metadata,
     );
 
-    chai.assert.isTrue(unpackBufferSpy.calledOnce);
-    chai.assert.isTrue(
-      unpackBufferSpy.calledWith({
-        buffer: new Uint8Array(),
-        filename: "filename",
-        extract_dir: "installDir",
-        metadata,
-        calculate_dynlibs: true,
-      }),
-    );
-
-    unpackBufferSpy.restore();
+    assert.equal(unpackBufferSpy.mock.callCount(), 1);
+    assert.deepEqual(unpackBufferSpy.mock.calls[0].arguments[0], {
+      buffer: new Uint8Array(),
+      filename: "filename",
+      extract_dir: "installDir",
+      metadata,
+      calculate_dynlibs: true,
+    });
   });
 });

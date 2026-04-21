@@ -1,7 +1,8 @@
+import re
 import sys
 from collections.abc import Callable, Sequence
 from importlib.abc import Loader, MetaPathFinder
-from importlib.machinery import ModuleSpec
+from importlib.machinery import ModuleSpec, PathFinder
 from importlib.util import spec_from_loader
 from types import ModuleType
 from typing import Any
@@ -116,6 +117,44 @@ class JsLoader(Loader):
         return True
 
 
+WINDOWS_DRIVE_REGEX = re.compile(r"^[a-zA-Z]:")
+
+
+class WindowsToLinuxPathFinder:
+    """
+    A MetaPathFinder that converts Windows-style paths in sys.path to
+    Linux-style paths for module searching.
+
+    This is useful when running Pyodide CLI in a Windows environment where
+    users or system configurations might add Windows-style paths to sys.path.
+    """
+
+    @classmethod
+    def find_spec(
+        cls,
+        fullname: str,
+        path: Sequence[str] | None = None,
+        target: ModuleType | None = None,
+    ) -> ModuleSpec | None:
+        sys_path = path if path is not None else sys.path
+
+        converted_paths: list[str] = []
+        for p in sys_path:
+            # Convert only if it's a string and looks like a Windows absolute path
+            if not WINDOWS_DRIVE_REGEX.match(p):
+                continue
+
+            # Convert 'C:\path\to\dir' to '/path/to/dir'
+            # Sometimes the path may contain forward slashes, sometimes backslashes...
+            linux_path = p[2:].replace("//", "/").replace("\\", "/")
+            converted_paths.append(linux_path)
+
+        if not converted_paths:
+            return None
+
+        return PathFinder.find_spec(fullname, converted_paths, target)
+
+
 jsfinder: JsFinder = JsFinder()
 register_js_module = jsfinder.register_js_module
 unregister_js_module = jsfinder.unregister_js_module
@@ -139,9 +178,22 @@ def register_js_finder() -> None:
     sys.meta_path.append(jsfinder)
 
 
-STDLIBS = sys.stdlib_module_names | {"test"}
-UNVENDORED_STDLIBS_AND_TEST: set[str] = set()
+def register_windows_finder() -> None:
+    """A bootstrap function to register WindowsToLinuxPathFinder in sys.meta_path.
 
+    This is called in `loadPyodide` in `pyodide.js` to allow Windows-style paths
+    in sys.path to be converted to Linux-style paths for module searching.
+
+    Using class instead of instance to alleviate the need for instantiation
+    (https://docs.python.org/3/library/importlib.html#importlib.machinery.PathFinder)
+    """
+    for importer in sys.meta_path:
+        if importer is WindowsToLinuxPathFinder:
+            raise RuntimeError("WindowsToLinuxPathFinder already registered")
+    sys.meta_path.append(WindowsToLinuxPathFinder)
+
+
+STDLIBS = sys.stdlib_module_names | {"test"}
 
 REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME: dict[str, str] = {}
 
@@ -169,10 +221,7 @@ def add_note_to_module_not_found_error(e: ModuleNotFoundError) -> None:
     if not package_name and import_name not in STDLIBS:
         return
 
-    if package_name in UNVENDORED_STDLIBS_AND_TEST:
-        msg = "The module '{package_name}' is unvendored from the Python standard library in the Pyodide distribution."
-        msg += YOU_CAN_INSTALL_IT_BY
-    elif import_name in STDLIBS:
+    if import_name in STDLIBS:
         msg = (
             "The module '{import_name}' is removed from the Python standard library in the"
             " Pyodide distribution due to browser limitations."
@@ -186,7 +235,7 @@ def add_note_to_module_not_found_error(e: ModuleNotFoundError) -> None:
     setattr(e, PYODIDE_ADDED_NOTE, True)
 
 
-def register_module_not_found_hook(packages: Any, unvendored: Any) -> None:
+def register_module_not_found_hook(packages: Any) -> None:
     """
     A function that adds UnvendoredStdlibFinder to the end of sys.meta_path.
 
@@ -194,6 +243,4 @@ def register_module_not_found_hook(packages: Any, unvendored: Any) -> None:
     in order to prevent any unexpected side effects.
     """
     global REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME  # noqa: PLW0603
-    global UNVENDORED_STDLIBS_AND_TEST  # noqa: PLW0603
     REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME = packages.to_py()
-    UNVENDORED_STDLIBS_AND_TEST = set(unvendored.to_py())

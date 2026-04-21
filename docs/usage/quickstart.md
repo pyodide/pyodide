@@ -22,7 +22,7 @@ releases](https://github.com/pyodide/pyodide/releases) or build Pyodide
 yourself. See {ref}`downloading_deploying` for more details.
 
 The `pyodide.js` file defines a single async function called
-{js:func}`~globalThis.loadPyodide` which sets up the Python environment
+{js:func}`~exports.loadPyodide` which sets up the Python environment
 and returns {js:mod}`the Pyodide top level namespace <pyodide>`.
 
 ```pyodide

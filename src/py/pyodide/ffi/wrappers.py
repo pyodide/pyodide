@@ -2,7 +2,7 @@ from collections.abc import Callable
 from typing import Any, Protocol, cast
 
 from . import (
-    IN_BROWSER,
+    IN_PYODIDE,
     JsCallableDoubleProxy,
     JsDomElement,
     JsProxy,
@@ -11,7 +11,7 @@ from . import (
     create_proxy,
 )
 
-if IN_BROWSER:
+if IN_PYODIDE:
     from js import clearInterval, clearTimeout, setInterval, setTimeout
 
 

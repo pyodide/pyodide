@@ -1,4 +1,5 @@
-import * as chai from "chai";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
   canonicalizePackageName,
   uriToPackageData,
@@ -6,19 +7,16 @@ import {
 
 describe("canonicalizePackageName", () => {
   it("should return lower case", () => {
-    chai.assert.equal(canonicalizePackageName("ABC"), "abc");
+    assert.equal(canonicalizePackageName("ABC"), "abc");
   });
   it("should replace -, _, . with -", () => {
-    chai.assert.equal(
-      canonicalizePackageName("pytest-pyodide"),
-      "pytest-pyodide",
-    );
-    chai.assert.equal(canonicalizePackageName("ruamel.yaml"), "ruamel-yaml");
-    chai.assert.equal(
+    assert.equal(canonicalizePackageName("pytest-pyodide"), "pytest-pyodide");
+    assert.equal(canonicalizePackageName("ruamel.yaml"), "ruamel-yaml");
+    assert.equal(
       canonicalizePackageName("pytest_benchmark"),
       "pytest-benchmark",
     );
-    chai.assert.equal(canonicalizePackageName("a_b-c.d"), "a-b-c-d");
+    assert.equal(canonicalizePackageName("a_b-c.d"), "a-b-c-d");
   });
 });
 
@@ -57,15 +55,15 @@ describe("uriToPackageData", () => {
     testcases.forEach((tc) => {
       const [url, expected] = tc;
       const pkgData = uriToPackageData(url);
-      chai.assert.equal(pkgData?.name, expected.name);
-      chai.assert.equal(pkgData?.version, expected.version);
-      chai.assert.equal(pkgData?.fileName, expected.fileName);
+      assert.equal(pkgData?.name, expected.name);
+      assert.equal(pkgData?.version, expected.version);
+      assert.equal(pkgData?.fileName, expected.fileName);
     });
   });
 
   it("should return undefined if URI is not a valid wheel URI", () => {
-    chai.assert.equal(uriToPackageData("requests"), undefined);
-    chai.assert.equal(uriToPackageData("pyodide-lock"), undefined);
-    chai.assert.equal(uriToPackageData("pytest_benchmark"), undefined);
+    assert.equal(uriToPackageData("requests"), undefined);
+    assert.equal(uriToPackageData("pyodide-lock"), undefined);
+    assert.equal(uriToPackageData("pytest_benchmark"), undefined);
   });
 });

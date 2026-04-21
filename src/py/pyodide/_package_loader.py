@@ -15,7 +15,7 @@ except ImportError:
     loadedPackages = None
 
 from .common import install_files
-from .ffi import IN_BROWSER, JsArray, JsBuffer, to_js
+from .ffi import IN_PYODIDE, JsArray, JsBuffer, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 if sys.base_prefix == sys.prefix:
@@ -156,7 +156,7 @@ def make_whlfile(
     return shutil._make_zipfile(*args, **kwargs)  # type: ignore[attr-defined]
 
 
-if IN_BROWSER:
+if IN_PYODIDE:
     shutil.register_archive_format("whl", make_whlfile, description="Wheel file")
     shutil.register_unpack_format(
         "whl",

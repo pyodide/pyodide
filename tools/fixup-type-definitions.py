@@ -34,6 +34,7 @@ def main(filename):
     text = text.replace("export interface", "interface")
     text = text.replace("export declare class", "declare class")
     text = text.replace("export {", "export type {")
+    text = text.replace("[dispose]", "[Symbol.dispose]")
     type_exports = ", ".join(sorted(exported_things))
     text += f"export type {{{type_exports}}};\n"
     path.write_text(text)

@@ -2,13 +2,13 @@ import "./constants";
 import {
   Lockfile,
   PackageData,
-  InternalPackageData,
+  LockfilePackage,
   PackageLoadMetadata,
   PackageManagerAPI,
   PackageManagerModule,
   LoadedPackages,
 } from "./types";
-import { IN_NODE } from "./environments";
+import { RUNTIME_ENV } from "./environments";
 import type { PyProxy } from "generated/pyproxy";
 import { createResolvable } from "./common/resolveable";
 import { createLock } from "./common/lock";
@@ -23,6 +23,7 @@ import {
   resolvePath,
   initNodeModules,
   ensureDirNode,
+  isAbsolute,
 } from "./compat";
 import { Installer } from "./installer";
 import { createContextWrapper } from "./common/contextManager";
@@ -35,32 +36,31 @@ import { createContextWrapper } from "./common/contextManager";
  * @private
  */
 export async function initializePackageIndex(
-  lockFilePromise: Promise<Lockfile>,
+  lockFilePromise: Promise<Lockfile | string>,
 ) {
   await initNodeModules();
-  const lockfile = await lockFilePromise;
+  const lockfile_ = await lockFilePromise;
+  const lockfile: Lockfile =
+    typeof lockfile_ === "string" ? JSON.parse(lockfile_) : lockfile_;
   if (!lockfile.packages) {
     throw new Error(
       "Loaded pyodide lock file does not contain the expected key 'packages'.",
     );
   }
 
-  if (lockfile.info.version !== API.version) {
+  if (lockfile.info.abi_version !== API.abiVersion) {
     throw new Error(
-      "Lock file version doesn't match Pyodide version.\n" +
-        `   lockfile version: ${lockfile.info.version}\n` +
-        `   pyodide  version: ${API.version}`,
+      "Lock file ABI version doesn't match Pyodide ABI version.\n" +
+        `   lockfile version: ${lockfile.info.abi_version}\n` +
+        `   pyodide  version: ${API.abiVersion}`,
     );
   }
 
   API.lockfile = lockfile;
   API.lockfile_info = lockfile.info;
   API.lockfile_packages = lockfile.packages;
+  // Used in `pyodide venv`. Keeping for backward compatibility.
   API.lockfile_unvendored_stdlibs_and_test = [];
-
-  // micropip compatibility
-  API.repodata_info = lockfile.info;
-  API.repodata_packages = lockfile.packages;
 
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map<string, string>();
@@ -70,29 +70,17 @@ export async function initializePackageIndex(
     for (let import_name of pkg.imports) {
       API._import_name_to_package_name.set(import_name, name);
     }
-
-    if (pkg.package_type === "cpython_module") {
-      API.lockfile_unvendored_stdlibs_and_test.push(name);
-    }
   }
 
-  API.lockfile_unvendored_stdlibs =
-    API.lockfile_unvendored_stdlibs_and_test.filter(
-      (lib: string) => lib !== "test",
-    );
   let toLoad = API.config.packages;
-  if (API.config.fullStdLib) {
-    toLoad = [...toLoad, ...API.lockfile_unvendored_stdlibs];
-  }
   await loadPackage(toLoad, { messageCallback() {} });
   // Have to wait for bootstrapFinalizedPromise before calling Python APIs
   await API.bootstrapFinalizedPromise;
+  API.flushPackageManagerBuffers();
+
   // Set up module_not_found_hook
   const importhook = API._pyodide._importhook;
-  importhook.register_module_not_found_hook(
-    API._import_name_to_package_name,
-    API.lockfile_unvendored_stdlibs_and_test,
-  );
+  importhook.register_module_not_found_hook(API._import_name_to_package_name);
   API.package_loader.init_loaded_packages();
 }
 
@@ -112,8 +100,10 @@ export class PackageManager {
    * Only used in Node. If we can't find a package in node_modules, we'll use this
    * to fetch the package from the cdn (and we'll store it into node_modules so
    * subsequent loads don't require a web request).
+   *
+   * exported for testing purposes.
    */
-  private cdnURL: string = "";
+  public cdnURL: string = "";
 
   /**
    * The set of loaded packages.
@@ -125,13 +115,22 @@ export class PackageManager {
 
   private _lock = createLock();
 
-  public installBaseUrl: string;
+  public installBaseUrl?: string;
 
   /**
    * The function to use for stdout and stderr, defaults to console.log and console.error
    */
   private stdout: (message: string) => void;
   private stderr: (message: string) => void;
+
+  /**
+   * Buffers for store stdout and stderr messages temporarily.
+   * These are used to store the messages that are printed before the
+   * stdout and stderr functions are set.
+   */
+  private streamReady: boolean = false;
+  private stdoutBuffer: string[] = [];
+  private stderrBuffer: string[] = [];
 
   private defaultChannel: string = DEFAULT_CHANNEL;
 
@@ -140,21 +139,23 @@ export class PackageManager {
     this.#module = pyodideModule;
     this.#installer = new Installer(api, pyodideModule);
 
-    // use lockFileURL as the base URL for the packages
-    // if lockFileURL is relative, use location as the base URL
-    const lockfileBase =
-      this.#api.config.lockFileURL.substring(
-        0,
-        this.#api.config.lockFileURL.lastIndexOf("/") + 1,
-      ) || globalThis.location?.toString();
-
-    if (IN_NODE) {
-      this.installBaseUrl = this.#api.config.packageCacheDir ?? lockfileBase;
+    if (RUNTIME_ENV.IN_NODE) {
+      // In node, we'll try first to load from the packageCacheDir and then fall
+      // back to cdnURL
+      this.installBaseUrl =
+        this.#api.config.packageCacheDir ?? this.#api.config.packageBaseUrl;
+      this.cdnURL = this.#api.config.cdnUrl;
     } else {
-      this.installBaseUrl = lockfileBase;
+      // use packageBaseUrl as the base URL for the packages
+      this.installBaseUrl = this.#api.config.packageBaseUrl;
     }
 
     this.stdout = (msg: string) => {
+      if (!this.streamReady) {
+        this.stdoutBuffer.push(msg);
+        return;
+      }
+
       const sp = this.#module.stackSave();
       try {
         const msgPtr = this.#module.stringToUTF8OnStack(msg);
@@ -165,6 +166,11 @@ export class PackageManager {
     };
 
     this.stderr = (msg: string) => {
+      if (!this.streamReady) {
+        this.stderrBuffer.push(msg);
+        return;
+      }
+
       const sp = this.#module.stackSave();
       try {
         const msgPtr = this.#module.stringToUTF8OnStack(msg);
@@ -238,7 +244,7 @@ export class PackageManager {
       checkIntegrity: true,
     },
   ): Promise<Array<PackageData>> {
-    const loadedPackageData = new Set<InternalPackageData>();
+    const loadedPackageData = new Set<LockfilePackage>();
     const pkgNames = toStringArray(names);
 
     const toLoad = this.recursiveDependencies(pkgNames);
@@ -291,7 +297,7 @@ export class PackageManager {
       }
 
       await Promise.all(
-        Array.from(toLoad.values()).map(({ installPromise }) => installPromise),
+        Array.from(toLoad.values(), ({ installPromise }) => installPromise),
       );
 
       if (loadedPackageData.size > 0) {
@@ -312,6 +318,10 @@ export class PackageManager {
 
       // We have to invalidate Python's import caches, or it won't
       // see the new files.
+
+      // Can't use invalidate_caches until bootstrap is finalized.
+      await this.#api.bootstrapFinalizedPromise;
+
       this.#api.importlib.invalidate_caches();
       return Array.from(loadedPackageData, filterPackageData);
     } finally {
@@ -383,9 +393,7 @@ export class PackageManager {
 
       if (toLoad.has(pkgname) && toLoad.get(pkgname)!.channel !== channel) {
         this.logStderr(
-          `Loading same package ${pkgname} from ${channel} and ${
-            toLoad.get(pkgname)!.channel
-          }`,
+          `Loading same package ${pkgname} from ${channel} and ${toLoad.get(pkgname)!.channel}`,
         );
         continue;
       }
@@ -436,6 +444,12 @@ export class PackageManager {
       }
       const lockfilePackage = this.#api.lockfile_packages[pkg.normalizedName];
       fileName = lockfilePackage.file_name;
+      // TODO: Node caching logic assumes relative here...
+      if (!isAbsolute(fileName) && !this.installBaseUrl) {
+        throw new Error(
+          `Lock file file_name for package "${pkg.name}" is relative path "${fileName}" but no packageBaseUrl provided to loadPyodide.`,
+        );
+      }
 
       uri = resolvePath(fileName, this.installBaseUrl);
       fileSubResourceHash = "sha256-" + base16ToBase64(lockfilePackage.sha256);
@@ -451,14 +465,19 @@ export class PackageManager {
       DEBUG && console.debug(`Downloading package ${pkg.name} from ${uri}`);
       return await loadBinaryFile(uri, fileSubResourceHash);
     } catch (e) {
-      if (!IN_NODE || pkg.channel !== this.defaultChannel) {
+      if (
+        !RUNTIME_ENV.IN_NODE ||
+        pkg.channel !== this.defaultChannel ||
+        !fileName ||
+        fileName.startsWith("/")
+      ) {
         throw e;
       }
     }
     this.logStdout(
       `Didn't find package ${fileName} locally, attempting to load from ${this.cdnURL}`,
     );
-    // If we are IN_NODE, download the package from the cdn, then stash it into
+    // If we are RUNTIME_ENV.IN_NODE, download the package from the cdn, then stash it into
     // the node_modules directory for future use.
     let binary = await loadBinaryFile(this.cdnURL + fileName);
     this.logStdout(
@@ -525,7 +544,7 @@ export class PackageManager {
   private async downloadAndInstall(
     pkg: PackageLoadMetadata,
     toLoad: Map<string, PackageLoadMetadata>,
-    loaded: Set<InternalPackageData>,
+    loaded: Set<LockfilePackage>,
     failed: Map<string, Error>,
     checkIntegrity: boolean = true,
   ) {
@@ -559,8 +578,22 @@ export class PackageManager {
     }
   }
 
-  public setCdnUrl(url: string) {
-    this.cdnURL = url;
+  /**
+   * Flushes the stdout and stderr buffers, that were collected before the
+   * stdout and stderr functions were set.
+   */
+  public flushBuffers() {
+    this.streamReady = true;
+
+    for (const msg of this.stdoutBuffer) {
+      this.stdout(msg);
+    }
+    for (const msg of this.stderrBuffer) {
+      this.stderr(msg);
+    }
+
+    this.stdoutBuffer = [];
+    this.stderrBuffer = [];
   }
 
   /**
@@ -610,7 +643,7 @@ function filterPackageData({
   version,
   file_name,
   package_type,
-}: InternalPackageData): PackageData {
+}: LockfilePackage): PackageData {
   return { name, version, fileName: file_name, packageType: package_type };
 }
 
@@ -660,14 +693,13 @@ if (typeof API !== "undefined" && typeof Module !== "undefined") {
    */
   loadedPackages = singletonPackageManager.loadedPackages;
 
-  // TODO: Find a better way to register these functions
-  API.setCdnUrl = singletonPackageManager.setCdnUrl.bind(
+  API.flushPackageManagerBuffers = singletonPackageManager.flushBuffers.bind(
     singletonPackageManager,
   );
-
-  API.lockfileBaseUrl = singletonPackageManager.installBaseUrl;
 
   if (API.lockFilePromise) {
     API.packageIndexReady = initializePackageIndex(API.lockFilePromise);
   }
+
+  API.packageManager = singletonPackageManager;
 }

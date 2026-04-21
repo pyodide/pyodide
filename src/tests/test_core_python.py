@@ -62,7 +62,7 @@ def test_cpython_core(main_test, selenium, request):
     if not isinstance(ignore_tests, list):
         raise Exception("Invalid python_tests.yaml entry: 'skip' should be a list")
 
-    selenium.load_package(["test", "pydecimal"])
+    selenium.load_package(["test"])
     selenium.set_script_timeout(timeout)
     try:
         res = selenium.run(
@@ -129,7 +129,13 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize(
             "main_test",
             [
-                pytest.param(t, marks=pytest.mark.requires_dynamic_linking)
+                pytest.param(
+                    t,
+                    marks=[
+                        pytest.mark.requires_dynamic_linking,
+                        pytest.mark.long_running,
+                    ],
+                )
                 for t in tests
             ],
             ids=[t[0] for t in tests],

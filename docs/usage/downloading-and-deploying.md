@@ -16,7 +16,7 @@ Pyodide is available from the JsDelivr CDN
 For a given version, several build variants are also available,
 
 - `<version>/full/`: the default full build
-- `<version>/debug/`: build with unminified `pyodide.asm.js` useful for debugging
+- `<version>/debug/`: build with unminified `pyodide.asm.mjs` useful for debugging
 
 ### GitHub releases
 
@@ -63,7 +63,7 @@ deployments](https://emscripten.org/docs/compiling/Deploying-Pages.html).
 
 | File Name            | Description                                                                                                                                                                                                                                       |
 | :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| pyodide.asm.js       | The JavaScript half of the main "binary". Direct output from the Emscripten compiler. Contains the Emscripten bootstrap code + all JavaScript libraries used by C + the JavaScript/Wasm runtime interop APIs.                                     |
+| pyodide.asm.mjs       | The JavaScript half of the main "binary". Direct output from the Emscripten compiler. Contains the Emscripten bootstrap code + all JavaScript libraries used by C + the JavaScript/Wasm runtime interop APIs.                                     |
 | pyodide.asm.wasm     | The WebAssembly half of the main "binary". Direct output from the Emscripten compiler. Contains all C library code that is statically linked. Also includes enough of libcxx to support things like exceptions in extension modules that use C++. |
 | pyodide.js           | Exports loadPyodide on globalThis. Legacy support for people who can't use es6 modules for whatever reason. Prefer pyodide.mjs.                                                                                                                   |
 | pyodide.mjs          | A small JS loader shim which exports loadPyodide. It manages downloading the runtime and handling user settings.                                                                                                                                  |

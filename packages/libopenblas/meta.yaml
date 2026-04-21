@@ -1,0 +1,67 @@
+package:
+  name: libopenblas
+  version: 0.3.28
+  tag:
+    - core
+    - library
+    - shared_library
+source:
+  sha256: f1003466ad074e9b0c8d421a204121100b0751c96fc6fcf3d1456bd12f8a00a1
+  url: https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.28/OpenBLAS-0.3.28.tar.gz
+  patches:
+    - patches/0001-Add-Wno-return-type-flag.patch
+    - patches/0002-Align-xerbla_array-signature-with-scipy-expectation.patch
+    - patches/0003-Skip-linktest.patch
+
+build:
+  type: shared_library
+  script: |
+    # seems like .zip does not maintain executable flags, need to reset these
+    chmod u+x c_check
+    chmod u+x f_check
+    chmod u+x exports/gensymbol
+    # Replace void returns by int returns
+    sed -ri 's/void(\s+)BLASFUNC/int\1BLASFUNC/g' common_interface.h
+    sed -ri 's/void(\s+)cblas_/int\1cblas_/g' cblas.h ctest/*.c
+    sed -ri 's/void(\s+)(C?NAME)/int\1\2/g' interface/*.c
+    sed -ri 's/((extern)?.+) void ([a-z0-9]+_)/\1\2 int \3/g' lapack-netlib/SRC/*.c \
+        lapack-netlib/SRC/DEPRECATED/*.c
+    # For some functions (mostly handling complex I think) f2c actually
+    # generate a function that returns void so I need to revert the void to int
+    # change the previous line does.
+    sed -ri 's@int ([cz](dotc|dotu|ladiv))@void \1@g' lapack-netlib/SRC/*.c\
+        lapack-netlib/SRC/DEPRECATED/*.c
+
+    # When TARGET=RISCV64_GENERIC, OpenBLAS adds `-march` and `-mabi` flags to the compiler.
+    # However, they are not supported by Emscripten, and started to cause build failures from recent Emscripten versions (>4.X).
+    sed -i 's@ifeq ($(CORE), RISCV64_GENERIC)@ifeq ($(CORE), NOT_RISCV64_GENERIC)@g' Makefile.riscv64
+    sed -i 's@ifeq ($(TARGET), RISCV64_GENERIC)@ifeq ($(TARGET), NOT_RISCV64_GENERIC)@g' Makefile.prebuild
+
+    emmake make libs shared \
+        BINARY=32 \
+        CC="emcc -msimd128" \
+        HOSTCC=gcc \
+        TARGET=RISCV64_GENERIC \
+        NOFORTRAN=1 NO_LAPACKE=1 \
+        USE_THREAD=0 \
+        LDFLAGS="${SIDE_MODULE_LDFLAGS}"
+    mkdir -p dist
+
+    # Add libf2c symbols to libopenblas.so
+    emcc ${WASM_LIBRARY_DIR}/lib/libf2c.a libopenblas.a \
+        ${SIDE_MODULE_LDFLAGS} \
+        -msimd128 \
+        -o libopenblas.so
+
+    cp libopenblas.so dist
+    emmake make install PREFIX=${WASM_LIBRARY_DIR}
+    # We need to copy the shared library again as the make install
+    # does not know we've modified the binary with libf2c symbols.
+    cp dist/libopenblas.so ${WASM_LIBRARY_DIR}/lib/libopenblas.so
+
+requirements:
+  host:
+    - libf2c
+about:
+  home: https://www.openblas.net/
+  license: BSD-3-Clause

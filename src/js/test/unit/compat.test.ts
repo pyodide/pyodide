@@ -1,7 +1,8 @@
-import * as chai from "chai";
 import * as fs from "fs";
-import * as path from "path";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import * as os from "os";
+import * as path from "path";
 
 import { ensureDirNode, initNodeModules } from "../../compat";
 
@@ -13,11 +14,11 @@ describe("ensureDirNode", () => {
 
     const notExistDir = path.join(baseDir, "notExistDir");
 
-    chai.assert.isFalse(fs.existsSync(notExistDir));
+    assert.ok(!fs.existsSync(notExistDir));
 
     await ensureDirNode(notExistDir);
 
-    chai.assert.isTrue(fs.existsSync(notExistDir));
+    assert.ok(fs.existsSync(notExistDir));
   });
 
   it("Should not throw if the dir already exists", async () => {
@@ -25,10 +26,10 @@ describe("ensureDirNode", () => {
 
     const baseDir = fs.mkdtempSync(path.join(os.tmpdir(), "foo-"));
 
-    chai.assert.isTrue(fs.existsSync(baseDir));
+    assert.ok(fs.existsSync(baseDir));
 
     await ensureDirNode(baseDir);
 
-    chai.assert.isTrue(fs.existsSync(baseDir));
+    assert.ok(fs.existsSync(baseDir));
   });
 });

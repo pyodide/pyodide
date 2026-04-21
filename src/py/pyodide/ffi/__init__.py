@@ -1,14 +1,14 @@
-# flake8: noqa
+# flake8: noqa  # noqa: PGH004
 import sys
 
 import _pyodide._core_docs
 from _pyodide._core_docs import *
 from _pyodide._importhook import register_js_module, unregister_js_module
 
-IN_BROWSER = "_pyodide_core" in sys.modules
+IN_PYODIDE = "_pyodide_core" in sys.modules
 
 
-if IN_BROWSER:
+if IN_PYODIDE:
     import _pyodide_core
 
     # This is intentionally opaque to static analysis tools (e.g., mypy)
@@ -60,9 +60,10 @@ __all__ = [
     "destroy_proxies",
     "to_js",
     "run_sync",
-    "IN_BROWSER",
+    "IN_PYODIDE",
     "register_js_module",
     "unregister_js_module",
     "JsNull",
     "jsnull",
+    "JsBigInt",
 ]
