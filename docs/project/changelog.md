@@ -75,6 +75,9 @@ myst:
   limited backwards incompatibility.
   {pr}`6022`
 
+- {{ Fix }} `API.on_fatal` is now called even when a fatal error has already occurred.
+  {pr}`6135`
+
 ## Version 0.29.3
 
 _January 28, 2026_

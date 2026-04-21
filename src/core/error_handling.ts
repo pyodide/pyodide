@@ -91,6 +91,11 @@ API.fatal_error = function (e: any): never {
   if (fatal_error_occurred) {
     console.error("Recursive call to fatal_error. Inner error was:");
     console.error(e);
+    try {
+      API.on_fatal?.(e);
+    } catch (e2) {
+      console.error(e2);
+    }
     // @ts-ignore
     return;
   }
@@ -142,9 +147,7 @@ API.fatal_error = function (e: any): never {
         },
       });
     }
-    if (API.on_fatal) {
-      API.on_fatal(e);
-    }
+    API.on_fatal?.(e);
   } catch (err2) {
     console.error("Another error occurred while handling the fatal error:");
     console.error(err2);
