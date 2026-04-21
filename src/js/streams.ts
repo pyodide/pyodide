@@ -484,13 +484,13 @@ function _setStdwrite(
     ({ raw, isatty, batched, write } = opts);
   }
   if (raw) {
-    setOps(new CharacterCodeWriter(options as RawWriteHandler));
+    setOps(new CharacterCodeWriter(opts as RawWriteHandler));
   }
   if (batched) {
-    setOps(new StringWriter(batched.bind(options)));
+    setOps(new StringWriter(batched.bind(opts)));
   }
   if (write) {
-    setOps(options as Writer);
+    setOps(opts as Writer);
   }
   refreshStreams();
 }
