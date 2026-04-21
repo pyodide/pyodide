@@ -3,34 +3,56 @@ on:
   workflow_dispatch:
   release:
     types: [published]
+
+permissions: {}
+
 jobs:
   deploy-pyodide-py-pypi:
     runs-on: ubuntu-latest
-    environment: PyPi
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: "3.11"
+          python-version: "3.x"
 
       - name: Install dependencies
-        run: python -m pip install build twine
+        run: python -m pip install build
 
-      - name: Build wheel
+      - name: Build sdist and wheel
         run: |
           cd src/py/
           python -m build .
 
-      - name: Check wheel
-        run: |
-          twine check src/py/dist/*
+      - name: Upload the distribution packages
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pyodide-py-distributions
+          path: src/py/dist/
+          if-no-files-found: error
+
+  publish-pyodide-py-pypi:
+    name: Publish pyodide-py to PyPI
+    needs: deploy-pyodide-py-pypi
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
+    environment:
+      name: PyPi
+      url: https://pypi.org/p/pyodide-py
+      deployment: false
+    permissions:
+      id-token: write # for OIDC trusted publishing
+
+    steps:
+      - name: Download pyodide-py Python distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: pyodide-py-distributions
+          path: dist/
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN_PYODIDE_PY }}
-          packages_dir: src/py/dist/
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0

@@ -1371,8 +1371,20 @@ def test_abiVersion_variable(selenium):
         get_config_var("PYODIDE_ABI_VERSION")
         """
     )
+    pyemscripten_platform_version = selenium.run(
+        """
+        from sysconfig import get_config_var
 
-    assert lockfile_abi_version == py_abi_version == core_abi_version
+        get_config_var("PYEMSCRIPTEN_PLATFORM_VERSION")  # PEP 783
+        """
+    )
+
+    assert (
+        lockfile_abi_version
+        == py_abi_version
+        == core_abi_version
+        == pyemscripten_platform_version
+    )
 
 
 @run_in_pyodide

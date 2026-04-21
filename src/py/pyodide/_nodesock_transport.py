@@ -25,11 +25,13 @@ class NodeSocketTransport(asyncio.Transport):
         self._sock = sock
         self._sock_fd = sock.fileno()
         self._protocol = protocol
-        self._closing = False
         self._closed = False
         self._paused = True  # start paused; resume_reading() will kick off reads
         self._read_task: asyncio.Task[None] | None = None
 
+        # self._extra is used in `get_extra_info` function.
+        # We just swallow exceptions following the _SelectorTransport implementation in CPython
+        # https://github.com/python/cpython/blob/fbfc6ccb0abf362a0ecdc02cd0aa2d16c1a4ce44/Lib/asyncio/selector_events.py#L780-L787
         self._extra.setdefault("socket", sock)  # type: ignore[attr-defined]
         try:
             self._extra.setdefault("sockname", sock.getsockname())  # type: ignore[attr-defined]
@@ -54,38 +56,24 @@ class NodeSocketTransport(asyncio.Transport):
     # ------------------------------------------------------------------
 
     def is_closing(self) -> bool:
-        return self._closing
+        # We don't separate _closing and _closed state
+        # because the buffer is managed by Node.js not Python
+        # so no drain is handled by Python
+        return self._closed
 
     def close(self) -> None:
-        if self._closing:
-            return
-        self._closing = True
-        self._stop_reading()
-        self._loop.call_soon(self._call_connection_lost, None)
+        self._force_close(None)
 
     def abort(self) -> None:
-        if self._closed:
-            return
-        self._closing = True
-        self._stop_reading()
-        try:
-            self._sock.close()
-        except Exception:
-            pass
-        self._loop.call_soon(self._call_connection_lost, None)
+        self._force_close(None)
 
     def _call_connection_lost(self, exc: Exception | None) -> None:
         if self._closed:
             return
+
+        self._protocol.connection_lost(exc)
+        self._sock.close()
         self._closed = True
-        try:
-            self._protocol.connection_lost(exc)
-        except Exception:
-            pass
-        try:
-            self._sock.close()
-        except Exception:
-            pass
 
     def get_protocol(self) -> asyncio.BaseProtocol:
         return self._protocol
@@ -98,13 +86,13 @@ class NodeSocketTransport(asyncio.Transport):
     # ------------------------------------------------------------------
 
     def is_reading(self) -> bool:
-        return not self._paused and not self._closing
+        return not self._paused and not self._closed
 
     def pause_reading(self) -> None:
         self._paused = True
 
     def resume_reading(self) -> None:
-        if self._closing or self._closed:
+        if self._closed:
             return
         if self._paused:
             self._paused = False
@@ -164,7 +152,6 @@ class NodeSocketTransport(asyncio.Transport):
     def _force_close(self, exc: Exception | None) -> None:
         if self._closed:
             return
-        self._closing = True
         self._stop_reading()
         self._loop.call_soon(self._call_connection_lost, exc)
 
@@ -185,17 +172,14 @@ class NodeSocketTransport(asyncio.Transport):
         return 0
 
     def write(self, data: bytes | bytearray | memoryview) -> None:
-        if self._closing or self._closed:
+        if self._closed:
             return
         if not data:
             return
         try:
-            from pyodide.ffi import create_proxy
             from pyodide_js._api import _nodeSock
 
-            data_proxy = create_proxy(data)
-            _nodeSock.send(self._sock_fd, data_proxy)
-            data_proxy.destroy()
+            _nodeSock.send(self._sock_fd, data)
         except Exception as exc:
             self._force_close(exc)
 

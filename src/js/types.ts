@@ -566,7 +566,6 @@ export interface API {
     connect: (fd: number, host: string, port: number) => Promise<void>;
     recv: (fd: number, nbytes: number) => Promise<Uint8Array>;
     send: (fd: number, data: any) => Promise<number>;
-    startTls: (fd: number) => number;
   };
 }
 

@@ -43,19 +43,21 @@ Assume for concreteness that we are releasing version 0.20.0.
 #### Releasing
 
 1. Switch to the main branch
-2. Replace the `## Unreleased` heading in the changelog with `## Version 0.20.0`
-   and add the date underneath it. Commit this.
-3. From the root of the repository run:
+
+2. From the root of the repository run:
    ```
    ./tools/bump_version.py 0.20.0 --tag
    ```
    This makes a release commit and tags it.
-4. Push the release commit and tag to upstream. This triggers the release CI.
+
+3. Push the release commit and tag to upstream. This triggers the release CI.
    ```
    git push upstream main 0.20.0
    ```
-5. Wait for CI to pass and release to be created.
-6. Rename the `stable` branch to a release branch for the previous major
+
+4. Wait for CI to pass and release to be created.
+
+5. Rename the `stable` branch to a release branch for the previous major
    version. For instance if last release was, `0.20.0`, the corresponding
    release branch would be `0.20.X`:
 
@@ -65,7 +67,7 @@ Assume for concreteness that we are releasing version 0.20.0.
    git push -u upstream 0.20.X
    ```
 
-7. Create a new `stable` branch:
+6. Create a new `stable` branch:
 
    ```sh
    git switch main
@@ -73,7 +75,7 @@ Assume for concreteness that we are releasing version 0.20.0.
    git push upstream stable --force
    ```
 
-8. Set the version back to next development version with:
+7. Set the version back to next development version with:
    ```sh
    git switch main
    ./tools/bump_version.py 0.21.0 --dev

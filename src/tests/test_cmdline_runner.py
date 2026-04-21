@@ -419,7 +419,7 @@ def test_pip_install_from_pyodide(selenium, venv):
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/test_dummy_nonpure-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
+            Processing ./dist/test_dummy_nonpure-*-cpxxx-cpxxx-pyemscripten_*_wasm32.whl
             Installing collected packages: test-dummy-nonpure
             Successfully installed test-dummy-nonpure-*
             """
@@ -579,7 +579,7 @@ def test_pip_install_sys_platform_condition_kept(selenium, venv):
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/test_dummy_nonpure-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
+            Processing ./dist/test_dummy_nonpure-*-cpxxx-cpxxx-pyemscripten_*_wasm32.whl
             Installing collected packages: test-dummy-nonpure
             Successfully installed test-dummy-nonpure-*
             """
@@ -621,7 +621,7 @@ def test_dash_m_pip_venv(selenium, venv):
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/test_dummy_nonpure-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
+            Processing ./dist/test_dummy_nonpure-*-cpxxx-cpxxx-pyemscripten_*_wasm32.whl
             Installing collected packages: test-dummy-nonpure
             Successfully installed test-dummy-nonpure-*
             """

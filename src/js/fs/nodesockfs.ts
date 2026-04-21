@@ -97,6 +97,10 @@ export async function initializeNodeSockFS(
 
   const FIONREAD = 0x541b;
 
+  const SHUT_RD = 0;
+  const SHUT_WR = 1;
+  const SHUT_RDWR = 2;
+
   // Highly inspired by Emscripten's SOCKFS implementation
   // https://github.com/emscripten-core/emscripten/blob/main/src/lib/libsockfs.js
   const tcp_sock_ops = {
@@ -166,10 +170,10 @@ export async function initializeNodeSockFS(
       sock.daddr = addr;
       sock.dport = port;
 
-      const wcgSocket = connectFunc(
+      const wcgSocket = connect(
         { hostname: addr, port },
         {
-          secureTransport: options?.secureTransport ?? "starttls",
+          secureTransport: options?.secureTransport ?? "off",
           allowHalfOpen: false,
         },
       );
@@ -198,43 +202,6 @@ export async function initializeNodeSockFS(
         sock.connecting = false;
         return -sock.error;
       }
-    },
-
-    /**
-     * Start TLS on an existing socket.
-     */
-    startTls(sock: NodeSock): number {
-      if (!sock.wcgSocket) {
-        return -ERRNO_CODES.ENOTCONN;
-      }
-
-      if (sock.reader) {
-        sock.reader.releaseLock();
-        sock.reader = null;
-      }
-      if (sock.writer) {
-        sock.writer.releaseLock();
-        sock.writer = null;
-      }
-
-      const tlsSocket = sock.wcgSocket.startTls();
-
-      sock.wcgSocket = tlsSocket;
-      sock.reader =
-        tlsSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
-      sock.writer =
-        tlsSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
-      sock.leftover = null;
-
-      tlsSocket.closed
-        .then(() => {
-          sock.closed = true;
-        })
-        .catch(() => {
-          sock.closed = true;
-        });
-
-      return 0;
     },
 
     // Node.js support synchronous sendmsg while the wintercg sockets API is
@@ -289,6 +256,41 @@ export async function initializeNodeSockFS(
       } catch {
         return null;
       }
+    },
+
+    shutdown(sock: NodeSock, how: number): number {
+      if (sock.closed) {
+        return -cDefs.ENOTCONN;
+      }
+
+      if (how !== SHUT_RD && how !== SHUT_WR && how !== SHUT_RDWR) {
+        return -cDefs.EINVAL;
+      }
+
+      if (how === SHUT_RD || how === SHUT_RDWR) {
+        if (sock.reader) {
+          sock.reader.cancel().catch(() => {});
+          sock.reader.releaseLock();
+          sock.reader = null;
+        }
+      }
+
+      if (how === SHUT_WR || how === SHUT_RDWR) {
+        if (sock.writer) {
+          sock.writer.close().catch(() => {});
+          sock.writer.releaseLock();
+          sock.writer = null;
+        }
+      }
+
+      if (sock.reader === null && sock.writer === null) {
+        sock.wcgSocket?.close().catch(() => {});
+        sock.wcgSocket = null;
+        sock.connected = false;
+        sock.closed = true;
+      }
+
+      return 0;
     },
 
     /*
@@ -460,19 +462,10 @@ export async function initializeNodeSockFS(
         buf = data;
       } else if (data.toJs) {
         buf = data.toJs();
-        data.destroy();
       } else {
         buf = new Uint8Array(data);
       }
       return await tcp_sock_ops.sendmsgAsync(sock, buf);
-    },
-
-    startTls(fd: number): number {
-      const sock = NodeSockFS.getSocket(fd);
-      if (!sock) {
-        return -ERRNO_CODES.EBADF;
-      }
-      return tcp_sock_ops.startTls(sock);
     },
   };
 

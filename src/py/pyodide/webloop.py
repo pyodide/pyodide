@@ -546,10 +546,11 @@ class WebLoop(asyncio.AbstractEventLoop):
 
     def create_task(
         self,
-        coro: Coroutine[T, Any, Any],
+        coro: Coroutine[Any, Any, T],
         *,
         name: str | None = None,
         context: contextvars.Context | None = None,
+        eager_start: bool | None = None,
     ) -> Task[T]:
         """Schedule a coroutine object.
 
@@ -793,6 +794,51 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         return await self.run_in_executor(None, socket.getnameinfo, sockaddr, flags)
 
+    async def _construct_socket(
+        self,
+        host,
+        port,
+        *,
+        family=0,
+        proto=0,
+        flags=0,
+        all_errors=False,
+    ):
+        """Resolve address and create a connected socket."""
+        import socket
+
+        infos = await self.getaddrinfo(
+            host,
+            port,
+            family=family,
+            type=socket.SOCK_STREAM,
+            proto=proto,
+            flags=flags,
+        )
+        if not infos:
+            raise OSError("getaddrinfo() returned empty list")
+
+        exceptions: list[Exception] = []
+        sock = None
+        for af, socktype, sproto, _canonname, sa in infos:
+            try:
+                sock = socket.socket(af, socktype, sproto)
+                sock.setblocking(False)
+                await self.sock_connect(sock, sa)
+                break
+            except OSError as exc:
+                if sock is not None:
+                    sock.close()
+                    sock = None
+                exceptions.append(exc)
+        else:
+            if all_errors:
+                raise ExceptionGroup("create_connection failed", exceptions)
+
+            raise exceptions[-1]
+
+        return sock
+
     async def create_connection(  # noqa: PLR0913
         self,
         protocol_factory,
@@ -823,45 +869,22 @@ class WebLoop(asyncio.AbstractEventLoop):
                 "SSL/TLS via create_connection is not yet supported"
             )
 
-        if host is not None or port is not None:
-            if sock is not None:
-                raise ValueError(
-                    "host/port and sock can not be specified at the same time"
-                )
-
-            infos = await self.getaddrinfo(
+        if sock is None and (host is None or port is None):
+            raise ValueError("host and port must be specified if sock is not provided")
+        elif sock is not None and (host is not None or port is not None):
+            raise ValueError("host/port and sock can not be specified at the same time")
+        elif sock is not None:
+            if sock.type != socket.SOCK_STREAM:
+                raise ValueError(f"A Stream Socket was expected, got {sock!r}")
+        else:  # host + port is passed, construct socket from it
+            sock = await self._construct_socket(
                 host,
                 port,
                 family=family,
-                type=socket.SOCK_STREAM,
                 proto=proto,
                 flags=flags,
+                all_errors=all_errors,
             )
-            if not infos:
-                raise OSError("getaddrinfo() returned empty list")
-
-            exceptions: list[Exception] = []
-            for af, socktype, sproto, _canonname, sa in infos:
-                try:
-                    sock = socket.socket(af, socktype, sproto)
-                    sock.setblocking(False)
-                    await self.sock_connect(sock, sa)
-                    break
-                except OSError as exc:
-                    if sock is not None:
-                        sock.close()
-                        sock = None
-                    exceptions.append(exc)
-            else:
-                if exceptions:
-                    raise exceptions[-1]
-                raise OSError("getaddrinfo() returned empty list")
-
-        if sock is None:
-            raise ValueError("host and port was not specified and no sock specified")
-
-        if sock.type != socket.SOCK_STREAM:
-            raise ValueError(f"A Stream Socket was expected, got {sock!r}")
 
         sock.setblocking(False)
 
@@ -965,6 +988,7 @@ class WebLoop(asyncio.AbstractEventLoop):
             raise NotImplementedError(
                 "sock_sendall() is not available in browser environments due to restricted raw socket access."
             ) from None
+
         data_proxy = create_proxy(data)
         await _nodeSock.send(sock.fileno(), data_proxy)
         data_proxy.destroy()

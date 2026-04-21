@@ -7,7 +7,7 @@ cryptography  # Used for db testing
 hypothesis
 mypy==1.11.0
 # lint
-pre-commit
+prek
 pyodide-cli<0.5.0
 pytest
 pytest-asyncio
