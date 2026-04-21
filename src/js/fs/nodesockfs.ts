@@ -133,7 +133,7 @@ export async function initializeNodeSockFS(
       if (request === FIONREAD) {
         return sock.leftover ? sock.leftover.length : 0;
       }
-      return -ERRNO_CODES.EINVAL;
+      return -cDefs.EINVAL;
     },
 
     close(sock: NodeSock): number {
@@ -163,17 +163,17 @@ export async function initializeNodeSockFS(
       options?: SocketOptions,
     ): Promise<number> {
       if (sock.wcgSocket) {
-        return -ERRNO_CODES.EISCONN;
+        return -cDefs.EISCONN;
       }
 
       sock.connecting = true;
       sock.daddr = addr;
       sock.dport = port;
 
-      const wcgSocket = connect(
+      const wcgSocket = connectFunc(
         { hostname: addr, port },
         {
-          secureTransport: options?.secureTransport ?? "off",
+          secureTransport: options?.secureTransport ?? "starttls",
           allowHalfOpen: false,
         },
       );
@@ -198,7 +198,7 @@ export async function initializeNodeSockFS(
           });
         return 0;
       } catch (err: unknown) {
-        sock.error = ERRNO_CODES.ECONNREFUSED;
+        sock.error = cDefs.ECONNREFUSED;
         sock.connecting = false;
         return -sock.error;
       }
@@ -208,7 +208,7 @@ export async function initializeNodeSockFS(
     // asynchronous.
     async sendmsgAsync(sock: NodeSock, data: Uint8Array): Promise<number> {
       if (!sock.writer) {
-        return -ERRNO_CODES.ENOTCONN;
+        return -cDefs.ENOTCONN;
       }
 
       try {
@@ -217,9 +217,9 @@ export async function initializeNodeSockFS(
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes("EPIPE") || msg.includes("ECONNRESET")) {
-          return -ERRNO_CODES.EPIPE;
+          return -cDefs.EPIPE;
         }
-        return -ERRNO_CODES.EIO;
+        return -cDefs.EIO;
       }
     },
 
@@ -289,6 +289,43 @@ export async function initializeNodeSockFS(
         sock.connected = false;
         sock.closed = true;
       }
+
+      return 0;
+    },
+
+    /**
+     * Start TLS on an existing socket.
+     */
+    startTls(sock: NodeSock): number {
+      if (!sock.wcgSocket) {
+        return -cDefs.ENOTCONN;
+      }
+
+      if (sock.reader) {
+        sock.reader.releaseLock();
+        sock.reader = null;
+      }
+      if (sock.writer) {
+        sock.writer.releaseLock();
+        sock.writer = null;
+      }
+
+      const tlsSocket = sock.wcgSocket.startTls();
+
+      sock.wcgSocket = tlsSocket;
+      sock.reader =
+        tlsSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+      sock.writer =
+        tlsSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
+      sock.leftover = null;
+
+      tlsSocket.closed
+        .then(() => {
+          sock.closed = true;
+        })
+        .catch(() => {
+          sock.closed = true;
+        });
 
       return 0;
     },
@@ -429,7 +466,7 @@ export async function initializeNodeSockFS(
     async connect(fd: number, host: string, port: number): Promise<void> {
       const sock = NodeSockFS.getSocket(fd);
       if (!sock) {
-        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+        throw new FS.ErrnoError(cDefs.EBADF);
       }
       const result = await tcp_sock_ops.connectAsync(sock, host, port);
       if (result < 0) {
@@ -440,7 +477,7 @@ export async function initializeNodeSockFS(
     async recv(fd: number, nbytes: number): Promise<Uint8Array> {
       const sock = NodeSockFS.getSocket(fd);
       if (!sock) {
-        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+        throw new FS.ErrnoError(cDefs.EBADF);
       }
       const result = await tcp_sock_ops.recvmsgAsync(sock, nbytes);
       if (result === null) {
@@ -455,7 +492,7 @@ export async function initializeNodeSockFS(
     ): Promise<number> {
       const sock = NodeSockFS.getSocket(fd);
       if (!sock) {
-        throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+        throw new FS.ErrnoError(cDefs.EBADF);
       }
       let buf: Uint8Array;
       if (data instanceof Uint8Array) {
@@ -466,6 +503,14 @@ export async function initializeNodeSockFS(
         buf = new Uint8Array(data);
       }
       return await tcp_sock_ops.sendmsgAsync(sock, buf);
+    },
+
+    startTls(fd: number): number {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock) {
+        return -cDefs.EBADF;
+      }
+      return tcp_sock_ops.startTls(sock);
     },
   };
 

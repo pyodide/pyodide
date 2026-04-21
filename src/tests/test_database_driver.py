@@ -382,7 +382,7 @@ def test_mysql_pymysql_tls(selenium_nodesock, mysql_test_db):
             conn.close()
 
         assert row[0] == "over TLS"
-        assert ssl_status[1] != "", "Expected active TLS cipher, got empty string"
+        assert ssl_status[1], "Expected active TLS cipher, got empty string"
 
     run(selenium_nodesock, host, port, user, password, db)
 
