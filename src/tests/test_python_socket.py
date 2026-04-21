@@ -546,6 +546,7 @@ def test_socket_shutdown(selenium_nodesock):
 
     @run_in_pyodide
     def run(selenium, host, port):
+        import socket
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((host, port))
