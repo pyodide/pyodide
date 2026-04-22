@@ -415,7 +415,7 @@ class Changelog:
         from the unreleased section, just duplicate it.
         """
         self.patch_release = ChangelogVersion()
-        self.patch_release.append_lines([f"## Version {version}", "", f"_{date}_", ""])
+        self.patch_release.append_lines([f"## Version {version}", "", f"_{date}_"])
         backport_subsections = {}
         backport_subsubsections = {}
 
@@ -427,7 +427,7 @@ class Changelog:
         ]
 
         changelog_indices = sorted(
-            changelog_indices,
+            set(changelog_indices),
             key=lambda idx: (idx.subsection, idx.paragraph, idx.entry),
         )
         for pr_index in changelog_indices:
@@ -466,7 +466,7 @@ class Changelog:
 
         # 2. Sort by reverse order of appearance and then delete.
         for idx in sorted(
-            indices_to_delete,
+            set(indices_to_delete),
             key=lambda idx: (-idx.subsection, -idx.paragraph, -idx.entry),
         ):
             self.unreleased.delete_entry(idx)
