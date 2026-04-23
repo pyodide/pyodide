@@ -1,5 +1,18 @@
 version: 2.1
 
+default_env: &default_env
+  EMSDK_NUM_CORES: 3
+  EMCC_CORES: 3
+  PYODIDE_JOBS: 3
+  # Make sure the ccache dir is consistent between core and package builds
+  # (it's not the case otherwise)
+  CCACHE_DIR: /root/.ccache/
+  # Disable the compression of wheels, so they are better compressed by the CDN
+  PYODIDE_ZIP_COMPRESSION_LEVEL: 0
+  # For maintainers: set this to 0 if you are making an ABI break, and
+  # reset to 1 after updating the packages to the new ABI.
+  USE_PREBUILT_PACKAGES: 1
+
 defaults: &defaults
   working_directory: ~/repo
   docker:
@@ -8,17 +21,7 @@ defaults: &defaults
     #       (e.g. `rg -F --hidden <old_tag>`)
     - image: pyodide/pyodide-env:20260211-chrome145-firefox146-py314
   environment:
-    EMSDK_NUM_CORES: 3
-    EMCC_CORES: 3
-    PYODIDE_JOBS: 3
-    # Make sure the ccache dir is consistent between core and package builds
-    # (it's not the case otherwise)
-    CCACHE_DIR: /root/.ccache/
-    # Disable the compression of wheels, so they are better compressed by the CDN
-    PYODIDE_ZIP_COMPRESSION_LEVEL: 0
-    # For maintainers: set this to 0 if you are making an ABI break, and
-    # reset to 1 after updating the packages to the new ABI.
-    USE_PREBUILT_PACKAGES: 1
+    <<: *default_env
 
 jobs:
   build-core:
@@ -29,6 +32,7 @@ jobs:
         default: 0
     <<: *defaults
     environment:
+      <<: *default_env
       DISABLE_DYLINK: << parameters.disable_dylink >>
     steps:
       - checkout
