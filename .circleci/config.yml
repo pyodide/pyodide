@@ -37,9 +37,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
-            - -core-v20220915-{{ checksum "cpython/Makefile" }}
-            - -core-v20220915
+            - -core-v20260423-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+            - -core-v20260423-{{ checksum "cpython/Makefile" }}
+            - -core-v20260423
 
       - run:
           name: calculate build hash for ccache
