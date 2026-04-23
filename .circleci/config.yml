@@ -70,6 +70,7 @@ jobs:
 
             ccache -z
             make -C cpython
+            ccache -p
             ccache -s
 
       - run:
@@ -81,6 +82,7 @@ jobs:
 
             ccache -z
             PYODIDE_PACKAGES="tag:pytest,tag:pyodide.test" make -j${PYODIDE_JOBS}
+            ccache -p
             ccache -s
 
       - run:
