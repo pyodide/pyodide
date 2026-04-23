@@ -9,6 +9,8 @@ package:
 source:
   sha256: f042152b681c4bfac5cae2742a55e103d27ab2ec0f3d88037136b6bfe7c9c5de
   url: https://files.pythonhosted.org/packages/source/p/packaging/packaging-26.1.tar.gz
+  patches:
+    - patches/0001-Add-backwards-compatibility-for-wheels-with-pyodide-.patch
 about:
   home: https://github.com/pypa/packaging
   PyPI: https://pypi.org/project/packaging
