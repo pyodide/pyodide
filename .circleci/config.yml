@@ -70,6 +70,7 @@ jobs:
 
             ccache -z
             make -C cpython
+            echo CCACHE_DIR: $CCACHE_DIR
             ccache -p
             ccache -s
 
@@ -82,6 +83,7 @@ jobs:
 
             ccache -z
             PYODIDE_PACKAGES="tag:pytest,tag:pyodide.test" make -j${PYODIDE_JOBS}
+            echo CCACHE_DIR: $CCACHE_DIR
             ccache -p
             ccache -s
 
