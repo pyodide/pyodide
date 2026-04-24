@@ -41,9 +41,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - -core-v20260423.2-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
-            - -core-v20260423.2-{{ checksum "cpython/Makefile" }}
-            - -core-v20260423.2
+            - -core-v20260423.3-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+            - -core-v20260423.3-{{ checksum "cpython/Makefile" }}
+            - -core-v20260423.3
 
       - run:
           name: calculate build hash for ccache
@@ -110,7 +110,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -core-v20260423.2-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+          key: -core-v20260423.3-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Clean up workspace
