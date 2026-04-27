@@ -8,6 +8,7 @@ Actual SSL operations are not supported in Pyodide's browser environment.
 
 import _ssl
 import os
+from pathlib import Path
 import sys
 import base64
 import warnings
@@ -347,17 +348,14 @@ class SSLContext:
         if cafile is None and capath is None and cadata is None:
             raise TypeError("cafile, capath and cadata cannot be all omitted")
         if cafile:
-            with open(cafile) as f:
-                self._ca_data = f.read()
+            self._ca_data = Path(cafile).read_text()
         elif cadata:
             self._ca_data = cadata if isinstance(cadata, str) else cadata.decode()
 
     def load_cert_chain(self, certfile, keyfile=None, password=None):
-        with open(certfile) as f:
-            self._certfile_data = f.read()
+        self._certfile_data = Path(certfile).read_text()
         if keyfile:
-            with open(keyfile) as f:
-                self._keyfile_data = f.read()
+            self._keyfile_data = Path(keyfile).read_text()
         self._key_password = password
 
     def set_default_verify_paths(self):
@@ -750,15 +748,19 @@ class SSLSocket(socket):
         raise NotImplementedError("Can't dup() %s instances" % self.__class__.__name__)
 
     def read(self, len=1024, buffer=None):
+        if buffer is not None:
+            data = socket.recv(self, len)
+            n = len(data)
+            buffer[:n] = data
+            return n
+
         return socket.recv(self, len)
 
     def write(self, data):
         return socket.send(self, data)
 
     def getpeercert(self, binary_form=False):
-        if binary_form:
-            return b""
-        return {}
+        return None
 
     def get_verified_chain(self):
         return []

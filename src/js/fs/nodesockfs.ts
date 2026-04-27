@@ -189,13 +189,9 @@ export async function initializeNodeSockFS(
         sock.writer =
           wcgSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
         // Track when the underlying transport closes
-        wcgSocket.closed
-          .then(() => {
-            sock.closed = true;
-          })
-          .catch(() => {
-            sock.closed = true;
-          });
+        wcgSocket.closed.finally(() => {
+          sock.closed = true;
+        });
         return 0;
       } catch (err: unknown) {
         sock.error = cDefs.ECONNREFUSED;
@@ -319,14 +315,9 @@ export async function initializeNodeSockFS(
         tlsSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
       sock.leftover = null;
 
-      tlsSocket.closed
-        .then(() => {
-          sock.closed = true;
-        })
-        .catch(() => {
-          sock.closed = true;
-        });
-
+      tlsSocket.closed.finally(() => {
+        sock.closed = true;
+      });
       return 0;
     },
 

@@ -1,6 +1,7 @@
 import contextlib
 import socket
 import threading
+from pathlib import Path
 
 import pytest
 from pytest_pyodide import run_in_pyodide
@@ -850,20 +851,18 @@ def test_asyncio_client_close_lifecycle(selenium_nodesock):
 # ---------------------------------------------------------------------------
 
 
-def _generate_self_signed_cert():
+@pytest.fixture
+def self_signed_cert(tmp_path):
     import datetime
     import ipaddress
-    import os
-    import tempfile
 
     from cryptography import x509
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import rsa
     from cryptography.x509.oid import NameOID
 
-    tmpdir = tempfile.mkdtemp()
-    certfile = os.path.join(tmpdir, "cert.pem")
-    keyfile = os.path.join(tmpdir, "key.pem")
+    certfile = tmp_path / "cert.pem"
+    keyfile = tmp_path / "key.pem"
 
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     cert = (
@@ -887,25 +886,21 @@ def _generate_self_signed_cert():
         )
         .sign(key, hashes.SHA256())
     )
-    with open(certfile, "wb") as f:
-        f.write(cert.public_bytes(serialization.Encoding.PEM))
-    with open(keyfile, "wb") as f:
-        f.write(
-            key.private_bytes(
-                serialization.Encoding.PEM,
-                serialization.PrivateFormat.TraditionalOpenSSL,
-                serialization.NoEncryption(),
-            )
+    Path(certfile).write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+    Path(keyfile).write_bytes(
+        key.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.TraditionalOpenSSL,
+            serialization.NoEncryption(),
         )
+    )
     return certfile, keyfile
 
 
 @contextlib.contextmanager
-def tls_server(handler, *, timeout=5.0):
+def tls_server(handler, certfile, keyfile, *, timeout=5.0):
     """Start a TLS server with a self-signed cert. Yields (host, port)."""
     import ssl as host_ssl
-
-    certfile, keyfile = _generate_self_signed_cert()
 
     server_ctx = host_ssl.SSLContext(host_ssl.PROTOCOL_TLS_SERVER)  # type: ignore[attr-defined]
     server_ctx.load_cert_chain(certfile, keyfile)
@@ -946,7 +941,7 @@ def tls_server(handler, *, timeout=5.0):
 
 
 @pytest.mark.skip_refcount_check
-def test_tls_starttls_send_recv(selenium_nodesock):
+def test_tls_starttls_send_recv(selenium_nodesock, self_signed_cert):
     """Connect plain TCP, upgrade via wrap_socket/startTls, exchange data over TLS."""
     RESPONSE = b"TLS OK"
 
@@ -971,6 +966,6 @@ def test_tls_starttls_send_recv(selenium_nodesock):
         ss.close()
         return response.decode()
 
-    with tls_server(handler) as (host, port):
+    with tls_server(handler, *self_signed_cert) as (host, port):
         result = run(selenium_nodesock, host, port)
         assert result == RESPONSE.decode()
