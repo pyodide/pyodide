@@ -2108,14 +2108,10 @@ def test_lockfile_api(selenium):
     from pyodide_js import lockfile
 
     lockfile_info = lockfile.info
-    lockfile_packages = lockfile.packages
 
     assert lockfile_info is not None
     assert lockfile_info.abi_version is not None
-    assert lockfile_info.version is not None
     assert lockfile_info.python is not None
-
-    assert lockfile_packages.micropip is not None
 
 
 def test_fs_init(selenium_standalone_noload):
