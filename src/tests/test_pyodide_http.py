@@ -321,8 +321,8 @@ async def test_pyfetch_custom_fetcher(selenium):
 
 @run_in_pyodide
 async def test_FetchResponse_empty_string(selenium):
-    from pyodide.http import FetchResponse
     import js
+    from pyodide.http import FetchResponse
 
     # Test that FetchResponse can handle empty string URLs
     # This should not raise an error
