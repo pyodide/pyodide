@@ -269,12 +269,6 @@ export async function initializeNodeSockFS(
         return -cDefs.EINVAL;
       }
 
-      // Don't call reader.cancel() or writer.close() here — with
-      // Duplex.toWeb(), cancel() calls destroy() on the underlying
-      // net.Socket which kills the entire connection and emits an
-      // "error" event ("The operation was aborted").  Just release
-      // the locks so our code stops reading/writing.  The actual
-      // transport teardown happens via wcgSocket.close() below.
       if (how === SHUT_RD || how === SHUT_RDWR) {
         if (sock.reader) {
           sock.reader.releaseLock();
