@@ -188,10 +188,16 @@ export async function initializeNodeSockFS(
           wcgSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
         sock.writer =
           wcgSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
-        // Track when the underlying transport closes
-        wcgSocket.closed.finally(() => {
-          sock.closed = true;
-        });
+        // Track when the underlying transport closes.
+        // Swallow any errors while closing sockets.
+        wcgSocket.closed.then(
+          () => {
+            sock.closed = true;
+          },
+          () => {
+            sock.closed = true;
+          },
+        );
         return 0;
       } catch (err: unknown) {
         sock.error = cDefs.ECONNREFUSED;
@@ -263,9 +269,14 @@ export async function initializeNodeSockFS(
         return -cDefs.EINVAL;
       }
 
+      // Don't call reader.cancel() or writer.close() here — with
+      // Duplex.toWeb(), cancel() calls destroy() on the underlying
+      // net.Socket which kills the entire connection and emits an
+      // "error" event ("The operation was aborted").  Just release
+      // the locks so our code stops reading/writing.  The actual
+      // transport teardown happens via wcgSocket.close() below.
       if (how === SHUT_RD || how === SHUT_RDWR) {
         if (sock.reader) {
-          sock.reader.cancel().catch(() => {});
           sock.reader.releaseLock();
           sock.reader = null;
         }
@@ -273,7 +284,6 @@ export async function initializeNodeSockFS(
 
       if (how === SHUT_WR || how === SHUT_RDWR) {
         if (sock.writer) {
-          sock.writer.close().catch(() => {});
           sock.writer.releaseLock();
           sock.writer = null;
         }
@@ -315,9 +325,14 @@ export async function initializeNodeSockFS(
         tlsSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
       sock.leftover = null;
 
-      tlsSocket.closed.finally(() => {
-        sock.closed = true;
-      });
+      tlsSocket.closed.then(
+        () => {
+          sock.closed = true;
+        },
+        () => {
+          sock.closed = true;
+        },
+      );
       return 0;
     },
 
