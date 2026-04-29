@@ -80,8 +80,8 @@ EM_JS(bool, _try_fcntl64, (int fd, int cmd, int arg, int* result), {
   if (!sock?.sock_ops?.fcntl64)
     return false;
 
-  Module.HEAP32[result / 4] = sock.sock_ops.fcntl64(sock, cmd, arg);
-  if (Module.HEAP32[result / 4] < 0)
+  Module.HEAP32[result >> 2] = sock.sock_ops.fcntl64(sock, cmd, arg);
+  if (Module.HEAP32[result >> 2] < 0)
     return false;
 
   // other commands are fallback to emscripten's implementation
@@ -97,7 +97,7 @@ EM_JS(bool, _try_shutdown, (int fd, int how, int* result), {
   if (!sock?.sock_ops?.shutdown)
     return false;
 
-  Module.HEAP32[result / 4] = sock.sock_ops.shutdown(sock, how);
+  Module.HEAP32[result >> 2] = sock.sock_ops.shutdown(sock, how);
   return true;
 })
 
@@ -145,6 +145,16 @@ int __syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t a
   return syscall_syncify(p);
 }
 
+int __syscall_fcntl64(int fd, int cmd, intptr_t varargs)
+{
+  int result = 0;
+  bool handled = _try_fcntl64(fd, cmd, varargs, &result);
+  if (!handled) {
+    return _orig_syscall_fcntl64(fd, cmd, varargs);
+  }
+  return result;
+}
+
 int __syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
 {
   int result = 0;
@@ -154,16 +164,6 @@ int __syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
     // we still want to return a meaningful error code
     // https://github.com/emscripten-core/emscripten/issues/13393
     return _orig_syscall_shutdown(fd, how, d1, d2, d3, d4);
-  }
-  return result;
-}
-
-int __syscall_fcntl64(int fd, int cmd, intptr_t varargs)
-{
-  int result = 0;
-  bool handled = _try_fcntl64(fd, cmd, varargs, &result);
-  if (!handled) {
-    return _orig_syscall_fcntl64(fd, cmd, varargs);
   }
   return result;
 }

@@ -252,6 +252,9 @@ EXPORTS=_main \
    ,_PyUnicode_New \
    ,_emscripten_stack_get_current \
    ,_Py_Version \
+   \
+   ,___stack_low \
+   ,___stack_high \
 
 
 ifeq ($(DISABLE_DYLINK), 1)

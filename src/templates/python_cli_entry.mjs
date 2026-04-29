@@ -219,20 +219,6 @@ async function main() {
     loop._no_in_progress_handler = handleExit
     loop._system_exit_handler = handleExit
     loop._keyboard_interrupt_handler = lambda: handleExit(130)
-
-    # Make shutil.get_terminal_size tell the terminal size accurately.
-    import shutil
-    from js.process import stdout
-    import os
-    def get_terminal_size(fallback=(80, 24)):
-        columns = getattr(stdout, "columns", None)
-        rows = getattr(stdout, "rows", None)
-        if columns is None:
-            columns = fallback[0]
-        if rows is None:
-            rows = fallback[1]
-        return os.terminal_size((columns, rows))
-    shutil.get_terminal_size = get_terminal_size
     `,
     { globals: sideGlobals },
   );

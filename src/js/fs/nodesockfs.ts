@@ -2,9 +2,12 @@
  * NodeSockFS — Node.js native socket filesystem replacing Emscripten's SOCKFS.
  * Uses WinterCG Sockets API as transport.
  *
- * JSPI syscalls (socket_syscalls.c) — sync Python (socket.connect/recv/send)
- * suspends the WASM stack via WebAssembly.Suspending, awaits the async op,
- * resumes.
+ * This is used in two contexts:
+ *   - Replacing socket syscalls: JSPI syscalls (socket_syscalls.c) — sync Python (socket.connect/recv/send)
+ *     suspends the WASM stack via WebAssembly.Suspending, awaits the async op,
+ *     resumes.
+ *   - In asyncio webloop (webloop.py) - async Python event loop socket functions
+ *     go through NodeSockFS directly.
  */
 
 import {
@@ -13,12 +16,12 @@ import {
   Socket as WinterCGSocket,
 } from "./wintercg-sockets";
 import type { SocketOptions, ConnectFunc } from "./wintercg-sockets";
+import type { FSStream, FSNode } from "../types";
 
 interface NodeSock {
   family: number;
   type: number;
   protocol: number;
-  server: any;
   error: number | null;
   /** The WinterCG Socket wrapping the underlying net.Socket / tls.TLSSocket */
   wcgSocket: WinterCGSocket | null;
@@ -31,12 +34,30 @@ interface NodeSock {
   connected: boolean;
   connecting: boolean;
   closed: boolean;
-  stream?: any;
+  stream?: FSStream;
   daddr?: string;
   dport?: number;
   saddr?: string;
   sport?: number;
-  sock_ops: any;
+  sock_ops: {
+    poll: (sock: NodeSock) => number;
+    ioctl: (sock: NodeSock, request: number) => number;
+    close: (sock: NodeSock) => number;
+    connectAsync: (
+      sock: NodeSock,
+      addr: string,
+      port: number,
+      options?: SocketOptions,
+    ) => Promise<number>;
+    sendmsgAsync: (sock: NodeSock, data: Uint8Array) => Promise<number>;
+    recvmsgAsync: (
+      sock: NodeSock,
+      length: number,
+    ) => Promise<Uint8Array | null>;
+    bind: (sock: NodeSock, addr: string, port: number) => void;
+    listen: (sock: NodeSock, backlog: number) => void;
+    accept: (sock: NodeSock) => never;
+  };
 }
 
 /**
@@ -55,14 +76,15 @@ export async function initializeNodeSockFS(
 
   const module = Module;
   const FS = module.FS;
+  const API = module.API;
+
+  // following Emscripten's other FS implementations
+  const DIR_MODE = cDefs.S_IFDIR | 0o777;
 
   // https://linux.die.net/man/2/shutdown
   const SHUT_RD = 0;
   const SHUT_WR = 1;
   const SHUT_RDWR = 2;
-
-  // following Emscripten's other FS implementations
-  const DIR_MODE = cDefs.S_IFDIR | 0o777;
 
   // Highly inspired by Emscripten's SOCKFS implementation
   // https://github.com/emscripten-core/emscripten/blob/main/src/lib/libsockfs.js
@@ -92,11 +114,11 @@ export async function initializeNodeSockFS(
      * For now only FIONREAD is supported.
      * TODO: support other requests?
      */
-    ioctl(sock: NodeSock, request: number, _arg: any): number {
+    ioctl(sock: NodeSock, request: number): number {
       if (request === cDefs.FIONREAD) {
         return sock.leftover ? sock.leftover.length : 0;
       }
-      return 0;
+      return -cDefs.EINVAL;
     },
 
     /**
@@ -298,14 +320,14 @@ export async function initializeNodeSockFS(
   };
 
   const stream_ops = {
-    poll(stream: any): number {
+    poll(stream: FSStream): number {
       const sock = stream.node.sock as NodeSock;
       return tcp_sock_ops.poll(sock);
     },
 
-    ioctl(stream: any, request: number, varargs: any): number {
+    ioctl(stream: FSStream, request: number): number {
       const sock = stream.node.sock as NodeSock;
-      return tcp_sock_ops.ioctl(sock, request, varargs);
+      return tcp_sock_ops.ioctl(sock, request);
     },
 
     write(): number {
@@ -313,7 +335,7 @@ export async function initializeNodeSockFS(
       throw new FS.ErrnoError(cDefs.EOPNOTSUPP);
     },
 
-    close(stream: any): void {
+    close(stream: FSStream): void {
       const sock = stream.node.sock as NodeSock;
       tcp_sock_ops.close(sock);
     },
@@ -323,14 +345,14 @@ export async function initializeNodeSockFS(
   let socketCounter = 0;
 
   // The main NodeSockFS object that will be mounted
-  const NodeSockFS: any = {
+  const NodeSockFS = {
     // Root node, set after mount
-    root: null as any,
+    root: null as FSNode | null,
 
     /**
      * Mount the filesystem
      */
-    mount(_mount: any): any {
+    mount(): FSNode {
       return FS.createNode(null, "/", DIR_MODE, 0);
     },
 
@@ -366,7 +388,6 @@ export async function initializeNodeSockFS(
         family,
         type,
         protocol,
-        server: null,
         error: null,
         wcgSocket: null,
         reader: null,
@@ -395,9 +416,65 @@ export async function initializeNodeSockFS(
 
       // map the new stream to the socket structure (sockets have a 1:1
       // relationship with a stream)
-      sock.stream = stream;
+      sock.stream = stream as FSStream;
 
       return sock;
+    },
+
+    /**
+     * Get a socket by file descriptor
+     */
+    getSocket(fd: number): NodeSock | null {
+      const stream = FS.getStream(fd) as FSStream;
+      if (!stream || !FS.isSocket(stream.node.mode)) {
+        return null;
+      }
+      return stream.node.sock as NodeSock;
+    },
+  };
+
+  // Used in webloop.py to forward eventloop socket operations to Node.js
+  API._nodeSock = {
+    async connect(fd: number, host: string, port: number): Promise<void> {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock) {
+        throw new FS.ErrnoError(cDefs.EBADF);
+      }
+      const result = await tcp_sock_ops.connectAsync(sock, host, port);
+      if (result < 0) {
+        throw new FS.ErrnoError(-result);
+      }
+    },
+
+    async recv(fd: number, nbytes: number): Promise<Uint8Array> {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock) {
+        throw new FS.ErrnoError(cDefs.EBADF);
+      }
+      const result = await tcp_sock_ops.recvmsgAsync(sock, nbytes);
+      if (result === null) {
+        return new Uint8Array(0);
+      }
+      return result;
+    },
+
+    async send(
+      fd: number,
+      data: Uint8Array | any /* or PyProxy of bytes object */,
+    ): Promise<number> {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock) {
+        throw new FS.ErrnoError(cDefs.EBADF);
+      }
+      let buf: Uint8Array;
+      if (data instanceof Uint8Array) {
+        buf = data;
+      } else if (data.toJs) {
+        buf = data.toJs();
+      } else {
+        buf = new Uint8Array(data);
+      }
+      return await tcp_sock_ops.sendmsgAsync(sock, buf);
     },
   };
 
@@ -411,6 +488,4 @@ export async function initializeNodeSockFS(
   // FIXME: This depends on internal Emscripten structures, which may change anytime.
   //        We should consider contributing upstream or finding a more stable integration method.
   module.SOCKFS.createSocket = NodeSockFS.createSocket;
-
-  return NodeSockFS;
 }
