@@ -53,6 +53,7 @@ interface NodeSock {
     recvmsgAsync: (
       sock: NodeSock,
       length: number,
+      blocking?: boolean,
     ) => Promise<Uint8Array | number>;
     bind: (sock: NodeSock, addr: string, port: number) => void;
     listen: (sock: NodeSock, backlog: number) => void;
@@ -233,6 +234,7 @@ export async function initializeNodeSockFS(
     async recvmsgAsync(
       sock: NodeSock,
       length: number,
+      blocking = false,
     ): Promise<Uint8Array | number> {
       if (sock.leftover && sock.leftover.length > 0) {
         const bytesRead = Math.min(length, sock.leftover.length);
@@ -244,8 +246,7 @@ export async function initializeNodeSockFS(
         return result;
       }
 
-      // Non-blocking mode: return EAGAIN immediately if no buffered data.
-      if (sock.stream.flags & cDefs.O_NONBLOCK) {
+      if (!blocking && sock.stream.flags & cDefs.O_NONBLOCK) {
         return -cDefs.EAGAIN;
       }
 
@@ -485,13 +486,16 @@ export async function initializeNodeSockFS(
       }
     },
 
-    async recv(fd: number, nbytes: number): Promise<Uint8Array | number> {
+    async recv(fd: number, nbytes: number): Promise<Uint8Array> {
       const sock = NodeSockFS.getSocket(fd);
       if (!sock) {
         throw new FS.ErrnoError(cDefs.EBADF);
       }
-      const result = await tcp_sock_ops.recvmsgAsync(sock, nbytes);
-      if (result === null) {
+      const result = await tcp_sock_ops.recvmsgAsync(sock, nbytes, true);
+      if (typeof result === "number") {
+        if (result < 0) {
+          throw new FS.ErrnoError(-result);
+        }
         return new Uint8Array(0);
       }
       return result;
