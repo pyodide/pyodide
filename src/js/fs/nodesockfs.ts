@@ -34,7 +34,7 @@ interface NodeSock {
   connected: boolean;
   connecting: boolean;
   closed: boolean;
-  stream?: FSStream;
+  stream: FSStream;
   daddr?: string;
   dport?: number;
   saddr?: string;
@@ -53,7 +53,7 @@ interface NodeSock {
     recvmsgAsync: (
       sock: NodeSock,
       length: number,
-    ) => Promise<Uint8Array | null>;
+    ) => Promise<Uint8Array | number>;
     bind: (sock: NodeSock, addr: string, port: number) => void;
     listen: (sock: NodeSock, backlog: number) => void;
     accept: (sock: NodeSock) => never;
@@ -126,6 +126,7 @@ export async function initializeNodeSockFS(
      * Emscripten's __syscall_fcntl64(F_SETFL) does not handle cleaning up the
      * flags with F_SETFL properly, so we need to do it here.
      * TODO: Upstream this fix to Emscripten
+     *
      * Other commands are fallbacked to emscripten's implementation.
      * (see socket_syscalls.c)
      */
@@ -244,7 +245,7 @@ export async function initializeNodeSockFS(
       }
 
       // Non-blocking mode: return EAGAIN immediately if no buffered data.
-      if (sock.stream?.flags & cDefs.O_NONBLOCK) {
+      if (sock.stream.flags & cDefs.O_NONBLOCK) {
         return -cDefs.EAGAIN;
       }
 
@@ -421,6 +422,7 @@ export async function initializeNodeSockFS(
       }
 
       // create our internal socket structure
+      // @ts-ignore (`stream` field is assigned later in this function)
       const sock: NodeSock = {
         family,
         type,
@@ -483,7 +485,7 @@ export async function initializeNodeSockFS(
       }
     },
 
-    async recv(fd: number, nbytes: number): Promise<Uint8Array> {
+    async recv(fd: number, nbytes: number): Promise<Uint8Array | number> {
       const sock = NodeSockFS.getSocket(fd);
       if (!sock) {
         throw new FS.ErrnoError(cDefs.EBADF);

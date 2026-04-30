@@ -572,7 +572,7 @@ export interface API {
 
   _nodeSock: {
     connect: (fd: number, host: string, port: number) => Promise<void>;
-    recv: (fd: number, nbytes: number) => Promise<Uint8Array>;
+    recv: (fd: number, nbytes: number) => Promise<Uint8Array | number>;
     send: (fd: number, data: any) => Promise<number>;
     startTls: (fd: number) => number;
   };
