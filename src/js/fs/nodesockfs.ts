@@ -137,7 +137,7 @@ export async function initializeNodeSockFS(
         sock.stream.flags = module.HEAP32[varargs / 4];
         return 0;
       }
-      return cDefs.EINVAL;
+      return -cDefs.EINVAL;
     },
 
     close(sock: NodeSock): number {
@@ -174,10 +174,10 @@ export async function initializeNodeSockFS(
       sock.daddr = addr;
       sock.dport = port;
 
-      const wcgSocket = connect(
+      const wcgSocket = connectFunc(
         { hostname: addr, port },
         {
-          secureTransport: options?.secureTransport ?? "off",
+          secureTransport: options?.secureTransport ?? "starttls",
           allowHalfOpen: false,
         },
       );
@@ -192,14 +192,16 @@ export async function initializeNodeSockFS(
           wcgSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
         sock.writer =
           wcgSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
-        // Track when the underlying transport closes
-        wcgSocket.closed
-          .then(() => {
+        // Track when the underlying transport closes.
+        // Swallow any errors while closing sockets.
+        wcgSocket.closed.then(
+          () => {
             sock.closed = true;
-          })
-          .catch(() => {
+          },
+          () => {
             sock.closed = true;
-          });
+          },
+        );
         return 0;
       } catch (err: unknown) {
         sock.error = cDefs.ECONNREFUSED;
@@ -278,7 +280,6 @@ export async function initializeNodeSockFS(
 
       if (how === SHUT_RD || how === SHUT_RDWR) {
         if (sock.reader) {
-          sock.reader.cancel().catch(() => {});
           sock.reader.releaseLock();
           sock.reader = null;
         }
@@ -286,7 +287,6 @@ export async function initializeNodeSockFS(
 
       if (how === SHUT_WR || how === SHUT_RDWR) {
         if (sock.writer) {
-          sock.writer.close().catch(() => {});
           sock.writer.releaseLock();
           sock.writer = null;
         }
@@ -299,6 +299,43 @@ export async function initializeNodeSockFS(
         sock.closed = true;
       }
 
+      return 0;
+    },
+
+    /**
+     * Start TLS on an existing socket.
+     */
+    startTls(sock: NodeSock): number {
+      if (!sock.wcgSocket) {
+        return -cDefs.ENOTCONN;
+      }
+
+      if (sock.reader) {
+        sock.reader.releaseLock();
+        sock.reader = null;
+      }
+      if (sock.writer) {
+        sock.writer.releaseLock();
+        sock.writer = null;
+      }
+
+      const tlsSocket = sock.wcgSocket.startTls();
+
+      sock.wcgSocket = tlsSocket;
+      sock.reader =
+        tlsSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+      sock.writer =
+        tlsSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
+      sock.leftover = null;
+
+      tlsSocket.closed.then(
+        () => {
+          sock.closed = true;
+        },
+        () => {
+          sock.closed = true;
+        },
+      );
       return 0;
     },
 
@@ -475,6 +512,14 @@ export async function initializeNodeSockFS(
         buf = new Uint8Array(data);
       }
       return await tcp_sock_ops.sendmsgAsync(sock, buf);
+    },
+
+    startTls(fd: number): number {
+      const sock = NodeSockFS.getSocket(fd);
+      if (!sock) {
+        return -cDefs.EBADF;
+      }
+      return tcp_sock_ops.startTls(sock);
     },
   };
 

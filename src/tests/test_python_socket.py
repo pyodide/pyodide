@@ -1,6 +1,7 @@
 import contextlib
 import socket
 import threading
+from pathlib import Path
 
 import pytest
 from pytest_pyodide import run_in_pyodide
@@ -897,3 +898,128 @@ def test_asyncio_client_close_lifecycle(selenium_nodesock):
         result = run(selenium_nodesock, host, port)
         assert "connection_made" in result
         assert "connection_lost:None" in result
+
+
+# ---------------------------------------------------------------------------
+# TLS tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def self_signed_cert(tmp_path):
+    import datetime
+    import ipaddress
+
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import NameOID
+
+    certfile = tmp_path / "cert.pem"
+    keyfile = tmp_path / "key.pem"
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")]))
+        .issuer_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")]))
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(datetime.datetime.now(datetime.UTC))
+        .not_valid_after(
+            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=1)
+        )
+        .add_extension(
+            x509.SubjectAlternativeName(
+                [
+                    x509.DNSName("localhost"),
+                    x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
+                ]
+            ),
+            critical=False,
+        )
+        .sign(key, hashes.SHA256())
+    )
+    Path(certfile).write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+    Path(keyfile).write_bytes(
+        key.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.TraditionalOpenSSL,
+            serialization.NoEncryption(),
+        )
+    )
+    return certfile, keyfile
+
+
+@contextlib.contextmanager
+def tls_server(handler, certfile, keyfile, *, timeout=5.0):
+    """Start a TLS server with a self-signed cert. Yields (host, port)."""
+    import ssl as host_ssl
+
+    server_ctx = host_ssl.SSLContext(host_ssl.PROTOCOL_TLS_SERVER)  # type: ignore[attr-defined]
+    server_ctx.load_cert_chain(certfile, keyfile)
+
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind(("127.0.0.1", 0))
+    server_socket.listen(1)
+    server_socket.settimeout(timeout)
+    host, port = server_socket.getsockname()
+    tls_sock = server_ctx.wrap_socket(server_socket, server_side=True)
+
+    errors: list[str] = []
+    ready = threading.Event()
+
+    def _serve():
+        ready.set()
+        try:
+            conn, addr = tls_sock.accept()
+            try:
+                handler(conn, addr)
+            finally:
+                conn.close()
+        except Exception as e:
+            errors.append(str(e))
+        finally:
+            tls_sock.close()
+
+    thread = threading.Thread(target=_serve, daemon=True)
+    thread.start()
+    ready.wait(timeout=timeout)
+
+    try:
+        yield host, port
+    finally:
+        thread.join(timeout=timeout)
+        assert not errors, f"TLS server error: {errors[0]}"
+
+
+@pytest.mark.skip_refcount_check
+def test_tls_starttls_send_recv(selenium_nodesock, self_signed_cert):
+    """Connect plain TCP, upgrade via wrap_socket/startTls, exchange data over TLS."""
+    RESPONSE = b"TLS OK"
+
+    def handler(conn, _addr):
+        conn.recv(1024)
+        conn.sendall(RESPONSE)
+
+    @run_in_pyodide
+    def run(selenium, host, port):
+        import socket
+        import ssl
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)  # type: ignore[attr-defined]
+        ctx.check_hostname = False
+
+        ss = ctx.wrap_socket(s, server_hostname="localhost")
+        ss.sendall(b"Hello TLS")
+        response = ss.recv(1024)
+        ss.close()
+        return response.decode()
+
+    with tls_server(handler, *self_signed_cert) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert result == RESPONSE.decode()

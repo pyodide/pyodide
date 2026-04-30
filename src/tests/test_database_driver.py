@@ -331,6 +331,62 @@ def test_sqlalchemy_mysql(selenium_nodesock, mysql_test_db):
     run(selenium_nodesock, host, port, user, password, db)
 
 
+# MySQL 8.0+ auto-generates TLS certificates at startup.
+# No extra server configuration needed — just pass ssl=True on the client.
+@pytest.mark.skip_refcount_check
+@pytest.mark.db
+@only_node
+def test_mysql_pymysql_tls(selenium_nodesock, mysql_test_db):
+    cfg = mysql_test_db
+
+    host = cfg["host"]
+    port = cfg["port"]
+    user = cfg["user"]
+    password = cfg["password"]
+    db = cfg["db"]
+
+    @run_in_pyodide(packages=["micropip"])
+    async def run(selenium, host, port, user, password, db):
+        import micropip
+
+        await micropip.install("pymysql==1.1.0")
+
+        import pymysql
+
+        conn = pymysql.connect(
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=db,
+            unix_socket=False,
+            ssl={"check_hostname": False},
+            autocommit=True,
+        )
+        try:
+            with conn.cursor() as cur:
+                cur.execute("DROP TABLE IF EXISTS tls_test")
+                cur.execute(
+                    "CREATE TABLE tls_test (id INT PRIMARY KEY, msg VARCHAR(100))"
+                )
+                cur.execute(
+                    "INSERT INTO tls_test (id, msg) VALUES (%s, %s)",
+                    (1, "over TLS"),
+                )
+                cur.execute("SELECT msg FROM tls_test WHERE id = 1")
+                row = cur.fetchone()
+
+                cur.execute("SHOW STATUS LIKE 'Ssl_cipher'")
+                ssl_status = cur.fetchone()
+        finally:
+            conn.close()
+
+        assert row[0] == "over TLS"
+        assert ssl_status[1], "Expected active TLS cipher, got empty string"
+
+    run(selenium_nodesock, host, port, user, password, db)
+
+
 @pytest.fixture(scope="session")
 def pg_admin_config():
     host = os.environ.get("POSTGRES_HOST", "127.0.0.1")
