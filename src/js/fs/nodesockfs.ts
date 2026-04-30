@@ -272,10 +272,6 @@ export async function initializeNodeSockFS(
     },
 
     shutdown(sock: NodeSock, how: number): number {
-      if (sock.closed) {
-        return -cDefs.ENOTCONN;
-      }
-
       if (how !== SHUT_RD && how !== SHUT_WR && how !== SHUT_RDWR) {
         return -cDefs.EINVAL;
       }
@@ -294,8 +290,8 @@ export async function initializeNodeSockFS(
         }
       }
 
-      if (sock.reader === null && sock.writer === null) {
-        sock.wcgSocket?.close().catch(() => {});
+      if (sock.reader === null && sock.writer === null && sock.wcgSocket) {
+        sock.wcgSocket.close().catch(() => {});
         sock.wcgSocket = null;
         sock.connected = false;
         sock.closed = true;

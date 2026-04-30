@@ -562,6 +562,43 @@ def test_socket_shutdown(selenium_nodesock):
         run(selenium_nodesock, host, port)
 
 
+def test_socket_shutdown_pairs(selenium_nodesock):
+    """All 9 combinations of two consecutive shutdown() calls should succeed (Linux behavior)."""
+
+    server_conns = []
+
+    def handler(conn, _addr):
+        server_conns.append(conn)
+        try:
+            while True:
+                data = conn.recv(1024)
+                if not data:
+                    break
+                conn.sendall(data)
+        except OSError:
+            pass
+
+    @run_in_pyodide
+    def run(selenium, host, port, first, second):
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+        s.sendall(b"ping")
+        s.recv(1024)
+
+        s.shutdown(first)
+        s.shutdown(second)
+        s.close()
+
+    shut_values = [0, 1, 2]
+    for first in shut_values:
+        for second in shut_values:
+            with tcp_server(handler) as (host, port):
+                run(selenium_nodesock, host, port, first, second)
+            server_conns.clear()
+
+
 def test_socket_shutdown_non_nodesock(selenium_standalone):
     """
     Calling shutdown on a non-node socket will raise "Function not implemented"
