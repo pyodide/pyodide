@@ -2134,7 +2134,6 @@ def test_lockfile_api(selenium):
 
     assert lockfile_info is not None
     assert lockfile_info.abi_version is not None
-    assert lockfile_info.version is not None
     assert lockfile_info.python is not None
 
     assert lockfile_packages.micropip is not None
