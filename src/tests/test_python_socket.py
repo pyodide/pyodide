@@ -599,6 +599,38 @@ def test_socket_shutdown_pairs(selenium_nodesock):
             server_conns.clear()
 
 
+def test_socket_nonblocking_recv_with_buffered_data(selenium_nodesock):
+    """Non-blocking recv should return data that arrived while nobody was reading.
+
+    This tests that the socket layer eagerly buffers incoming data (like the
+    kernel receive queue), so a non-blocking recv finds it immediately.
+    """
+
+    def handler(conn, _addr):
+        data = conn.recv(1024)
+        conn.sendall(data)
+
+    @run_in_pyodide
+    def run(selenium, host, port):
+        import socket
+        import time
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        s.sendall(b"hello")
+        time.sleep(0.5)
+
+        s.setblocking(False)
+        data = s.recv(1024)
+        s.close()
+        return data
+
+    with tcp_server(handler) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert result == b"hello"
+
+
 def test_socket_shutdown_non_nodesock(selenium_standalone):
     """
     Calling shutdown on a non-node socket will raise "Function not implemented"
