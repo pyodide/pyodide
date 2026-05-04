@@ -92,13 +92,16 @@ export async function initializeNodeSockFS(
   function startRecvPump(sock: NodeSock): void {
     if (sock.pumpRunning || !sock.reader) return;
     sock.pumpRunning = true;
+    const myReader = sock.reader;
     (async () => {
       try {
-        while (!sock.closed && sock.reader) {
-          const { value, done } = await sock.reader.read();
+        while (!sock.closed && sock.reader === myReader) {
+          const { value, done } = await myReader.read();
           if (done || !value) {
-            sock.eof = true;
-            notifyDataAvailable(sock);
+            if (sock.reader === myReader) {
+              sock.eof = true;
+              notifyDataAvailable(sock);
+            }
             break;
           }
           sock.recvBuffer.push(value);
@@ -106,10 +109,14 @@ export async function initializeNodeSockFS(
           notifyDataAvailable(sock);
         }
       } catch {
-        sock.eof = true;
-        notifyDataAvailable(sock);
+        if (sock.reader === myReader) {
+          sock.eof = true;
+          notifyDataAvailable(sock);
+        }
       } finally {
-        sock.pumpRunning = false;
+        if (sock.reader === myReader) {
+          sock.pumpRunning = false;
+        }
       }
     })();
   }
