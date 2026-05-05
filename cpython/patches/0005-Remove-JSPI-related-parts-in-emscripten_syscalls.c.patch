@@ -1,4 +1,4 @@
-From 7774d54f58deb619b13b5220e17b6bc3377e9196 Mon Sep 17 00:00:00 2001
+From 363dfe8339efb23166c76f8f98baab4ff83318a8 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Fri, 30 Jan 2026 15:48:03 +0900
 Subject: [PATCH 5/9] Remove JSPI-related parts in emscripten_syscalls.c
@@ -265,5 +265,5 @@ index b1236e6b123..e2deb7281b9 100644
  
  int syscall_ioctl_orig(int fd, int request, void* varargs)
 -- 
-2.34.1
+2.43.0
 

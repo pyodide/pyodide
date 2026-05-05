@@ -1,4 +1,4 @@
-From 4878c95d8d7f9f8d60e512aacf3e59037e336227 Mon Sep 17 00:00:00 2001
+From 55c7ddebd480240c874cd2be650c2457779d335b Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 22 Feb 2025 13:18:18 +0100
 Subject: [PATCH 4/9] Make `from x import *` aware of jsproxy modules
@@ -34,5 +34,5 @@ index ff44ba0ee64..2921e702ea6 100644
          if (PyObject_GetOptionalAttr(v, &_Py_ID(__dict__), &dict) < 0) {
              return -1;
 -- 
-2.34.1
+2.43.0
 

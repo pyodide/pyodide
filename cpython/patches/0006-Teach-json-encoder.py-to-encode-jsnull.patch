@@ -1,4 +1,4 @@
-From 77bcb5f2de330bc9ae13c7b50eb72cb4d52a7eef Mon Sep 17 00:00:00 2001
+From 72f3c4e3ff5febcf1ac4bb03b0bb7d96fb626525 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 9 Jul 2025 17:00:12 +0200
 Subject: [PATCH 6/9] Teach json encoder.py to encode jsnull
@@ -94,5 +94,5 @@ index 2f82a69a157..83d1c3e2f62 100644
                         True and False are also 1 and 0.*/
          keystr = _encoded_const(key);
 -- 
-2.34.1
+2.43.0
 
