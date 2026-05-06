@@ -343,10 +343,10 @@ JsProxy_bind_class(PyObject* self, PyObject* sig)
 
   // Call `sig = jsbind.bind_class_sig(sig)` and then delegate to
   // JsProxy_bind_sig.
-  // bind_class_sig takes sig and returns type[sig].
-  _Py_IDENTIFIER(bind_class_sig);
+  // _bind_class_sig takes sig and returns type[sig].
+  _Py_IDENTIFIER(_bind_class_sig);
   PyObject* class_sig =
-    _PyObject_CallMethodIdOneArg(jsbind, &PyId_bind_class_sig, sig);
+    _PyObject_CallMethodIdOneArg(jsbind, &PyId__bind_class_sig, sig);
   FAIL_IF_NULL(class_sig);
   result = JsProxy_bind_sig(self, class_sig);
 finally:
@@ -572,9 +572,9 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
   int got_converter = 0;
   PyObject* sig = NULL;
   if (JsProxy_SIG(self) != NULL) {
-    _Py_IDENTIFIER(get_attr_sig);
+    _Py_IDENTIFIER(_get_attr_sig);
     get_attr_sig_res = _PyObject_CallMethodIdObjArgs(
-      jsbind, &PyId_get_attr_sig, JsProxy_SIG(self), attr, NULL);
+      jsbind, &PyId__get_attr_sig, JsProxy_SIG(self), attr, NULL);
     FAIL_IF_NULL(get_attr_sig_res);
 
     // js_name_obj and sig are borrowed references into get_attr_sig_res, and
@@ -689,9 +689,9 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
   // (e.g. snake_case Python attr -> camelCase JS property).
   const char* js_key = key;
   if (JsProxy_SIG(self) != NULL) {
-    _Py_IDENTIFIER(resolve_js_name);
+    _Py_IDENTIFIER(_resolve_js_name);
     js_name_obj = _PyObject_CallMethodIdObjArgs(
-      jsbind, &PyId_resolve_js_name, JsProxy_SIG(self), attr, NULL);
+      jsbind, &PyId__resolve_js_name, JsProxy_SIG(self), attr, NULL);
     FAIL_IF_NULL(js_name_obj);
     js_key = PyUnicode_AsUTF8(js_name_obj);
     FAIL_IF_NULL(js_key);
@@ -2826,9 +2826,9 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   // If a signature is attached, run the JS names through any reverse name
   // translation it provides (e.g. camelCase -> snake_case).
   if (JsProxy_SIG(self) != NULL) {
-    _Py_IDENTIFIER(reverse_dir_names);
+    _Py_IDENTIFIER(_reverse_dir_names);
     PyObject* translated = _PyObject_CallMethodIdObjArgs(
-      jsbind, &PyId_reverse_dir_names, JsProxy_SIG(self), pydir, NULL);
+      jsbind, &PyId__reverse_dir_names, JsProxy_SIG(self), pydir, NULL);
     if (translated == NULL) {
       FAIL();
     }
