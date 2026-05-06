@@ -1,4 +1,5 @@
 import re
+from collections.abc import Callable
 from inspect import (
     Parameter,
     getattr_static,
@@ -116,9 +117,7 @@ def snake_to_camel(name: str) -> str:
     # Preserve all trailing underscores (used to escape reserved words).
     stripped = name.rstrip("_")
     trailing = name[len(stripped) :]
-    return (
-        _SNAKE_TO_CAMEL_RE.sub(lambda m: m.group(1).upper(), stripped) + trailing
-    )
+    return _SNAKE_TO_CAMEL_RE.sub(lambda m: m.group(1).upper(), stripped) + trailing
 
 
 def camel_to_snake(name: str) -> str:
@@ -196,7 +195,7 @@ class CamelCase(BindClass):
             def do_stuff(self, /): ...
     """
 
-    _js_name = staticmethod(snake_to_camel)
+    _js_name = staticmethod(snake_to_camel)  # type: ignore[assignment]
 
 
 class JsName:
@@ -233,7 +232,7 @@ _NAME_TRANSLATORS: "dict[Any, Any]" = {
 }
 
 
-def js_name(name: str):
+def js_name[F: Callable[..., Any]](name: str) -> Callable[[F], F]:
     """Decorator that pins the JS property name for a method.
 
     The decorated method's Python name will be translated to ``name`` when
@@ -245,14 +244,14 @@ def js_name(name: str):
             def do_stuff(self, /): ...
     """
 
-    def decorator(f):
-        f.__js_name__ = name
+    def decorator(f: F) -> F:
+        f.__js_name__ = name  # type: ignore[attr-defined]
         return f
 
     return decorator
 
 
-def camel_case(f):
+def camel_case[F: Callable[..., Any]](f: F) -> F:
     """Decorator that opts a single method into ``snake_case`` ->
     ``camelCase`` JS-name translation, regardless of the class-level
     configuration::
@@ -261,7 +260,7 @@ def camel_case(f):
             @camel_case
             def do_stuff(self, /): ...   # calls jsproxy.doStuff()
     """
-    f.__js_name__ = snake_to_camel(f.__name__)
+    f.__js_name__ = snake_to_camel(f.__name__)  # type: ignore[attr-defined]
     return f
 
 
@@ -281,25 +280,27 @@ def _extract_js_name_override(annotation, py_name):
     return None
 
 
-def _build_name_cache(sig):
-    """Build (and cache) the ``py_name -> js_name`` mapping for ``sig``.
+def _get_name_cache(sig: type) -> tuple[dict[str, str], dict[str, str]]:
+    """Return the ``(py_to_js, js_to_py)`` name caches for ``sig``, building
+    them lazily on first access.
 
-    The cache is computed once per signature class on first attribute access
-    and stored as ``sig._js_name_cache``. It contains an entry for every
-    Python attribute name with an explicit override (via an
-    ``Annotated[..., JsName(...)]`` / ``Annotated[..., CamelCase]``
-    annotation, or an ``@js_name`` / ``@camel_case`` decorator) plus an
-    entry for any name encountered at runtime that falls through to the
-    class-level ``_js_name`` translator.
+    The forward cache contains an entry for every Python attribute name with
+    an explicit override (via an ``Annotated[..., JsName(...)]`` /
+    ``Annotated[..., CamelCase]`` annotation, or an ``@js_name`` /
+    ``@camel_case`` decorator). After the first call, ``_resolve_js_name``
+    also memoizes results from the class-level ``_js_name`` translator into
+    the same cache.
     """
+    if res := getattr(sig, "_js_name_cache", None):
+        return res
     cache: dict[str, str] = {}
     # Annotated[..., JsName(...)] / Annotated[..., CamelCase] markers.
     if not hasattr(sig, "_type_hints"):
         try:
-            sig._type_hints = get_type_hints(sig, include_extras=True)
+            sig._type_hints = get_type_hints(sig, include_extras=True)  # type: ignore[attr-defined]
         except Exception:
-            sig._type_hints = {}
-    for py, ann in sig._type_hints.items():
+            sig._type_hints = {}  # type: ignore[attr-defined]
+    for py, ann in sig._type_hints.items():  # type: ignore[attr-defined]
         explicit = _extract_js_name_override(ann, py)
         if explicit is not None:
             cache[py] = explicit
@@ -311,31 +312,31 @@ def _build_name_cache(sig):
             explicit = getattr(member, "__js_name__", None)
             if isinstance(explicit, str):
                 cache[py] = explicit
-    sig._js_name_cache = cache
     # Eagerly build the reverse map for dir(). This is O(n) but only done
     # once per sig class.
-    sig._js_name_reverse_cache = {js: py for py, js in cache.items()}
-    return cache
+    reverse: dict[str, str] = {js: py for py, js in cache.items()}
+    res = (cache, reverse)
+    sig._js_name_cache = res  # type: ignore[attr-defined]
+    return res
 
 
-def _resolve_js_name(sig: type, py_name: str) -> str:
+def _resolve_js_name(sig: type | None, py_name: str) -> str:
     """Translate a Python attribute name to its JS property name for ``sig``.
 
-    Used by the C JsProxy machinery. Resolution order:
+    Called from C in ``JsProxy_GetAttr_helper`` and ``JsProxy_SetAttr``
+    (``src/core/jsproxy.c``). Resolution order:
 
     1. Explicit override (``JsName`` / ``CamelCase`` annotation,
        ``@js_name`` / ``@camel_case`` decorator).
     2. ``sig._js_name(py_name)`` (the class-level translator).
     3. ``py_name`` unchanged.
 
-    The result is memoized on ``sig._js_name_cache`` so subsequent lookups
-    of the same name don't re-run any translation.
+    The result is memoized so subsequent lookups of the same name don't
+    re-run any translation.
     """
     if sig is None:
         return py_name
-    cache = getattr(sig, "_js_name_cache", None)
-    if cache is None:
-        cache = _build_name_cache(sig)
+    cache, reverse = _get_name_cache(sig)
     js = cache.get(py_name)
     if js is not None:
         return js
@@ -347,14 +348,14 @@ def _resolve_js_name(sig: type, py_name: str) -> str:
     # Memoize the fallback result too so subsequent accesses don't pay the
     # cost of looking up _js_name and calling it again.
     cache[py_name] = js
-    sig._js_name_reverse_cache.setdefault(js, py_name)
+    reverse.setdefault(js, py_name)
     return js
 
 
-def _reverse_dir_names(sig: type, js_names: list) -> list:
+def _reverse_dir_names(sig: type | None, js_names: list[str]) -> list[str]:
     """Translate a list of JS property names back to Python attribute names.
 
-    Used by ``dir(jsproxy)`` when a signature is attached. If no inverse
+    Called from C in ``JsProxy_Dir`` (``src/core/jsproxy.c``). If no inverse
     translation is available the names are returned unchanged.
     """
     if sig is None:
@@ -362,28 +363,23 @@ def _reverse_dir_names(sig: type, js_names: list) -> list:
     return [_reverse_js_name(sig, n) for n in js_names]
 
 
-def _reverse_js_name(sig: type, jsname: str) -> str:
+def _reverse_js_name(sig: type | None, jsname: str) -> str:
     """Translate a JS property name back to its Python attribute name for ``sig``.
 
-    Used by ``dir()``. The lookup is best-effort: if the inverse cannot be
-    determined, ``jsname`` is returned unchanged.
+    The lookup is best-effort: if the inverse cannot be determined,
+    ``jsname`` is returned unchanged.
     """
     if sig is None:
         return jsname
-    if getattr(sig, "_js_name_cache", None) is None:
-        _build_name_cache(sig)
-    rev = sig._js_name_reverse_cache
-    if jsname in rev:
-        return rev[jsname]
+    _, reverse = _get_name_cache(sig)
+    if jsname in reverse:
+        return reverse[jsname]
     # Special-case the snake/camel inverse without forcing every BindClass
     # to provide an inverse function.
     translator = getattr(sig, "_js_name", None)
     if translator is snake_to_camel:
         return camel_to_snake(jsname)
     return jsname
-
-
-
 
 
 class _TypeConverter:
@@ -503,7 +499,8 @@ def _get_attr_sig_method(sig, attr):
 
 
 def _get_attr_sig(sig, attr):
-    """Called from JsProxy_GetAttr when the proxy has a signature.
+    """Called from C in ``JsProxy_GetAttr_helper`` (``src/core/jsproxy.c``)
+    when the proxy has a signature.
 
     Must return a triple:
 
@@ -533,7 +530,8 @@ no_default = Parameter.empty
 
 
 def _func_to_sig(f):
-    """Called from jsproxy_call.c when we're about to call a callable.
+    """Called from C in ``jsproxy_call.c`` when we're about to call a
+    callable.
 
     Has to return an appropriate JsFuncSignature.
     """

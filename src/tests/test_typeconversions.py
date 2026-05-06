@@ -2472,7 +2472,7 @@ def test_bind_js_name_setattr(selenium):
     a_px: JsProxy = run_js("({id: 1})")
     a = a_px.bind_sig(A)
     a.identifier = 99
-    assert a_px.id == 99
+    assert a_px.id == 99  # type: ignore[attr-defined]
 
 
 @run_in_pyodide
@@ -2584,9 +2584,7 @@ def test_bind_camel_case_annotation(selenium):
         # No marker: name is *not* translated (would otherwise be otherThing).
         other_thing: int
 
-    a_px: JsProxy = run_js(
-        "({fullName: 'Ada', itemList: [1,2,3], other_thing: 9})"
-    )
+    a_px: JsProxy = run_js("({fullName: 'Ada', itemList: [1,2,3], other_thing: 9})")
     a = a_px.bind_sig(A)
     assert a.full_name == "Ada"
     assert a.item_list == [1, 2, 3]
@@ -2613,7 +2611,7 @@ def test_bind_camel_case_decorator_overrides_class(selenium):
         # Class-level translator: full_name -> FULL_NAME.
         full_name: str
         # CamelCase marker overrides Screaming on this attribute only.
-        item_list: Annotated[list, CamelCase]
+        item_list: Annotated[list[int], CamelCase]
         # JsName overrides everything.
         identifier: Annotated[int, JsName("id")]
 
@@ -2668,7 +2666,7 @@ def test_bind_dir_all_overrides(selenium):
         # Class-level (CamelCase): plain_attr -> plainAttr.
         plain_attr: int
         # Per-attribute CamelCase marker (no double translation).
-        item_list: Annotated[list, CamelCase]
+        item_list: Annotated[list[int], CamelCase]
         # JsName override.
         identifier: Annotated[int, JsName("id")]
 
