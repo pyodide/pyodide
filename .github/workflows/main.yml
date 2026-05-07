@@ -193,11 +193,12 @@ jobs:
         shell: bash -l {0}
         env:
           PYODIDE_PACKAGES: ${{ matrix.pyodide_packages }}
+          PYODIDE_JOBS: ${{ env.PYODIDE_JOBS }}
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           ccache -z
-          make -j${{ env.PYODIDE_JOBS }}
+          make -j$PYODIDE_JOBS
           ccache -s
 
       - name: Build windows python.exe
@@ -488,6 +489,8 @@ jobs:
       - name: Check build trigger
         id: check-build-trigger
         shell: bash
+        env:
+          HAS_SCIPY_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'scipy') }}
         run: |
           set -e -x
 
@@ -497,7 +500,7 @@ jobs:
           # message contains "[scipy]" or when the PR has `scipy` label
           if [[ "$GITHUB_EVENT_NAME" == push ||
                 "$COMMIT_MSG" =~ \[scipy\] ||
-                "${{ contains(github.event.pull_request.labels.*.name, 'scipy') }}" == "true" ]]; then
+                "$HAS_SCIPY_LABEL" == "true" ]]; then
               echo "trigger=true" >> "$GITHUB_OUTPUT"
           fi
 
