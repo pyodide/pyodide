@@ -16,6 +16,10 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
   deploy:
     name: Deploy pyodide-cross-build-environments.json to GitHub Pages
