@@ -386,7 +386,7 @@ jobs:
     needs: [build-core, get_python_version]
     services:
       mysql:
-        image: mysql:8.0.45
+        image: mysql:8.0.45@sha256:4af1f8815716546f5b12410f7621f37f93db8dd11a184706ef59111930b8c2ff
         ports:
           - 3306:3306
         env:
@@ -398,7 +398,7 @@ jobs:
           --health-timeout=5s
           --health-retries=20
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:71e27bf60b70bded003791b5573f8b808365613f341df20ffcf0c1ed7bc13ddf
         ports:
           - 5432:5432
         env:
@@ -411,7 +411,7 @@ jobs:
           --health-timeout=5s
           --health-retries=20
       redis:
-        image: redis:7
+        image: redis:7@sha256:5a77f0f4698389019f828f6387049ce1d5adbea204e56422aa7720dab7034287
         ports:
           - 6379:6379
         options: >-
