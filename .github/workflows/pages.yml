@@ -25,8 +25,8 @@ jobs:
     name: Deploy pyodide-cross-build-environments.json to GitHub Pages
     permissions:
       contents: read
-      pages: write
-      id-token: write
+      pages: write # for deploying to GitHub Pages
+      id-token: write # for OIDC trusted publishing to GitHub Pages
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}/api/pyodide-cross-build-environments.json
