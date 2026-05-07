@@ -15,6 +15,13 @@ myst:
 
 # Change Log
 
+## Version 0.29.4
+
+_May 7, 2026_
+
+- {{ Enhancement }} Made Pyodide compatible with wheels tagged `pyemscripten`.
+  {pr}`6180`, {pr}`6203`
+
 ## Version 0.29.3
 
 _January 28, 2026_
