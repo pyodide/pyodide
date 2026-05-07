@@ -20,6 +20,7 @@ concurrency:
 
 jobs:
   update_cross_build_releases:
+    name: Update cross-build metadata file
     runs-on: ubuntu-latest
     permissions:
       contents: write
