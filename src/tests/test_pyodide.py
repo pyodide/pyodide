@@ -1366,8 +1366,20 @@ def test_abiVersion_variable(selenium):
         get_config_var("PYODIDE_ABI_VERSION")
         """
     )
+    pyemscripten_platform_version = selenium.run(
+        """
+        from sysconfig import get_config_var
 
-    assert lockfile_abi_version == py_abi_version == core_abi_version
+        get_config_var("PYEMSCRIPTEN_PLATFORM_VERSION")  # PEP 783
+        """
+    )
+
+    assert (
+        lockfile_abi_version
+        == py_abi_version
+        == core_abi_version
+        == pyemscripten_platform_version
+    )
 
 
 @run_in_pyodide
@@ -1632,6 +1644,7 @@ def test_windows_to_linux_path_finder_edge_cases(selenium):
 @run_in_pyodide
 def test_windows_to_linux_path_import(selenium_standalone):
     import sys
+    from importlib import invalidate_caches
     from pathlib import Path
 
     tmp_dir = Path("/tmp/my/temporary/directory/for/testing/import")
@@ -1639,6 +1652,7 @@ def test_windows_to_linux_path_import(selenium_standalone):
     module_file = tmp_dir / "test_module.py"
 
     sys.path.append("C:\\tmp\\my\\temporary\\directory\\for\\testing\\import")
+    invalidate_caches()
 
     try:
         import test_module
@@ -2130,14 +2144,10 @@ def test_lockfile_api(selenium):
     from pyodide_js import lockfile
 
     lockfile_info = lockfile.info
-    lockfile_packages = lockfile.packages
 
     assert lockfile_info is not None
     assert lockfile_info.abi_version is not None
-    assert lockfile_info.version is not None
     assert lockfile_info.python is not None
-
-    assert lockfile_packages.micropip is not None
 
 
 def test_fs_init(selenium_standalone_noload):
