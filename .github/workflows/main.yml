@@ -261,6 +261,9 @@ jobs:
           activate-environment: pyodide-env
           python-version: "3.14"
           channels: conda-forge
+          # pin, as a workaround to avoid macOS conda activation bug in 26.3.2-2
+          # see https://github.com/conda-incubator/setup-miniconda/issues/501
+          miniconda-version: "py312_26.1.1-1"
 
       - name: install test requirements
         shell: bash -l {0}
