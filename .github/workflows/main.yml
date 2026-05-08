@@ -15,6 +15,7 @@ permissions: {}
 
 jobs:
   get_python_version:
+    name: Get Python version
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -30,6 +31,7 @@ jobs:
           echo "PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)"  >> "$GITHUB_OUTPUT"
 
   check-docs:
+    name: Check documentation
     runs-on: ubuntu-latest
     needs: get_python_version
     permissions:
@@ -60,6 +62,7 @@ jobs:
           ./tools/check_documented_functions.py --check
 
   test-python:
+    name: Test Python
     runs-on: ubuntu-latest
     needs: get_python_version
     permissions:
@@ -96,6 +99,7 @@ jobs:
           fail_ci_if_error: false
 
   build-core:
+    name: Build core (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -130,7 +134,7 @@ jobs:
         with:
           go-version: '1.21'
 
-      - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3.3.0
+      - uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5 # v4.0.1
         with:
           activate-environment: pyodide-env
           environment-file: environment.yml
@@ -189,11 +193,12 @@ jobs:
         shell: bash -l {0}
         env:
           PYODIDE_PACKAGES: ${{ matrix.pyodide_packages }}
+          PYODIDE_JOBS: ${{ env.PYODIDE_JOBS }}
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           ccache -z
-          make -j${{ env.PYODIDE_JOBS }}
+          make -j$PYODIDE_JOBS
           ccache -s
 
       - name: Build windows python.exe
@@ -224,6 +229,7 @@ jobs:
           retention-days: 60
 
   test-core:
+    name: Test core (${{ matrix.browser }})
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
@@ -250,11 +256,14 @@ jobs:
           name: core-build-${{ runner.os }}
           path: ./dist/
 
-      - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3.3.0
+      - uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5 # v4.0.1
         with:
           activate-environment: pyodide-env
           python-version: "3.14"
           channels: conda-forge
+          # pin, as a workaround to avoid macOS conda activation bug in 26.3.2-2
+          # see https://github.com/conda-incubator/setup-miniconda/issues/501
+          miniconda-version: "py312_26.1.1-1"
 
       - name: install test requirements
         shell: bash -l {0}
@@ -332,6 +341,7 @@ jobs:
         if: always()
 
   test-cmdline-runner:
+    name: Test command-line runner (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -374,11 +384,12 @@ jobs:
           fi
 
   test-db-integration:
+    name: Test DB integrations
     runs-on: ubuntu-latest
     needs: [build-core, get_python_version]
     services:
       mysql:
-        image: mysql:8.0.45
+        image: mysql:8.0.45@sha256:4af1f8815716546f5b12410f7621f37f93db8dd11a184706ef59111930b8c2ff
         ports:
           - 3306:3306
         env:
@@ -390,7 +401,7 @@ jobs:
           --health-timeout=5s
           --health-retries=20
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:71e27bf60b70bded003791b5573f8b808365613f341df20ffcf0c1ed7bc13ddf
         ports:
           - 5432:5432
         env:
@@ -403,7 +414,7 @@ jobs:
           --health-timeout=5s
           --health-retries=20
       redis:
-        image: redis:7
+        image: redis:7@sha256:5a77f0f4698389019f828f6387049ce1d5adbea204e56422aa7720dab7034287
         ports:
           - 6379:6379
         options: >-
@@ -481,6 +492,8 @@ jobs:
       - name: Check build trigger
         id: check-build-trigger
         shell: bash
+        env:
+          HAS_SCIPY_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'scipy') }}
         run: |
           set -e -x
 
@@ -490,11 +503,12 @@ jobs:
           # message contains "[scipy]" or when the PR has `scipy` label
           if [[ "$GITHUB_EVENT_NAME" == push ||
                 "$COMMIT_MSG" =~ \[scipy\] ||
-                "${{ contains(github.event.pull_request.labels.*.name, 'scipy') }}" == "true" ]]; then
+                "$HAS_SCIPY_LABEL" == "true" ]]; then
               echo "trigger=true" >> "$GITHUB_OUTPUT"
           fi
 
   test-scipy:
+    name: Test SciPy (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     needs: [test-scipy-trigger, build-core]
     if: needs.test-scipy-trigger.outputs.test-scipy
@@ -532,6 +546,7 @@ jobs:
           node scipy-pytest.js --pyargs scipy -m 'not slow' -ra -v
 
   test-bun:
+    name: Test Bun (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
 
     needs: [build-core]
@@ -566,6 +581,7 @@ jobs:
         run: bun smoke-test.js
 
   test-deno:
+    name: Test Deno (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
 
     needs: [build-core]

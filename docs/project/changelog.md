@@ -17,6 +17,7 @@ myst:
 
 ## Unreleased
 
+
 - {{ Breaking }} The `ssl` module is now a stub implementation bundled with
   Pyodide instead of being dynamically loaded with OpenSSL. This means the `ssl`
   module is available immediately without loading additional packages, but
@@ -44,7 +45,6 @@ myst:
   `pydoc_data` package is still in the distribution but needs to be explicitly loaded with
   `loadPackage("pydoc_data")` to use. The `fullstdlib` option in loadPyodide is deprecated and a no-op.
   {pr}`6151`
-
 
 - {{ Enhancement }} A JavaScript object is now treated as an array-like object
   if it has a `length` property and is iterable. Every JsProxy of an array-like
@@ -81,6 +81,10 @@ myst:
   and `stderr` in Node now define this handler. These terminal sizes are
   reported by `os.get_terminal_size()` and `shutil.get_terminal_size()`.
   {pr}`6157`
+
+## Version 0.29.4
+
+_May 7, 2026_
 
 - {{ Enhancement }} Made Pyodide compatible with wheels tagged `pyemscripten`.
   {pr}`6180`, {pr}`6203`

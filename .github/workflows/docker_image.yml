@@ -1,4 +1,5 @@
 name: pyodide-env-docker
+
 on:
   workflow_dispatch:
     inputs:
@@ -14,14 +15,20 @@ on:
         description: "Tag of the docker image to build (If not set, <release-date>-chrome[version]-firefox[version] will be used)"
         required: false
         default: ""
+
 env:
   GHCR_REGISTRY: ghcr.io
   IMAGE_NAME: pyodide/pyodide-env
 
 permissions: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build_docker:
+    name: Build Docker image and push to Docker Hub
     runs-on: ubuntu-latest
     environment: Docker
     permissions:
@@ -69,11 +76,13 @@ jobs:
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: echo "$DIGEST"
+
   build_ghcr:
+    name: Build Docker image and push to GHCR
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
+      packages: write # for pushing to GHCR
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

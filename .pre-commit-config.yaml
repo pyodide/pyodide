@@ -67,6 +67,7 @@ repos:
     rev: "a4727cbbcd26d7098e96b9cb738169b59711ae51" # frozen: v1.24.1
     hooks:
       - id: zizmor
+        args: ["--pedantic", "--fix=safe"]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: 8e5c80792e2ec0c87804d8ef915bf35e2caea6da  # frozen: v1.20.0

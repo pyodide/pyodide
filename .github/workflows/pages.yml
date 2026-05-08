@@ -16,13 +16,17 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
   deploy:
     name: Deploy pyodide-cross-build-environments.json to GitHub Pages
     permissions:
       contents: read
-      pages: write
-      id-token: write
+      pages: write # for deploying to GitHub Pages
+      id-token: write # for OIDC trusted publishing to GitHub Pages
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}/api/pyodide-cross-build-environments.json
@@ -42,10 +46,9 @@ jobs:
           cp pyodide-cross-build-environments.json ./_site/api/pyodide-cross-build-environments.json
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: ./_site
 
       - name: Deploy to GitHub Pages
-        id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
