@@ -47,7 +47,7 @@ EM_JS(JsVal, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
     return null;
 
   return (async function() {
-    var result = await sock.sock_ops.recvmsgAsync(sock, len, false);
+    var result = await sock.sock_ops.recvmsgAsync(sock, len);
     // clang-format off
     if (typeof result === "number")
       return result;
