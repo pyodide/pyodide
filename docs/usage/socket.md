@@ -5,34 +5,36 @@
 ```{admonition} This is experimental
 :class: warning
 
-This feature is only available in Node.js environments. It is not supported in browsers.
+This feature is experimental and may change or be removed in future versions of Pyodide.
+This feature is only available in Node.js and is not supported in browsers.
 ```
 
 By default, Pyodide does not support sockets in the browser.
-This is because the browser does not have a standard API for sockets, so Pyodide does not include a socket implementation
-and instead raises an error when you try to use sockets in the browser.
+Browsers do not provide a standard low-level socket API, so Pyodide does not include a browser socket
+implementation and raises an error if your code tries to use sockets there.
 
-However, if you are running Pyodide in a Node.js environment, we provide a experimental API to use sockets.
+If you are running Pyodide in Node.js, you can enable an experimental socket API.
 
 ## Enabling socket support
 
-To enable socket support, you need to call `await pyodide.useNodeSockFS()` before importing any Python modules that use sockets.
+Call `await pyodide.useNodeSockFS()` before importing any Python modules that use sockets.
 
 ```javascript
 const pyodide = await loadPyodide();
 await pyodide.useNodeSockFS();
 ```
 
-This feature requires JavaScript Promise Integration. If you are using Node.js <= 24, you need to explicitly enable it by adding
-`--experimental-wasm-stack-switching` flag when running your Node.js application:
+This feature requires JavaScript Promise Integration.
+
+If you are using Node.js <= 24, enable it explicitly with the `--experimental-wasm-stack-switching` flag:
 
 ```bash
 node --experimental-wasm-stack-switching
 ```
 
-If you are using Node.js >= 25, Promise Integration is enabled by default, so you don't need to do anything special.
+If you are using Node.js >= 25, Promise Integration is enabled by default.
 
-That's all. After that, you can use sockets in your Python code as you normally would.
+After this setup, you can use sockets in Python as usual.
 
 ## Example
 
@@ -56,7 +58,8 @@ s.close()
 
 ### Using sockets with database drivers
 
-Many database drivers use sockets to connect to the database server. With socket support enabled, you can use these drivers in Pyodide running in Node.js.
+Many database drivers use sockets to connect to a database server.
+With socket support enabled, you can use these drivers in Pyodide on Node.js.
 
 For example, you can use the `pymysql` driver to connect to a MySQL database:
 
