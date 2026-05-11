@@ -138,8 +138,6 @@ class CamelCase(BindClass):
             def do_stuff(self, /): ...
     """
 
-    _js_name = staticmethod(snake_to_camel)  # type: ignore[assignment]
-
 
 class JsName:
     """Annotation marker that pins a specific JS property name.
@@ -280,19 +278,16 @@ def _resolve_js_name(sig: type | None, py_name: str) -> str:
     if sig is None:
         return py_name
     cache, reverse = _get_name_cache(sig)
-    js = cache.get(py_name)
-    if js is not None:
-        return js
-    translator = getattr(sig, "_js_name", None)
-    if translator is None:
-        js = py_name
+    js_name = cache.get(py_name)
+    if js_name is not None:
+        return js_name
+    if issubclass(sig, CamelCase):
+        js_name = snake_to_camel(py_name)
     else:
-        js = translator(py_name)
-    # Memoize the fallback result too so subsequent accesses don't pay the
-    # cost of looking up _js_name and calling it again.
-    cache[py_name] = js
-    reverse.setdefault(js, py_name)
-    return js
+        js_name = py_name
+    cache[py_name] = js_name
+    reverse[js_name] = py_name
+    return js_name
 
 
 def _reverse_dir_names(sig: type | None, js_names: list[str]) -> list[str]:
@@ -306,23 +301,20 @@ def _reverse_dir_names(sig: type | None, js_names: list[str]) -> list[str]:
     return [_reverse_js_name(sig, n) for n in js_names]
 
 
-def _reverse_js_name(sig: type | None, jsname: str) -> str:
+def _reverse_js_name(sig: type, js_name: str) -> str:
     """Translate a JS property name back to its Python attribute name for ``sig``.
 
     The lookup is best-effort: if the inverse cannot be determined,
-    ``jsname`` is returned unchanged.
+    ``js_name`` is returned unchanged.
     """
-    if sig is None:
-        return jsname
     _, reverse = _get_name_cache(sig)
-    if jsname in reverse:
-        return reverse[jsname]
-    # Special-case the snake/camel inverse without forcing every BindClass
-    # to provide an inverse function.
-    translator = getattr(sig, "_js_name", None)
-    if translator is snake_to_camel:
-        return camel_to_snake(jsname)
-    return jsname
+    if js_name in reverse:
+        return reverse[js_name]
+    # If it's a CamelCase class, apply camel_to_snake to try to invert
+    # snake_to_camel.
+    if issubclass(sig, CamelCase):
+        return camel_to_snake(js_name)
+    return js_name
 
 
 class _TypeConverter:
