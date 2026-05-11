@@ -1,4 +1,3 @@
-import re
 from collections.abc import Callable
 from inspect import (
     Parameter,
@@ -30,6 +29,8 @@ from _pyodide_core import (
     py2js_deep,
     py2js_default,
 )
+
+from .camel_to_snake import camel_to_snake, snake_to_camel
 
 
 class Py2JsConverterMeta(type):
@@ -83,64 +84,6 @@ class Deep:
 
 class Default:
     pass
-
-
-_SNAKE_TO_CAMEL_RE = re.compile(r"_([a-zA-Z0-9])")
-_CAMEL_TO_SNAKE_RE1 = re.compile(r"(.)([A-Z][a-z]+)")
-_CAMEL_TO_SNAKE_RE2 = re.compile(r"([a-z0-9])([A-Z])")
-
-
-def snake_to_camel(name: str) -> str:
-    """Convert a snake_case Python attribute name to a camelCase JS name.
-
-    Leading underscores are preserved (so dunder names like ``__call__`` are
-    untouched). A single trailing underscore is also preserved so that the
-    reserved-word transform in ``pre.js`` still works (e.g. ``class_`` -> ``class_``).
-    Internal underscores are removed and the following character is upper-cased.
-
-    >>> snake_to_camel("foo_bar")
-    'fooBar'
-    >>> snake_to_camel("foo_bar_baz")
-    'fooBarBaz'
-    >>> snake_to_camel("already_lowerCase")
-    'alreadyLowerCase'
-    >>> snake_to_camel("__call__")
-    '__call__'
-    >>> snake_to_camel("class_")
-    'class_'
-    """
-    if not name:
-        return name
-    # Preserve leading underscores (dunders, sunders, private names).
-    if name[:2] == "__":
-        return name
-    # Preserve all trailing underscores (used to escape reserved words).
-    stripped = name.rstrip("_")
-    trailing = name[len(stripped) :]
-    return _SNAKE_TO_CAMEL_RE.sub(lambda m: m.group(1).upper(), stripped) + trailing
-
-
-def camel_to_snake(name: str) -> str:
-    """Convert a camelCase JS name to a snake_case Python attribute name.
-
-    Inverse of :func:`snake_to_camel` for typical inputs.
-
-    >>> camel_to_snake("fooBar")
-    'foo_bar'
-    >>> camel_to_snake("XMLHttpRequest")
-    'xml_http_request'
-    >>> camel_to_snake("__call__")
-    '__call__'
-    """
-    if not name:
-        return name
-    if name[:2] == "__":
-        return name
-    stripped = name.rstrip("_")
-    trailing = name[len(stripped) :]
-    s1 = _CAMEL_TO_SNAKE_RE1.sub(r"\1_\2", stripped)
-    s2 = _CAMEL_TO_SNAKE_RE2.sub(r"\1_\2", s1)
-    return s2.lower() + trailing
 
 
 class BindClass:

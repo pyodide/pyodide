@@ -15,6 +15,8 @@ from pytest_pyodide.hypothesis import (
     std_hypothesis_settings,
 )
 
+from _pyodide.camel_to_snake import camel_to_snake, snake_to_camel
+
 
 class NoHypothesisUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
@@ -2271,10 +2273,7 @@ def test_bind_getattr(selenium):
     assert t.g({"a": 7}, {"b": 9}, {"c": 11}) == [1, 2, 3]
 
 
-@run_in_pyodide
-def test_snake_to_camel_helpers(selenium):
-    from _pyodide.jsbind import camel_to_snake, snake_to_camel
-
+def test_snake_to_camel_helpers():
     assert snake_to_camel("foo") == "foo"
     assert snake_to_camel("foo_bar") == "fooBar"
     assert snake_to_camel("foo_bar_baz") == "fooBarBaz"
@@ -2294,11 +2293,104 @@ def test_snake_to_camel_helpers(selenium):
     assert camel_to_snake("foo") == "foo"
     assert camel_to_snake("fooBar") == "foo_bar"
     assert camel_to_snake("fooBarBaz") == "foo_bar_baz"
-    assert camel_to_snake("XMLHttpRequest") == "xml_http_request"
+    assert camel_to_snake("XMLHttpRequest") == "XMLHttpRequest"
     assert camel_to_snake("__call__") == "__call__"
     assert camel_to_snake("class_") == "class_"
     assert camel_to_snake("fooBar__") == "foo_bar__"
     assert camel_to_snake("foo___") == "foo___"
+
+
+# Conditions:
+# 1. An identifier
+# 2. no two uppercase characters in a row
+# 3. underscore not followed by lower case letter
+#
+# Restriction 3. results from the decision to convert blahXML to blah_xml instead of blah_x_m_l.
+# blah_xml round trips back to blahXml.
+#
+# Restruction 4 results from a_a ==> a_a ==> aA
+@st.composite
+def _okay_identifiers(draw):
+    # First character: letter, or underscore
+    first = draw(
+        st.sampled_from("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_")
+    )
+    chars = [first]
+    n = draw(st.integers(min_value=0, max_value=20))
+    for _ in range(n):
+        prev = chars[-1]
+        # After uppercase letter, the next char cannot be uppercase.
+        if prev.isupper():
+            c = draw(st.sampled_from("abcdefghijklmnopqrstuvwxyz0123456789_"))
+        # After "_", the next char cannot be lowercase.
+        elif prev == "_":
+            c = draw(st.sampled_from("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"))
+        else:
+            c = draw(
+                st.sampled_from(
+                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
+                )
+            )
+        chars.append(c)
+    return "".join(chars)
+
+
+@given(s=_okay_identifiers())
+@example(s="a_A")
+@settings(deadline=10000)
+def test_camel_to_snake_to_camel_roundtrip1(s):
+    print("s", s, "camel_to_snake", camel_to_snake(s))
+    assert snake_to_camel(camel_to_snake(s)) == s
+
+
+def test_camel_to_snake_acronym():
+    sn = camel_to_snake("blahXML")
+    assert sn == "blah_xml"
+    roundtrip = snake_to_camel(sn)
+    assert roundtrip == "blahXml"
+
+
+@given(s=st.from_regex(r"[A-Za-z0-9_]*", fullmatch=True))
+def test_camel_to_snake_idempotent(s):
+    once = camel_to_snake(s)
+    assert camel_to_snake(once) == once
+
+
+# First alpha character is uppercase ==> No change for camel_to_snake ==> roundtrips
+@given(s=st.from_regex(r"_*[A-Z][A-Za-z0-9_]*", fullmatch=True))
+@settings(deadline=10000)
+def test_camel_to_snake_to_camel_roundtrip2(s):
+    assert snake_to_camel(camel_to_snake(s)) == s
+
+
+# Conditions:
+# 1. An identifier
+# 2. All lower case
+# 3. At least two non-underscore characters between any two underscores
+@given(s=st.from_regex(r"_?[a-z0-9]+(?:_[a-z0-9]{2,})*_?", fullmatch=True))
+@example(s="_a")
+@example(s="_A")
+def test_snake_to_camel_to_snake_roundtrip1(s):
+    print("s", s, "snake_to_camel", snake_to_camel(s))
+    assert camel_to_snake(snake_to_camel(s)) == s
+
+
+@given(s=st.from_regex(r"_*[A-Z][A-Za-z0-9_]*", fullmatch=True))
+def test_snake_to_camel_to_snake_roundtrip2(s):
+    print("s", s, "snake_to_camel", snake_to_camel(s))
+    assert camel_to_snake(snake_to_camel(s)) == s
+
+
+def test_snake_to_camel_acronym():
+    s = snake_to_camel("a_b_c_d_e")
+    assert s == "aBCDE"
+    assert camel_to_snake(s) == "a_bcde"
+
+
+@given(s=st.from_regex(r"[A-Za-z0-9_]*", fullmatch=True))
+def test_snake_to_camel_idempotent(s):
+    once = snake_to_camel(s)
+    assert snake_to_camel(once) == once
 
 
 @run_in_pyodide
