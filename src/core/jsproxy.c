@@ -2829,9 +2829,7 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
     _Py_IDENTIFIER(_reverse_dir_names);
     PyObject* translated = _PyObject_CallMethodIdObjArgs(
       jsbind, &PyId__reverse_dir_names, JsProxy_SIG(self), pydir, NULL);
-    if (translated == NULL) {
-      FAIL();
-    }
+    FAIL_IF_NULL(translated);
     Py_SETREF(pydir, translated);
   }
   // Merge and sort
