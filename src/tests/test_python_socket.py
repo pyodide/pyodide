@@ -1,6 +1,7 @@
 import contextlib
 import socket
 import threading
+from pathlib import Path
 
 import pytest
 from pytest_pyodide import run_in_pyodide
@@ -561,6 +562,43 @@ def test_socket_shutdown(selenium_nodesock):
         run(selenium_nodesock, host, port)
 
 
+def test_socket_shutdown_pairs(selenium_nodesock):
+    """All 9 combinations of two consecutive shutdown() calls should succeed (Linux behavior)."""
+
+    server_conns = []
+
+    def handler(conn, _addr):
+        server_conns.append(conn)
+        try:
+            while True:
+                data = conn.recv(1024)
+                if not data:
+                    break
+                conn.sendall(data)
+        except OSError:
+            pass
+
+    @run_in_pyodide
+    def run(selenium, host, port, first, second):
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+        s.sendall(b"ping")
+        s.recv(1024)
+
+        s.shutdown(first)
+        s.shutdown(second)
+        s.close()
+
+    shut_values = [0, 1, 2]
+    for first in shut_values:
+        for second in shut_values:
+            with tcp_server(handler) as (host, port):
+                run(selenium_nodesock, host, port, first, second)
+            server_conns.clear()
+
+
 def test_socket_shutdown_non_nodesock(selenium_standalone):
     """
     Calling shutdown on a non-node socket will raise "Function not implemented"
@@ -584,6 +622,60 @@ def test_socket_shutdown_non_nodesock(selenium_standalone):
         s.close()
 
     run(selenium_standalone)
+
+
+def test_socket_settimeout_nonblocking(selenium_nodesock):
+    """settimeout(0) makes recv raise socket.timeout when no data is available."""
+
+    def handler(conn, _addr):
+        import time
+
+        time.sleep(2)
+        conn.sendall(b"delayed")
+        conn.close()
+
+    @run_in_pyodide(packages=["pytest"])
+    def run(selenium, host, port):
+        import socket
+
+        import pytest
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        s.settimeout(0)
+
+        with pytest.raises(OSError):
+            s.recv(1024)
+
+    with tcp_server(handler) as (host, port):
+        run(selenium_nodesock, host, port)
+
+
+def test_socket_settimeout_restore_blocking(selenium_nodesock):
+    """settimeout(0) then settimeout(None) restores blocking mode."""
+
+    def handler(conn, _addr):
+        conn.sendall(b"hello")
+        conn.close()
+
+    @run_in_pyodide
+    def run(selenium, host, port):
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        s.settimeout(0)
+        s.settimeout(None)
+
+        data = s.recv(1024)
+        s.close()
+        return data.decode()
+
+    with tcp_server(handler) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert result == "hello"
 
 
 # ---------------------------------------------------------------------------
@@ -843,3 +935,129 @@ def test_asyncio_client_close_lifecycle(selenium_nodesock):
         result = run(selenium_nodesock, host, port)
         assert "connection_made" in result
         assert "connection_lost:None" in result
+
+
+# ---------------------------------------------------------------------------
+# TLS tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def self_signed_cert(tmp_path):
+    import datetime
+    import ipaddress
+
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import NameOID
+
+    certfile = tmp_path / "cert.pem"
+    keyfile = tmp_path / "key.pem"
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")]))
+        .issuer_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")]))
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(datetime.datetime.now(datetime.UTC))
+        .not_valid_after(
+            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=1)
+        )
+        .add_extension(
+            x509.SubjectAlternativeName(
+                [
+                    x509.DNSName("localhost"),
+                    x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
+                ]
+            ),
+            critical=False,
+        )
+        .sign(key, hashes.SHA256())
+    )
+    Path(certfile).write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+    Path(keyfile).write_bytes(
+        key.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.TraditionalOpenSSL,
+            serialization.NoEncryption(),
+        )
+    )
+    return certfile, keyfile
+
+
+@contextlib.contextmanager
+def tls_server(handler, certfile, keyfile, *, timeout=5.0):
+    """Start a TLS server with a self-signed cert. Yields (host, port)."""
+    import ssl as host_ssl
+
+    server_ctx = host_ssl.SSLContext(host_ssl.PROTOCOL_TLS_SERVER)  # type: ignore[attr-defined]
+    server_ctx.load_cert_chain(certfile, keyfile)
+
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind(("127.0.0.1", 0))
+    server_socket.listen(1)
+    server_socket.settimeout(timeout)
+    host, port = server_socket.getsockname()
+    tls_sock = server_ctx.wrap_socket(server_socket, server_side=True)
+
+    errors: list[str] = []
+    ready = threading.Event()
+
+    def _serve():
+        ready.set()
+        try:
+            conn, addr = tls_sock.accept()
+            try:
+                handler(conn, addr)
+            finally:
+                conn.close()
+        except Exception as e:
+            errors.append(str(e))
+        finally:
+            tls_sock.close()
+
+    thread = threading.Thread(target=_serve, daemon=True)
+    thread.start()
+    ready.wait(timeout=timeout)
+
+    try:
+        yield host, port
+    finally:
+        thread.join(timeout=timeout)
+        assert not errors, f"TLS server error: {errors[0]}"
+
+
+@pytest.mark.skip_refcount_check
+def test_tls_starttls_send_recv(selenium_nodesock, self_signed_cert):
+    """Connect plain TCP, upgrade via wrap_socket/startTls, exchange data over TLS."""
+    RESPONSE = b"TLS OK"
+
+    def handler(conn, _addr):
+        conn.recv(1024)
+        conn.sendall(RESPONSE)
+
+    @run_in_pyodide
+    def run(selenium, host, port):
+        import socket
+        import ssl
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)  # type: ignore[attr-defined]
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2  # type: ignore[attr-defined]
+        ctx.check_hostname = False
+
+        ss = ctx.wrap_socket(s, server_hostname="localhost")
+        ss.sendall(b"Hello TLS")
+        response = ss.recv(1024)
+        ss.close()
+        return response.decode()
+
+    with tls_server(handler, *self_signed_cert) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert result == RESPONSE.decode()

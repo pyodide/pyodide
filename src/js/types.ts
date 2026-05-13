@@ -295,6 +295,7 @@ export interface EmscriptenModule {
   stringToUTF8OnStack: (str: string) => number;
   HEAP8: Uint8Array;
   HEAPU8: Uint8Array;
+  HEAP32: Int32Array;
   HEAPU32: Uint32Array;
   SOCKFS: any;
   getSocketAddress: (addr: number, addrlen: number) => any;
@@ -571,8 +572,9 @@ export interface API {
 
   _nodeSock: {
     connect: (fd: number, host: string, port: number) => Promise<void>;
-    recv: (fd: number, nbytes: number) => Promise<Uint8Array>;
+    recv: (fd: number, nbytes: number) => Promise<Uint8Array | number>;
     send: (fd: number, data: any) => Promise<number>;
+    startTls: (fd: number) => number;
   };
 }
 

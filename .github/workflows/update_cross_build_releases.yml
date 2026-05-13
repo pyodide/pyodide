@@ -12,19 +12,31 @@ on:
 env:
   version: ${{ github.event_name == 'release' && github.event.release.tag_name || github.event.inputs.version }}
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   update_cross_build_releases:
+    name: Update cross-build metadata file
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # for pushing cross-build metadata file updates
+      pull-requests: write # for creating a PR with the metadata file update
+      issues: write # for creating an issue if the update fails
     steps:
       # Note: we check out the main branch so that the cross-build metadata
       # file is always updated on top of the latest state of the repository.
       - name: Checkout main branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
           ref: main
+          persist-credentials: false
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: 3.14
 
@@ -36,37 +48,50 @@ jobs:
       - name: Update cross-build metadata file
         id: update_cross_build_metadata
         working-directory: tools
+        env:
+          VERSION: ${{ env.version }}
         run: |
-          python update_cross_build_releases.py "${{ env.version }}"
+          python update_cross_build_releases.py "$VERSION"
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: Update cross-build metadata file for version ${{ env.version }} [skip ci]
-          title: Update cross-build metadata file for version ${{ env.version }}
-          body: |
-            This PR updates the cross-build metadata file for the new version ${{ env.version }}.
-            Requesting a review from the @pyodide/core team.
-          branch: update-cross-build-metadata-${{ env.version }}
-          base: main
-          branch-suffix: timestamp
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ env.version }}
+        run: |
+          BRANCH="update-cross-build-metadata-${VERSION}-$(date +%s)"
+
+          gh auth setup-git
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          git add pyodide-cross-build-environments.json
+          git commit -m "Update cross-build metadata file for version ${VERSION} [skip ci]"
+
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "Update cross-build metadata file for version ${VERSION}" \
+            --body "$(printf 'This PR updates the cross-build metadata file for the new version %s.\nRequesting a review from the @pyodide/core team.' "${VERSION}")" \
+            --base main \
+            --head "$BRANCH"
 
       - name: Create an issue if the update fails
         if: failure() || steps.update_cross_build_metadata.outcome == 'failure'
-        uses: dacbd/create-issue-action@v2.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          title: Update cross-build metadata file for version ${{ env.VERSION }} failed
-          body: |
-            ## Description
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ env.version }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ASSIGNEE: ${{ github.actor }}
+        run: |
+          gh issue create \
+            --title "Update cross-build metadata file for version ${VERSION} failed" \
+            --assignee "${ASSIGNEE}" \
+            --body "## Description
 
-            The update of the cross-build metadata file for version ${{ env.VERSION }} failed.
+          The update of the cross-build metadata file for version ${VERSION} failed.
 
-            ## Additional information
+          ## Additional information
 
-            Please check the logs at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            for more information and update the metadata file manually if necessary.
-
-          labels:
-          assignees: ${{ github.actor }}
+          Please check the logs at ${RUN_URL}
+          for more information and update the metadata file manually if necessary."
