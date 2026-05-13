@@ -1,5 +1,13 @@
 {
   "releases": {
+    "314.0.0a2": {
+      "version": "314.0.0a2",
+      "url": "https://github.com/pyodide/pyodide/releases/download/314.0.0a2/xbuildenv-314.0.0a2.tar.bz2",
+      "sha256": "ac7bbcdf289ab3ae25621c436b1d013099ef6bec644ad0538dae5d65552c5c95",
+      "python_version": "3.14.2",
+      "emscripten_version": "5.0.3",
+      "min_pyodide_build_version": "0.26.0"
+    },
     "314.0.0a1": {
       "version": "314.0.0a1",
       "url": "https://github.com/pyodide/pyodide/releases/download/314.0.0a1/xbuildenv-314.0.0a1.tar.bz2",
