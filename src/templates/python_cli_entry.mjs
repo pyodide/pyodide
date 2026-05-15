@@ -179,25 +179,14 @@ async function main() {
       }
     } catch (e) {
       // During interpreter finalization, Python modules are being torn down.
-      // If a remaining live object (e.g. an atexit handler, __del__, or module
-      // globals cleanup) triggers an error that crosses the JS/Python FFI
-      // boundary, wrap_exception() will try to format it via sys.excepthook.
-      // But sys/traceback are already partially dismantled, so excepthook
-      // itself fails, producing the unhelpful "Error in sys.excepthook:
-      // Original exception was:" message.
+      // If a remaining live object triggers an error, we try to format it via sys.excepthook.
+      // However when there is a fatal error that we cannot process (e.g. function signature mismatch)
+      // excephook itself will fail and we cannot recover.
       //
       // Catch that here and print whatever we can extract so the real
       // exception type and message are visible.
-      console.error("Error during interpreter finalization (Py_FinalizeEx):");
-      if (e && e.type) {
-        console.error(`  Python exception type: ${e.type}`);
-      }
-      if (e && e.message) {
-        console.error(`  Message: ${e.message}`);
-      }
-      if (!(e && (e.type || e.message))) {
-        console.error(e);
-      }
+      console.error("Error during interpreter finalization:");
+      console.error(e);
       code = 120;
     }
     // It's important to call `process.exit` immediately after
