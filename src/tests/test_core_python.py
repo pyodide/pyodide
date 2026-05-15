@@ -110,7 +110,7 @@ def test_cpython_core(main_test, selenium, request):
         if res == 4:
             pytest.skip("No tests ran")
         elif isinstance(res, str) and res.startswith("skip:"):
-            pytest.skip(res[len("skip:"):] or f"{name} skipped")
+            pytest.skip(res[len("skip:") :] or f"{name} skipped")
     except selenium.JavascriptException:
         print(selenium.logs)
         raise
