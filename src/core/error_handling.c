@@ -178,6 +178,22 @@ wrap_exception()
   // in the outer Python. Hypothetically this could cause trouble and we should
   // fix it, but it's probably not worth the effort.
   PyErr_Print();
+
+  // PyErr_Print calls sys.excepthook which may itself fail during interpreter
+  // shutdown (e.g. traceback module partially torn down). When excepthook
+  // fails, CPython prints "Error in sys.excepthook:" followed by a truncated
+  // "Original exception was:" to stderr, and sets a new error on the
+  // indicator. Detect this and fall back to PyErr_DisplayException which uses
+  // a C-level display path that doesn't depend on sys.excepthook.
+  if (PyErr_Occurred()) {
+    PyErr_Clear();
+    // Discard the unhelpful "Error in sys.excepthook" output and re-capture
+    restore_stderr();
+    capture_stderr();
+    // Use C-level display which bypasses sys.excepthook entirely
+    PyErr_DisplayException(exc);
+  }
+
   JsVal formatted_exception = restore_stderr();
 
   typestr = _PyObject_GetAttrId((PyObject*)Py_TYPE(exc), &PyId___qualname__);
