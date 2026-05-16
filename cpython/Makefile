@@ -194,6 +194,7 @@ $(PYINSTALL)/lib/libzstd.a:
 			-DZSTD_BUILD_TESTS=OFF \
 			-DZSTD_BUILD_CONTRIB=OFF \
 			-DZSTD_MULTITHREAD_SUPPORT=OFF \
+			-DZSTD_LEGACY_SUPPORT=OFF \
 			-DCMAKE_INSTALL_PREFIX=$(ZSTDBUILD)/dist \
 		&& emmake make -C build-wasm \
 		&& emmake make -C build-wasm install \
