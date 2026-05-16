@@ -167,6 +167,8 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt
+          # workaround: virtualenv 21.3.3 is breaking the Python activation TODO see what changed
+          pip install "virtualenv<21.3.3"
 
       - name: Build emsdk
         shell: bash -l {0}
