@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+# /// script
+# dependencies = [
+#   "brotli",
+# ]
+# ///
+
 # A short script to check the size of files when compressed.
 # Usage:
 #   check_compressed_size.py pyodide.asm.mjs pyodide.asm.wasm
