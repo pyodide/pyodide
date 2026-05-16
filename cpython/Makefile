@@ -186,8 +186,8 @@ $(PYINSTALL)/lib/libzstd.a:
 		&& . $(PYODIDE_ROOT)/pyodide_env.sh \
 		&& emcmake cmake build/cmake \
 			-B build-wasm \
-			-DCMAKE_BUILD_TYPE=Release \
-			-DCMAKE_C_FLAGS="-fPIC -Os" \
+			-DCMAKE_BUILD_TYPE=MinSizeRel \
+			-DCMAKE_C_FLAGS="-fPIC" \
 			-DZSTD_BUILD_SHARED=OFF \
 			-DZSTD_BUILD_STATIC=ON \
 			-DZSTD_BUILD_PROGRAMS=OFF \
