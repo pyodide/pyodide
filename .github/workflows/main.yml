@@ -166,9 +166,7 @@ jobs:
       - name: Install dependencies (Python)
         shell: bash -l {0}
         run: |
-          echo "virtualenv<21.3.3" > /tmp/pyodide-pip-constraints.txt
-          echo "PIP_CONSTRAINT=/tmp/pyodide-pip-constraints.txt" >> "$GITHUB_ENV"
-          pip install -r requirements.txt
+          python -m pip install -r requirements.txt
 
       - name: Build emsdk
         shell: bash -l {0}
