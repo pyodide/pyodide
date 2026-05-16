@@ -152,26 +152,19 @@ jobs:
           which go
 
       - name: Install dependencies (ubuntu)
-        shell: bash -l {0}
         if: ${{ contains(runner.os, 'ubuntu') }}
         run: |
           sudo apt install -y build-essential git xxd
 
       - name: Install dependencies (macos)
-        shell: bash -l {0}
         if: ${{ contains(runner.os, 'macos') }}
         run: |
           brew install coreutils
 
       - name: Install dependencies (Python)
-        shell: bash -l {0}
-        run: |
-          pip install -r requirements.txt
-          # workaround: virtualenv 21.3.3 is breaking the Python activation TODO see what changed
-          pip install "virtualenv<21.3.3"
+        run: pip install -r requirements.txt
 
       - name: Build emsdk
-        shell: bash -l {0}
         run: |
           which ccache
 
@@ -180,7 +173,6 @@ jobs:
           ccache -s
 
       - name: Build Cpython
-        shell: bash -l {0}
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
@@ -192,7 +184,6 @@ jobs:
           ccache -s
 
       - name: build Pyodide with packages ${{ matrix.pyodide_packages }}
-        shell: bash -l {0}
         env:
           PYODIDE_PACKAGES: ${{ matrix.pyodide_packages }}
           PYODIDE_JOBS: ${{ env.PYODIDE_JOBS }}
@@ -204,12 +195,10 @@ jobs:
           ccache -s
 
       - name: Build windows python.exe
-        shell: bash -l {0}
         run: |
           make dist/python.exe
 
       - name: check-size
-        shell: bash -l {0}
         run: |
           ls -lh dist/
 
