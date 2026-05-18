@@ -2310,6 +2310,7 @@ const PyProxySequenceHandlers = {
   },
   has(jsobj: PyProxy, jskey: any): boolean {
     if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
+      // Note: if the number was negative it didn't match the pattern
       return Number(jskey) < jsobj.length;
     }
     return PyProxyHandlers.has(jsobj, jskey);
