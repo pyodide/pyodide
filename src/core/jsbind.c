@@ -656,7 +656,7 @@ jsbind_init(PyObject* core_mod)
   FAIL_IF_NULL(jsbind);
   no_default = PyObject_GetAttrString(jsbind, "no_default");
   FAIL_IF_NULL(no_default);
-  default_signature = PyObject_GetAttrString(jsbind, "default_signature");
+  default_signature = PyObject_GetAttrString(jsbind, "_default_signature");
   FAIL_IF_NULL(default_signature);
 
   success = true;

@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from inspect import (
     Parameter,
     getattr_static,
@@ -28,6 +29,8 @@ from _pyodide_core import (
     py2js_deep,
     py2js_default,
 )
+
+from .camel_to_snake import camel_to_snake, snake_to_camel
 
 
 class Py2JsConverterMeta(type):
@@ -84,10 +87,237 @@ class Default:
 
 
 class BindClass:
-    pass
+    """Marker base class for jsbind signature classes.
+
+    Subclasses describe the structure of a JS object so that attribute
+    accesses, method calls, and conversions can be type-checked at the
+    boundary.
+
+    Subclasses may configure how Python attribute names are mapped onto JS
+    property names by overriding the ``_js_name`` static method::
+
+        class Screaming(BindClass):
+            @staticmethod
+            def _js_name(name: str) -> str:
+                return name.upper()
+
+    Per-member overrides are available via :class:`JsName` /
+    :func:`js_name` (pin an exact JS name) and :class:`CamelCase` /
+    :func:`camel_case` (apply ``snake_to_camel`` to a single member).
+
+    See :class:`CamelCase` for a built-in mixin that exposes camelCase JS
+    properties via snake_case Python attribute names.
+    """
+
+    @staticmethod
+    def _js_name(py_name: str) -> str:
+        return py_name
 
 
-class TypeConverter:
+class CamelCase(BindClass):
+    """A :class:`BindClass` mixin that translates ``snake_case`` Python
+    attribute names to ``camelCase`` JS property names.
+
+    Use as a base class instead of :class:`BindClass`::
+
+        class Foo(CamelCase):
+            x_y: int
+
+            def do_something(self, /) -> None: ...
+
+    Then ``foo.x_y`` reads JS ``foo.xY`` and ``foo.do_something()`` calls
+    JS ``foo.doSomething()``.
+
+    Individual members may opt out via :class:`JsName` / :func:`js_name`
+    to pin an exact JS name::
+
+        class Foo(CamelCase):
+            my_id: Annotated[int, JsName("id")]
+
+            @js_name("doStuff")
+            def do_stuff(self, /): ...
+    """
+
+
+class JsName:
+    """Annotation marker that pins a specific JS property name.
+
+    Use inside :class:`typing.Annotated` on attribute or return-value
+    annotations of a :class:`BindClass` subclass to override any class-level
+    name translation::
+
+        from typing import Annotated
+        from _pyodide.jsbind import CamelCase, JsName
+
+        class Foo(CamelCase):
+            # Read JS property "id" instead of the default "myId".
+            my_id: Annotated[int, JsName("id")]
+
+    For methods, the :func:`js_name` decorator is more convenient.
+    """
+
+    __slots__ = ("name",)
+
+    def __init__(self, name: str):
+        self.name = name
+
+    def __repr__(self) -> str:
+        return f"JsName({self.name!r})"
+
+
+# Annotation markers that act as per-attribute name translators. Mapping is
+# ``marker -> translator(py_name) -> js_name``. The marker may either be a
+# class (e.g. :class:`CamelCase`) or any object usable as ``Annotated`` metadata.
+_NAME_TRANSLATORS: "dict[Any, Any]" = {
+    CamelCase: snake_to_camel,
+}
+
+
+def js_name[F: Callable[..., Any]](name: str) -> Callable[[F], F]:
+    """Decorator that pins the JS property name for a method.
+
+    The decorated method's Python name will be translated to ``name`` when
+    looking it up on the underlying JS object, regardless of any class-level
+    name translation::
+
+        class Foo(CamelCase):
+            @js_name("doStuff")
+            def do_stuff(self, /): ...
+    """
+
+    def decorator(f: F) -> F:
+        f.__js_name__ = name  # type: ignore[attr-defined]
+        return f
+
+    return decorator
+
+
+def camel_case[F: Callable[..., Any]](f: F) -> F:
+    """Decorator that opts a single method into ``snake_case`` ->
+    ``camelCase`` JS-name translation, regardless of the class-level
+    configuration::
+
+        class Foo(BindClass):
+            @camel_case
+            def do_stuff(self, /): ...   # calls jsproxy.doStuff()
+    """
+    f.__js_name__ = snake_to_camel(f.__name__)  # type: ignore[attr-defined]
+    return f
+
+
+def _extract_js_name_override(annotation, py_name):
+    """If ``annotation`` is ``Annotated[T, ...]`` and one of the metadata
+    items is a :class:`JsName` instance or a registered name-translator
+    marker (such as :class:`CamelCase`), return the resulting JS name.
+    Otherwise return ``None``."""
+    if not isinstance(annotation, _AnnotatedAlias):
+        return None
+    for meta in annotation.__metadata__:
+        if isinstance(meta, JsName):
+            return meta.name
+        translator = _NAME_TRANSLATORS.get(meta)
+        if translator is not None:
+            return translator(py_name)
+    return None
+
+
+def _get_name_cache(sig: type) -> tuple[dict[str, str], dict[str, str]]:
+    """Return the ``(py_to_js, js_to_py)`` name caches for ``sig``, building
+    them lazily on first access.
+
+    The forward cache contains an entry for every Python attribute name with
+    an explicit override (via an ``Annotated[..., JsName(...)]`` /
+    ``Annotated[..., CamelCase]`` annotation, or an ``@js_name`` /
+    ``@camel_case`` decorator). After the first call, ``_resolve_js_name``
+    also memoizes results from the class-level ``_js_name`` translator into
+    the same cache.
+    """
+    if res := getattr(sig, "_js_name_cache", None):
+        return res
+    cache: dict[str, str] = {}
+    # Annotated[..., JsName(...)] / Annotated[..., CamelCase] markers.
+    if not hasattr(sig, "_type_hints"):
+        try:
+            sig._type_hints = get_type_hints(sig, include_extras=True)  # type: ignore[attr-defined]
+        except Exception:
+            sig._type_hints = {}  # type: ignore[attr-defined]
+    for py, ann in sig._type_hints.items():  # type: ignore[attr-defined]
+        explicit = _extract_js_name_override(ann, py)
+        if explicit is not None:
+            cache[py] = explicit
+    # Method decorators (@js_name / @camel_case).
+    for cls in getattr(sig, "__mro__", (sig,)):
+        for py, member in getattr(cls, "__dict__", {}).items():
+            if py in cache:
+                continue
+            explicit = getattr(member, "__js_name__", None)
+            if isinstance(explicit, str):
+                cache[py] = explicit
+    # Eagerly build the reverse map for dir(). This is O(n) but only done
+    # once per sig class.
+    reverse: dict[str, str] = {js: py for py, js in cache.items()}
+    res = (cache, reverse)
+    sig._js_name_cache = res  # type: ignore[attr-defined]
+    return res
+
+
+def _resolve_js_name(sig: type | None, py_name: str) -> str:
+    """Translate a Python attribute name to its JS property name for ``sig``.
+
+    Called from C in ``JsProxy_GetAttr_helper`` and ``JsProxy_SetAttr``
+    (``src/core/jsproxy.c``). Resolution order:
+
+    1. Explicit override (``JsName`` / ``CamelCase`` annotation,
+       ``@js_name`` / ``@camel_case`` decorator).
+    2. ``sig._js_name(py_name)`` (the class-level translator).
+    3. ``py_name`` unchanged.
+
+    The result is memoized so subsequent lookups of the same name don't
+    re-run any translation.
+    """
+    if sig is None:
+        return py_name
+    cache, reverse = _get_name_cache(sig)
+    js_name = cache.get(py_name)
+    if js_name is not None:
+        return js_name
+    if issubclass(sig, CamelCase):
+        js_name = snake_to_camel(py_name)
+    else:
+        js_name = py_name
+    cache[py_name] = js_name
+    reverse[js_name] = py_name
+    return js_name
+
+
+def _reverse_dir_names(sig: type | None, js_names: list[str]) -> list[str]:
+    """Translate a list of JS property names back to Python attribute names.
+
+    Called from C in ``JsProxy_Dir`` (``src/core/jsproxy.c``). If no inverse
+    translation is available the names are returned unchanged.
+    """
+    if sig is None:
+        return js_names
+    return [_reverse_js_name(sig, n) for n in js_names]
+
+
+def _reverse_js_name(sig: type, js_name: str) -> str:
+    """Translate a JS property name back to its Python attribute name for ``sig``.
+
+    The lookup is best-effort: if the inverse cannot be determined,
+    ``js_name`` is returned unchanged.
+    """
+    _, reverse = _get_name_cache(sig)
+    if js_name in reverse:
+        return reverse[js_name]
+    # If it's a CamelCase class, apply camel_to_snake to try to invert
+    # snake_to_camel.
+    if issubclass(sig, CamelCase):
+        return camel_to_snake(js_name)
+    return js_name
+
+
+class _TypeConverter:
     def unpack_generic_alias(self, x: _GenericAlias) -> Any:
         if isinstance(x, _UnionGenericAlias):
             if len(x.__args__) != 2:
@@ -106,7 +336,15 @@ class TypeConverter:
             arg = x.__args__[0]
             return create_promise_converter(self.js2py_annotation(arg))
         if isinstance(x, _AnnotatedAlias):
-            return x.__metadata__[0]
+            # Skip over name-translation markers; they only configure the JS
+            # property name, not the value conversion.
+            for meta in x.__metadata__:
+                if isinstance(meta, JsName):
+                    continue
+                if meta in _NAME_TRANSLATORS:
+                    continue
+                return meta
+            return None
         return None
 
     def js2py_annotation(self, annotation: Any) -> "Js2PyConverter":
@@ -138,11 +376,11 @@ class TypeConverter:
         return None
 
 
-type_converter = TypeConverter()
+_type_converter = _TypeConverter()
 
 
-def get_attr_sig_prop(attr_sig):
-    """Helper for get_attr_sig in case that the attribute we're looking up is a
+def _get_attr_sig_prop(attr_sig):
+    """Helper for _get_attr_sig in case that the attribute we're looking up is a
     property with annotation.
     """
     # If the attribute is marked with BindClass, then we should attach bind it
@@ -150,20 +388,20 @@ def get_attr_sig_prop(attr_sig):
     if isinstance(attr_sig, BindClass):
         return (False, attr_sig)
     # Otherwise, make it into a converter.
-    if converter := type_converter.js2py_annotation(attr_sig):
+    if converter := _type_converter.js2py_annotation(attr_sig):
         return (True, converter)
     return (False, None)
 
 
-def get_attr_sig_method_helper(sig, attr):
+def _get_attr_sig_method_helper(sig, attr):
     """Check if sig has a method named attr. If so, get the appropriate
     signature.
 
-    Returns: None or a valid get_attr_sig return value.
+    Returns: None or a valid _get_attr_sig return value.
     """
     res_attr = getattr_static(sig, attr, None)
     # If it isn't a static method, it has one too many arguments. Easiest way to
-    # communicate this to func_to_sig is to use __get__ to bind an argument. We
+    # communicate this to _func_to_sig is to use __get__ to bind an argument. We
     # have to do this manually because `sig` is a class not an instance.
     if res_attr and callable(res_attr):
         # The argument to __get__ doesn't matter.
@@ -185,24 +423,29 @@ def get_attr_sig_method_helper(sig, attr):
     return attr_sig
 
 
-def get_attr_sig_method(sig, attr):
+def _get_attr_sig_method(sig, attr):
     if not hasattr(sig, "_method_cache"):
         sig._method_cache = {}
     if res_attr := sig._method_cache.get(attr, None):
         return res_attr
-    res = get_attr_sig_method_helper(sig, attr)
+    res = _get_attr_sig_method_helper(sig, attr)
     sig._method_cache[attr] = res
     return res
 
 
-def get_attr_sig(sig, attr):
-    """Called from JsProxy_GetAttr when the proxy has a signature.
+def _get_attr_sig(sig, attr):
+    """Called from C in ``JsProxy_GetAttr_helper`` (``src/core/jsproxy.c``)
+    when the proxy has a signature.
 
-    Must return a pair:
+    Must return a triple:
 
-        (False, sig) -- if the result is a JsProxy bind sig to it
-        (True, converter) -- apply converter to the result
+        (js_name, False, sig) -- if the result is a JsProxy bind sig to it
+        (js_name, True, converter) -- apply converter to the result
+
+    ``js_name`` is the JS property name to look up (after applying any name
+    translation configured on ``sig``).
     """
+    js_name = _resolve_js_name(sig, attr)
     # Look up type hints and cache them if we haven't yet. We could use
     # `functools.cache` for this, but it seems to keep `sig` alive for longer
     # than necessary.
@@ -211,17 +454,19 @@ def get_attr_sig(sig, attr):
         sig._type_hints = get_type_hints(sig, include_extras=True)
     # See if there is an attribute type hint
     if prop_sig := sig._type_hints.get(attr, None):
-        return get_attr_sig_prop(prop_sig)
-    if res := get_attr_sig_method(sig, attr):
-        return (False, res)
-    return (False, None)
+        got_converter, value = _get_attr_sig_prop(prop_sig)
+        return (js_name, got_converter, value)
+    if res := _get_attr_sig_method(sig, attr):
+        return (js_name, False, res)
+    return (js_name, False, None)
 
 
 no_default = Parameter.empty
 
 
-def func_to_sig(f):
-    """Called from jsproxy_call.c when we're about to call a callable.
+def _func_to_sig(f):
+    """Called from C in ``jsproxy_call.c`` when we're about to call a
+    callable.
 
     Has to return an appropriate JsFuncSignature.
     """
@@ -245,12 +490,12 @@ def func_to_sig(f):
     if cls:
         f = cls.__init__.__get__(cls)
 
-    res = func_to_sig_inner(f, cls)
+    res = _func_to_sig_inner(f, cls)
     setattr(cache, cache_name, res)
     return res
 
 
-def func_to_sig_inner(f, cls):
+def _func_to_sig_inner(f, cls):
     sig = signature(f)
     posparams = []
     posparams_defaults = []
@@ -265,7 +510,7 @@ def func_to_sig_inner(f, cls):
 
     for p in sig.parameters.values():
         converter = (
-            type_converter.py2js_annotation(types.get(p.name, None)) or py2js_default
+            _type_converter.py2js_annotation(types.get(p.name, None)) or py2js_default
         )
         match p.kind:
             case Parameter.POSITIONAL_ONLY:
@@ -290,7 +535,7 @@ def func_to_sig_inner(f, cls):
         # We use a bitflag to check which kwparams have been passed to fill in
         # defaults / raise type error.
         raise RuntimeError("Cannot handle function with more than 64 kwonly args")
-    result = type_converter.js2py_annotation(types.get("return", cls))
+    result = _type_converter.js2py_annotation(types.get("return", cls))
     if iscoroutinefunction(f):
         if result is None:
             result = js2py_default
@@ -317,10 +562,10 @@ def _default_sig_stencil(*args, **kwargs):
     pass
 
 
-default_signature = func_to_sig_inner(_default_sig_stencil, None)
+_default_signature = _func_to_sig_inner(_default_sig_stencil, None)
 
 
-def bind_class_sig(sig):
+def _bind_class_sig(sig):
     """Called from JsProxy_bind_class.
 
     Just replace sig with type[sig]. This is consistent with what we'd get from

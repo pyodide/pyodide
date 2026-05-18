@@ -15,6 +15,8 @@ from pytest_pyodide.hypothesis import (
     std_hypothesis_settings,
 )
 
+from _pyodide.camel_to_snake import camel_to_snake, snake_to_camel
+
 
 class NoHypothesisUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
@@ -2269,6 +2271,556 @@ def test_bind_getattr(selenium):
 
     assert t.f({"a": 7}, {"b": 9}, {"c": 11}) == [7, 9, 11]
     assert t.g({"a": 7}, {"b": 9}, {"c": 11}) == [1, 2, 3]
+
+
+def test_snake_to_camel_helpers():
+    assert snake_to_camel("foo") == "foo"
+    assert snake_to_camel("foo_bar") == "fooBar"
+    assert snake_to_camel("foo_bar_baz") == "fooBarBaz"
+    assert snake_to_camel("a_b_c_d") == "aBCD"
+    # All trailing underscores preserved (reserved-word escape).
+    assert snake_to_camel("class_") == "class_"
+    assert snake_to_camel("from_") == "from_"
+    assert snake_to_camel("foo_bar__") == "fooBar__"
+    assert snake_to_camel("foo___") == "foo___"
+    # Dunders untouched.
+    assert snake_to_camel("__call__") == "__call__"
+    assert snake_to_camel("__init__") == "__init__"
+    # Empty / single-char.
+    assert snake_to_camel("") == ""
+    assert snake_to_camel("x") == "x"
+
+    assert camel_to_snake("foo") == "foo"
+    assert camel_to_snake("fooBar") == "foo_bar"
+    assert camel_to_snake("fooBarBaz") == "foo_bar_baz"
+    assert camel_to_snake("XMLHttpRequest") == "XMLHttpRequest"
+    assert camel_to_snake("__call__") == "__call__"
+    assert camel_to_snake("class_") == "class_"
+    assert camel_to_snake("fooBar__") == "foo_bar__"
+    assert camel_to_snake("foo___") == "foo___"
+
+
+# Conditions:
+# 1. An identifier
+# 2. no two uppercase characters in a row
+# 3. underscore not followed by lower case letter
+#
+# Restriction 3. results from the decision to convert blahXML to blah_xml instead of blah_x_m_l.
+# blah_xml round trips back to blahXml.
+#
+# Restruction 4 results from a_a ==> a_a ==> aA
+@st.composite
+def _okay_identifiers(draw):
+    # First character: letter, or underscore
+    first = draw(
+        st.sampled_from("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_")
+    )
+    chars = [first]
+    n = draw(st.integers(min_value=0, max_value=20))
+    for _ in range(n):
+        prev = chars[-1]
+        # After uppercase letter, the next char cannot be uppercase.
+        if prev.isupper():
+            c = draw(st.sampled_from("abcdefghijklmnopqrstuvwxyz0123456789_"))
+        # After "_", the next char cannot be lowercase.
+        elif prev == "_":
+            c = draw(st.sampled_from("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"))
+        else:
+            c = draw(
+                st.sampled_from(
+                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
+                )
+            )
+        chars.append(c)
+    return "".join(chars)
+
+
+@given(s=_okay_identifiers())
+@example(s="a_A")
+@settings(deadline=10000)
+def test_camel_to_snake_to_camel_roundtrip1(s):
+    print("s", s, "camel_to_snake", camel_to_snake(s))
+    assert snake_to_camel(camel_to_snake(s)) == s
+
+
+def test_camel_to_snake_acronym():
+    sn = camel_to_snake("blahXML")
+    assert sn == "blah_xml"
+    roundtrip = snake_to_camel(sn)
+    assert roundtrip == "blahXml"
+
+
+@given(s=st.from_regex(r"[A-Za-z0-9_]*", fullmatch=True))
+def test_camel_to_snake_idempotent(s):
+    once = camel_to_snake(s)
+    assert camel_to_snake(once) == once
+
+
+# First alpha character is uppercase ==> No change for camel_to_snake ==> roundtrips
+@given(s=st.from_regex(r"_*[A-Z][A-Za-z0-9_]*", fullmatch=True))
+@settings(deadline=10000)
+def test_camel_to_snake_to_camel_roundtrip2(s):
+    assert snake_to_camel(camel_to_snake(s)) == s
+
+
+# Conditions:
+# 1. An identifier
+# 2. All lower case
+# 3. At least two non-underscore characters between any two underscores
+@given(s=st.from_regex(r"_?[a-z0-9]+(?:_[a-z0-9]{2,})*_?", fullmatch=True))
+@example(s="_a")
+@example(s="_A")
+def test_snake_to_camel_to_snake_roundtrip1(s):
+    print("s", s, "snake_to_camel", snake_to_camel(s))
+    assert camel_to_snake(snake_to_camel(s)) == s
+
+
+@given(s=st.from_regex(r"_*[A-Z][A-Za-z0-9_]*", fullmatch=True))
+def test_snake_to_camel_to_snake_roundtrip2(s):
+    print("s", s, "snake_to_camel", snake_to_camel(s))
+    assert camel_to_snake(snake_to_camel(s)) == s
+
+
+def test_snake_to_camel_acronym():
+    s = snake_to_camel("a_b_c_d_e")
+    assert s == "aBCDE"
+    assert camel_to_snake(s) == "a_bcde"
+
+
+@given(s=st.from_regex(r"[A-Za-z0-9_]*", fullmatch=True))
+def test_snake_to_camel_idempotent(s):
+    once = snake_to_camel(s)
+    assert snake_to_camel(once) == once
+
+
+@run_in_pyodide
+def test_bind_camelcase(selenium):
+    from typing import Annotated
+
+    from _pyodide.jsbind import CamelCase, Deep
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class A(CamelCase):
+        first_name: str
+        last_name: str
+        item_list: Annotated[list[int], Deep]
+
+        def get_full_name(self, /) -> str:
+            return ""
+
+        def add_item(self, x: int, /) -> None:
+            pass
+
+    a_px: JsProxy = run_js(
+        """
+        ({
+            firstName: "Ada",
+            lastName: "Lovelace",
+            itemList: [1, 2, 3],
+            getFullName() { return this.firstName + " " + this.lastName; },
+            addItem(x) { this.itemList.push(x); },
+        })
+        """
+    )
+    a = a_px.bind_sig(A)
+    # Attribute lookup translates snake_case -> camelCase.
+    assert a.first_name == "Ada"
+    assert a.last_name == "Lovelace"
+    assert a.item_list == [1, 2, 3]
+    # Method calls translate too.
+    assert a.get_full_name() == "Ada Lovelace"
+    a.add_item(4)
+    assert a.item_list == [1, 2, 3, 4]
+    # setattr translates too.
+    a.first_name = "Grace"
+    assert a.get_full_name() == "Grace Lovelace"
+
+
+@run_in_pyodide
+def test_bind_camelcase_class(selenium):
+    from typing import Annotated
+
+    from _pyodide.jsbind import CamelCase, Deep
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class A(CamelCase):
+        first_name: str
+
+        def __init__(self, name: str, /): ...
+
+        def upper_name(self, /) -> str:
+            return ""
+
+        def get_items(self, /) -> Annotated[list[int], Deep]:
+            return []
+
+    A_px: JsProxy = run_js(
+        """
+        (class {
+            constructor(name) { this.firstName = name; }
+            upperName() { return this.firstName.toUpperCase(); }
+            getItems() { return [1, 2, 3]; }
+        })
+        """
+    )
+    Bound = A_px.bind_class(A)
+    a = Bound("ada")
+    assert a.first_name == "ada"
+    assert a.upper_name() == "ADA"
+    assert a.get_items() == [1, 2, 3]
+
+
+@run_in_pyodide
+def test_bind_custom_name_translation(selenium):
+    """A user-supplied ``_js_name`` function should be honored."""
+    from _pyodide.jsbind import BindClass
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class ScreamingSnake(BindClass):
+        @staticmethod
+        def _js_name(name: str) -> str:
+            return name.upper()
+
+    class A(ScreamingSnake):
+        my_attr: int
+
+        def my_method(self, /) -> int:
+            return 0
+
+    a_px: JsProxy = run_js("({MY_ATTR: 7, MY_METHOD() { return 42; }})")
+    a = a_px.bind_sig(A)
+    assert a.my_attr == 7
+    assert a.my_method() == 42
+
+
+@run_in_pyodide
+def test_bind_js_name_decorator(selenium):
+    """``@js_name`` pins the JS property name for a method."""
+    from _pyodide.jsbind import CamelCase, js_name
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class A(CamelCase):
+        @js_name("doStuff")
+        def perform(self, /) -> int:
+            return 0
+
+        # No decorator: still uses the camelCase translation.
+        def get_value(self, /) -> int:
+            return 0
+
+    a_px: JsProxy = run_js(
+        """
+        ({
+            doStuff() { return 7; },
+            getValue() { return 42; },
+        })
+        """
+    )
+    a = a_px.bind_sig(A)
+    assert a.perform() == 7
+    assert a.get_value() == 42
+
+
+@run_in_pyodide
+def test_bind_js_name_annotation(selenium):
+    """``Annotated[T, JsName(...)]`` pins the JS property name for an attribute."""
+    from typing import Annotated
+
+    from _pyodide.jsbind import CamelCase, Deep, JsName
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class A(CamelCase):
+        # JsName overrides the camelCase default.
+        identifier: Annotated[int, JsName("id")]
+        # Combine JsName with another marker.
+        items: Annotated[list[int], Deep, JsName("xs")]
+        # No JsName: still translated to "fullName".
+        full_name: str
+
+    a_px: JsProxy = run_js("({id: 7, xs: [1,2,3], fullName: 'Ada'})")
+    a = a_px.bind_sig(A)
+    assert a.identifier == 7
+    assert a.items == [1, 2, 3]
+    assert a.full_name == "Ada"
+
+
+@run_in_pyodide
+def test_bind_js_name_setattr(selenium):
+    """``@js_name`` and ``JsName`` are also honored by setattr."""
+    from typing import Annotated
+
+    from _pyodide.jsbind import CamelCase, JsName
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class A(CamelCase):
+        identifier: Annotated[int, JsName("id")]
+
+    a_px: JsProxy = run_js("({id: 1})")
+    a = a_px.bind_sig(A)
+    a.identifier = 99
+    assert a_px.id == 99  # type: ignore[attr-defined]
+
+
+@run_in_pyodide
+def test_bind_js_name_dir(selenium):
+    """``dir()`` reverse-translates explicit JsName overrides."""
+    from typing import Annotated
+
+    from _pyodide.jsbind import CamelCase, JsName, js_name
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class A(CamelCase):
+        identifier: Annotated[int, JsName("id")]
+
+        @js_name("doStuff")
+        def perform(self, /) -> int:
+            return 0
+
+    a_px: JsProxy = run_js("({id: 1, doStuff() {}, fullName: 'x'})")
+    a = a_px.bind_sig(A)
+    names = dir(a)
+    # Explicit overrides come back as their Python names.
+    assert "identifier" in names
+    assert "perform" in names
+    # Non-overridden camelCase still gets translated.
+    assert "full_name" in names
+
+
+@run_in_pyodide
+def test_bind_camelcase_reserved_word_escape(selenium):
+    """Trailing-underscore escaping for reserved JS words must compose with
+    snake_to_camel translation. JS properties named ``from``, ``from_`` and
+    ``from__`` should be accessible from Python as ``from_``, ``from__`` and
+    ``from___`` respectively, since one trailing underscore is consumed by
+    the reserved-word transform in pre.js."""
+    from _pyodide.jsbind import CamelCase
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class A(CamelCase):
+        def from_(self, /) -> int:
+            return 0
+
+        def from__(self, /) -> int:
+            return 0
+
+        def from___(self, /) -> int:
+            return 0
+
+    a_px: JsProxy = run_js(
+        """
+        ({
+            from() { return 1; },
+            from_() { return 2; },
+            from__() { return 3; },
+        })
+        """
+    )
+    a = a_px.bind_sig(A)
+    assert a.from_() == 1
+    assert a.from__() == 2
+    assert a.from___() == 3
+
+
+@run_in_pyodide
+def test_bind_camel_case_decorator(selenium):
+    """``@camel_case`` opts a single method on a non-CamelCase class into
+    snake -> camel translation."""
+    from _pyodide.jsbind import BindClass, camel_case
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class A(BindClass):
+        @camel_case
+        def do_stuff(self, /) -> int:
+            return 0
+
+        # No decorator: name is *not* translated (would otherwise be otherThing).
+        def other_thing(self, /) -> int:
+            return 0
+
+    a_px: JsProxy = run_js(
+        """
+        ({
+            doStuff() { return 7; },
+            other_thing() { return 42; },
+        })
+        """
+    )
+    a = a_px.bind_sig(A)
+    assert a.do_stuff() == 7
+    assert a.other_thing() == 42
+
+
+@run_in_pyodide
+def test_bind_camel_case_annotation(selenium):
+    """``Annotated[T, CamelCase]`` opts a single attribute into camelCase."""
+    from typing import Annotated
+
+    from _pyodide.jsbind import BindClass, CamelCase, Deep
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class A(BindClass):
+        # CamelCase as a per-attribute marker.
+        full_name: Annotated[str, CamelCase]
+        # Combined with another marker on the same attribute.
+        item_list: Annotated[list[int], Deep, CamelCase]
+        # No marker: name is *not* translated (would otherwise be otherThing).
+        other_thing: int
+
+    a_px: JsProxy = run_js("({fullName: 'Ada', itemList: [1,2,3], other_thing: 9})")
+    a = a_px.bind_sig(A)
+    assert a.full_name == "Ada"
+    assert a.item_list == [1, 2, 3]
+    assert a.other_thing == 9
+
+
+@run_in_pyodide
+def test_bind_camel_case_decorator_overrides_class(selenium):
+    """``@camel_case`` and ``Annotated[..., CamelCase]`` override the
+    class-level translator. The class here uses SCREAMING_CASE so it is
+    obvious which names are produced by which translator."""
+    from typing import Annotated
+
+    from _pyodide.jsbind import BindClass, CamelCase, JsName, camel_case, js_name
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class Screaming(BindClass):
+        @staticmethod
+        def _js_name(name: str) -> str:
+            return name.upper()
+
+    class A(Screaming):
+        # Class-level translator: full_name -> FULL_NAME.
+        full_name: str
+        # CamelCase marker overrides Screaming on this attribute only.
+        item_list: Annotated[list[int], CamelCase]
+        # JsName overrides everything.
+        identifier: Annotated[int, JsName("id")]
+
+        # Class-level translator: do_thing -> DO_THING.
+        def do_thing(self, /) -> int:
+            return 0
+
+        # @camel_case overrides Screaming for this method only.
+        @camel_case
+        def do_stuff(self, /) -> int:
+            return 0
+
+        # @js_name overrides everything.
+        @js_name("perform")
+        def execute(self, /) -> int:
+            return 0
+
+    a_px: JsProxy = run_js(
+        """
+        ({
+            FULL_NAME: 'Ada',
+            itemList: [1, 2, 3],
+            id: 7,
+            DO_THING() { return 0; },
+            doStuff() { return 1; },
+            perform() { return 2; },
+        })
+        """
+    )
+    a = a_px.bind_sig(A)
+    assert a.full_name == "Ada"
+    assert list(a.item_list) == [1, 2, 3]
+    assert a.identifier == 7
+    assert a.do_thing() == 0
+    assert a.do_stuff() == 1
+    assert a.execute() == 2
+
+
+@run_in_pyodide
+def test_bind_dir_all_overrides(selenium):
+    """``dir()`` reverse-translates names from every per-member override
+    mechanism (``@camel_case``, ``Annotated[..., CamelCase]``,
+    ``Annotated[..., JsName(...)]``, ``@js_name``) plus the class-level
+    snake_case <-> camelCase translation provided by :class:`CamelCase`."""
+    from typing import Annotated
+
+    from _pyodide.jsbind import CamelCase, JsName, camel_case, js_name
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class A(CamelCase):
+        # Class-level (CamelCase): plain_attr -> plainAttr.
+        plain_attr: int
+        # Per-attribute CamelCase marker (no double translation).
+        item_list: Annotated[list[int], CamelCase]
+        # JsName override.
+        identifier: Annotated[int, JsName("id")]
+
+        # Class-level (CamelCase): plain_method -> plainMethod.
+        def plain_method(self, /) -> int:
+            return 0
+
+        # @camel_case opts an individual method in (no double translation).
+        @camel_case
+        def do_stuff(self, /) -> int:
+            return 0
+
+        # @js_name override.
+        @js_name("perform")
+        def execute(self, /) -> int:
+            return 0
+
+    a_px: JsProxy = run_js(
+        """
+        ({
+            plainAttr: 1,
+            itemList: [1, 2, 3],
+            id: 7,
+            plainMethod() { return 0; },
+            doStuff() { return 1; },
+            perform() { return 2; },
+        })
+        """
+    )
+    a = a_px.bind_sig(A)
+    names = set(dir(a))
+    # Every Python-side name should appear in dir().
+    assert "plain_attr" in names
+    assert "item_list" in names
+    assert "identifier" in names
+    assert "plain_method" in names
+    assert "do_stuff" in names
+    assert "execute" in names
+    # The raw JS-side names should not (they are reverse-translated).
+    assert "plainAttr" not in names
+    assert "itemList" not in names
+    assert "id" not in names
+    assert "plainMethod" not in names
+    assert "doStuff" not in names
+    assert "perform" not in names
+
+
+@run_in_pyodide
+def test_bind_camelcase_dir(selenium):
+    """``dir(jsproxy)`` should reverse-translate camelCase JS names."""
+    from _pyodide.jsbind import CamelCase
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class A(CamelCase):
+        first_name: str
+
+    a_px: JsProxy = run_js("({firstName: 'Ada', lastName: 'Lovelace'})")
+    a = a_px.bind_sig(A)
+    names = dir(a)
+    assert "first_name" in names
+    assert "last_name" in names
 
 
 @run_in_pyodide

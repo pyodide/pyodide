@@ -343,10 +343,10 @@ JsProxy_bind_class(PyObject* self, PyObject* sig)
 
   // Call `sig = jsbind.bind_class_sig(sig)` and then delegate to
   // JsProxy_bind_sig.
-  // bind_class_sig takes sig and returns type[sig].
-  _Py_IDENTIFIER(bind_class_sig);
+  // _bind_class_sig takes sig and returns type[sig].
+  _Py_IDENTIFIER(_bind_class_sig);
   PyObject* class_sig =
-    _PyObject_CallMethodIdOneArg(jsbind, &PyId_bind_class_sig, sig);
+    _PyObject_CallMethodIdOneArg(jsbind, &PyId__bind_class_sig, sig);
   FAIL_IF_NULL(class_sig);
   result = JsProxy_bind_sig(self, class_sig);
 finally:
@@ -564,32 +564,45 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
     FAIL();
   }
 
-  jsresult = JsProxy_GetAttr_js(JsProxy_VAL(self), key);
+  // If we have a signature, ask jsbind both for the converter info and for the
+  // JS property name to look up (the sig may translate Python names to JS
+  // names, e.g. snake_case -> camelCase). Otherwise the JS name is just the
+  // Python name.
+  const char* js_key = key;
+  int got_converter = 0;
+  PyObject* sig = NULL;
+  if (JsProxy_SIG(self) != NULL) {
+    _Py_IDENTIFIER(_get_attr_sig);
+    get_attr_sig_res = _PyObject_CallMethodIdObjArgs(
+      jsbind, &PyId__get_attr_sig, JsProxy_SIG(self), attr, NULL);
+    FAIL_IF_NULL(get_attr_sig_res);
+
+    // js_name_obj and sig are borrowed references into get_attr_sig_res, and
+    // js_key points into js_name_obj's internal UTF-8 buffer. All three are
+    // kept alive by get_attr_sig_res, which is only Py_CLEARed in the finally
+    // block below.
+    PyObject* js_name_obj;
+    if (!PyArg_ParseTuple(
+          get_attr_sig_res, "OpO", &js_name_obj, &got_converter, &sig)) {
+      FAIL();
+    }
+    js_key = PyUnicode_AsUTF8(js_name_obj);
+    FAIL_IF_NULL(js_key);
+  }
+
+  jsresult = JsProxy_GetAttr_js(JsProxy_VAL(self), js_key);
   if (JsvError_Check(jsresult)) {
     if (!PyErr_Occurred()) {
       PyErr_SetString(PyExc_AttributeError, key);
     }
     FAIL();
   }
-
-  if (JsProxy_SIG(self) != NULL) {
-    _Py_IDENTIFIER(get_attr_sig);
-    get_attr_sig_res = _PyObject_CallMethodIdObjArgs(
-      jsbind, &PyId_get_attr_sig, JsProxy_SIG(self), attr, NULL);
-    FAIL_IF_NULL(get_attr_sig_res);
-
-    bool got_converter;
-    PyObject* sig;
-    if (!PyArg_ParseTuple(get_attr_sig_res, "pO", &got_converter, &sig)) {
-      FAIL();
-    }
-    if (got_converter) {
-      pyresult = Js2PyConverter_convert(sig, jsresult, Jsv_null);
-      goto success;
-    }
-    if (!Py_IsNone(sig)) {
-      attr_sig = Py_XNewRef(sig);
-    }
+  if (got_converter) {
+    pyresult = Js2PyConverter_convert(sig, jsresult, Jsv_null);
+    goto success;
+  }
+  if (sig != NULL && !Py_IsNone(sig)) {
+    attr_sig = Py_XNewRef(sig);
   }
   // attr_sig might contain the result sig or it might be NULL.
   // TODO: maybe allow being strict and requiring that we get a sig?
@@ -657,6 +670,7 @@ static int
 JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
 {
   bool success = false;
+  PyObject* js_name_obj = NULL;
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
@@ -671,15 +685,28 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
     }
   }
 
+  // If a signature is attached, ask it to translate the attribute name
+  // (e.g. snake_case Python attr -> camelCase JS property).
+  const char* js_key = key;
+  if (JsProxy_SIG(self) != NULL) {
+    _Py_IDENTIFIER(_resolve_js_name);
+    js_name_obj = _PyObject_CallMethodIdObjArgs(
+      jsbind, &PyId__resolve_js_name, JsProxy_SIG(self), attr, NULL);
+    FAIL_IF_NULL(js_name_obj);
+    js_key = PyUnicode_AsUTF8(js_name_obj);
+    FAIL_IF_NULL(js_key);
+  }
+
   if (pyvalue == NULL) {
-    FAIL_IF_MINUS_ONE(JsProxy_DelAttr_js(JsProxy_VAL(self), key));
+    FAIL_IF_MINUS_ONE(JsProxy_DelAttr_js(JsProxy_VAL(self), js_key));
   } else {
     JsVal jsvalue = python2js(pyvalue);
-    FAIL_IF_MINUS_ONE(JsProxy_SetAttr_js(JsProxy_VAL(self), key, jsvalue));
+    FAIL_IF_MINUS_ONE(JsProxy_SetAttr_js(JsProxy_VAL(self), js_key, jsvalue));
   }
 
   success = true;
 finally:
+  Py_CLEAR(js_name_obj);
   return success ? 0 : -1;
 }
 
@@ -2796,6 +2823,15 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   jsdir = JsProxy_Dir_js(JsProxy_VAL(self));
   pydir = js2python(jsdir);
   FAIL_IF_NULL(pydir);
+  // If a signature is attached, run the JS names through any reverse name
+  // translation it provides (e.g. camelCase -> snake_case).
+  if (JsProxy_SIG(self) != NULL) {
+    _Py_IDENTIFIER(_reverse_dir_names);
+    PyObject* translated = _PyObject_CallMethodIdObjArgs(
+      jsbind, &PyId__reverse_dir_names, JsProxy_SIG(self), pydir, NULL);
+    FAIL_IF_NULL(translated);
+    Py_SETREF(pydir, translated);
+  }
   // Merge and sort
   FAIL_IF_MINUS_ONE(_PySet_Update(result_set, pydir));
   if (JsvArray_Check(JsProxy_VAL(self))) {
