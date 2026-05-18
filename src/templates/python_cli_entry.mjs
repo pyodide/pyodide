@@ -173,7 +173,35 @@ async function main() {
     if (code === undefined) {
       code = 0;
     }
-    if (py._module._Py_FinalizeEx() < 0) {
+
+    // Workaround: some native extensions don't implement
+    // tp_traverse, so Py_FinalizeEx may destroy type objects before their
+    // instances, crashing on stale function pointers in Wasm.
+    // Force-clearing modules and running GC here while types are still alive to
+    // avoid fatal errors during finalization.
+    // See:
+    //   1. https://pyo3.rs/v0.24.2/class/protocols.html#garbage-collector-integration
+    //   2. tp_traverse: https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse
+    //   3. https://github.com/pyodide/pyodide/issues/6234
+    try {
+      py.runPython("import sys, gc; sys.modules.clear(); gc.collect()");
+    } catch (e) {
+      // Best-effort — proceed to finalization even if this fails.
+    }
+    try {
+      if (py._module._Py_FinalizeEx() < 0) {
+        code = 120;
+      }
+    } catch (e) {
+      // During interpreter finalization, Python modules are being torn down.
+      // If a remaining live object triggers an error, we try to format it via sys.excepthook.
+      // However when there is a fatal error that we cannot process (e.g. function signature mismatch)
+      // excephook itself will fail and we cannot recover.
+      //
+      // Catch that here and print whatever we can extract so the real
+      // exception type and message are visible.
+      console.error("Error during interpreter finalization:");
+      console.error(e);
       code = 120;
     }
     // It's important to call `process.exit` immediately after
