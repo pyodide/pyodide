@@ -180,6 +180,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lffi \
 	-llzma \
 	-lsqlite3 \
+	-lzstd \
 	-lstdc++ \
 	-lidbfs.js \
 	-lnodefs.js \
@@ -300,6 +301,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lhiwire \
 		-llzma \
 		-lsqlite3 \
+		-lzstd \
 		-lidbfs.js \
 		-lnodefs.js \
 		-lproxyfs.js

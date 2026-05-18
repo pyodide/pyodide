@@ -21,6 +21,9 @@ HIWIRE_COMMIT=6a1e67280a15d929ebeceee54a6358c9c8d5f697
 LZMABUILD=$(ROOT)/build/lzma
 LZMATARBALL=https://github.com/xz-mirror/xz/releases/download/v5.2.2/xz-5.2.2.tar.gz
 
+ZSTDBUILD=$(ROOT)/build/zstd
+ZSTDTARBALL=https://github.com/python/cpython-source-deps/archive/refs/tags/zstd-1.5.7.tar.gz
+
 # Not mandatory, but try to match the version of SQLite used in Emscripten
 # https://github.com/emscripten-core/emscripten/blob/4.0.9/tools/ports/sqlite3.py
 SQLITE3BUILD=$(ROOT)/build/sqlite3
@@ -30,13 +33,15 @@ ifdef CPYTHON_DEBUG
 	MAYBE_WITH_PYDEBUG=--with-pydebug
 endif
 
-all: $(PYINSTALL)/lib/$(PYLIB) libffi libhiwire liblzma
+all: $(PYINSTALL)/lib/$(PYLIB) libffi libhiwire liblzma libzstd
 
 libffi: $(PYINSTALL)/lib/libffi.a
 
 libhiwire: $(PYINSTALL)/lib/libhiwire.a
 
 liblzma: $(PYINSTALL)/lib/liblzma.a
+
+libzstd: $(PYINSTALL)/lib/libzstd.a
 
 libsqlite3: $(PYINSTALL)/lib/libsqlite3.a
 
@@ -171,6 +176,35 @@ $(PYINSTALL)/lib/liblzma.a :
 	mkdir -p $(PYINSTALL)/include/lzma
 	cp -r $(LZMABUILD)/dist/include/* $(PYINSTALL)/include/lzma
 
+$(PYINSTALL)/lib/libzstd.a:
+	rm -rf $(ZSTDBUILD)
+	mkdir $(ZSTDBUILD)
+	(\
+		cd $(ZSTDBUILD) \
+		&& wget -q -O - $(ZSTDTARBALL) | tar -xz --strip-components=1 \
+		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
+		&& . $(PYODIDE_ROOT)/pyodide_env.sh \
+		&& emcmake cmake build/cmake \
+			-B build-wasm \
+			-DCMAKE_BUILD_TYPE=MinSizeRel \
+			-DCMAKE_C_FLAGS="-fPIC" \
+			-DZSTD_BUILD_SHARED=OFF \
+			-DZSTD_BUILD_STATIC=ON \
+			-DZSTD_BUILD_PROGRAMS=OFF \
+			-DZSTD_BUILD_TESTS=OFF \
+			-DZSTD_BUILD_CONTRIB=OFF \
+			-DZSTD_MULTITHREAD_SUPPORT=OFF \
+			-DZSTD_LEGACY_SUPPORT=OFF \
+			-DCMAKE_INSTALL_PREFIX=$(ZSTDBUILD)/dist \
+		&& emmake make -C build-wasm \
+		&& emmake make -C build-wasm install \
+	)
+	mkdir -p $(PYINSTALL)/lib
+	rm -rf $(PYINSTALL)/include/zstd
+	mkdir -p $(PYINSTALL)/include/zstd
+	cp $(ZSTDBUILD)/dist/lib/libzstd.a $(PYINSTALL)/lib/
+	cp -r $(ZSTDBUILD)/dist/include/* $(PYINSTALL)/include/zstd/
+
 $(PYINSTALL)/lib/libsqlite3.a:
 	rm -rf $(SQLITE3BUILD)
 	mkdir $(SQLITE3BUILD)
@@ -239,7 +273,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 $(PYBUILD)/Modules/Setup.local: Setup.local
 	cp Setup.local $(PYBUILD)/Modules/
 
-$(PYBUILD)/$(PYLIB): $(PYBUILD)/Makefile $(PYBUILD)/pyconfig.h $(PYBUILD)/Modules/Setup.local $(PYINSTALL)/lib/libffi.a $(PYINSTALL)/lib/liblzma.a $(PYINSTALL)/lib/libsqlite3.a
+$(PYBUILD)/$(PYLIB): $(PYBUILD)/Makefile $(PYBUILD)/pyconfig.h $(PYBUILD)/Modules/Setup.local $(PYINSTALL)/lib/libffi.a $(PYINSTALL)/lib/liblzma.a $(PYINSTALL)/lib/libsqlite3.a $(PYINSTALL)/lib/libzstd.a
 	cp Setup.local $(PYBUILD)/Modules/
 	( \
 		cd $(PYBUILD); \
