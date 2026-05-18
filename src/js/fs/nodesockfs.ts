@@ -17,6 +17,10 @@ import {
 } from "./wintercg-sockets";
 import type { SocketOptions, ConnectFunc } from "./wintercg-sockets";
 import type { FSStream, FSNode } from "../types";
+import {
+  createResolvable,
+  type ResolvablePromise,
+} from "../common/resolveable";
 
 interface NodeSock {
   family: number;
@@ -29,8 +33,31 @@ interface NodeSock {
   reader: ReadableStreamDefaultReader<Uint8Array> | null;
   /** WritableStream writer for sending data */
   writer: WritableStreamDefaultWriter<Uint8Array> | null;
-  /** Leftover bytes from a previous read that were larger than requested */
-  leftover: Uint8Array | null;
+
+  /**
+   * Buffer for received data
+   * In nonblocking mode, this buffer is used to store data that has been received
+   * but not yet read by the application.
+   */
+  recvBuffer: Uint8Array[];
+  recvBufferBytes: number;
+  /**
+   * The stream has reached FIN.
+   * It does not mean the stream is closed, but it will not receive any more data.
+   */
+  eof: boolean;
+  /**
+   * Promise that resolves when data is available
+   * Used in blocking mode to suspend the WASM stack until data is available.
+   */
+  dataAvailable: ResolvablePromise | null;
+
+  /**
+   * State of the background receive pump
+   */
+  pumpRunning: boolean;
+  pumpPaused: ResolvablePromise | null;
+
   connected: boolean;
   connecting: boolean;
   closed: boolean;
@@ -53,7 +80,6 @@ interface NodeSock {
     recvmsgAsync: (
       sock: NodeSock,
       length: number,
-      blocking?: boolean,
     ) => Promise<Uint8Array | number>;
     bind: (sock: NodeSock, addr: string, port: number) => void;
     listen: (sock: NodeSock, backlog: number) => void;
@@ -82,10 +108,113 @@ export async function initializeNodeSockFS(
   // following Emscripten's other FS implementations
   const DIR_MODE = cDefs.S_IFDIR | 0o777;
 
+  // Buffer size threshold for pausing the receive pump (256 KB)
+  const RECV_BUFFER_HIGH_WATER = 256 * 1024;
+
   // https://linux.die.net/man/2/shutdown
   const SHUT_RD = 0;
   const SHUT_WR = 1;
   const SHUT_RDWR = 2;
+
+  /**
+   * Start the background receive pump for a socket.
+   * This function reads data from the underlying ReadableStream and buffers it.
+   * It pauses when the buffer exceeds RECV_BUFFER_HIGH_WATER to prevent memory exhaustion.
+   */
+  function startRecvPump(sock: NodeSock): void {
+    if (sock.pumpRunning || !sock.reader) return;
+    sock.pumpRunning = true;
+
+    const reader = sock.reader;
+    // startTLS changes the reader, so we need to check if the reader has been upgraded
+    // before reading from it after event loop iterations
+    const socketUpgraded = () => sock.reader !== reader;
+
+    (async () => {
+      try {
+        while (!sock.closed && !socketUpgraded()) {
+          const { value, done } = await reader.read();
+          if (done || !value) {
+            if (!socketUpgraded()) {
+              sock.eof = true;
+              notifyDataAvailable(sock);
+            }
+            break;
+          }
+          sock.recvBuffer.push(value);
+          sock.recvBufferBytes += value.length;
+          notifyDataAvailable(sock);
+
+          if (sock.recvBufferBytes >= RECV_BUFFER_HIGH_WATER) {
+            sock.pumpPaused = createResolvable();
+            await sock.pumpPaused;
+          }
+        }
+      } catch {
+        if (!socketUpgraded()) {
+          sock.eof = true;
+          notifyDataAvailable(sock);
+        }
+      } finally {
+        if (!socketUpgraded()) {
+          sock.pumpRunning = false;
+        }
+      }
+    })();
+  }
+
+  function notifyDataAvailable(sock: NodeSock): void {
+    if (sock.dataAvailable) {
+      sock.dataAvailable.resolve();
+      sock.dataAvailable = null;
+    }
+  }
+
+  /**
+   * Block until data is available to read or the socket is closed.
+   */
+  function waitForData(sock: NodeSock): Promise<void> {
+    if (sock.recvBufferBytes > 0 || sock.eof || sock.closed) {
+      return Promise.resolve();
+    }
+    sock.dataAvailable = createResolvable();
+    return sock.dataAvailable;
+  }
+
+  function maybeResumePump(sock: NodeSock): void {
+    if (sock.pumpPaused && sock.recvBufferBytes < RECV_BUFFER_HIGH_WATER) {
+      sock.pumpPaused.resolve();
+      sock.pumpPaused = null;
+    }
+  }
+
+  function drainBuffer(sock: NodeSock, length: number): Uint8Array {
+    // Enough data in a single chunk
+    if (sock.recvBuffer.length === 1 && sock.recvBuffer[0].length <= length) {
+      const chunk = sock.recvBuffer.shift()!;
+      sock.recvBufferBytes -= chunk.length;
+      return chunk;
+    }
+
+    const out = new Uint8Array(Math.min(length, sock.recvBufferBytes));
+    let offset = 0;
+    while (offset < out.length && sock.recvBuffer.length > 0) {
+      const chunk = sock.recvBuffer[0];
+      const needed = out.length - offset;
+      if (chunk.length <= needed) {
+        out.set(chunk, offset);
+        offset += chunk.length;
+        sock.recvBuffer.shift();
+      } else {
+        out.set(chunk.subarray(0, needed), offset);
+        sock.recvBuffer[0] = chunk.subarray(needed);
+        offset += needed;
+      }
+    }
+    sock.recvBufferBytes -= out.length;
+    maybeResumePump(sock);
+    return out;
+  }
 
   // Highly inspired by Emscripten's SOCKFS implementation
   // https://github.com/emscripten-core/emscripten/blob/main/src/lib/libsockfs.js
@@ -94,7 +223,7 @@ export async function initializeNodeSockFS(
       let mask = 0;
 
       // Readable: we have buffered leftover data ready to return
-      if (sock.leftover && sock.leftover.length > 0) {
+      if (sock.recvBufferBytes > 0 || sock.eof) {
         mask |= cDefs.POLLRDNORM | cDefs.POLLIN;
       }
 
@@ -117,7 +246,7 @@ export async function initializeNodeSockFS(
      */
     ioctl(sock: NodeSock, request: number): number {
       if (request === cDefs.FIONREAD) {
-        return sock.leftover ? sock.leftover.length : 0;
+        return sock.recvBufferBytes;
       }
       return -cDefs.EINVAL;
     },
@@ -155,10 +284,14 @@ export async function initializeNodeSockFS(
         sock.wcgSocket.close().catch(() => {});
         sock.wcgSocket = null;
       }
-      sock.leftover = null;
+      sock.recvBuffer = [];
+      sock.recvBufferBytes = 0;
       sock.connected = false;
       sock.connecting = false;
       sock.closed = true;
+
+      notifyDataAvailable(sock);
+      maybeResumePump(sock);
       return 0;
     },
 
@@ -194,6 +327,9 @@ export async function initializeNodeSockFS(
           wcgSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
         sock.writer =
           wcgSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
+
+        startRecvPump(sock);
+
         // Track when the underlying transport closes.
         // Swallow any errors while closing sockets.
         wcgSocket.closed.then(
@@ -234,41 +370,27 @@ export async function initializeNodeSockFS(
     async recvmsgAsync(
       sock: NodeSock,
       length: number,
-      blocking = false,
     ): Promise<Uint8Array | number> {
-      if (sock.leftover && sock.leftover.length > 0) {
-        const bytesRead = Math.min(length, sock.leftover.length);
-        const result = sock.leftover.subarray(0, bytesRead);
-        sock.leftover =
-          bytesRead < sock.leftover.length
-            ? sock.leftover.subarray(bytesRead)
-            : null;
-        return result;
+      if (sock.recvBufferBytes > 0) {
+        return drainBuffer(sock, length);
       }
 
-      if (!blocking && sock.stream.flags & cDefs.O_NONBLOCK) {
+      if (sock.eof) {
+        return 0;
+      }
+
+      if (sock.stream.flags & cDefs.O_NONBLOCK) {
         return -cDefs.EAGAIN;
       }
 
-      if (!sock.reader) {
+      await waitForData(sock);
+      if (sock.recvBufferBytes > 0) {
+        return drainBuffer(sock, length);
+      }
+      if (sock.eof) {
         return 0;
       }
-
-      try {
-        const { value, done } = await sock.reader.read();
-        if (done || !value) {
-          return 0;
-        }
-
-        if (value.length <= length) {
-          return value;
-        }
-
-        sock.leftover = value.subarray(length);
-        return value.subarray(0, length);
-      } catch {
-        return 0;
-      }
+      return -cDefs.EAGAIN;
     },
 
     shutdown(sock: NodeSock, how: number): number {
@@ -280,6 +402,11 @@ export async function initializeNodeSockFS(
         if (sock.reader) {
           sock.reader.releaseLock();
           sock.reader = null;
+          sock.recvBuffer = [];
+          sock.recvBufferBytes = 0;
+          sock.eof = true;
+          notifyDataAvailable(sock);
+          maybeResumePump(sock);
         }
       }
 
@@ -324,7 +451,12 @@ export async function initializeNodeSockFS(
         tlsSocket.readable.getReader() as ReadableStreamDefaultReader<Uint8Array>;
       sock.writer =
         tlsSocket.writable.getWriter() as WritableStreamDefaultWriter<Uint8Array>;
-      sock.leftover = null;
+      sock.recvBuffer = [];
+      sock.recvBufferBytes = 0;
+      sock.eof = false;
+      sock.pumpRunning = false;
+      sock.pumpPaused = null;
+      startRecvPump(sock);
 
       tlsSocket.closed.then(
         () => {
@@ -428,7 +560,12 @@ export async function initializeNodeSockFS(
         wcgSocket: null,
         reader: null,
         writer: null,
-        leftover: null,
+        recvBuffer: [],
+        recvBufferBytes: 0,
+        eof: false,
+        dataAvailable: null,
+        pumpRunning: false,
+        pumpPaused: null,
         connected: false,
         connecting: false,
         closed: false,
@@ -487,14 +624,13 @@ export async function initializeNodeSockFS(
       if (!sock) {
         throw new FS.ErrnoError(cDefs.EBADF);
       }
-      const result = await tcp_sock_ops.recvmsgAsync(sock, nbytes, true);
-      if (typeof result === "number") {
-        if (result < 0) {
-          throw new FS.ErrnoError(-result);
-        }
-        return new Uint8Array(0);
+      while (sock.recvBufferBytes === 0 && !sock.eof && !sock.closed) {
+        await waitForData(sock);
       }
-      return result;
+      if (sock.recvBufferBytes > 0) {
+        return drainBuffer(sock, nbytes);
+      }
+      return new Uint8Array(0);
     },
 
     async send(
