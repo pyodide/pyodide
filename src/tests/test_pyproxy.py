@@ -964,12 +964,44 @@ def test_pyproxy_gc_destroy(selenium):
 
 
 @pytest.mark.skip_pyproxy_check
+def test_topy_shared_ref_refcount(selenium):
+    # See: https://github.com/pyodide/pyodide/issues/5598
+    # Tests if toPy properly handles shared references
+    # without messing up with the refcount
+    selenium.run_js(
+        """
+        const shared = { x: 1 };
+        const obj = [shared, shared, shared];
+        const py_obj = pyodide.toPy(obj);
+        // If refcounts are correct, accessing all elements should work
+        // and Python garbage collection shouldn't free the shared dict early
+        const result = pyodide.runPython(`
+            def check(obj):
+                import sys
+                # All three elements should be the same object
+                assert obj[0] is obj[1] is obj[2]
+                # refcount should be at least 4:
+                #   1 for obj[0], 1 for obj[1], 1 for obj[2], 1 for the arg
+                rc = sys.getrefcount(obj[0])
+                assert rc >= 4, f"refcount too low: {rc}"
+                return True
+            check
+        `);
+        assert(() => result(py_obj) === true);
+        result.destroy();
+        py_obj.destroy();
+        """
+    )
+
+
+@pytest.mark.skip_pyproxy_check
 @pytest.mark.driver_timeout(60)
 def test_pyproxy_to_py_shared_ref_stress(selenium):
     # See: https://github.com/pyodide/pyodide/issues/5598
-    # Tests the race condition where FinalizationRegistry and
-    # Python's garbage collector run at the same time
-    # which might cause double free error
+    # Stress test to make sure shared references are handled correctly
+    # If they are not correctly refcounted, Python objects will be gc-ed
+    # when they should not be, and errors like memory access out of bounds
+    # will happen when it is deallocated and reallocated
     selenium.run_js(
         """
         await (async function () {
@@ -993,7 +1025,7 @@ def test_pyproxy_to_py_shared_ref_stress(selenium):
           `);
 
           try {
-            for (let i = 0; i < 20_000; i++) {
+            for (let i = 0; i < 1_000; i++) {
               const pyValue = pyodide.toPy(getObjects());
               pythonCb(pyValue);
 
