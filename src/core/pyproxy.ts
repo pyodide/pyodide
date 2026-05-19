@@ -81,9 +81,6 @@ if (globalThis.FinalizationRegistry) {
       }
       try {
         Py_ENTER();
-        if (ptr === undefined) {
-          console.log("ptr is undefined");
-        }
         _Py_DecRef(ptr);
         Py_EXIT();
       } catch (e) {
@@ -1187,7 +1184,7 @@ export class PyIterableMethods {
       shared.cache.json_adaptor_map,
       isJsonAdaptor(this),
     );
-    Module.finalizationRegistry.register(result, [iterptr, undefined], token);
+    Module.finalizationRegistry.register(result, { ptr: iterptr }, token);
     return result;
   }
 }
@@ -1284,7 +1281,7 @@ export class PyAsyncIterableMethods {
     }
 
     let result = aiter_helper(iterptr, token);
-    Module.finalizationRegistry.register(result, [iterptr, undefined], token);
+    Module.finalizationRegistry.register(result, { ptr: iterptr }, token);
     return result;
   }
 }
