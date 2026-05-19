@@ -1184,7 +1184,7 @@ export class PyIterableMethods {
       shared.cache.json_adaptor_map,
       isJsonAdaptor(this),
     );
-    Module.finalizationRegistry.register(result, { ptr: iterptr }, token);
+    Module.finalizationRegistry.register(result, [iterptr, undefined], token);
     return result;
   }
 }
@@ -1281,7 +1281,7 @@ export class PyAsyncIterableMethods {
     }
 
     let result = aiter_helper(iterptr, token);
-    Module.finalizationRegistry.register(result, { ptr: iterptr }, token);
+    Module.finalizationRegistry.register(result, [iterptr, undefined], token);
     return result;
   }
 }

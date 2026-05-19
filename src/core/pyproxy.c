@@ -1471,7 +1471,7 @@ EM_JS_VAL(JsVal, create_once_callable, (PyObject * obj, bool may_syncify), {
     Module.finalizationRegistry.unregister(wrapper);
     _Py_DecRef(obj);
   };
-  Module.finalizationRegistry.register(wrapper, { ptr : obj }, wrapper);
+  Module.finalizationRegistry.register(wrapper, [ obj, undefined ], wrapper);
   return wrapper;
 });
 
