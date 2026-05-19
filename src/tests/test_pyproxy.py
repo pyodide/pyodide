@@ -963,6 +963,55 @@ def test_pyproxy_gc_destroy(selenium):
     }
 
 
+@pytest.mark.skip_pyproxy_check
+@pytest.mark.driver_timeout(60)
+def test_pyproxy_to_py_shared_ref_stress(selenium):
+    # See: https://github.com/pyodide/pyodide/issues/5598
+    # Tests the race condition where FinalizationRegistry and
+    # Python's garbage collector run at the same time
+    # which might cause double free error
+    selenium.run_js(
+        """
+        await (async function () {
+          const objects = [];
+          const ref = {};
+
+          function getObjects() {
+            objects.push({ ref });
+            return objects;
+          }
+
+          const pythonCb = pyodide.runPython(`
+              instances = []
+
+              def cb(objects):
+                  global instances
+                  instances.append(objects[-1])
+                  return len(instances)
+
+              cb
+          `);
+
+          try {
+            for (let i = 0; i < 20_000; i++) {
+              const pyValue = pyodide.toPy(getObjects());
+              pythonCb(pyValue);
+
+              if (i % 50 === 0) {
+                await new Promise((resolve) => setTimeout(resolve, 0));
+                if (globalThis.gc) {
+                  gc();
+                }
+              }
+            }
+          } finally {
+            pythonCb.destroy();
+          }
+        })();
+        """
+    )
+
+
 def test_pyproxy_implicit_copy(selenium):
     result = selenium.run_js(
         """
