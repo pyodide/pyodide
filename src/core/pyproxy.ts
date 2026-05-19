@@ -81,6 +81,9 @@ if (globalThis.FinalizationRegistry) {
       }
       try {
         Py_ENTER();
+        if (ptr === undefined) {
+          console.log("ptr is undefined");
+        }
         _Py_DecRef(ptr);
         Py_EXIT();
       } catch (e) {
