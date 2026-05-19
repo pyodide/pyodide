@@ -290,7 +290,7 @@ function js2python_convert_with_context(value, context) {
   }
   result = context.cache.get(value);
   if (result !== undefined) {
-    // _Py_IncRef(result);
+    _Py_IncRef(result);
     return result;
   }
   context.depth--;
