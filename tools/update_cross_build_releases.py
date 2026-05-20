@@ -1,6 +1,7 @@
 import argparse
 import hashlib
 import json
+import os
 import shutil
 import tempfile
 from collections.abc import Generator
@@ -39,6 +40,19 @@ def get_archive(url: str) -> bytes:
     return resp.content
 
 
+# If you want to test this locally, you can set a short-lived token
+# with GITHUB_TOKEN=$(gh auth token --scopes repo) to avoid hitting the rate limit.
+def get_published_at(version: str) -> str:
+    url = f"https://api.github.com/repos/pyodide/pyodide/releases/tags/{version}"
+    headers = {}
+    token = os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    resp = requests.get(url, headers=headers)
+    resp.raise_for_status()
+    return resp.json()["published_at"]
+
+
 def parse_env_var(content: str, var_name: str) -> str:
     # A very dummy parser for env vars.
     for line in content.splitlines():
@@ -68,16 +82,18 @@ def add_version(
     digest: str,
     python_version: str | None = None,
     emscripten_version: str | None = None,
+    published_at: str | None = None,
     min_pyodide_build_version: str | None = None,
     max_pyodide_build_version: str | None = None,
 ) -> str:
-    metadata = CrossBuildEnvMetaSpec.parse_raw(raw_metadata)
+    metadata = CrossBuildEnvMetaSpec.model_validate_json(raw_metadata)
     new_release = CrossBuildEnvReleaseSpec(
         version=version,
         url=url,
         sha256=digest,
         python_version=python_version or "FIXME",
         emscripten_version=emscripten_version or "FIXME",
+        published_at=published_at,
         min_pyodide_build_version=min_pyodide_build_version or "FIXME",
         # Max version is optional, and maintainers should update it when needed.
         max_pyodide_build_version=max_pyodide_build_version or None,
@@ -89,7 +105,7 @@ def add_version(
     metadata.releases = dict(
         sorted(metadata.releases.items(), reverse=True, key=lambda x: Version(x[0]))
     )
-    dictionary = metadata.dict(exclude_none=True)
+    dictionary = metadata.model_dump(exclude_none=True)
     return json.dumps(dictionary, indent=2)
 
 
@@ -110,6 +126,8 @@ def main():
             makefile_content, "PYODIDE_EMSCRIPTEN_VERSION"
         )
 
+    published_at = get_published_at(version)
+
     metadata = METADATA_FILE.read_text()
     new_metadata = add_version(
         metadata,
@@ -118,6 +136,7 @@ def main():
         digest,
         python_version=python_version,
         emscripten_version=emscripten_version,
+        published_at=published_at,
         min_pyodide_build_version=MIN_COMPATIBLE_PYODIDE_BUILD_VERSION,
     )
 
