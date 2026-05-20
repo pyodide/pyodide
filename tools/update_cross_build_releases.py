@@ -16,8 +16,13 @@ from pyodide_build.xbuildenv_releases import (
     CrossBuildEnvReleaseSpec,
 )
 
-# This file must be called from the root of the repository for the path to work
-METADATA_FILE = Path(__file__).parents[1] / "pyodide-cross-build-environments.json"
+# These files must be called from the root of the repository for the paths to work
+METADATA_FILE_V1 = (
+    Path(__file__).parents[1] / "pyodide-cross-build-environments-v1.json"
+)
+METADATA_FILE_V2 = (
+    Path(__file__).parents[1] / "pyodide-cross-build-environments-v2.json"
+)
 
 BASE_URL = "https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-{version}.tar.bz2"
 
@@ -128,19 +133,24 @@ def main():
 
     published_at = get_published_at(version)
 
-    metadata = METADATA_FILE.read_text()
-    new_metadata = add_version(
-        metadata,
-        version,
-        full_url,
-        digest,
+    common_args = dict(
+        version=version,
+        url=full_url,
+        digest=digest,
         python_version=python_version,
         emscripten_version=emscripten_version,
-        published_at=published_at,
         min_pyodide_build_version=MIN_COMPATIBLE_PYODIDE_BUILD_VERSION,
     )
 
-    METADATA_FILE.write_text(new_metadata + "\n")
+    # v1: base schema without published_at
+    new_v1 = add_version(METADATA_FILE_V1.read_text(), **common_args)
+    METADATA_FILE_V1.write_text(new_v1 + "\n")
+
+    # v2: extends v1 by adding published_at
+    new_v2 = add_version(
+        METADATA_FILE_V2.read_text(), **common_args, published_at=published_at
+    )
+    METADATA_FILE_V2.write_text(new_v2 + "\n")
 
 
 if __name__ == "__main__":
