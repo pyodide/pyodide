@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy pyodide-cross-build-environments.json to GitHub Pages
+    name: Deploy cross-build environments metadata to GitHub Pages
     permissions:
       contents: read
       pages: write # for deploying to GitHub Pages
