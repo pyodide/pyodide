@@ -8,8 +8,7 @@ on:
       - main
     paths:
       # This workflow only runs if these specific files change
-      - pyodide-cross-build-environments-v2.json
-      - pyodide-cross-build-environments-v1.json
+      - "metadata/**"
   workflow_dispatch:
   schedule:
     # Run every day at 03:00 UTC
