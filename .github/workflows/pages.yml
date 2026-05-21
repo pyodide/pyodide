@@ -42,14 +42,16 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
-        # v2: same as v1, but with published_at field to include ISO 8601 timestamp of the release publication (canonical URL for pyodide-build >= 0.34.5)
-        # v1: original starting URL for pyodide-build < 0.34.5, which didn't have published_at.
-        # We will continue to maintain both for backward compatibility with earlier pyodide-build versions
+        # v2: same as v1, but adds published_at field with ISO 8601 UTC timestamp to each release entry.
+        #     It is used by pyodide-build >= 0.34.5, which switches the default metadata URL to /api/v2/.
+        # v1: schema without published_at, served at the original URL path for backward compatibility
+        #     with pyodide-build < 0.34.5. This is frozen and will no longer be updated by the script.
+        # We will continue to host both for backward compatibility with earlier pyodide-build versions
       - name: Prepare artifacts
         run: |
           mkdir -p ./_site/api/v2
-          cp pyodide-cross-build-environments-v2.json ./_site/api/v2/pyodide-cross-build-environments.json
-          cp pyodide-cross-build-environments-v1.json ./_site/api/pyodide-cross-build-environments.json
+          cp metadata/pyodide-cross-build-environments-v2.json ./_site/api/v2/pyodide-cross-build-environments.json
+          cp metadata/pyodide-cross-build-environments-v1.json ./_site/api/pyodide-cross-build-environments.json
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

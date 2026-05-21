@@ -5,8 +5,8 @@ import pytest
 from pyodide_build.xbuildenv_releases import CrossBuildEnvMetaSpec
 
 REPO_ROOT = Path(__file__).parents[2]
-METADATA_FILE_V1 = REPO_ROOT / "pyodide-cross-build-environments-v1.json"
-METADATA_FILE_V2 = REPO_ROOT / "pyodide-cross-build-environments-v2.json"
+METADATA_FILE_V1 = REPO_ROOT / "metadata" / "pyodide-cross-build-environments-v1.json"
+METADATA_FILE_V2 = REPO_ROOT / "metadata" / "pyodide-cross-build-environments-v2.json"
 
 
 @pytest.mark.parametrize("metadata_file", [METADATA_FILE_V1, METADATA_FILE_V2])

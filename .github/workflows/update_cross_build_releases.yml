@@ -66,7 +66,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git checkout -b "$BRANCH"
-          git add pyodide-cross-build-environments-v1.json pyodide-cross-build-environments-v2.json
+          git add metadata/pyodide-cross-build-environments-v2.json
           git commit -m "Update cross-build metadata files for version ${VERSION} [skip ci]"
 
           git push origin "$BRANCH"
