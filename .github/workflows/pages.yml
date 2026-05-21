@@ -7,8 +7,8 @@ on:
     branches:
       - main
     paths:
-      # This workflow only runs if this specific file changes
-      - pyodide-cross-build-environments.json
+      # This workflow only runs if these specific files change
+      - "metadata/**"
   workflow_dispatch:
   schedule:
     # Run every day at 03:00 UTC
@@ -22,14 +22,16 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy pyodide-cross-build-environments.json to GitHub Pages
+    name: Deploy cross-build environments metadata to GitHub Pages
     permissions:
       contents: read
       pages: write # for deploying to GitHub Pages
       id-token: write # for OIDC trusted publishing to GitHub Pages
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}/api/pyodide-cross-build-environments.json
+      # This is cosmetically used in the deployment logs as the clickable link; it won't affect
+      # our existing deployments since the pages are published based on what we have below in _site
+      url: ${{ steps.deployment.outputs.page_url }}/api/v2/pyodide-cross-build-environments.json
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -40,10 +42,16 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
-      - name: Prepare artifact
+        # v2: same as v1, but adds published_at field with ISO 8601 UTC timestamp to each release entry.
+        #     It is used by pyodide-build >= 0.34.5, which switches the default metadata URL to /api/v2/.
+        # v1: schema without published_at, served at the original URL path for backward compatibility
+        #     with pyodide-build < 0.34.5. This is frozen and will no longer be updated by the script.
+        # We will continue to host both for backward compatibility with earlier pyodide-build versions
+      - name: Prepare artifacts
         run: |
-          mkdir -p ./_site/api
-          cp pyodide-cross-build-environments.json ./_site/api/pyodide-cross-build-environments.json
+          mkdir -p ./_site/api/v2
+          cp metadata/pyodide-cross-build-environments-v2.json ./_site/api/v2/pyodide-cross-build-environments.json
+          cp metadata/pyodide-cross-build-environments-v1.json ./_site/api/pyodide-cross-build-environments.json
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
