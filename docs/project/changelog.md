@@ -86,6 +86,9 @@ myst:
   reported by `os.get_terminal_size()` and `shutil.get_terminal_size()`.
   {pr}`6157`
 
+- {{ Fix }} Fixed a leakage in the WASM stack when JSPI is enabled.
+  {pr}`6250`
+
 ## Version 0.29.4
 
 _May 7, 2026_
