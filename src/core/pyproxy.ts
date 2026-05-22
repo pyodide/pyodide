@@ -18,6 +18,29 @@ declare var Tests: any;
 declare var Module: any;
 declare var validSuspender: { value: boolean };
 
+let activePromisingCalls = 0;
+let restoreStackTop: number;
+
+/**
+ * When there is multiple JSPI calls run concurrently, storing and restoring
+ * the stack pointer can mess up because of the shared global state.
+ * To avoid this, we keep track of the number of active promising calls and
+ * only restore the stack pointer when the last call is done.
+ */
+function enterPromisingCall() {
+  if (activePromisingCalls === 0) {
+    restoreStackTop = stackSave();
+  }
+  activePromisingCalls++;
+}
+
+function leavePromisingCall() {
+  activePromisingCalls--;
+  if (activePromisingCalls === 0) {
+    stackRestore(restoreStackTop);
+  }
+}
+
 import { TypedArray } from "types";
 import type { PythonError } from "generated/error_handling";
 
@@ -583,41 +606,43 @@ async function callPyObjectKwargsPromising(
   const num_kwargs = kwargs_names.length;
   jsargs.push(...kwargs_values);
 
-  const stackTop = stackSave();
+  enterPromisingCall();
   const exc = stackAlloc(4);
   let result;
   try {
+    Py_ENTER();
+    // promisingApply clears the error flag and saves any error into excStatus.
+    // This ensures that tasks that are run between when promisingApply resolves
+    // and when this task resumes here won't incorrectly observe the error flag.
+    // See test_stack_switching.test_throw_from_switcher for a detailed
+    // explanation.
+    //
+    // The result of promisingApply() is wrapped in a one element list
+    // (regardless of whether there was an error or not) to ensure that we only
+    // await the stack switches and not a thenable result.
+    result = await Module.promisingApply(
+      ptrobj,
+      jsargs,
+      num_pos_args,
+      kwargs_names,
+      num_kwargs,
+      exc,
+    );
+    Py_EXIT();
+  } catch (e) {
+    API.fatal_error(e);
+  }
+  // Unwrap result
+  result = result[0];
+  if (result === Module.error) {
+    _PyErr_SetRaisedException(HEAPU32[exc / 4]);
     try {
-      Py_ENTER();
-      // promisingApply clears the error flag and saves any error into excStatus.
-      // This ensures that tasks that are run between when promisingApply resolves
-      // and when this task resumes here won't incorrectly observe the error flag.
-      // See test_stack_switching.test_throw_from_switcher for a detailed
-      // explanation.
-      //
-      // The result of promisingApply() is wrapped in a one element list
-      // (regardless of whether there was an error or not) to ensure that we only
-      // await the stack switches and not a thenable result.
-      result = await Module.promisingApply(
-        ptrobj,
-        jsargs,
-        num_pos_args,
-        kwargs_names,
-        num_kwargs,
-        exc,
-      );
-      Py_EXIT();
-    } catch (e) {
-      API.fatal_error(e);
-    }
-    // Unwrap result
-    result = result[0];
-    if (result === Module.error) {
-      _PyErr_SetRaisedException(HEAPU32[exc / 4]);
       _pythonexc2js();
+    } finally {
+      leavePromisingCall();
     }
-  } finally {
-    stackRestore(stackTop);
+  } else {
+    leavePromisingCall();
   }
   // Automatically schedule coroutines
   if (result && result.type === "coroutine" && result._ensure_future) {

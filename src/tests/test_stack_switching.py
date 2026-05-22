@@ -3,6 +3,35 @@ from pytest_pyodide import run_in_pyodide
 
 from conftest import requires_jspi
 
+STACK_CHECK_JS = """
+return pyodide._module.stackSave();
+"""
+
+
+@pytest.fixture(autouse=True)
+def assert_no_stack_leak(request):
+    selenium = (
+        request.getfixturevalue("selenium")
+        if "selenium" in request.fixturenames
+        else None
+    )
+    if selenium is None:
+        yield
+        return
+    try:
+        before = selenium.run_js(STACK_CHECK_JS)
+    except Exception:
+        yield
+        return
+    yield
+    try:
+        after = selenium.run_js(STACK_CHECK_JS)
+    except Exception:
+        return
+    assert before == after, (
+        f"stack pointer leak: before={before} after={after} diff={before - after} bytes"
+    )
+
 
 @requires_jspi
 @pytest.mark.requires_dynamic_linking
@@ -787,3 +816,19 @@ def test_async_promising_async_error(selenium):
     # In bad cases, the previous exception was a fatal error but we didn't
     # notice. Check that no fatal error occurred by running Python.
     selenium.run("")
+
+
+@requires_jspi
+@pytest.mark.requires_dynamic_linking
+def test_stack_pointer_leak_coroutine(selenium):
+    selenium.run_js(
+        """
+        pyodide.runPython("async def __coro(): return 1");
+        const f = pyodide.globals.get("__coro");
+        for (let i = 0; i < 50; i++) {
+            const c = f(); await c; c.destroy();
+        }
+        f.destroy();
+        pyodide.runPython("del __coro");
+        """
+    )
