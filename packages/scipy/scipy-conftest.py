@@ -97,7 +97,6 @@ tests_to_mark = [
     # scipy/linalg tests
     ("test_blas.+test_complex_dotu", skip, todo_signature_mismatch_msg),
     ("test_cython_blas.+complex", skip, todo_signature_mismatch_msg),
-    ("test_lapack.py.+larfg_larf", skip, todo_signature_mismatch_msg),
     # scipy/ndimage/tests
     ("test_filters.py::TestThreading", xfail, thread_msg),
     # scipy/optimize/tests
