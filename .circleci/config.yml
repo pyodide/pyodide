@@ -263,6 +263,39 @@ jobs:
           paths:
             - ./xbuildenv
 
+  create-xbuild-env-debug:
+    <<: *defaults
+    steps:
+      - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
+
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: create debug xbuild environment
+          command: |
+            make pyodide_build
+            # Overlay the debug dist on top of the regular dist so that
+            # create_xbuildenv.py picks up the PYODIDE_DEBUG=1 build of pyodide.asm.mjs
+            cp -r dist-debug/. dist/
+            python tools/create_xbuildenv.py /tmp/xbuildenv-debug-out
+            mv /tmp/xbuildenv-debug-out/xbuildenv ./xbuildenv-debug
+
+      - run:
+          name: Zip debug xbuild environment
+          command: |
+            tar cjf xbuildenv-debug.tar.gz ./xbuildenv-debug/
+
+      - store_artifacts:
+          path: /root/repo/xbuildenv-debug.tar.gz
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./xbuildenv-debug
+
   build-test-pyc-packages:
     <<: *defaults
     steps:
@@ -478,11 +511,13 @@ jobs:
             mkdir -p /tmp/ghr/dist
             cp -r dist /tmp/ghr/pyodide
             cp -r xbuildenv /tmp/ghr/xbuildenv
+            cp -r xbuildenv-debug /tmp/ghr/xbuildenv-debug
             cp -r cpython/installs /tmp/ghr/static-libraries
             cd /tmp/ghr
             tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
             tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.mjs,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip pyodide/python pyodide/python.bat pyodide/python.exe pyodide/python_cli_entry.mjs
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
+            tar cjf dist/xbuildenv-debug-${CIRCLE_TAG}.tar.bz2  xbuildenv-debug/
             tar cjf dist/static-libraries-${CIRCLE_TAG}.tar.bz2  static-libraries/
 
             # If it has an 'a' in the tag it's an alpha so mark it as a prelease
@@ -577,10 +612,12 @@ jobs:
             mkdir -p /tmp/ghr/dist
             cp -r dist /tmp/ghr/pyodide
             cp -r xbuildenv /tmp/ghr/xbuildenv
+            cp -r xbuildenv-debug /tmp/ghr/xbuildenv-debug
             cp -r cpython/installs /tmp/ghr/static-libraries
             cd /tmp/ghr
             tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.mjs,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip pyodide/python pyodide/python.bat pyodide/python.exe pyodide/python_cli_entry.mjs
             tar cjf dist/xbuildenv.tar.bz2  xbuildenv/
+            tar cjf dist/xbuildenv-debug.tar.bz2  xbuildenv-debug/
             tar cjf dist/static-libraries.tar.bz2  static-libraries/
 
             cd -
@@ -790,6 +827,13 @@ workflows:
             tags:
               only: /.*/
 
+      - create-xbuild-env-debug:
+          requires:
+            - build-pyodide-debug
+          filters:
+            tags:
+              only: /.*/
+
       - test-d8:
           requires:
             - build-core
@@ -826,6 +870,7 @@ workflows:
             - test-full-packages-firefox
             - build-pyodide-debug
             - create-xbuild-env
+            - create-xbuild-env-debug
             - build-test-pyc-packages
           filters:
             branches:
@@ -841,6 +886,7 @@ workflows:
             - test-full-packages-firefox
             - build-pyodide-debug
             - create-xbuild-env
+            - create-xbuild-env-debug
             - build-test-pyc-packages
           filters:
             branches:
