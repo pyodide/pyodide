@@ -100,7 +100,7 @@ def add_version(
         sha256=digest,
         python_version=python_version or "FIXME",
         emscripten_version=emscripten_version or "FIXME",
-        published_at=published_at,
+        published_at=published_at or "",
         min_pyodide_build_version=min_pyodide_build_version or "FIXME",
         # Max version is optional, and maintainers should update it when needed.
         max_pyodide_build_version=max_pyodide_build_version or None,
