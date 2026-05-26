@@ -12,7 +12,7 @@ export {
   validSuspender,
   suspenderGlobal,
 } from "./suspenders.mjs";
-export { StackState } from "./stack_state.mjs";
+export { StackState, enterTask } from "./stack_state.mjs";
 
 let canConstructWasm = true;
 try {

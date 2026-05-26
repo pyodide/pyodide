@@ -57,6 +57,7 @@ declare function DEREF_U32(ptr: number, offset: number): number;
 declare function Py_ENTER(): void;
 declare function Py_EXIT(): void;
 // end-pyodide-skip
+declare function enterTask(): void;
 
 function isPyProxy(jsobj: any): jsobj is PyProxy {
   try {
@@ -582,11 +583,20 @@ async function callPyObjectKwargsPromising(
   const kwargs_values = Object.values(kwargs);
   const num_kwargs = kwargs_names.length;
   jsargs.push(...kwargs_values);
-
-  const stackTop = stackSave();
-  const exc = stackAlloc(4);
+  // We have to take ownership of the pointer before we sleep or else it could
+  // get freed out from under us. This also fixes a bug that was around before
+  // we added the sleep.
+  _Py_IncRef(ptrobj);
+  // Sleep so we release any stack frames above this point. Otherwise, we would
+  // have a hard time reclaiming them later. Also, enterTask() may wish to move
+  // the stack pointer up and we can't reasonably evict our caller from the
+  // stack.
+  await new Promise<void>((res) => API.scheduleCallback(res, 0));
   let result;
+  const exc = _malloc(4);
   try {
+    // enterTask() decides where the stackStop of the new task should be.
+    enterTask();
     Py_ENTER();
     // promisingApply clears the error flag and saves any error into excStatus.
     // This ensures that tasks that are run between when promisingApply resolves
@@ -609,26 +619,27 @@ async function callPyObjectKwargsPromising(
   } catch (e) {
     API.fatal_error(e);
   }
-  // Unwrap result
-  result = result[0];
-  if (result === Module.error) {
-    _PyErr_SetRaisedException(HEAPU32[exc / 4]);
-    try {
+  try {
+    // Unwrap result
+    result = result[0];
+    if (result === Module.error) {
+      _PyErr_SetRaisedException(HEAPU32[exc / 4]);
       _pythonexc2js();
-    } finally {
-      stackRestore(stackTop);
     }
-  }
-  // Automatically schedule coroutines
-  if (result && result.type === "coroutine" && result._ensure_future) {
-    Py_ENTER();
-    const is_coroutine = __iscoroutinefunction(ptrobj);
-    Py_EXIT();
-    if (is_coroutine) {
-      result._ensure_future();
+    // Automatically schedule coroutines
+    if (result && result.type === "coroutine" && result._ensure_future) {
+      Py_ENTER();
+      const is_coroutine = __iscoroutinefunction(ptrobj);
+      Py_EXIT();
+      if (is_coroutine) {
+        result._ensure_future();
+      }
     }
+    return result;
+  } finally {
+    _free(exc);
+    _Py_DecRef(ptrobj);
   }
-  return result;
 }
 
 Module.callPyObjectMaybePromising = async function (

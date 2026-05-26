@@ -54,6 +54,7 @@ declare global {
   // _PyList_New, _PyDict_New, _PyDict_SetItem, _PySet_New, _PySet_Add
   // _PyEval_SaveThread, _PyEval_RestoreThread,
   //   _PyErr_CheckSignals, _PyErr_SetString
+  export const _malloc: (sz: number) => number;
   export const _free: (a: number) => void;
   export const __PyTraceback_Add: (a: number, b: number, c: number) => void;
   export const _PyRun_SimpleString: (ptr: number) => number;
@@ -69,6 +70,7 @@ declare global {
   export const _PyGILState_Check: () => number;
   export const __PyErr_CheckSignals: () => number;
   export const _PyErr_SetRaisedException: (ptr: number) => void;
+  export function restoreStack(a: number): void;
 }
 
 // Our own functions we use from JavaScript. These all need to be labeled with

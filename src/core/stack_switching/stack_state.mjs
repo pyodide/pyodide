@@ -39,6 +39,59 @@
  */
 const stackStates = [];
 
+const stackStarts = new Map();
+const stackStopFreeList = [];
+let maxStackStop = Infinity;
+
+/**
+ * Decide where the stack stop for a new task should be and evict any tasks that
+ * are in the way.
+ * @private
+ */
+export function enterTask() {
+  let stackPosition = stackSave();
+  let found;
+  for (let i = stackStopFreeList.length - 1; i >= 0; i--) {
+    if (stackStopFreeList[i] > stackPosition) {
+      found = i;
+      break;
+    }
+  }
+  if (found === undefined) {
+    return;
+  }
+  stackPosition = stackStopFreeList[found];
+  stackStopFreeList.splice(found, 1);
+  evictStackUpTo(stackPosition);
+  stackRestore(stackPosition);
+}
+
+function evictStackUpTo(stop) {
+  let total = 0;
+  // Search up the stack for things that need to be ejected in their entirety
+  // and save them
+  while (
+    stackStates.length > 0 &&
+    stackStates[stackStates.length - 1].stop < stop
+  ) {
+    total += stackStates.pop()._save();
+  }
+  // Part of one more object may need to be ejected.
+  const last = stackStates[stackStates.length - 1];
+  if (last && last !== this) {
+    total += last._save_up_to(stop);
+  }
+  // If we just saved all of the last stackState it needs to be removed.
+  // Alternatively, the current StackState may be on the stackStates list.
+  // Technically it would make sense to leave it there, but we will add it
+  // back if we suspend again and if we exit normally it gets removed from the
+  // stack.
+  if (last && last.stop === stop) {
+    stackStates.pop();
+  }
+  return total;
+}
+
 /**
  * A class to help us keep track of the argument stack data for our individual
  * continuations. The suspender automatically and opaquely handles the call
@@ -55,6 +108,7 @@ export class StackState {
   constructor() {
     /** current stack pointer */
     this.start = stackSave();
+    stackStarts.set(this.start, (stackStarts.get(this.start) ?? 0) + 1);
     /**
      * The value the stack pointer had when we entered Python. This is how far
      * up the stack the current continuation cares about. This was recorded just
@@ -78,34 +132,27 @@ export class StackState {
    * @returns How much data we copied. (Only for debugging purposes.)
    */
   restore() {
-    let total = 0;
-    // Search up the stack for things that need to be ejected in their entirety
-    // and save them
-    while (
-      stackStates.length > 0 &&
-      stackStates[stackStates.length - 1].stop < this.stop
-    ) {
-      total += stackStates.pop()._save();
+    const val = stackStarts.get(this.start);
+    if (val === undefined) {
+      throw new Error("Should not happen");
     }
-    // Part of one more object may need to be ejected.
-    const last = stackStates[stackStates.length - 1];
-    if (last && last !== this) {
-      total += last._save_up_to(this.stop);
+    if (val - 1 === 0) {
+      stackStarts.delete(this.start);
+    } else {
+      stackStarts.set(this.start, val - 1);
     }
-    // If we just saved all of the last stackState it needs to be removed.
-    // Alternatively, the current StackState may be on the stackStates list.
-    // Technically it would make sense to leave it there, but we will add it
-    // back if we suspend again and if we exit normally it gets removed from the
-    // stack.
-    if (last && last.stop === this.stop) {
-      stackStates.pop();
-    }
+
+    let total = evictStackUpTo(this.stop);
     if (this._copy.length !== 0) {
       // Now that we've saved everything that might be in our way we can restore
       // the current stack data if need be.
       Module.HEAP8.set(this._copy, this.start);
       total += this._copy.length;
       this._copy = new Uint8Array(0);
+    }
+    const curStack = stackSave();
+    if (curStack > this.start && !stackStarts.has(curStack)) {
+      stackStopFreeList.push(curStack);
     }
     // Restore stack pointers
     Module.stackStop = this.stop;
