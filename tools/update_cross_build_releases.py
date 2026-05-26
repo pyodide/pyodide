@@ -25,11 +25,17 @@ from pyodide_build.xbuildenv_releases import (
 METADATA_FILE_V2 = (
     Path(__file__).parents[1] / "metadata" / "pyodide-cross-build-environments-v2.json"
 )
+METADATA_FILE_DEBUG_V2 = (
+    Path(__file__).parents[1]
+    / "metadata"
+    / "pyodide-cross-build-environments-debug-v2.json"
+)
 
 BASE_URL = "https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-{version}.tar.bz2"
+DEBUG_BASE_URL = "https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-debug-{version}.tar.bz2"
 
 # Pyodide build version that is compatible with the latest cross-build environment
-# Note for maintainers: update this value when there is a breaking changes in the cross-build environment
+# Note for maintainers: update this value when there are breaking changes in the cross-build environment
 MIN_COMPATIBLE_PYODIDE_BUILD_VERSION = "0.26.0"
 
 
@@ -40,8 +46,10 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_archive(url: str) -> bytes:
+def get_archive(url: str) -> bytes | None:
     resp = requests.get(url)
+    if resp.status_code == 404:
+        return None
     resp.raise_for_status()
 
     return resp.content
@@ -123,6 +131,8 @@ def main():
     full_url = BASE_URL.format(version=version)
 
     content = get_archive(full_url)
+    if content is None:
+        raise RuntimeError(f"Release tarball not found: {full_url}")
     digest = hashlib.sha256(content).hexdigest()
 
     with extract_archive(content) as extracted:
@@ -137,10 +147,9 @@ def main():
 
     common_args = dict(
         version=version,
-        url=full_url,
-        digest=digest,
         python_version=python_version,
         emscripten_version=emscripten_version,
+        published_at=published_at,
         min_pyodide_build_version=MIN_COMPATIBLE_PYODIDE_BUILD_VERSION,
     )
 
@@ -150,9 +159,32 @@ def main():
     # METADATA_FILE_V1.write_text(new_v1 + "\n")
 
     new_v2 = add_version(
-        METADATA_FILE_V2.read_text(), **common_args, published_at=published_at
+        METADATA_FILE_V2.read_text(), url=full_url, digest=digest, **common_args
     )
     METADATA_FILE_V2.write_text(new_v2 + "\n")
+
+    # Also update the debug metadata if a debug xbuildenv was published for this release.
+    debug_url = DEBUG_BASE_URL.format(version=version)
+    debug_content = get_archive(debug_url)
+    if debug_content is not None:
+        # I'm unsure if this sanity check is best placed here, or in the
+        # CircleCI config, or if we should not have it at all altogether
+        if len(debug_content) <= len(content):
+            raise RuntimeError(
+                f"The debug xbuildenv ({len(debug_content):,} bytes) is not larger than "
+                f"release xbuildenv ({len(content):,} bytes). The debug build "
+                f"(PYODIDE_DEBUG=1) should always produce a larger archive"
+            )
+        debug_digest = hashlib.sha256(debug_content).hexdigest()
+        new_debug_v2 = add_version(
+            METADATA_FILE_DEBUG_V2.read_text(),
+            url=debug_url,
+            digest=debug_digest,
+            **common_args,
+        )
+        METADATA_FILE_DEBUG_V2.write_text(new_debug_v2 + "\n")
+    else:
+        print(f"No debug xbuildenv found for {version}, skipping debug metadata update")
 
 
 if __name__ == "__main__":

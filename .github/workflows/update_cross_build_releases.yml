@@ -67,6 +67,7 @@ jobs:
 
           git checkout -b "$BRANCH"
           git add metadata/pyodide-cross-build-environments-v2.json
+          git add metadata/pyodide-cross-build-environments-debug-v2.json
           git commit -m "Update cross-build metadata files for version ${VERSION} [skip ci]"
 
           git push origin "$BRANCH"
