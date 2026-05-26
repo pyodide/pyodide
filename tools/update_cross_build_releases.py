@@ -167,6 +167,14 @@ def main():
     debug_url = DEBUG_BASE_URL.format(version=version)
     debug_content = get_archive(debug_url)
     if debug_content is not None:
+        # I'm unsure if this sanity check is best placed here, or in the
+        # CircleCI config, or if we should not have it at all altogether
+        if len(debug_content) <= len(content):
+            raise RuntimeError(
+                f"The debug xbuildenv ({len(debug_content):,} bytes) is not larger than "
+                f"release xbuildenv ({len(content):,} bytes). The debug build "
+                f"(PYODIDE_DEBUG=1) should always produce a larger archive"
+            )
         debug_digest = hashlib.sha256(debug_content).hexdigest()
         new_debug_v2 = add_version(
             METADATA_FILE_DEBUG_V2.read_text(),
