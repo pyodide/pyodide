@@ -39,9 +39,16 @@
  */
 const stackStates = [];
 
-const stackStarts = new Map();
-const stackStopFreeList = [];
+let taskSizeTotal = 0n;
+let taskSizeCount = 0n;
+let stackTop;
+
 let maxStackStop = Infinity;
+
+function setStackPosition(stackPosition) {
+  evictStackUpTo(stackPosition);
+  stackRestore(stackPosition);
+}
 
 /**
  * Decide where the stack stop for a new task should be and evict any tasks that
@@ -49,21 +56,49 @@ let maxStackStop = Infinity;
  * @private
  */
 export function enterTask() {
-  let stackPosition = stackSave();
-  let found;
-  for (let i = stackStopFreeList.length - 1; i >= 0; i--) {
-    if (stackStopFreeList[i] > stackPosition) {
-      found = i;
-      break;
-    }
-  }
-  if (found === undefined) {
+  // If this is the first task we enter, record the current stack position as
+  // the top of the entire stack and leave it alone.
+  if (!stackTop) {
+    stackTop = stackSave();
     return;
   }
-  stackPosition = stackStopFreeList[found];
-  stackStopFreeList.splice(found, 1);
-  evictStackUpTo(stackPosition);
-  stackRestore(stackPosition);
+  if (stackStates.length === 0) {
+    // If there are no active tasks we should always use the top of the stack.
+    if (stackTop > stackSave()) {
+      setStackPosition(stackTop);
+    }
+    return;
+  }
+  // Search for a gap in the stack large enough that we feel like sticking a
+  // task in it. We search from bottom to top because insertion is cheaper
+  // closer to the bottom. (More specifically, if the tasks run a long time then
+  // it costs the same no matter where we insert but if they are short lived
+  // inserting lower is better).
+
+  // If we make threshold bigger, we will use up more stack space but also copy
+  // less stack around. If we make it smaller, we use less stack space but copy
+  // more stack.
+  const threshold = Number(taskSizeTotal / taskSizeCount) * 0.8;
+  let lastStop = stackStates.at(-1).stop;
+  for (let idx = stackStates.length - 2; idx >= 0; idx--) {
+    const state = stackStates[idx];
+    if (state.start - lastStop > threshold) {
+      setStackPosition(lastStart);
+      return;
+    }
+    lastStop = state.stop;
+  }
+  if (stackTop - lastStop > threshold) {
+    setStackPosition(stackTop);
+    return;
+  }
+  // No large enough gaps found. Last, check if the current stack position is
+  // below the bottom used stack position and if so move the stack up.
+  const bottomUsed = stackStates.at(-1).start;
+  if (bottomUsed > stackSave()) {
+    setStackPosition(bottomUsed);
+    return;
+  }
 }
 
 function evictStackUpTo(stop) {
@@ -78,7 +113,7 @@ function evictStackUpTo(stop) {
   }
   // Part of one more object may need to be ejected.
   const last = stackStates[stackStates.length - 1];
-  if (last && last !== this) {
+  if (last && last !== stop) {
     total += last._save_up_to(stop);
   }
   // If we just saved all of the last stackState it needs to be removed.
@@ -108,7 +143,6 @@ export class StackState {
   constructor() {
     /** current stack pointer */
     this.start = stackSave();
-    stackStarts.set(this.start, (stackStarts.get(this.start) ?? 0) + 1);
     /**
      * The value the stack pointer had when we entered Python. This is how far
      * up the stack the current continuation cares about. This was recorded just
@@ -120,6 +154,8 @@ export class StackState {
      * stack.
      */
     this._copy = new Uint8Array(0);
+    taskSizeTotal += BigInt(this.stop - this.start);
+    taskSizeCount++;
     if (this.start !== this.stop) {
       // Edge case that probably never happens: If start and stop are equal, the
       // current continuation occupies no arg stack space.
@@ -132,16 +168,6 @@ export class StackState {
    * @returns How much data we copied. (Only for debugging purposes.)
    */
   restore() {
-    const val = stackStarts.get(this.start);
-    if (val === undefined) {
-      throw new Error("Should not happen");
-    }
-    if (val - 1 === 0) {
-      stackStarts.delete(this.start);
-    } else {
-      stackStarts.set(this.start, val - 1);
-    }
-
     let total = evictStackUpTo(this.stop);
     if (this._copy.length !== 0) {
       // Now that we've saved everything that might be in our way we can restore
@@ -149,10 +175,6 @@ export class StackState {
       Module.HEAP8.set(this._copy, this.start);
       total += this._copy.length;
       this._copy = new Uint8Array(0);
-    }
-    const curStack = stackSave();
-    if (curStack > this.start && !stackStarts.has(curStack)) {
-      stackStopFreeList.push(curStack);
     }
     // Restore stack pointers
     Module.stackStop = this.stop;

@@ -11,15 +11,8 @@ STACK_CHECK_AFTER_JS = """
 let lastStack = Infinity;
 let curStack = pyodide._module.stackSave();
 pyodide.runPython("def nothing(): pass");
-
-// flush free list
-while (curStack != lastStack) {
-    lastStack = curStack;
-    await pyodide.globals.nothing.callPromising();
-    curStack = pyodide._module.stackSave();
-    console.log(`flush free list! ${lastStack}, ${curStack}`);
-}
-
+// Reset stack address
+await pyodide.globals.nothing.callPromising();
 return pyodide._module.stackSave();
 """
 
