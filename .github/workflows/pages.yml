@@ -52,6 +52,7 @@ jobs:
           mkdir -p ./_site/api/v2
           cp metadata/pyodide-cross-build-environments-v2.json ./_site/api/v2/pyodide-cross-build-environments.json
           cp metadata/pyodide-cross-build-environments-v1.json ./_site/api/pyodide-cross-build-environments.json
+          cp metadata/pyodide-cross-build-environments-debug-v2.json ./_site/api/v2/debug.json
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
