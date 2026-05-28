@@ -51,7 +51,7 @@ class BodyUsedError(OSError):
 
 class AbortError(OSError):
     def __init__(self, reason: JsException) -> None:
-        super().__init__(reason.message)
+        super().__init__(str(reason.message))
 
 
 # pyxhr exceptions
