@@ -46,6 +46,10 @@ myst:
   `loadPackage("pydoc_data")` to use. The `fullstdlib` option in loadPyodide is deprecated and a no-op.
   {pr}`6151`
 
+- {{ Feature }} The `compression.zstd` module (new in CPython 3.14) is now bundled in
+  Pyodide, providing native zstd compression and decompression support via `_zstd`.
+  {pr}`6240`
+
 - {{ Enhancement }} A JavaScript object is now treated as an array-like object
   if it has a `length` property and is iterable. Every JsProxy of an array-like
   object now implements subscripting.
