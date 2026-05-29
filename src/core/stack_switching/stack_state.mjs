@@ -39,11 +39,9 @@
  */
 const stackStates = [];
 
-let taskSizeTotal = 0n;
-let taskSizeCount = 0n;
+let taskSizeTotal = 500;
+let taskSizeCount = 1;
 let stackTop;
-
-let maxStackStop = Infinity;
 
 function setStackPosition(stackPosition) {
   evictStackUpTo(stackPosition);
@@ -58,15 +56,8 @@ function setStackPosition(stackPosition) {
 export function enterTask() {
   // If this is the first task we enter, record the current stack position as
   // the top of the entire stack and leave it alone.
-  if (!stackTop) {
+  if (stackTop === undefined) {
     stackTop = stackSave();
-    return;
-  }
-  if (stackStates.length === 0) {
-    // If there are no active tasks we should always use the top of the stack.
-    if (stackTop > stackSave()) {
-      setStackPosition(stackTop);
-    }
     return;
   }
   // Search for a gap in the stack large enough that we feel like sticking a
@@ -78,23 +69,19 @@ export function enterTask() {
   // If we make threshold bigger, we will use up more stack space but also copy
   // less stack around. If we make it smaller, we use less stack space but copy
   // more stack.
-  const threshold = Number(taskSizeTotal / taskSizeCount) * 0.8;
-  let lastStop = stackStates.at(-1).stop;
-  for (let idx = stackStates.length - 2; idx >= 0; idx--) {
-    const state = stackStates[idx];
+  const threshold = (taskSizeTotal / taskSizeCount) * 0.8;
+  let lastStop = stackStates.at(-1)?.stop;
+  for (let idx = stackStates.length - 2; idx >= -1; idx--) {
+    const state = idx >= 0 ? stackStates[idx] : {start: stackTop, stop: stackTop};
     if (state.start - lastStop > threshold) {
-      setStackPosition(lastStart);
+      setStackPosition(state.start);
       return;
     }
     lastStop = state.stop;
   }
-  if (stackTop - lastStop > threshold) {
-    setStackPosition(stackTop);
-    return;
-  }
   // No large enough gaps found. Last, check if the current stack position is
   // below the bottom used stack position and if so move the stack up.
-  const bottomUsed = stackStates.at(-1).start;
+  const bottomUsed = stackStates.at(-1)?.start ?? stackTop;
   if (bottomUsed > stackSave()) {
     setStackPosition(bottomUsed);
     return;
@@ -107,13 +94,13 @@ function evictStackUpTo(stop) {
   // and save them
   while (
     stackStates.length > 0 &&
-    stackStates[stackStates.length - 1].stop < stop
+    stackStates.at(-1).stop < stop
   ) {
     total += stackStates.pop()._save();
   }
   // Part of one more object may need to be ejected.
-  const last = stackStates[stackStates.length - 1];
-  if (last && last !== stop) {
+  const last = stackStates.at(-1);
+  if (last && last.stop !== stop) {
     total += last._save_up_to(stop);
   }
   // If we just saved all of the last stackState it needs to be removed.
@@ -154,7 +141,7 @@ export class StackState {
      * stack.
      */
     this._copy = new Uint8Array(0);
-    taskSizeTotal += BigInt(this.stop - this.start);
+    taskSizeTotal += this.stop - this.start;
     taskSizeCount++;
     if (this.start !== this.stop) {
       // Edge case that probably never happens: If start and stop are equal, the
