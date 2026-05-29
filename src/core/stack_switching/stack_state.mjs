@@ -72,7 +72,8 @@ export function enterTask() {
   const threshold = (taskSizeTotal / taskSizeCount) * 0.8;
   let lastStop = stackStates.at(-1)?.stop;
   for (let idx = stackStates.length - 2; idx >= -1; idx--) {
-    const state = idx >= 0 ? stackStates[idx] : {start: stackTop, stop: stackTop};
+    const state =
+      idx >= 0 ? stackStates[idx] : { start: stackTop, stop: stackTop };
     if (state.start - lastStop > threshold) {
       setStackPosition(state.start);
       return;
@@ -92,10 +93,7 @@ function evictStackUpTo(stop) {
   let total = 0;
   // Search up the stack for things that need to be ejected in their entirety
   // and save them
-  while (
-    stackStates.length > 0 &&
-    stackStates.at(-1).stop < stop
-  ) {
+  while (stackStates.length > 0 && stackStates.at(-1).stop < stop) {
     total += stackStates.pop()._save();
   }
   // Part of one more object may need to be ejected.
