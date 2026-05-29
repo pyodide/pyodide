@@ -1,4 +1,4 @@
-From 2ced1c0454df340dac85d3f02331021fbd9ac7d0 Mon Sep 17 00:00:00 2001
+From ed8839cb9af25461c12a8d2403931ccd5c07e5e8 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 25 Jul 2024 14:28:57 +0200
 Subject: [PATCH 7/9] Warn if ZoneInfo is imported without tzdata
@@ -25,5 +25,5 @@ index 03cc42149f9..2767edb9c6a 100644
          # to "we cannot find this key":
          #
 -- 
-2.34.1
+2.43.0
 

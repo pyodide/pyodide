@@ -23,8 +23,7 @@ To balance ABI stability needs of package maintainers with flexibility to adopt
 new platform features and bug fixes, Pyodide adopts a new PyEmscripten platform
 for each feature release of Python. The platform tags take the form
 `pyemscripten_${YEAR}_${PATCH}_wasm32` (e.g., `pyemscripten_2026_0_wasm32` for
-Python 3.14). Prior to Python 3.14, it was called the Pyodide platform instead
-of the PyEmscripten platform.
+Python 3.14).
 
 Each PyEmscripten platform specifies:
 
@@ -39,14 +38,16 @@ in particular it is agnostic to the Python version it is intended to be used
 with. However, for clarity we indicate in the platform documentation which
 Python version we plan to use each platform with.
 
-The PyEmscripten platform is part of a draft Python packaging specification. See
-[PEP 783](https://peps.python.org/pep-0783/) for the full specification.
+The PyEmscripten platform is specified by {pep}`783`, and wheels using this
+tag are supported on PyPI. Prior to {pep}`783`, it was called the Pyodide
+platform instead of the PyEmscripten platform (and used the form
+`pyodide_${YEAR}_${PATCH}_wasm32`).
 
 ### Platform Versions
 
 - [pyemscripten_2026_0](abi/314.md) (Python 3.14, under development)
-- [pyodide_2025_0](abi/313.md) (Python 3.13)
-- [pyodide_2024_0](abi/312.md) (Python 3.12)
+- [pyemscripten_2025_0](abi/313.md) (Python 3.13)
+- [pyemscripten_2024_0](abi/312.md) (Python 3.12)
 
 For background on why specific flags were chosen, see [ABI-sensitive flags](abi/flags.md).
 
