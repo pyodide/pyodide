@@ -89,6 +89,12 @@ myst:
   0x00FF would be corrupted when read from JavaScript when they were located at
   a WebAssembly memory address above 2GB. {pr}`6217`
 
+- {{ Fix }} Stack switching used to sometimes leak stack memory, this is now
+  fixed. As a side effect, `callPromising()` and `runPythonAsync()` now always
+  yields to the event loop once before Python begins executing, so the ordering
+  of such calls may change.
+  {pr}`6260`
+
 ## Version 0.29.3
 
 _January 28, 2026_
