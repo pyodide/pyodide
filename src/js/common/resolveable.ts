@@ -5,6 +5,7 @@ export interface ResolvablePromise extends Promise<void> {
 
 /**
  * Create a promise that can be resolved or rejected from the outside.
+ * TODO: Replace this with Promise.withResolvers() when it's available in all supported environments.
  */
 export function createResolvable(): ResolvablePromise {
   let _resolve: (value: any) => void = () => {};

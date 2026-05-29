@@ -192,7 +192,7 @@ export async function initializeNodeSockFS(
     // Enough data in a single chunk
     if (sock.recvBuffer.length === 1 && sock.recvBuffer[0].length <= length) {
       const chunk = sock.recvBuffer.shift()!;
-      sock.recvBufferBytes -= chunk.length;
+      sock.recvBufferBytes = 0;
       return chunk;
     }
 
