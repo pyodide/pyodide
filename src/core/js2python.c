@@ -1,11 +1,13 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "datetime.h"
 
 #include "error_handling.h"
 #include "js2python.h"
 #include "python2js.h"
 
 #include <emscripten.h>
+#include <math.h>
 
 #include "jsmemops.h"
 #include "jsproxy.h"
@@ -25,6 +27,7 @@ _js2python_none(void)
 }
 
 EMSCRIPTEN_KEEPALIVE int compat_null_to_none = 0;
+EMSCRIPTEN_KEEPALIVE int auto_convert_date = 1;
 
 EMSCRIPTEN_KEEPALIVE PyObject*
 _js2python_null(void)
@@ -59,6 +62,45 @@ EMSCRIPTEN_KEEPALIVE PyObject*
 _js2python_bigint(PyObject* val)
 {
   return PyObject_CallOneArg(py_JsBigInt, val);
+}
+
+EMSCRIPTEN_KEEPALIVE int
+_js2python_should_convert_date(void)
+{
+  return auto_convert_date;
+}
+
+// Convert a JS Date timestamp (UTC milliseconds since epoch) to a
+// timezone-aware Python datetime. Microsecond precision comes from
+// the fractional part of timestamp_ms / 1000, handled internally by
+// datetime.fromtimestamp().
+EMSCRIPTEN_KEEPALIVE PyObject*
+_js2python_datetime(double timestamp_ms)
+{
+  double timestamp_s = timestamp_ms / 1000.0;
+
+  PyObject* ts_obj = PyFloat_FromDouble(timestamp_s);
+  if (ts_obj == NULL) {
+    return NULL;
+  }
+
+  PyObject* result = PyObject_CallMethod(
+    py_datetime_class, "fromtimestamp", "OO", ts_obj, py_timezone_utc);
+  Py_DECREF(ts_obj);
+  if (result == NULL) {
+    // fromtimestamp raises OverflowError if the timestamp is out of range,
+    // or OSError on localtime() failure.
+    // https://docs.python.org/3/library/datetime.html#datetime.date.fromtimestamp
+    if (PyErr_ExceptionMatches(PyExc_OverflowError) ||
+        PyErr_ExceptionMatches(PyExc_OSError)) {
+      PyErr_Clear();
+      PyErr_SetString(conversion_error,
+                      "Cannot convert JavaScript Date to Python datetime: "
+                      "timestamp out of range for datetime");
+    }
+    return NULL;
+  }
+  return result;
 }
 
 EM_JS_REF(PyObject*, js2python_immutable_js, (JsVal value), {

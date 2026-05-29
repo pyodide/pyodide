@@ -205,6 +205,13 @@ export interface PyodideConfig {
   toJsLiteralMap?: boolean;
 
   /**
+   * Set to ``false`` to disable automatic conversion between JavaScript
+   * ``Date`` objects and Python ``datetime.datetime`` objects.
+   * Default: ``true``.
+   */
+  autoConvertDate?: boolean;
+
+  /**
    * Determine the value of ``sys.executable``.
    * @ignore
    */
@@ -398,6 +405,9 @@ function configureAPI(
   }
   if (config.toJsLiteralMap) {
     API.setCompatToJsLiteralMap(true);
+  }
+  if (config.autoConvertDate === false) {
+    API.setAutoConvertDate(false);
   }
 
   if (API.version !== version && config.checkAPIVersion) {

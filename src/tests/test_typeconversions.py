@@ -1,6 +1,7 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
 import io
 import pickle
+from datetime import UTC
 from typing import Any
 
 import pytest
@@ -2539,3 +2540,157 @@ def test_js_bigint_construct_typed_array(selenium):
     # Without JsBigInt we can't construct a BigInt64Array
     a = BigInt64Array.new([JsBigInt(x) for x in range(1, 10, 2)])
     assert list(a) == list(range(1, 10, 2))
+
+
+@run_in_pyodide
+def test_js_date_to_python_datetime(selenium):
+    from datetime import datetime
+
+    from pyodide.code import run_js
+
+    d = run_js("new Date('2024-06-15T12:30:45.123Z')")
+    assert isinstance(d, datetime)
+    assert d.tzinfo == UTC
+    assert d.year == 2024
+    assert d.month == 6
+    assert d.day == 15
+    assert d.hour == 12
+    assert d.minute == 30
+    assert d.second == 45
+    assert d.microsecond == 123000
+
+
+@run_in_pyodide
+def test_python_datetime_to_js_date(selenium):
+    from datetime import datetime
+
+    from pyodide.code import run_js
+
+    dt = datetime(2024, 6, 15, 12, 30, 45, 123000, tzinfo=UTC)
+    check_fn = run_js(
+        """
+        (d) => {
+            return [
+                d instanceof Date,
+                d.getUTCFullYear(),
+                d.getUTCMonth(),
+                d.getUTCDate(),
+                d.getUTCHours(),
+                d.getUTCMinutes(),
+                d.getUTCSeconds(),
+                d.getUTCMilliseconds(),
+            ];
+        }
+        """
+    )
+    result_list = check_fn(dt).to_py()
+    assert result_list[0] is True
+    assert result_list[1] == 2024
+    assert result_list[2] == 5  # JS months are 0-indexed
+    assert result_list[3] == 15
+    assert result_list[4] == 12
+    assert result_list[5] == 30
+    assert result_list[6] == 45
+    assert result_list[7] == 123
+
+
+@run_in_pyodide
+def test_date_roundtrip_js_to_python_to_js(selenium):
+    from pyodide.code import run_js
+
+    original_ts = run_js("new Date('2024-06-15T12:30:45.123Z').getTime()")
+    dt = run_js("new Date('2024-06-15T12:30:45.123Z')")
+    roundtrip_ts = run_js("(d) => d.getTime()")(dt)
+    assert roundtrip_ts == original_ts
+
+
+@run_in_pyodide
+def test_date_pre_epoch(selenium):
+    from datetime import datetime
+
+    from pyodide.code import run_js
+
+    d = run_js("new Date('1960-01-15T08:30:00.000Z')")
+    assert isinstance(d, datetime)
+    assert d.year == 1960
+    assert d.month == 1
+    assert d.day == 15
+    assert d.hour == 8
+    assert d.minute == 30
+
+
+@run_in_pyodide
+def test_date_epoch(selenium):
+    from datetime import datetime
+
+    from pyodide.code import run_js
+
+    d = run_js("new Date(0)")
+    assert isinstance(d, datetime)
+    assert d == datetime(1970, 1, 1, tzinfo=UTC)
+
+
+@run_in_pyodide
+def test_date_invalid_date_fallback_to_jsproxy(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    d = run_js("new Date('not-a-date')")
+    assert isinstance(d, JsProxy)
+
+
+@run_in_pyodide
+def test_naive_datetime_to_js_treated_as_utc(selenium):
+    from datetime import datetime
+
+    from pyodide.code import run_js
+
+    dt_naive = datetime(2024, 6, 15, 12, 30, 45)
+    dt_aware = datetime(2024, 6, 15, 12, 30, 45, tzinfo=UTC)
+    get_time = run_js("(d) => d.getTime()")
+    ts_naive = get_time(dt_naive)
+    ts_aware = get_time(dt_aware)
+    assert ts_naive == ts_aware
+
+
+def test_date_disabled_with_opt_out(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            autoConvertDate: false
+        });
+        pyodide.runPython(`
+            from pyodide.code import run_js
+            from pyodide.ffi import JsProxy
+
+            d = run_js("new Date('2024-06-15T12:30:45.123Z')")
+            assert isinstance(d, JsProxy), f"Expected JsProxy, got {type(d)}"
+        `);
+        """
+    )
+
+
+@run_in_pyodide
+def test_date_microsecond_truncation(selenium):
+    from datetime import datetime
+
+    from pyodide.code import run_js
+
+    dt = datetime(2024, 6, 15, 12, 30, 45, 123456, tzinfo=UTC)
+    ms = run_js("(d) => d.getUTCMilliseconds()")(dt)
+    assert ms == 123  # sub-ms truncated
+
+
+@run_in_pyodide
+def test_date_negative_timestamp_microseconds(selenium):
+    from datetime import datetime
+
+    from pyodide.code import run_js
+
+    d = run_js("new Date('1969-07-20T20:17:40.123Z')")
+    assert isinstance(d, datetime)
+    assert d.year == 1969
+    assert d.month == 7
+    assert d.day == 20
+    assert d.microsecond == 123000

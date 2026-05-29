@@ -80,6 +80,7 @@ JavaScript:
 | {py:data}`None`                 | {js:data}`undefined`                     |
 | {py:data}`pyodide.ffi.jsnull`   | {js:data}`null`                          |
 | {py:data}`pyodide.ffi.JsBigInt` | {js:data}`BigInt`                        |
+| {py:data}`datetime.datetime`    | {js.data}`Date`                          |
 
 \* An {py:class}`int` is converted to a {js:data}`Number` if the absolute value
 is less than or equal to {js:data}`Number.MAX_SAFE_INTEGER` otherwise it is
@@ -105,6 +106,7 @@ Python:
 | {js:data}`Boolean`   | {py:class}`bool`                                      |
 | {js:data}`undefined` | {py:data}`None`                                       |
 | {js:data}`null`      | {py:data}`pyodide.ffi.jsnull`                         |
+| {js:data}`Date`      | {py:data}`datetime.datetime`                          |
 
 \* A {js:data}`Number` is converted to an {py:class}`int` if the absolute value
 is less than or equal to {js:data}`Number.MAX_SAFE_INTEGER` and its fractional

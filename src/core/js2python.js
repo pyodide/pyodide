@@ -121,6 +121,12 @@ function js2python_convertImmutableInner(value) {
     } else {
       return __js2python_pyproxy(shared.ptr);
     }
+  } else if (__js2python_should_convert_date() && value instanceof Date) {
+    let ts = value.getTime();
+    if (!Number.isNaN(ts)) {
+      return __js2python_datetime(ts);
+    }
+    // If the timestamp is invalid, fall through to create a JsProxy
   }
   return undefined;
 }
