@@ -587,10 +587,11 @@ async function callPyObjectKwargsPromising(
   // get freed out from under us. This also fixes a bug that was around before
   // we added the sleep.
   _Py_IncRef(ptrobj);
-  // Sleep so we release any stack frames above this point. Otherwise, we would
-  // have a hard time reclaiming them later. Also, enterTask() may wish to move
-  // the stack pointer up and we can't reasonably evict our caller from the
-  // stack.
+  // Yield to the event loop before starting the task. We may have been called by
+  // WebAssembly stack frames which own data on the stack. We can't overwrite that
+  // data until those stack frames are finished with it. Returning to the event
+  // loop first unwinds all the caller frames. That way enterTask() is free to
+  // place the task wherever it likes.
   await new Promise<void>((res) => API.scheduleCallback(res, 0));
   let result;
   const exc = _malloc(4);
