@@ -1,7 +1,22 @@
-{% extends '!layout.html' %} {%- block extrahead %} {{ super() }}
+{% extends '!layout.html' %}
+
+{%- block extrahead %}
+{{ super() }}
 <script
   defer
   src="https://static.cloudflareinsights.com/beacon.min.js"
   data-cf-beacon='{"token": "4405a86c36a84efca5dbde1b25edd153"}'
 ></script>
+{%- endblock %}
+
+{%- block docs_navbar %}
+<div class="pyodide-sticky-header">
+  <div class="pyodide-domain-notice" role="alert">
+    This website, <strong><a href="https://pyodide.org">https://pyodide.org</a></strong>,
+    is the sole official website of the Pyodide project. Any other website purporting to
+    represent Pyodide is not affiliated with, endorsed by, or authorized by the Pyodide
+    project or its maintainers in any capacity.
+  </div>
+  {{ super() }}
+</div>
 {%- endblock %}
