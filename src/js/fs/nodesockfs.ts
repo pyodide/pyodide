@@ -134,7 +134,7 @@ export async function initializeNodeSockFS(
       try {
         while (!sock.closed && !socketUpgraded()) {
           const { value, done } = await reader.read();
-          if (done || !value) {
+          if (done) {
             if (!socketUpgraded()) {
               sock.eof = true;
               notifyDataAvailable(sock);
@@ -193,6 +193,7 @@ export async function initializeNodeSockFS(
     if (sock.recvBuffer.length === 1 && sock.recvBuffer[0].length <= length) {
       const chunk = sock.recvBuffer.shift()!;
       sock.recvBufferBytes = 0;
+      maybeResumePump(sock);
       return chunk;
     }
 
