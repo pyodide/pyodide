@@ -372,26 +372,23 @@ export async function initializeNodeSockFS(
       sock: NodeSock,
       length: number,
     ): Promise<Uint8Array | number> {
-      if (sock.recvBufferBytes > 0) {
-        return drainBuffer(sock, length);
-      }
+      const tryDrain = (): Uint8Array | number | null => {
+        if (sock.recvBufferBytes > 0) return drainBuffer(sock, length);
+        if (sock.eof) return 0;
+        return null;
+      };
 
-      if (sock.eof) {
-        return 0;
-      }
+      const ready = tryDrain();
+      if (ready !== null) return ready;
 
       if (sock.stream.flags & cDefs.O_NONBLOCK) {
-        return -cDefs.EAGAIN;
+        // yield to make sure the background pump has a chance to run
+        await Promise.resolve();
+        return tryDrain() ?? -cDefs.EAGAIN;
       }
 
       await waitForData(sock);
-      if (sock.recvBufferBytes > 0) {
-        return drainBuffer(sock, length);
-      }
-      if (sock.eof) {
-        return 0;
-      }
-      return -cDefs.EAGAIN;
+      return tryDrain() ?? -cDefs.EAGAIN;
     },
 
     shutdown(sock: NodeSock, how: number): number {
