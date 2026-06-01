@@ -297,6 +297,7 @@ export interface EmscriptenModule {
   HEAPU8: Uint8Array;
   HEAP32: Int32Array;
   HEAPU32: Uint32Array;
+  HEAP16: Int16Array;
   SOCKFS: any;
   getSocketAddress: (addr: number, addrlen: number) => any;
   getExceptionMessage(e: number): [string, string];

@@ -68,6 +68,11 @@ interface NodeSock {
   sport?: number;
   sock_ops: {
     poll: (sock: NodeSock) => number;
+    pollAsync: (
+      sock: NodeSock,
+      events: number,
+      timeout: number,
+    ) => Promise<number>;
     ioctl: (sock: NodeSock, request: number) => number;
     close: (sock: NodeSock) => number;
     connectAsync: (
@@ -115,6 +120,12 @@ export async function initializeNodeSockFS(
   const SHUT_RD = 0;
   const SHUT_WR = 1;
   const SHUT_RDWR = 2;
+
+  // see struct_info_generated.json
+  const POLLFD_FD = 0;
+  const POLLFD_EVENTS = 4;
+  const POLLFD_REVENTS = 6;
+  const POLLFD_SIZE = 8;
 
   /**
    * Start the background receive pump for a socket.
@@ -223,7 +234,7 @@ export async function initializeNodeSockFS(
     poll(sock: NodeSock): number {
       let mask = 0;
 
-      // Readable: we have buffered leftover data ready to return
+      // Readable: buffered data is ready, or EOF can be observed.
       if (sock.recvBufferBytes > 0 || sock.eof) {
         mask |= cDefs.POLLRDNORM | cDefs.POLLIN;
       }
@@ -239,6 +250,28 @@ export async function initializeNodeSockFS(
       }
 
       return mask;
+    },
+
+    async pollAsync(
+      sock: NodeSock,
+      events: number,
+      timeout: number,
+    ): Promise<number> {
+      const getRequestedEvents = (): number =>
+        tcp_sock_ops.poll(sock) & (events | cDefs.POLLERR | cDefs.POLLHUP);
+
+      const ready = getRequestedEvents();
+      if (ready || timeout === 0) return ready;
+
+      if (timeout < 0) {
+        await waitForData(sock);
+      } else {
+        await Promise.race([
+          waitForData(sock),
+          new Promise((resolve) => setTimeout(resolve, timeout)),
+        ]);
+      }
+      return getRequestedEvents();
     },
 
     /**
@@ -602,6 +635,63 @@ export async function initializeNodeSockFS(
       }
       return stream.node.sock as NodeSock;
     },
+
+    /**
+     * poll syscall for NodeSock fds
+     * The implementation is mostly adopted from
+     * - https://github.com/emscripten-core/emscripten/blob/main/src/lib/libsyscall.js
+     * - https://github.com/python/cpython/blob/main/Python/emscripten_syscalls.c
+     */
+    async pollAsync(
+      fds: number,
+      nfds: number,
+      timeout: number,
+    ): Promise<number> {
+      const entries: Array<{
+        pollfd: number;
+        fd: number;
+        events: number;
+        sock: NodeSock | null;
+      }> = [];
+
+      for (let i = 0; i < nfds; i++) {
+        const pollfd = fds + POLLFD_SIZE * i;
+        const fd = module.HEAP32[(pollfd + POLLFD_FD) >> 2];
+        const events = module.HEAP16[(pollfd + POLLFD_EVENTS) >> 1];
+        if (!FS.getStream(fd)) {
+          entries.push({ pollfd, fd, events, sock: null });
+          continue;
+        }
+        entries.push({ pollfd, fd, events, sock: NodeSockFS.getSocket(fd) });
+      }
+
+      let count = 0;
+      const waits: Promise<void>[] = [];
+      for (const { pollfd, events, sock } of entries) {
+        const setRevents = (flags: number): void => {
+          flags &= events | cDefs.POLLERR | cDefs.POLLHUP;
+          module.HEAP16[(pollfd + POLLFD_REVENTS) >> 1] = flags;
+          if (flags) {
+            count++;
+          }
+        };
+
+        if (!sock) {
+          // stream not found
+          setRevents(cDefs.POLLNVAL);
+          continue;
+        }
+        if (timeout === 0) {
+          setRevents(sock.sock_ops.poll(sock));
+        } else {
+          waits.push(
+            sock.sock_ops.pollAsync(sock, events, timeout).then(setRevents),
+          );
+        }
+      }
+      await Promise.all(waits);
+      return count;
+    },
   };
 
   // Used in webloop.py to forward eventloop socket operations to Node.js
@@ -669,4 +759,5 @@ export async function initializeNodeSockFS(
   // FIXME: This depends on internal Emscripten structures, which may change anytime.
   //        We should consider contributing upstream or finding a more stable integration method.
   module.SOCKFS.createSocket = NodeSockFS.createSocket;
+  module.SOCKFS.pollAsync = NodeSockFS.pollAsync;
 }
