@@ -39,14 +39,18 @@
  */
 const stackStates = [];
 
+// Keep track of the running average task size. We could have a special case for
+// taskSizeCount = 0 to prevent dividing by zero, but it's simpler just to start
+// wtih some single value in the running average.
 let taskSizeTotal = 500;
 let taskSizeCount = 1;
-let stackTop;
 
 function setStackPosition(stackPosition) {
   evictStackUpTo(stackPosition);
   stackRestore(stackPosition);
 }
+
+let stackTop;
 
 /**
  * Decide where the stack stop for a new task should be and evict any tasks that
@@ -81,7 +85,9 @@ export function enterTask() {
     lastStop = state.stop;
   }
   // No large enough gaps found. Last, check if the current stack position is
-  // below the bottom used stack position and if so move the stack up.
+  // below the bottom used stack position and if so move the stack up. This can
+  // happen if a task higher on the stack exited first followed by a task lower
+  // on the stack.
   const bottomUsed = stackStates.at(-1)?.start ?? stackTop;
   if (bottomUsed > stackSave()) {
     setStackPosition(bottomUsed);
