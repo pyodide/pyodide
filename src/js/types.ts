@@ -54,6 +54,7 @@ declare global {
   // _PyList_New, _PyDict_New, _PyDict_SetItem, _PySet_New, _PySet_Add
   // _PyEval_SaveThread, _PyEval_RestoreThread,
   //   _PyErr_CheckSignals, _PyErr_SetString
+  export const _malloc: (sz: number) => number;
   export const _free: (a: number) => void;
   export const __PyTraceback_Add: (a: number, b: number, c: number) => void;
   export const _PyRun_SimpleString: (ptr: number) => number;
