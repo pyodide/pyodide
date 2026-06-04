@@ -617,6 +617,7 @@ def test_socket_nonblocking_recv_with_buffered_data(selenium_nodesock):
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((host, port))
+        s.setblocking(True)
 
         s.sendall(b"hello")
         time.sleep(0.5)
@@ -629,6 +630,49 @@ def test_socket_nonblocking_recv_with_buffered_data(selenium_nodesock):
     with tcp_server(handler) as (host, port):
         result = run(selenium_nodesock, host, port)
         assert result == b"hello"
+
+
+def test_socket_recv_backpressure(selenium_nodesock):
+    """Receiving large data doesn't cause unbounded memory growth.
+
+    The recv pump pauses when its internal buffer exceeds the high-water mark
+    (256KB), which propagates backpressure to the sender via TCP flow control.
+    This test verifies that a 1MB transfer works correctly despite the cap.
+    """
+    DATA_SIZE = 1024 * 1024
+
+    server_sent = []
+
+    def handler(conn, _addr):
+        conn.recv(1024)
+        data = b"A" * DATA_SIZE
+        conn.sendall(data)
+        server_sent.append(len(data))
+        conn.close()
+
+    @run_in_pyodide
+    def run(selenium, host, port, data_size):
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        s.sendall(b"go")
+
+        received = b""
+        while len(received) < data_size:
+            chunk = s.recv(65536)
+            if not chunk:
+                break
+            received += chunk
+
+        s.close()
+        return len(received)
+
+    with tcp_server(handler, timeout=15.0) as (host, port):
+        nbytes = run(selenium_nodesock, host, port, DATA_SIZE)
+        assert nbytes == DATA_SIZE
+        assert server_sent[0] == DATA_SIZE
 
 
 def test_socket_shutdown_non_nodesock(selenium_standalone):
