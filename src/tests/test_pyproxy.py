@@ -963,6 +963,35 @@ def test_pyproxy_gc_destroy(selenium):
     }
 
 
+@run_in_pyodide
+def test_topy_shared_ref_refcount(selenium):
+    # See: https://github.com/pyodide/pyodide/issues/5598
+    # Tests if toPy properly handles shared references
+    # without messing up with the refcount
+    from pyodide.code import run_js
+
+    def check(obj):
+        import sys
+
+        # All three elements should be the same object
+        assert obj[0] is obj[1] is obj[2]
+        # refcount should be at least 4:
+        #   1 for obj[0], 1 for obj[1], 1 for obj[2], 1 for the arg
+        rc = sys.getrefcount(obj[0])
+        assert rc >= 4, f"refcount too low: {rc}"
+
+    # Test with shared object literal
+    obj = run_js(
+        """
+        const shared = { x: 1 };
+        const obj = [shared, shared, shared];
+        const pyObj = pyodide.toPy(obj);
+        pyObj;
+        """
+    )
+    check(obj)
+
+
 def test_pyproxy_implicit_copy(selenium):
     result = selenium.run_js(
         """

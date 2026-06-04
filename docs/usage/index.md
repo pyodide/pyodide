@@ -130,4 +130,5 @@ undefined
    service-worker.md
    working-with-bundlers.md
    cli.md
+   socket.md
 ```

@@ -69,9 +69,11 @@ def test_cpython_core(main_test, selenium, request):
             dedent(
                 f"""
                 res = None
+                import importlib
                 import platform
-                from test.libregrtest.main import main
                 import sys
+                import unittest
+                from test.libregrtest.main import main
                 sys.excepthook = sys.__excepthook__
 
                 platform.platform(aliased=True)
@@ -80,20 +82,35 @@ def test_cpython_core(main_test, selenium, request):
                     # This uses raise() which doesn't work.
                     del _testcapi.raise_SIGINT_then_send_None
 
-                match_tests = [[pat, False] for pat in {ignore_tests}]
+                # Detect module-level skips (e.g. optional C extension not
+                # compiled in) before running libregrtest. libregrtest exits
+                # with code 0 for both "all passed" and "module skipped", so
+                # without this check pytest would report a vacuous PASSED
+                # instead of SKIPPED.
                 try:
-                    main(["{name}"], match_tests=match_tests, verbose=True, verbose3=True)
-                except SystemExit as e:
-                    if e.code == 4:
-                        res = e.code
-                    elif e.code != 0:
-                        raise RuntimeError(f"Failed with code: {{e.code}}")
+                    importlib.import_module("test.{name}")
+                except unittest.SkipTest as e:
+                    res = f"skip:{{e}}"
+                finally:
+                    sys.modules.pop("test.{name}", None)
+
+                if res is None:
+                    match_tests = [[pat, False] for pat in {ignore_tests}]
+                    try:
+                        main(["{name}"], match_tests=match_tests, verbose=True, verbose3=True)
+                    except SystemExit as e:
+                        if e.code == 4:
+                            res = e.code
+                        elif e.code != 0:
+                            raise RuntimeError(f"Failed with code: {{e.code}}")
                 res
                 """
             )
         )
         if res == 4:
             pytest.skip("No tests ran")
+        elif isinstance(res, str) and res.startswith("skip:"):
+            pytest.skip(res[len("skip:") :] or f"{name} skipped")
     except selenium.JavascriptException:
         print(selenium.logs)
         raise

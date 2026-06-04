@@ -129,6 +129,10 @@ def is_valid_date(date_string):
 
 
 def check_changelog(new_version: str):
+    # skip for alpha versions
+    if "a" in new_version:
+        return None
+
     content = CHANGELOG.read_text()
 
     unreleased_header = "## Unreleased"

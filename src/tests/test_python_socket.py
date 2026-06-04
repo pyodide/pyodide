@@ -1081,6 +1081,7 @@ def test_tls_starttls_send_recv(selenium_nodesock, self_signed_cert):
         s.connect((host, port))
 
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)  # type: ignore[attr-defined]
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2  # type: ignore[attr-defined]
         ctx.check_hostname = False
 
         ss = ctx.wrap_socket(s, server_hostname="localhost")

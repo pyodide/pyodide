@@ -46,6 +46,10 @@ myst:
   `loadPackage("pydoc_data")` to use. The `fullstdlib` option in loadPyodide is deprecated and a no-op.
   {pr}`6151`
 
+- {{ Feature }} The `compression.zstd` module (new in CPython 3.14) is now bundled in
+  Pyodide, providing native zstd compression and decompression support via `_zstd`.
+  {pr}`6240`
+
 - {{ Enhancement }} A JavaScript object is now treated as an array-like object
   if it has a `length` property and is iterable. Every JsProxy of an array-like
   object now implements subscripting.
@@ -82,6 +86,11 @@ myst:
   reported by `os.get_terminal_size()` and `shutil.get_terminal_size()`.
   {pr}`6157`
 
+- {{ Fix }} Fixed invalid refcounting when multiple JS objects that shars the reference
+  are passed to Python.
+  {pr}`6245`
+
+
 ## Version 0.29.4
 
 _May 7, 2026_
@@ -92,6 +101,12 @@ _May 7, 2026_
 - {{ Fix }} Fixed a bug where Python strings that contained codepoints above
   0x00FF would be corrupted when read from JavaScript when they were located at
   a WebAssembly memory address above 2GB. {pr}`6217`
+
+- {{ Fix }} Stack switching used to sometimes leak stack memory, this is now
+  fixed. As a side effect, `callPromising()` and `runPythonAsync()` now always
+  yields to the event loop once before Python begins executing, so the ordering
+  of such calls may change.
+  {pr}`6260`
 
 ## Version 0.29.3
 
