@@ -23,7 +23,7 @@ myst:
 
 - {{ ABI }} Upgraded Emscripten to 5.0.3 {pr}`6161`
 
-- {{ Breaking }} We do not unvendor stdlibs anymore. `sqlite3` and `lzma` are now bundled into Pyodide by default. `pydecimal` and `test` package is removed from the distribution.
+- {{ Breaking }} We do not unvendor stdlibs anymore. `sqlite3` and `lzma` are now bundled into Pyodide by default. The `pydecimal` and `test` packages have been removed from the distribution.
   `pydoc_data` package is still in the distribution but needs to be explicitly loaded with
   `loadPackage("pydoc_data")` to use. The `fullstdlib` option in loadPyodide is deprecated and a no-op.
   {pr}`6151`
