@@ -17,6 +17,16 @@ myst:
 
 ## Unreleased
 
+### General
+
+- {{ Update }} Upgraded to Python 3.14.2. {pr}`6161`
+
+- {{ ABI }} Upgraded Emscripten to 5.0.3 {pr}`6161`
+
+- {{ Breaking }} We do not unvendor stdlibs anymore. `sqlite3` and `lzma` are now bundled into Pyodide by default. The `pydecimal` and `test` packages have been removed from the distribution.
+  `pydoc_data` package is still in the distribution but needs to be explicitly loaded with
+  `loadPackage("pydoc_data")` to use. The `fullstdlib` option in loadPyodide is deprecated and a no-op.
+  {pr}`6151`
 
 - {{ Breaking }} The `ssl` module is now a stub implementation bundled with
   Pyodide instead of being dynamically loaded with OpenSSL. This means the `ssl`
@@ -41,14 +51,30 @@ myst:
   - Bundlers: Update configuration to reference the new filename
   {pr}`6111`
 
-- {{ Breaking }} We do not unvendor stdlibs anymore. `sqlite3` and `lzma` are now bundled into Pyodide by default. `pydecimal` and `test` package is removed from the distribution.
-  `pydoc_data` package is still in the distribution but needs to be explicitly loaded with
-  `loadPackage("pydoc_data")` to use. The `fullstdlib` option in loadPyodide is deprecated and a no-op.
-  {pr}`6151`
-
 - {{ Feature }} The `compression.zstd` module (new in CPython 3.14) is now bundled in
   Pyodide, providing native zstd compression and decompression support via `_zstd`.
   {pr}`6240`
+
+### Python API
+
+- {{ Enhancement }} `PyProxy` now has a `[Symbol.dispose]` method.
+  {pr}`6003`
+
+- {{ Enhancement }} `PyBufferView` (the return value of `PyProxy.getBuffer()`)
+  now has a `[Symbol.dispose]` method.
+  {pr}`6003`
+
+- {{ Enhancement }} If `isatty` is set to true on `stdout` or `stderr` it is now
+  possible to set the window size by providing a stdout/stderr handler which
+  implements the `getTerminalSize()` method. In particular, the default `stdout`
+  and `stderr` in Node now define this handler. These terminal sizes are
+  reported by `os.get_terminal_size()` and `shutil.get_terminal_size()`.
+  {pr}`6157`
+
+- {{ Enhancement }} Added experimental socket support in Node.js environment.
+  {pr}`6191` {pr}`6108` {pr}`6145` {pr}`6166` {pr}`6174`
+
+### JavaScript API
 
 - {{ Enhancement }} A JavaScript object is now treated as an array-like object
   if it has a `length` property and is iterable. Every JsProxy of an array-like
@@ -59,17 +85,10 @@ myst:
   array-like object.
   {pr}`6019`
 
-- {{ Enhancement }} `PyProxy` now has a `[Symbol.dispose]` method.
-  {pr}`6003`
-
 - {{ Enhancement }} A `JsProxy` of an object with a `[Symbol.dispose]` method is
   now a context manager. A `JsProxy` of an object with a `[Symbol.asyncDispose]`
   method is now an async context manager.
   {pr}`6007` {pr}`6014`
-
-- {{ Enhancement }} `PyBufferView` (the return value of `PyProxy.getBuffer()`)
-  now has a `[Symbol.dispose]` method.
-  {pr}`6003`
 
 - {{ Enhancement }} Added `pyodide.ffi.JsBigInt` which is a subtype of `int`.
   Now bigint will be translated to Python as a `JsBigInt` and `JsBigInt` will be
@@ -79,14 +98,7 @@ myst:
   limited backwards incompatibility.
   {pr}`6022`
 
-- {{ Enhancement }} If `isatty` is set to true on `stdout` or `stderr` it is now
-  possible to set the window size by providing a stdout/stderr handler which
-  implements the `getTerminalSize()` method. In particular, the default `stdout`
-  and `stderr` in Node now define this handler. These terminal sizes are
-  reported by `os.get_terminal_size()` and `shutil.get_terminal_size()`.
-  {pr}`6157`
-
-- {{ Fix }} Fixed invalid refcounting when multiple JS objects that shars the reference
+- {{ Fix }} Fixed invalid refcounting when multiple JS objects that share a reference
   are passed to Python.
   {pr}`6245`
 

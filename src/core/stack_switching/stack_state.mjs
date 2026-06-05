@@ -41,7 +41,7 @@ const stackStates = [];
 
 // Keep track of the running average task size. We could have a special case for
 // taskSizeCount = 0 to prevent dividing by zero, but it's simpler just to start
-// wtih some single value in the running average.
+// with some single value in the running average.
 let taskSizeTotal = 500;
 let taskSizeCount = 1;
 
