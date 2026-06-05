@@ -98,7 +98,7 @@ myst:
   limited backwards incompatibility.
   {pr}`6022`
 
-- {{ Fix }} Fixed invalid refcounting when multiple JS objects that share the reference
+- {{ Fix }} Fixed invalid refcounting when multiple JS objects that share a reference
   are passed to Python.
   {pr}`6245`
 
