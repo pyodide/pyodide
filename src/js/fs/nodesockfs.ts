@@ -192,6 +192,9 @@ export async function initializeNodeSockFS(
     return sock.dataAvailable;
   }
 
+  /**
+   * Resume the receive pump if it was paused due to buffer overflow.
+   */
   function maybeResumePump(sock: NodeSock): void {
     if (sock.pumpPaused && sock.recvBufferBytes < RECV_BUFFER_HIGH_WATER) {
       sock.pumpPaused.resolve();
@@ -208,6 +211,8 @@ export async function initializeNodeSockFS(
       return chunk;
     }
 
+    // If not enough data in a single chunk, concatenate chunks
+    // until we have enough or run out of data
     const out = new Uint8Array(Math.min(length, sock.recvBufferBytes));
     let offset = 0;
     while (offset < out.length && sock.recvBuffer.length > 0) {
@@ -257,15 +262,22 @@ export async function initializeNodeSockFS(
       events: number,
       timeout: number,
     ): Promise<number> {
+      // Get the events that are currently ready
+      // https://github.com/emscripten-core/emscripten/blob/61533b1fbd7fefc1792220aa0499db1724471e74/src/lib/libsyscall.js#L599
       const getRequestedEvents = (): number =>
         tcp_sock_ops.poll(sock) & (events | cDefs.POLLERR | cDefs.POLLHUP);
 
       const ready = getRequestedEvents();
+      // timeout == 0: No wait, return immediately
       if (ready || timeout === 0) return ready;
 
+      // timeout < 0: Infinite wait
       if (timeout < 0) {
+        // wait for data to become available
         await waitForData(sock);
       } else {
+        // timeout > 0: Wait for the specified time
+        // Race between waiting for data and the timeout
         await Promise.race([
           waitForData(sock),
           new Promise((resolve) => setTimeout(resolve, timeout)),
