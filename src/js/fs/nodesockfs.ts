@@ -282,10 +282,7 @@ export async function initializeNodeSockFS(
       } else {
         // timeout > 0: Wait for the specified time
         // Race between waiting for data and the timeout
-        await Promise.race([
-          waitForData(sock),
-          sleep(timeout),
-        ]);
+        await Promise.race([waitForData(sock), sleep(timeout)]);
       }
       return getRequestedEvents();
     },
@@ -666,27 +663,12 @@ export async function initializeNodeSockFS(
       nfds: number,
       timeout: number,
     ): Promise<number> {
-      const entries: Array<{
-        pollfd: number;
-        fd: number;
-        events: number;
-        sock: NodeSock | null;
-      }> = [];
-
+      let count = 0;
+      const waits: Promise<void>[] = [];
       for (let i = 0; i < nfds; i++) {
         const pollfd = fds + POLLFD_SIZE * i;
         const fd = module.HEAP32[(pollfd + POLLFD_FD) >> 2];
         const events = module.HEAP16[(pollfd + POLLFD_EVENTS) >> 1];
-        if (!FS.getStream(fd)) {
-          entries.push({ pollfd, fd, events, sock: null });
-          continue;
-        }
-        entries.push({ pollfd, fd, events, sock: NodeSockFS.getSocket(fd) });
-      }
-
-      let count = 0;
-      const waits: Promise<void>[] = [];
-      for (const { pollfd, events, sock } of entries) {
         const setRevents = (flags: number): void => {
           flags &= events | cDefs.POLLERR | cDefs.POLLHUP;
           module.HEAP16[(pollfd + POLLFD_REVENTS) >> 1] = flags;
@@ -695,12 +677,11 @@ export async function initializeNodeSockFS(
           }
         };
 
+        const sock = NodeSockFS.getSocket(fd);
         if (!sock) {
           // stream not found
           setRevents(cDefs.POLLNVAL);
-          continue;
-        }
-        if (timeout === 0) {
+        } else if (timeout === 0) {
           setRevents(sock.sock_ops.poll(sock));
         } else {
           waits.push(
