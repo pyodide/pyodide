@@ -17,6 +17,7 @@ import {
 } from "./wintercg-sockets";
 import type { SocketOptions, ConnectFunc } from "./wintercg-sockets";
 import type { FSStream, FSNode } from "../types";
+import { sleep } from "../scheduler";
 import {
   createResolvable,
   type ResolvablePromise,
@@ -133,27 +134,33 @@ export async function initializeNodeSockFS(
    * It pauses when the buffer exceeds RECV_BUFFER_HIGH_WATER to prevent memory exhaustion.
    */
   function startRecvPump(sock: NodeSock): void {
-    if (sock.pumpRunning || !sock.reader) return;
+    if (sock.pumpRunning) return;
     sock.pumpRunning = true;
-
-    const reader = sock.reader;
-    // startTLS changes the reader, so we need to check if the reader has been upgraded
-    // before reading from it after event loop iterations
-    const socketUpgraded = () => sock.reader !== reader;
 
     (async () => {
       try {
-        while (!sock.closed && !socketUpgraded()) {
-          const { value, done } = await reader.read();
-          if (done) {
-            if (!socketUpgraded()) {
-              sock.eof = true;
-              notifyDataAvailable(sock);
-            }
+        while (!sock.closed && sock.reader) {
+          const reader = sock.reader;
+          let result: ReadableStreamReadResult<Uint8Array>;
+          try {
+            result = await reader.read();
+          } catch {
+            // The reader was released (e.g. startTls swapped it) or errored.
+            // If it was swapped, loop again to pick up the new reader.
+            if (sock.reader !== reader) continue;
+            sock.eof = true;
+            notifyDataAvailable(sock);
             break;
           }
-          sock.recvBuffer.push(value);
-          sock.recvBufferBytes += value.length;
+          // A reader swap can only happen across the await above.
+          if (sock.reader !== reader) continue;
+          if (result.done) {
+            sock.eof = true;
+            notifyDataAvailable(sock);
+            break;
+          }
+          sock.recvBuffer.push(result.value);
+          sock.recvBufferBytes += result.value.length;
           notifyDataAvailable(sock);
 
           if (sock.recvBufferBytes >= RECV_BUFFER_HIGH_WATER) {
@@ -161,15 +168,8 @@ export async function initializeNodeSockFS(
             await sock.pumpPaused;
           }
         }
-      } catch {
-        if (!socketUpgraded()) {
-          sock.eof = true;
-          notifyDataAvailable(sock);
-        }
       } finally {
-        if (!socketUpgraded()) {
-          sock.pumpRunning = false;
-        }
+        sock.pumpRunning = false;
       }
     })();
   }
@@ -280,7 +280,7 @@ export async function initializeNodeSockFS(
         // Race between waiting for data and the timeout
         await Promise.race([
           waitForData(sock),
-          new Promise((resolve) => setTimeout(resolve, timeout)),
+          sleep(timeout),
         ]);
       }
       return getRequestedEvents();
@@ -497,8 +497,10 @@ export async function initializeNodeSockFS(
       sock.recvBuffer = [];
       sock.recvBufferBytes = 0;
       sock.eof = false;
-      sock.pumpRunning = false;
-      sock.pumpPaused = null;
+      if (sock.pumpPaused) {
+        sock.pumpPaused.resolve();
+        sock.pumpPaused = null;
+      }
       startRecvPump(sock);
 
       tlsSocket.closed.then(
