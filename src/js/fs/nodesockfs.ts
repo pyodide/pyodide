@@ -203,6 +203,10 @@ export async function initializeNodeSockFS(
   }
 
   function drainBuffer(sock: NodeSock, length: number): Uint8Array {
+    if (sock.recvBufferBytes === 0) {
+      return new Uint8Array(0);
+    }
+
     // Enough data in a single chunk
     if (sock.recvBuffer.length === 1 && sock.recvBuffer[0].length <= length) {
       const chunk = sock.recvBuffer.shift()!;
@@ -418,7 +422,8 @@ export async function initializeNodeSockFS(
       length: number,
     ): Promise<Uint8Array | number> {
       const tryDrain = (): Uint8Array | number | null => {
-        if (sock.recvBufferBytes > 0) return drainBuffer(sock, length);
+        const data = drainBuffer(sock, length);
+        if (data.length > 0) return data;
         if (sock.eof) return 0;
         return null;
       };
@@ -729,10 +734,7 @@ export async function initializeNodeSockFS(
       while (sock.recvBufferBytes === 0 && !sock.eof && !sock.closed) {
         await waitForData(sock);
       }
-      if (sock.recvBufferBytes > 0) {
-        return drainBuffer(sock, nbytes);
-      }
-      return new Uint8Array(0);
+      return drainBuffer(sock, nbytes);
     },
 
     async send(
