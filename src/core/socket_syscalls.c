@@ -47,7 +47,7 @@ EM_JS(JsVal, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
     return null;
 
   return (async function() {
-    var result = await sock.sock_ops.recvmsgAsync(sock, len, false);
+    var result = await sock.sock_ops.recvmsgAsync(sock, len);
     // clang-format off
     if (typeof result === "number")
       return result;
@@ -88,6 +88,31 @@ EM_JS(bool, _try_fcntl64, (int fd, int cmd, int arg, int* result), {
   return true;
 })
 
+// Returns a Promise for NodeSock fds, null for everything else.
+// CPython socket timeouts call poll() before recv(). Emscripten's poll is
+// synchronous, but NodeSock readiness depends on the async receive pump.
+EM_JS(JsVal, _maybe_poll_async, (intptr_t fds, int nfds, int timeout), {
+  if (!Module.SOCKFS.pollAsync) {
+    return null;
+  }
+
+  // Check if there is any NodeSock fd
+  // If not, return null to use emscripten's poll
+  for (var i = 0; i < nfds; i++) {
+    var pollfd = fds + 8 * i; // 8 == POLLFD_SIZE
+    var fd = Module.HEAP32[pollfd >> 2];
+    var stream = Module.FS.getStream(fd);
+    if (!stream) {
+      continue;
+    }
+    var sock = Module.SOCKFS.getSocket(fd);
+    if (!sock?.sock_ops?.pollAsync) {
+      return null;
+    }
+  }
+  return Module.SOCKFS.pollAsync(fds, nfds, timeout);
+})
+
 // Try to handle shutdown syscall for NodeSock fds.
 // Returns true if the operation was handled, false otherwise.
 // If true, the result is stored in *result
@@ -117,6 +142,9 @@ int _orig_syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
 
 int _orig_syscall_fcntl64(int fd, int cmd, intptr_t varargs)
   __attribute__((__import_module__("env"), __import_name__("__syscall_fcntl64"), __warn_unused_result__));
+
+int _orig_syscall_poll(intptr_t fds, int nfds, int timeout)
+  __attribute__((__import_module__("env"), __import_name__("__syscall_poll"), __warn_unused_result__));
 
 int __syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
 {
@@ -153,6 +181,15 @@ int __syscall_fcntl64(int fd, int cmd, intptr_t varargs)
     return _orig_syscall_fcntl64(fd, cmd, varargs);
   }
   return result;
+}
+
+int __syscall_poll(intptr_t fds, int nfds, int timeout)
+{
+  JsVal p = _maybe_poll_async(fds, nfds, timeout);
+  if (__builtin_wasm_ref_is_null_extern(p)) {
+    return _orig_syscall_poll(fds, nfds, timeout);
+  }
+  return syscall_syncify(p);
 }
 
 int __syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
