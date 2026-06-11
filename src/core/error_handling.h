@@ -188,6 +188,13 @@ console_error_obj(JsVal obj);
 #define FAIL() goto finally
 #endif
 
+#define DECLARE_PY_OBJECT(x)                                                   \
+  PyObject* x = NULL;                                                          \
+  _Defer                                                                       \
+  {                                                                            \
+    Py_CLEAR(x);                                                               \
+  }
+
 #define FAIL_IF_NULL(ref)                                                      \
   do {                                                                         \
     if (unlikely((ref) == NULL)) {                                             \

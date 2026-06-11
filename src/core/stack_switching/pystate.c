@@ -58,9 +58,9 @@ restoreThreadState(PyThreadState* state)
 EMSCRIPTEN_KEEPALIVE PyThreadState*
 captureThreadState()
 {
-  PyObject* asyncio_module = NULL;
-  PyObject* loop = NULL;
-  PyObject* tmp = NULL;
+  DECLARE_PY_OBJECT(asyncio_module);
+  DECLARE_PY_OBJECT(loop);
+  DECLARE_PY_OBJECT(tmp);
   PyThreadState* result = NULL;
 
   // We need to set the event loop in the new thread state to be the same as the
@@ -87,9 +87,6 @@ captureThreadState()
   }
 
 finally:
-  Py_CLEAR(asyncio_module);
-  Py_CLEAR(loop);
-  Py_CLEAR(tmp);
 
   return result;
 }

@@ -211,7 +211,6 @@ static JsVal
 _python2js_sequence(ConversionContext* context, PyObject* x)
 {
   bool success = false;
-  PyObject* pyitem = NULL;
 
   JsVal jsarray = JsvArray_New();
   FAIL_IF_MINUS_ONE(
@@ -219,7 +218,8 @@ _python2js_sequence(ConversionContext* context, PyObject* x)
   Py_ssize_t length = PySequence_Size(x);
   FAIL_IF_MINUS_ONE(length);
   for (Py_ssize_t i = 0; i < length; ++i) {
-    PyObject* pyitem = PySequence_GetItem(x, i);
+    DECLARE_PY_OBJECT(pyitem);
+    pyitem = PySequence_GetItem(x, i);
     FAIL_IF_NULL(pyitem);
     JsVal jsitem = _python2js(context, pyitem);
     FAIL_IF_JS_ERROR(jsitem);
@@ -230,11 +230,9 @@ _python2js_sequence(ConversionContext* context, PyObject* x)
     } else {
       JsvArray_Push(jsarray, jsitem);
     }
-    Py_CLEAR(pyitem);
   }
   success = true;
 finally:
-  Py_CLEAR(pyitem);
   return success ? jsarray : JS_ERROR;
 }
 
@@ -246,9 +244,9 @@ static JsVal
 _python2js_dict(ConversionContext* context, PyObject* x)
 {
   bool success = false;
-  PyObject* items = NULL;
-  PyObject* iter = NULL;
-  PyObject* item = NULL;
+  DECLARE_PY_OBJECT(items);
+  DECLARE_PY_OBJECT(iter);
+  DECLARE_PY_OBJECT(item);
 
   _Py_IDENTIFIER(items);
   JsVal jsdict = context->dict_new(context);
@@ -298,9 +296,6 @@ _python2js_dict(ConversionContext* context, PyObject* x)
     _python2js_add_to_cache(hiwire_get(context->cache), x, jsdict));
   success = true;
 finally:
-  Py_CLEAR(items);
-  Py_CLEAR(iter);
-  Py_CLEAR(item);
   return success ? jsdict : JS_ERROR;
 }
 
@@ -318,8 +313,8 @@ static JsVal
 _python2js_set(ConversionContext* context, PyObject* x)
 {
   bool success = false;
-  PyObject* iter = NULL;
-  PyObject* pykey = NULL;
+  DECLARE_PY_OBJECT(iter);
+  DECLARE_PY_OBJECT(pykey);
   // result:
 
   JsVal jsset = JsvSet_New();
@@ -343,7 +338,6 @@ _python2js_set(ConversionContext* context, PyObject* x)
     _python2js_add_to_cache(hiwire_get(context->cache), x, jsset));
   success = true;
 finally:
-  Py_CLEAR(pykey);
   return success ? jsset : JS_ERROR;
 }
 
@@ -602,7 +596,8 @@ static int
 _JsObject_Set(ConversionContext *context, JsVal obj, JsVal key, JsVal value) {
   int result = _JsObject_Set_js(obj, key, value);
   if (result == -2) {
-    PyObject* pykey = js2python(key);
+    DECLARE_PY_OBJECT(pykey);
+    pykey = js2python(key);
     if (pykey == NULL) {
       PyErr_SetString(
         conversion_error, "Key collision when converting Python dictionary to JavaScript.");
@@ -610,7 +605,6 @@ _JsObject_Set(ConversionContext *context, JsVal obj, JsVal key, JsVal value) {
     }
     PyErr_Format(
       conversion_error, "Key collision when converting Python dictionary to JavaScript. Key: %R", pykey);
-    Py_CLEAR(pykey);
     return -1;
   }
   return result;
@@ -1025,7 +1019,8 @@ int
 python2js_init(PyObject* core)
 {
   bool success = false;
-  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core_docs");
+  DECLARE_PY_OBJECT(docstring_source);
+  docstring_source = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(docstring_source);
   FAIL_IF_MINUS_ONE(
     add_methods_and_set_docstrings(core, methods, docstring_source));
@@ -1036,6 +1031,5 @@ python2js_init(PyObject* core)
 
   success = true;
 finally:
-  Py_CLEAR(docstring_source);
   return success ? 0 : -1;
 }

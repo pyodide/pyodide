@@ -137,6 +137,7 @@ export CFLAGS_BASE=\
 	$(DBGFLAGS) \
 	-fPIC \
 	-fwasm-exceptions \
+	-fdefer-ts \
 	-sSUPPORT_LONGJMP=wasm \
 	$(EXTRA_CFLAGS)
 
