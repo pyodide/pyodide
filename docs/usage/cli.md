@@ -25,7 +25,7 @@ There are three ways to install the Pyodide CLI.
 
 ### Github releases
 
-You can download `pyodide-core-314.0.0.tar.bz2` from github releases and
+You can download `pyodide-core-vv.vv.vv.tar.bz2` from github releases and
 extract it. It contains the `python` command inside.
 
 ### Pyodide venv
