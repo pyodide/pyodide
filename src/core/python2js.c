@@ -191,7 +191,7 @@ EM_JS_VAL(JsVal, _python2js_ascii, (const char* ptr, int len), {
   // above). TextDecoder.decode also throws on a SharedArrayBuffer-backed view,
   // so only take the fast path on a plain ArrayBuffer (Pyodide's heap today).
   // Both checks are cheap, so we leave them inline rather than hoisting.
-  if (len >= 64 && Module.HEAPU8.buffer instanceof ArrayBuffer) {
+  if (len >= 64) {
     // Cache one TextDecoder instance. The `"latin1"` label is windows-1252, but
     // it agrees with ASCII over 0x00-0x7F, which is all we feed it.
     let decoder = Module._asciiTextDecoder;
