@@ -170,8 +170,16 @@ typedef struct
   } tf;
   JsRef js;
   PyObject* signature;
+  // Cache for the type's _js_type_flags, computed lazily by JsProxy_getflags.
+  // JS_TYPE_FLAGS_UNCACHED (-2) means "not yet computed"; it cannot collide
+  // with a valid flags value (>= 0) nor with the -1 error return. The flags
+  // are immutable per type (set once in JsProxy_create_subtype and never
+  // mutated), so caching them per instance is safe.
+  int js_type_flags_cache;
 } JsProxy;
 // clang-format on
+
+#define JS_TYPE_FLAGS_UNCACHED (-2)
 
 // Layout of dict and ExceptionFields needs to exactly match the layout of the
 // same-name fields of BaseException. Otherwise bad things will happen. Check it
@@ -223,6 +231,10 @@ _Static_assert(sizeof(PyBaseExceptionObject) ==
 int
 JsProxy_getflags(PyObject* self)
 {
+  int cached = ((JsProxy*)self)->js_type_flags_cache;
+  if (cached != JS_TYPE_FLAGS_UNCACHED) {
+    return cached;
+  }
   PyObject* pyflags =
     _PyObject_GetAttrId((PyObject*)Py_TYPE(self), &PyId__js_type_flags);
   if (pyflags == NULL) {
@@ -230,6 +242,11 @@ JsProxy_getflags(PyObject* self)
   }
   int result = PyLong_AsLong(pyflags);
   Py_CLEAR(pyflags);
+  // PyLong_AsLong returns -1 on error; don't cache an error result.
+  if (result == -1 && PyErr_Occurred()) {
+    return -1;
+  }
+  ((JsProxy*)self)->js_type_flags_cache = result;
   return result;
 }
 
@@ -3333,6 +3350,7 @@ JsProxy_cinit(PyObject* obj, JsVal val, PyObject* sig)
   JsProxy* self = (JsProxy*)obj;
   self->js = hiwire_new_deduplicate(val);
   self->signature = Py_XNewRef(sig);
+  self->js_type_flags_cache = JS_TYPE_FLAGS_UNCACHED;
 #ifdef DEBUG_F
   extern bool tracerefs;
   if (tracerefs) {
