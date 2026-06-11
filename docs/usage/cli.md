@@ -25,7 +25,7 @@ There are three ways to install the Pyodide CLI.
 
 ### Github releases
 
-You can download `pyodide-core-0.vv.vv.tar.bz2` from github releases and
+You can download `pyodide-core-314.0.0.tar.bz2` from github releases and
 extract it. It contains the `python` command inside.
 
 ### Pyodide venv
@@ -36,14 +36,14 @@ not work without pip installed.
 
 ### uv
 
-You can use `uv python install cpython-3.13.2-emscripten-wasm32-musl` to install
+You can use `uv python install cpython-3.14.2-emscripten-wasm32-musl` to install
 Pyodide. Then you can create a Pyodide venv with
 ```sh
-uv venv .venv-pyodide -p cpython-3.13.2-emscripten-wasm32-musl
+uv venv .venv-pyodide -p cpython-3.14.2-emscripten-wasm32-musl
 ```
 When you install packages you should use:
 ```sh
-uv pip install --no-build --extra-index-url https://index.pyodide.org/0.28.3/ --index-strategy unsafe-best-match
+uv pip install --no-build --extra-index-url https://index.pyodide.org/314.0.0/ --index-strategy unsafe-best-match
 ```
 
 You can set these settings by default by putting the following in `uv.toml`:
@@ -52,7 +52,7 @@ no-build = true
 index-strategy = "unsafe-best-match"
 
 [[index]]
-url = "https://index.pyodide.org/0.28.3/"
+url = "https://index.pyodide.org/314.0.0/"
 ```
 Or the following in `pyproject.toml`
 ```toml
@@ -60,7 +60,7 @@ tool.uv.no-build = true
 tool.uv.index-strategy = "unsafe-best-match"
 
 [[tool.uv.index]]
-url = "https://index.pyodide.org/0.28.3/"
+url = "https://index.pyodide.org/314.0.0/"
 ```
 But you may not want to apply any of these settings to your native Python
 virtual environment.

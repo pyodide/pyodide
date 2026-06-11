@@ -17,6 +17,8 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} `pyodide.http.pyxhr` is now importable as a public API (`from pyodide.http import pyxhr`), matching the documentation.
+
 ## Version 314.0.0
 
 _June 09, 2026_

@@ -555,7 +555,7 @@ proxy.destroy()
 ```
 
 When a JavaScript function returns a {js:class}`Promise` (for example, if the
-function is an {ref}`async function`), it is assumed that the
+function is an async function), it is assumed that the
 {js:class}`Promise` is going to do some work that uses the arguments of the
 function, so it is not safe to destroy them until the {js:class}`Promise`
 resolves. In this case, the proxied function returns a Python
