@@ -17,6 +17,8 @@ myst:
 
 ## Unreleased
 
+- {{ Performance }} Sped up conversion of ASCII strings from Python to JavaScript using TextDecoder. {pr}`6283`
+
 ## Version 314.0.0
 
 _June 09, 2026_
