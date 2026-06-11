@@ -17,6 +17,8 @@ myst:
 
 ## Unreleased
 
+- {{ Performance }} Sped up JsProxy operations by caching type flags. {pr}`6282`
+
 ## Version 314.0.0
 
 _June 09, 2026_
