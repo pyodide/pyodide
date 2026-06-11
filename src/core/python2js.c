@@ -147,10 +147,13 @@ finally:
 // exactly, so we can use a `"latin1"` TextDecoder as a fast path. CPython
 // tracks ASCII-ness per string (PyUnicode_IS_ASCII), and _python2js_unicode
 // routes only ASCII strings to _python2js_ascii below. Benchmarks (Node 26 /
-// V8, Apple Silicon) show TextDecoder is far faster than the `+=` loop for
-// longer strings, e.g. ~10x at 512 chars and ~40x at 4096 chars, while the loop
-// is faster for very short strings. The crossover is between 8 and 64 chars, so
-// _python2js_ascii keeps the loop below a small length threshold.
+// V8, Apple Silicon, two purpose-built binaries differing only in this file)
+// show TextDecoder has a roughly fixed ~100 ns cost while the `+=` loop grows
+// linearly, so TextDecoder is far faster for longer strings, e.g. ~10x at 512
+// chars and ~43x at 4096 chars, but slower for short strings. The measured
+// crossover is around 44-48 chars, so _python2js_ascii keeps the loop below a
+// length threshold of 64 (chosen conservatively past the crossover so no string
+// length regresses).
 //
 // Caveats handled in _python2js_ascii:
 //   - TextDecoder.decode throws on a view backed by a SharedArrayBuffer.
@@ -170,12 +173,12 @@ finally:
 // the byte range with a cached TextDecoder; for short strings the `+=` loop is
 // faster, so keep using it below the threshold.
 EM_JS_VAL(JsVal, _python2js_ascii, (const char* ptr, int len), {
-  // TextDecoder beats the loop only once strings get long enough; the crossover
-  // is between 8 and 64 chars (see the FAQ above). TextDecoder.decode also
-  // throws on a SharedArrayBuffer-backed view, so only take the fast path on a
-  // plain ArrayBuffer (Pyodide's heap today). Both checks are cheap, so we
-  // leave them inline rather than hoisting.
-  if (len >= 32 && Module.HEAPU8.buffer instanceof ArrayBuffer) {
+  // TextDecoder beats the loop only once strings get long enough; the measured
+  // crossover is around 44-48 chars and we use 64 for margin (see the FAQ
+  // above). TextDecoder.decode also throws on a SharedArrayBuffer-backed view,
+  // so only take the fast path on a plain ArrayBuffer (Pyodide's heap today).
+  // Both checks are cheap, so we leave them inline rather than hoisting.
+  if (len >= 64 && Module.HEAPU8.buffer instanceof ArrayBuffer) {
     // Cache one TextDecoder instance. The `"latin1"` label is windows-1252, but
     // it agrees with ASCII over 0x00-0x7F, which is all we feed it.
     let decoder = Module._asciiTextDecoder;
