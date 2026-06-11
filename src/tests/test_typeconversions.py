@@ -143,6 +143,47 @@ def test_large_string_conversion(selenium):
 
 
 @run_in_pyodide
+def test_js2python_string_codepoints(selenium):
+    """JS string -> Python str conversion (js2python_string) must handle all
+    three Python internal representations (UCS1/UCS2/UCS4) and decode UTF-16
+    surrogate pairs into a single astral code point, while passing lone
+    surrogates through as their bare code-unit value.
+    """
+    from pyodide.code import run_js
+
+    # A JS string returned to Python is converted by js2python_string.
+    js_string = run_js("(s) => s")
+
+    # UCS1 (<= U+00FF), UCS2 (<= U+FFFF), UCS4 (astral / emoji).
+    assert js_string("pyodidé") == "pyodidé"
+    assert js_string("碘化物") == "碘化物"
+    assert js_string("🐍") == "🐍"
+    assert js_string("a😀b漢c") == "a😀b漢c"
+
+    # A surrogate pair built from its two UTF-16 code units must decode to the
+    # single astral code point, not two separate characters.
+    pair = run_js("() => String.fromCharCode(0xD83D, 0xDE00)")()
+    assert pair == "😀"
+    assert len(pair) == 1
+    assert ord(pair) == 0x1F600
+
+    # Lone surrogates pass through as their bare code-unit value.
+    lone_high = run_js("() => String.fromCharCode(0xD83D)")()
+    assert len(lone_high) == 1
+    assert ord(lone_high) == 0xD83D
+    lone_low = run_js("() => String.fromCharCode(0xDE00)")()
+    assert len(lone_low) == 1
+    assert ord(lone_low) == 0xDE00
+
+    # A high surrogate not followed by a low surrogate stays lone, and the
+    # following character is preserved.
+    mixed = run_js("() => String.fromCharCode(0xD83D, 0x0041)")()
+    assert len(mixed) == 2
+    assert ord(mixed[0]) == 0xD83D
+    assert mixed[1] == "A"
+
+
+@run_in_pyodide
 def test_string_conversion_above_2gb(selenium):
     """Regression test for a Python str -> JS string conversion bug that
     fired only when the str's data buffer was allocated above the 2 GB WASM

@@ -16,11 +16,13 @@ function js2python_string(value) {
     const unit = value.charCodeAt(i);
     let code_point;
     // A high surrogate (0xD800-0xDBFF) followed by a low surrogate
-    // (0xDC00-0xDFFF) is a surrogate pair encoding a single code point.
-    // `codePointAt` combines them; we then skip the trailing low surrogate.
-    // Lone surrogates (high without a following low, or a low surrogate) are
-    // left as-is: `codePointAt` returns the bare code unit, matching the
-    // behavior of the previous string-iterator implementation.
+    // (0xDC00-0xDFFF) is a surrogate pair encoding a single code point. We
+    // combine them with the standard UTF-16 decoding formula and then skip
+    // the trailing low surrogate. Lone surrogates (high without a following
+    // low, or a low surrogate) are left as-is as their bare code-unit value,
+    // matching the behavior of the previous string-iterator implementation.
+    // See:
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/charCodeAt
     if (unit >= 0xd800 && unit <= 0xdbff) {
       const next = value.charCodeAt(i + 1);
       if (next >= 0xdc00 && next <= 0xdfff) {
