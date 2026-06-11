@@ -17,6 +17,8 @@ myst:
 
 ## Unreleased
 
+- {{ Performance }} Sped up PyProxy creation. {pr}`6280`
+
 ## Version 314.0.0
 
 _June 09, 2026_
