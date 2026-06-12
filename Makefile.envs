@@ -317,6 +317,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Werror=incompatible-pointer-types \
 	-Werror=unused-result \
 	-mreference-types \
+	-fdefer-ts \
 	-I$(PYTHONINCLUDE) \
 	-I$(PYTHONINCLUDE)/..
 
