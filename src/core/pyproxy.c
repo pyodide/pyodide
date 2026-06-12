@@ -354,7 +354,7 @@ bool compat_to_string_repr = false;
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_repr(PyObject* pyobj)
 {
-  PyObject* pyrepr = NULL;
+  DECLARE_PY_OBJECT(pyrepr);
   JsVal jsrepr = JS_ERROR;
 
   if (compat_to_string_repr) {
@@ -366,7 +366,6 @@ _pyproxy_repr(PyObject* pyobj)
   jsrepr = python2js(pyrepr);
 
 finally:
-  Py_CLEAR(pyrepr);
   return jsrepr;
 }
 
@@ -392,7 +391,7 @@ _pyproxy_type(PyObject* ptrobj)
 EMSCRIPTEN_KEEPALIVE int
 _pyproxy_hasattr(PyObject* pyobj, JsVal jskey)
 {
-  PyObject* pykey = NULL;
+  DECLARE_PY_OBJECT(pykey);
   int result = -1;
 
   pykey = js2python(jskey);
@@ -400,7 +399,6 @@ _pyproxy_hasattr(PyObject* pyobj, JsVal jskey)
   result = PyObject_HasAttr(pyobj, pykey);
 
 finally:
-  Py_CLEAR(pykey);
   return result;
 }
 
@@ -470,9 +468,9 @@ EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
 {
   bool success = false;
-  PyObject* pykey = NULL;
-  PyObject* pydescr = NULL;
-  PyObject* pyresult = NULL;
+  DECLARE_PY_OBJECT(pykey);
+  DECLARE_PY_OBJECT(pydescr);
+  DECLARE_PY_OBJECT(pyresult);
   JsVal result = JS_ERROR;
 
   pykey = js2python(key);
@@ -513,9 +511,6 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
 success:
   success = true;
 finally:
-  Py_CLEAR(pykey);
-  Py_CLEAR(pydescr);
-  Py_CLEAR(pyresult);
   if (!success) {
     if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
       PyErr_Clear();
@@ -528,8 +523,8 @@ EMSCRIPTEN_KEEPALIVE int
 _pyproxy_setattr(PyObject* pyobj, JsVal key, JsVal value)
 {
   bool success = false;
-  PyObject* pykey = NULL;
-  PyObject* pyval = NULL;
+  DECLARE_PY_OBJECT(pykey);
+  DECLARE_PY_OBJECT(pyval);
 
   pykey = js2python(key);
   FAIL_IF_NULL(pykey);
@@ -539,8 +534,6 @@ _pyproxy_setattr(PyObject* pyobj, JsVal key, JsVal value)
 
   success = true;
 finally:
-  Py_CLEAR(pykey);
-  Py_CLEAR(pyval);
   return success ? 0 : -1;
 }
 
@@ -548,7 +541,7 @@ EMSCRIPTEN_KEEPALIVE int
 _pyproxy_delattr(PyObject* pyobj, JsVal idkey)
 {
   bool success = false;
-  PyObject* pykey = NULL;
+  DECLARE_PY_OBJECT(pykey);
 
   pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
@@ -556,7 +549,6 @@ _pyproxy_delattr(PyObject* pyobj, JsVal idkey)
 
   success = true;
 finally:
-  Py_CLEAR(pykey);
   return success ? 0 : -1;
 }
 
@@ -567,8 +559,8 @@ _pyproxy_getitem(PyObject* pyobj,
                  bool is_json_adaptor)
 {
   bool success = false;
-  PyObject* pykey = NULL;
-  PyObject* pyresult = NULL;
+  DECLARE_PY_OBJECT(pykey);
+  DECLARE_PY_OBJECT(pyresult);
   JsVal result;
 
   pykey = js2python(jskey);
@@ -584,8 +576,6 @@ finally:
                    PyErr_ExceptionMatches(PyExc_IndexError))) {
     PyErr_Clear();
   }
-  Py_CLEAR(pykey);
-  Py_CLEAR(pyresult);
   if (!success) {
     return JS_ERROR;
   }
@@ -596,8 +586,8 @@ EMSCRIPTEN_KEEPALIVE int
 _pyproxy_setitem(PyObject* pyobj, JsVal jskey, JsVal jsval)
 {
   bool success = false;
-  PyObject* pykey = NULL;
-  PyObject* pyval = NULL;
+  DECLARE_PY_OBJECT(pykey);
+  DECLARE_PY_OBJECT(pyval);
 
   pykey = js2python(jskey);
   FAIL_IF_NULL(pykey);
@@ -607,8 +597,6 @@ _pyproxy_setitem(PyObject* pyobj, JsVal jskey, JsVal jsval)
 
   success = true;
 finally:
-  Py_CLEAR(pykey);
-  Py_CLEAR(pyval);
   return success ? 0 : -1;
 }
 
@@ -616,7 +604,7 @@ EMSCRIPTEN_KEEPALIVE int
 _pyproxy_delitem(PyObject* pyobj, JsVal idkey)
 {
   bool success = false;
-  PyObject* pykey = NULL;
+  DECLARE_PY_OBJECT(pykey);
 
   pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
@@ -624,7 +612,6 @@ _pyproxy_delitem(PyObject* pyobj, JsVal idkey)
 
   success = true;
 finally:
-  Py_CLEAR(pykey);
   return success ? 0 : -1;
 }
 
@@ -634,8 +621,8 @@ _pyproxy_slice_assign(PyObject* pyobj,
                       Py_ssize_t stop,
                       JsVal val)
 {
-  PyObject* pyval = NULL;
-  PyObject* pyresult = NULL;
+  DECLARE_PY_OBJECT(pyval);
+  DECLARE_PY_OBJECT(pyresult);
   JsVal jsresult = JS_ERROR;
 
   pyval = js2python(val);
@@ -651,16 +638,14 @@ _pyproxy_slice_assign(PyObject* pyobj,
   jsresult = python2js_with_depth(pyresult, 1, proxies);
 
 finally:
-  Py_CLEAR(pyresult);
-  Py_CLEAR(pyval);
   return jsresult;
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_pop(PyObject* pyobj, bool pop_start)
 {
-  PyObject* idx = NULL;
-  PyObject* pyresult = NULL;
+  DECLARE_PY_OBJECT(idx);
+  DECLARE_PY_OBJECT(pyresult);
   JsVal jsresult = JS_ERROR;
   if (pop_start) {
     idx = PyLong_FromLong(0);
@@ -681,15 +666,13 @@ _pyproxy_pop(PyObject* pyobj, bool pop_start)
     }
   }
 finally:
-  Py_CLEAR(idx);
-  Py_CLEAR(pyresult);
   return jsresult;
 }
 
 EMSCRIPTEN_KEEPALIVE int
 _pyproxy_contains(PyObject* pyobj, JsVal idkey)
 {
-  PyObject* pykey = NULL;
+  DECLARE_PY_OBJECT(pykey);
   int result = -1;
 
   pykey = js2python(idkey);
@@ -697,7 +680,6 @@ _pyproxy_contains(PyObject* pyobj, JsVal idkey)
   result = PySequence_Contains(pyobj, pykey);
 
 finally:
-  Py_CLEAR(pykey);
   return result;
 }
 
@@ -705,7 +687,7 @@ EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_ownKeys(PyObject* pyobj)
 {
   bool success = false;
-  PyObject* pydir = NULL;
+  DECLARE_PY_OBJECT(pydir);
 
   pydir = PyObject_Dir(pyobj);
   FAIL_IF_NULL(pydir);
@@ -722,7 +704,6 @@ _pyproxy_ownKeys(PyObject* pyobj)
 
   success = true;
 finally:
-  Py_CLEAR(pydir);
   if (!success) {
     return JS_ERROR;
   }
@@ -770,8 +751,8 @@ _pyproxy_apply(PyObject* callable,
   PyObject** pyargs = pyargs_array;
   pyargs++; // leave a space for self argument in case callable is a bound
             // method
-  PyObject* pykwnames = NULL;
-  PyObject* pyresult = NULL;
+  DECLARE_PY_OBJECT(pykwnames);
+  DECLARE_PY_OBJECT(pyresult);
   JsVal result = JS_ERROR;
 
   // Put both arguments and keyword arguments into pyargs
@@ -807,8 +788,6 @@ finally:
   for (Py_ssize_t i = 0; i < last_converted_arg; i++) {
     Py_CLEAR(pyargs[i]);
   }
-  Py_CLEAR(pyresult);
-  Py_CLEAR(pykwnames);
   return result;
 }
 
@@ -865,25 +844,23 @@ _iscoroutinefunction(PyObject* f)
   }
 
   // Wasn't a basic callable, call into inspect.iscoroutinefunction
-  PyObject* result = PyObject_CallOneArg(iscoroutinefunction, f);
+  DECLARE_PY_OBJECT(result);
+  result = PyObject_CallOneArg(iscoroutinefunction, f);
   if (!result) {
     PyErr_Clear();
   }
-  bool ret = Py_IsTrue(result);
-  Py_CLEAR(result);
-  return ret;
+  return Py_IsTrue(result);
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_iter_next(PyObject* iterator, JsVal proxyCache, bool is_json_adaptor)
 {
-  PyObject* item = PyIter_Next(iterator);
+  DECLARE_PY_OBJECT(item);
+  item = PyIter_Next(iterator);
   if (item == NULL) {
     return JS_ERROR;
   }
-  JsVal result = python2js_json_adaptor(item, proxyCache, is_json_adaptor);
-  Py_CLEAR(item);
-  return result;
+  return python2js_json_adaptor(item, proxyCache, is_json_adaptor);
 }
 
 EM_JS(JsVal, _pyproxyGen_make_result, (bool done, JsVal value), {
@@ -894,8 +871,8 @@ EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxyGen_Send(PyObject* receiver, JsVal jsval)
 {
   bool success = false;
-  PyObject* v = NULL;
-  PyObject* retval = NULL;
+  DECLARE_PY_OBJECT(v);
+  DECLARE_PY_OBJECT(retval);
 
   v = js2python(jsval);
   FAIL_IF_NULL(v);
@@ -908,8 +885,6 @@ _pyproxyGen_Send(PyObject* receiver, JsVal jsval)
 
   success = true;
 finally:
-  Py_CLEAR(v);
-  Py_CLEAR(retval);
   if (!success) {
     return JS_ERROR;
   }
@@ -922,7 +897,7 @@ _pyproxyGen_return(PyObject* receiver, JsVal jsval)
 {
   bool success = false;
   PySendResult status = PYGEN_ERROR;
-  PyObject* pyresult;
+  DECLARE_PY_OBJECT(pyresult);
 
   JsVal result;
 
@@ -951,7 +926,6 @@ finally:
   if (!success) {
     return JS_ERROR;
   }
-  Py_CLEAR(pyresult);
   return _pyproxyGen_make_result(status == PYGEN_RETURN, result);
 }
 
@@ -959,8 +933,8 @@ EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxyGen_throw(PyObject* receiver, JsVal jsval)
 {
   bool success = false;
-  PyObject* pyvalue = NULL;
-  PyObject* pyresult = NULL;
+  DECLARE_PY_OBJECT(pyvalue);
+  DECLARE_PY_OBJECT(pyresult);
   PySendResult status = PYGEN_ERROR;
 
   JsVal result;
@@ -986,8 +960,6 @@ _pyproxyGen_throw(PyObject* receiver, JsVal jsval)
   FAIL_IF_JS_ERROR(result);
   success = true;
 finally:
-  Py_CLEAR(pyresult);
-  Py_CLEAR(pyvalue);
   if (!success) {
     return JS_ERROR;
   }
@@ -997,9 +969,9 @@ finally:
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxyGen_asend(PyObject* receiver, JsVal jsval)
 {
-  PyObject* v = NULL;
-  PyObject* asend = NULL;
-  PyObject* pyresult = NULL;
+  DECLARE_PY_OBJECT(v);
+  DECLARE_PY_OBJECT(asend);
+  DECLARE_PY_OBJECT(pyresult);
   JsVal jsresult = JS_ERROR;
 
   v = js2python(jsval);
@@ -1024,18 +996,15 @@ _pyproxyGen_asend(PyObject* receiver, JsVal jsval)
   FAIL_IF_JS_ERROR(jsresult);
 
 finally:
-  Py_CLEAR(v);
-  Py_CLEAR(asend);
-  Py_CLEAR(pyresult);
   return jsresult;
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxyGen_areturn(PyObject* receiver)
 {
-  PyObject* v = NULL;
-  PyObject* asend = NULL;
-  PyObject* pyresult = NULL;
+  DECLARE_PY_OBJECT(v);
+  DECLARE_PY_OBJECT(asend);
+  DECLARE_PY_OBJECT(pyresult);
   JsVal jsresult = JS_ERROR;
 
   pyresult =
@@ -1046,18 +1015,15 @@ _pyproxyGen_areturn(PyObject* receiver)
   FAIL_IF_JS_ERROR(jsresult);
 
 finally:
-  Py_CLEAR(v);
-  Py_CLEAR(asend);
-  Py_CLEAR(pyresult);
   return jsresult;
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxyGen_athrow(PyObject* receiver, JsVal jsval)
 {
-  PyObject* v = NULL;
-  PyObject* asend = NULL;
-  PyObject* pyresult = NULL;
+  DECLARE_PY_OBJECT(v);
+  DECLARE_PY_OBJECT(asend);
+  DECLARE_PY_OBJECT(pyresult);
   JsVal jsresult = JS_ERROR;
 
   v = js2python(jsval);
@@ -1077,9 +1043,6 @@ _pyproxyGen_athrow(PyObject* receiver, JsVal jsval)
   FAIL_IF_JS_ERROR(jsresult);
 
 finally:
-  Py_CLEAR(v);
-  Py_CLEAR(asend);
-  Py_CLEAR(pyresult);
   return jsresult;
 }
 
@@ -1087,7 +1050,7 @@ EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_aiter_next(PyObject* aiterator)
 {
   PyTypeObject* t;
-  PyObject* awaitable;
+  DECLARE_PY_OBJECT(awaitable);
 
   t = Py_TYPE(aiterator);
   if (t->tp_as_async == NULL || t->tp_as_async->am_anext == NULL) {
@@ -1100,9 +1063,7 @@ _pyproxy_aiter_next(PyObject* aiterator)
   if (awaitable == NULL) {
     return JS_ERROR;
   }
-  JsVal result = python2js(awaitable);
-  Py_CLEAR(awaitable);
-  return result;
+  return python2js(awaitable);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1240,9 +1201,9 @@ _pyproxy_ensure_future(PyObject* pyobject,
                        JsVal reject_handle)
 {
   bool success = false;
-  PyObject* future = NULL;
-  PyObject* callback = NULL;
-  PyObject* retval = NULL;
+  DECLARE_PY_OBJECT(future);
+  DECLARE_PY_OBJECT(callback);
+  DECLARE_PY_OBJECT(retval);
   future = _PyObject_CallMethodIdOneArg(asyncio, &PyId_ensure_future, pyobject);
   FAIL_IF_NULL(future);
   callback = FutureDoneCallback_cnew(resolve_handle, reject_handle);
@@ -1252,9 +1213,6 @@ _pyproxy_ensure_future(PyObject* pyobject,
 
   success = true;
 finally:
-  Py_CLEAR(future);
-  Py_CLEAR(callback);
-  Py_CLEAR(retval);
   return success ? 0 : -1;
 }
 
@@ -1501,8 +1459,8 @@ create_once_callable_py(PyObject* _mod,
 EMSCRIPTEN_KEEPALIVE int
 create_promise_handles_result_helper(PyObject* handle_result, PyObject* converter, JsVal jsval) {
   bool success = false;
-  PyObject* pyval = NULL;
-  PyObject* result = NULL;
+  DECLARE_PY_OBJECT(pyval);
+  DECLARE_PY_OBJECT(result);
 
   if (converter == NULL || Py_IsNone(converter)) {
     pyval = js2python(jsval);
@@ -1515,8 +1473,6 @@ create_promise_handles_result_helper(PyObject* handle_result, PyObject* converte
 
   success = true;
 finally:
-  Py_CLEAR(pyval);
-  Py_CLEAR(result);
   if (!success) {
     // Not sure what we'll do if this function fails tbh...
     printf("Unexpected error:\n");
@@ -1658,9 +1614,9 @@ pyproxy_init(PyObject* core)
 {
   bool success = false;
 
-  PyObject* collections_abc = NULL;
-  PyObject* docstring_source = NULL;
-  PyObject* inspect = NULL;
+  DECLARE_PY_OBJECT(collections_abc);
+  DECLARE_PY_OBJECT(docstring_source);
+  DECLARE_PY_OBJECT(inspect);
 
   collections_abc = PyImport_ImportModule("collections.abc");
   FAIL_IF_NULL(collections_abc);
@@ -1692,8 +1648,5 @@ pyproxy_init(PyObject* core)
 
   success = true;
 finally:
-  Py_CLEAR(docstring_source);
-  Py_CLEAR(collections_abc);
-  Py_CLEAR(inspect);
   return success ? 0 : -1;
 }

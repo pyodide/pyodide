@@ -116,7 +116,7 @@ static PyTypeObject Py2JsConverterType = {
 JsVal
 Py2JsConverter_convert(PyObject* converter, PyObject* pyval, JsVal proxies)
 {
-  PyObject* pre_converted = NULL;
+  DECLARE_PY_OBJECT(pre_converted);
   JsVal result = JS_ERROR;
 
   int status = PyObject_IsInstance(converter, (PyObject*)&Py2JsConverterType);
@@ -137,7 +137,6 @@ Py2JsConverter_convert(PyObject* converter, PyObject* pyval, JsVal proxies)
   result =
     Py2JsConverter_converter(converter)(converter, pre_converted, proxies);
 finally:
-  Py_CLEAR(pre_converted);
   return result;
 }
 
@@ -580,13 +579,13 @@ add_py2js_converter(PyObject* core_mod,
 {
   bool success = false;
 
-  PyObject* converter = Py2JsConverter_cnew(func);
+  DECLARE_PY_OBJECT(converter);
+  converter = Py2JsConverter_cnew(func);
   FAIL_IF_NULL(converter);
   FAIL_IF_MINUS_ONE(PyObject_SetAttrString(core_mod, name, converter));
 
   success = true;
 finally:
-  Py_CLEAR(converter);
   return success ? 0 : -1;
 }
 
@@ -597,13 +596,13 @@ add_js2py_converter(PyObject* core_mod,
 {
   bool success = false;
 
-  PyObject* converter = Js2PyConverter_cnew(func);
+  DECLARE_PY_OBJECT(converter);
+  converter = Js2PyConverter_cnew(func);
   FAIL_IF_NULL(converter);
   FAIL_IF_MINUS_ONE(PyObject_SetAttrString(core_mod, name, converter));
 
   success = true;
 finally:
-  Py_CLEAR(converter);
   return success ? 0 : -1;
 }
 

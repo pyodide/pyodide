@@ -69,7 +69,8 @@ init_pyodide_proxy()
   });
   bool success = false;
   // Enable JavaScript access to the _pyodide module.
-  PyObject* _pyodide = PyImport_ImportModule("_pyodide");
+  DECLARE_PY_OBJECT(_pyodide);
+  _pyodide = PyImport_ImportModule("_pyodide");
   FAIL_IF_NULL(_pyodide);
   JsVal _pyodide_proxy = python2js(_pyodide);
   FAIL_IF_JS_ERROR(_pyodide_proxy);
@@ -77,7 +78,6 @@ init_pyodide_proxy()
 
   success = true;
 finally:
-  Py_CLEAR(_pyodide);
   return success ? 0 : -1;
 }
 
@@ -86,7 +86,7 @@ PyObject*
 PyInit__pyodide_core(void)
 {
   bool success = false;
-  PyObject* _pyodide = NULL;
+  DECLARE_PY_OBJECT(_pyodide);
   PyObject* core_module = NULL;
 
   _pyodide = PyImport_ImportModule("_pyodide");
@@ -119,7 +119,6 @@ PyInit__pyodide_core(void)
 
   success = true;
 finally:
-  Py_CLEAR(_pyodide);
   if (!success) {
     Py_CLEAR(core_module);
   }
