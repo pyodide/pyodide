@@ -137,7 +137,6 @@ export CFLAGS_BASE=\
 	$(DBGFLAGS) \
 	-fPIC \
 	-fwasm-exceptions \
-	-fdefer-ts \
 	-sSUPPORT_LONGJMP=wasm \
 	$(EXTRA_CFLAGS)
 
@@ -318,6 +317,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Werror=incompatible-pointer-types \
 	-Werror=unused-result \
 	-mreference-types \
+	-fdefer-ts \
 	-I$(PYTHONINCLUDE) \
 	-I$(PYTHONINCLUDE)/..
 
