@@ -59,15 +59,31 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 	echo '()<::>{' >> $@                       # zero argument argspec and start body
 	cat src/js/generated/_pyodide.out.js >> $@ # All of _pyodide.out.js is body
 	echo '}' >> $@                             # Close function body
+# This tail executes at module-evaluation time, including inside pthread
+# workers, where Pyodide's JS state does not exist. Skip init on workers.
+	echo 'var IS_PYODIDE_PTHREAD = typeof ENVIRONMENT_IS_PTHREAD !== "undefined" && ENVIRONMENT_IS_PTHREAD;' >> $@
 	cat src/core/stack_switching/stack_switching.out.js >> $@
 	cat src/core/pre.js >> $@                  # Execute pre.js too
-	echo "pyodide_js_init();" >> $@            # Then execute the function.
+	echo "if (!IS_PYODIDE_PTHREAD) pyodide_js_init();" >> $@ # Then execute the function.
 
 
 # Don't use ccache here because it does not support #embed properly.
 # https://github.com/ccache/ccache/discussions/1366
 src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat emsdk/emsdk/.complete
-	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
+	unset _EMCC_CCACHE && emcc --std=c23 $(PTHREAD_FLAG) -c $< -o $@
+
+# JSEvents needs _emscripten_run_callback_on_thread (native code in libhtml5)
+# under pthreads, but AUTO_NATIVE_LIBRARIES=0 keeps libhtml5 out of the link
+# and linking all of it (MAIN_MODULE links whole archives) drags in unwanted
+# JS library deps, so compile just the one file that defines it.
+ifdef PYODIDE_PTHREADS
+MAIN_MODULE_PTHREAD_OBJS=src/core/emscripten_html5_callback.o
+endif
+
+src/core/emscripten_html5_callback.o: emsdk/emsdk/.complete
+	emcc -pthread $(OPTFLAGS) \
+		-I emsdk/emsdk/upstream/emscripten/system/lib/libc \
+		-c emsdk/emsdk/upstream/emscripten/system/lib/html5/callback.c -o $@
 
 src/core/jsverror.wasm: src/core/jsverror.wat emsdk/emsdk/.complete
 	./emsdk/emsdk/upstream/bin/wasm-as $< -o $@ -all
@@ -109,6 +125,7 @@ $(CPYTHONINSTALL)/.installed-pyodide: $(CPYTHONINSTALL)/include/pyodide/.install
 dist/pyodide.asm.mjs: \
 	dist \
 	src/core/main.o  \
+	$(MAIN_MODULE_PTHREAD_OBJS) \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB) \
 	$(CPYTHONINSTALL)/.installed-pyodide
@@ -116,8 +133,8 @@ dist/pyodide.asm.mjs: \
 	@date +"[%F %T] Building pyodide.asm.mjs..."
    # TODO(ryanking13): Link libgl to a side module not to the main module.
    # For unknown reason, a side module cannot see symbols when libGL is linked to it.
-	embuilder build libgl
-	$(CXX) -o dist/pyodide.asm.mjs -lpyodide src/core/main.o $(MAIN_MODULE_LDFLAGS)
+	embuilder build $(if $(PYODIDE_PTHREADS),libGL-mt-getprocaddr,libgl)
+	$(CXX) -o dist/pyodide.asm.mjs -lpyodide src/core/main.o $(MAIN_MODULE_PTHREAD_OBJS) $(MAIN_MODULE_LDFLAGS)
 
 	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
 		cd dist && npx prettier -w pyodide.asm.mjs ; \

@@ -1,0 +1,39 @@
+From: Pyodide pthreads prototype <pyodide@pyodide.org>
+Date: Thu, 11 Jun 2026 00:00:00 +0000
+Subject: [PATCH] Disable the wasm-gc call trampoline in pthreads builds
+
+The wasm-gc trampoline function pointer is created with addFunction on
+the main thread. Every pthread has its own WebAssembly.Table and
+Emscripten only mirrors dlopen'd libraries between thread tables, not
+addFunction entries, so the table index stored in (shared)
+_PyRuntimeState is out of bounds on worker threads: the first Python
+call on a spawned thread crashes with "RuntimeError: table index is out
+of bounds" in _PyEM_TrampolineCall. Instantiating the trampoline module
+would also fail on the main thread because its hardcoded memory import
+is not declared shared ("mismatch in shared state of memory").
+
+Fall back to the JS trampoline when wasmMemory is a SharedArrayBuffer;
+it resolves the function pointer through the calling thread's own table.
+
+---
+--- a/Python/emscripten_trampoline.c	2026-06-11 01:07:43
++++ b/Python/emscripten_trampoline.c	2026-06-11 01:07:43
+@@ -55,6 +55,18 @@
+ }
+ // Try to compile wasm-gc trampoline if possible.
+ function getPyEMTrampolinePtr() {
++    // In pthreads builds the trampoline must not be used: the function
++    // pointer is created with addFunction on the main thread, but every
++    // pthread has its own WebAssembly.Table, and addFunction entries are not
++    // mirrored to other threads (only dlopen'd libraries are synced). The
++    // table index stored in _PyRuntimeState would be out of bounds on worker
++    // threads. Also, instantiating the trampoline module would fail anyway
++    // because its memory import is not declared shared. Fall back to the JS
++    // trampoline, which resolves func through the calling thread's own table.
++    if (typeof SharedArrayBuffer !== "undefined" && wasmMemory
++        && wasmMemory.buffer instanceof SharedArrayBuffer) {
++        return 0;
++    }
+     // Starting with iOS 18.3.1, WebKit on iOS has an issue with the garbage
+     // collector that breaks the call trampoline. See #130418 and
+     // https://bugs.webkit.org/show_bug.cgi?id=293113 for details.

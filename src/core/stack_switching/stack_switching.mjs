@@ -36,6 +36,8 @@ Module.newJspiSupported = newJspiSupported;
 Module.oldJspiSupported = oldJspiSupported;
 Module.jspiSupported = jspiSupported;
 
-if (jspiSupported) {
+// Module.preRun is undefined in pthread workers; suspenders are
+// main-thread-only anyways.
+if (jspiSupported && Module.preRun) {
   Module.preRun.push(initSuspenders);
 }
