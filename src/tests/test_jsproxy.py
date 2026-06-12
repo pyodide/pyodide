@@ -2789,7 +2789,7 @@ async def test_js_proxy_str(selenium):
 
 @run_in_pyodide
 def test_bind_jsfunc_sig(selenium):
-    from _pyodide.jsbind import func_to_sig_inner
+    from _pyodide.jsbind import _func_to_sig_inner
 
     def f(
         a: dict[str, int],
@@ -2798,7 +2798,7 @@ def test_bind_jsfunc_sig(selenium):
         raise NotImplementedError
 
     assert (
-        repr(func_to_sig_inner(f, None))
+        repr(_func_to_sig_inner(f, None))
         == "<JsSignature (a: dict[str, int], /) -> list[int]>"
     )
 

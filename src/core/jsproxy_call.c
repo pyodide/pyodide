@@ -377,9 +377,9 @@ JsMethod_Vectorcall_impl(JsVal func,
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" while calling a JavaScript object"));
   if (sig) {
-    _Py_IDENTIFIER(func_to_sig);
+    _Py_IDENTIFIER(_func_to_sig);
     call_sig = (JsFuncSignature*)_PyObject_CallMethodIdOneArg(
-      jsbind, &PyId_func_to_sig, sig);
+      jsbind, &PyId__func_to_sig, sig);
     FAIL_IF_NULL(call_sig);
   }
   if (Py_IsNone((PyObject*)call_sig)) {
