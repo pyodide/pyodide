@@ -119,6 +119,19 @@ finally:
 static JsVal
 _python2js_long(PyObject* x)
 {
+  int overflow;
+  long x_long = PyLong_AsLongAndOverflow(x, &overflow);
+  if (x_long == -1 && !overflow) {
+    FAIL_IF_ERR_OCCURRED();
+  }
+  if (!overflow) {
+    // On wasm32, long is 32 bits, so any non-overflowing value is a safe JS
+    // integer. Return it directly, avoiding a BigInt allocation and the extra
+    // EM_JS crossing performed by Jsv_BigIntToNum.
+    return JsvNum_fromInt(x_long);
+  }
+  // Overflow: fall back to the full bigint conversion then narrow to a Number
+  // if it is small enough.
   JsVal res = _python2js_bigint(x);
   FAIL_IF_JS_ERROR(res);
   return Jsv_BigIntToNum(res);
