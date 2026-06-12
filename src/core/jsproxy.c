@@ -544,8 +544,8 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
 
   bool success = false;
   JsVal jsresult = JS_ERROR;
-  PyObject* get_attr_sig_res = NULL;
-  PyObject* attr_sig = NULL;
+  DECLARE_PY_OBJECT(get_attr_sig_res);
+  DECLARE_PY_OBJECT(attr_sig);
   // result:
   PyObject* pyresult = NULL;
 
@@ -606,7 +606,7 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
     method_call_singleton->func = hiwire_new(jsresult);
     method_call_singleton->this_ = JsProxy_REF(self);
     hiwire_incref(method_call_singleton->this_);
-    method_call_singleton->signature = Py_NewRef(attr_sig);
+    method_call_singleton->signature = Py_XNewRef(attr_sig);
     goto success;
   }
   if (JsvFunction_Check(jsresult)) {
@@ -623,8 +623,6 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
 success:
   success = true;
 finally:
-  Py_CLEAR(attr_sig);
-  Py_CLEAR(get_attr_sig_res);
   if (!success) {
     Py_CLEAR(pyresult);
   }
