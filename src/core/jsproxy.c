@@ -1171,7 +1171,7 @@ _agen_handle_result_js_c(PyObject* set_result,
   if (status == 0) {
     PyObject_CallOneArg(set_result, pyvalue);
     // Not sure what to do if there is an error here...
-    goto finally;
+    return;
   }
 
   if (status == 1) {
@@ -1198,15 +1198,12 @@ return_error:
   if (closing && (PyErr_GivenExceptionMatches(e, PyExc_StopAsyncIteration) ||
                   PyErr_GivenExceptionMatches(e, PyExc_GeneratorExit))) {
     PyObject_CallOneArg(set_result, Py_None);
-    goto finally;
+    return;
   }
 
   PyObject_CallOneArg(set_exception, e);
   // Don't know what to do if there was an error...
   PyErr_Clear();
-  goto finally;
-
-finally:;
 }
 
 // clang-format off
