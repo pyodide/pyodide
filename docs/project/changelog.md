@@ -17,6 +17,8 @@ myst:
 
 ## Unreleased
 
+- {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
+
 ## Version 314.0.0
 
 _June 09, 2026_
