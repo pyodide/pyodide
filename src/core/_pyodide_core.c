@@ -14,13 +14,8 @@
     } else {                                                                   \
       PyErr_Format(PyExc_ImportError, args);                                   \
     }                                                                          \
-    FAIL();                                                                    \
+    FAIL();                                                                   \
   } while (0)
-
-#define FAIL_IF_STATUS_EXCEPTION(status)                                       \
-  if (PyStatus_Exception(status)) {                                            \
-    goto finally;                                                              \
-  }
 
 #define TRY_INIT(mod)                                                          \
   do {                                                                         \
@@ -67,7 +62,7 @@ init_pyodide_proxy()
     // Emscripten 3.1.44 seems to have removed it??
     wasmImports["open64"] = wasmImports["open"];
   });
-  bool success = false;
+  FAIL_RETURN_VALUE(-1);
   // Enable JavaScript access to the _pyodide module.
   DECLARE_PY_OBJECT(_pyodide);
   _pyodide = PyImport_ImportModule("_pyodide");
@@ -76,18 +71,17 @@ init_pyodide_proxy()
   FAIL_IF_JS_ERROR(_pyodide_proxy);
   set_pyodide_module(_pyodide_proxy);
 
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
 
 EM_JS_DEPS(pyodide_core_deps, "stackAlloc,stackRestore,stackSave");
 PyObject*
 PyInit__pyodide_core(void)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(NULL);
   DECLARE_PY_OBJECT(_pyodide);
   PyObject* core_module = NULL;
+  ON_FAIL({ Py_CLEAR(core_module); });
 
   _pyodide = PyImport_ImportModule("_pyodide");
   if (_pyodide == NULL) {
@@ -117,10 +111,5 @@ PyInit__pyodide_core(void)
     FATAL_ERROR("Failed to create _pyodide proxy.");
   }
 
-  success = true;
-finally:
-  if (!success) {
-    Py_CLEAR(core_module);
-  }
   return core_module;
 }
