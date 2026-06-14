@@ -65,5 +65,7 @@ python2js_init(PyObject* core);
 
 extern PyObject* py_jsnull;
 extern PyObject* py_JsBigInt;
+extern PyObject* py_datetime_class;
+extern PyObject* py_timezone_utc;
 
 #endif /* PYTHON2JS_H */

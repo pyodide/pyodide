@@ -28,5 +28,6 @@ int
 js2python_init();
 
 extern int compat_null_to_none;
+extern int auto_convert_date;
 
 #endif /* JS2PYTHON_H */
