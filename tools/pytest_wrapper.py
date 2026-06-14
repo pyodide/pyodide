@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import os
+import platform
 import subprocess
 import sys
+import time
 
 args = sys.argv[1:]
 
@@ -24,6 +26,22 @@ def cache_dir(args: list[str]) -> None:
     return ".pytest_cache"
 
 
+def is_safari_run(args: list[str]) -> bool:
+    for arg in args:
+        if "safari" in arg.lower():
+            return True
+    return False
+
+
+def cleanup_safari() -> None:
+    if platform.system() != "Darwin":
+        return
+    print("Cleaning up Safari/safaridriver processes before retry...")
+    subprocess.run(["pkill", "-9", "Safari"], capture_output=True, check=False)
+    subprocess.run(["pkill", "-9", "safaridriver"], capture_output=True, check=False)
+    time.sleep(3)
+
+
 if __name__ == "__main__":
     try:
         subprocess.run([sys.executable, "-m", "pytest"] + args, check=True)
@@ -31,7 +49,6 @@ if __name__ == "__main__":
     except subprocess.CalledProcessError:
         pass
 
-    # Failed tests. Look up number of failed tests
     lastfailed_path = os.path.join(cache_dir(args), "v/cache/lastfailed")
     if not os.path.exists(lastfailed_path):
         print("Test failed during collection. Not rerunning.")
@@ -42,6 +59,9 @@ if __name__ == "__main__":
     if num_failed > 9:
         print("More than 9 tests failed. Not rerunning")
         sys.exit(1)
+
+    if is_safari_run(args):
+        cleanup_safari()
 
     print("Rerunning failed tests sequentially")
     remove_num_threads_option(args)
