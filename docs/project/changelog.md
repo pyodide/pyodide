@@ -18,6 +18,8 @@ myst:
 ## Unreleased
 
 
+- {{ Performance }} Sped up conversion of ASCII strings from Python to JavaScript using TextDecoder. {pr}`6283`
+
 - {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
 
 - {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
