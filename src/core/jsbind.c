@@ -42,7 +42,8 @@ Py2JsConverter_copy(PyObject* self, PyObject* _unused)
   if (result == NULL) {
     return NULL;
   }
-  Py2JsConverter_pre_convert(result) = Py2JsConverter_pre_convert(self);
+  Py2JsConverter_pre_convert(result) =
+    Py_XNewRef(Py2JsConverter_pre_convert(self));
   return result;
 }
 
@@ -172,7 +173,12 @@ static PyObject*
 Js2PyConverter_copy(PyObject* self, PyObject* _unused)
 {
   PyObject* result = Js2PyConverter_cnew(Js2PyConverter_converter(self));
-  Js2PyConverter_post_convert(result) = Js2PyConverter_post_convert(self);
+  if (result == NULL) {
+    return NULL;
+  }
+  Js2PyConverter_post_convert(result) =
+    Py_XNewRef(Js2PyConverter_post_convert(self));
+  Js2PyConverter_extra(result) = Py_XNewRef(Js2PyConverter_extra(self));
   return result;
 }
 
