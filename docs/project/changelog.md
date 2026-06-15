@@ -17,11 +17,11 @@ myst:
 
 - {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
 
+- {{ Performance }} Sped up PyProxy creation. {pr}`6280`
 
 - {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
 
 - {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
-
 
 ## Version 314.0.0
 
