@@ -1914,6 +1914,15 @@ def test_mappings(selenium):
     m.update({6: 7, 8: 9})
     assert dict(m) == {1: 8, 3: 4, 4: None, 6: 7, 8: 9}
 
+    # update() must also apply keyword arguments, including alongside a
+    # positional argument.
+    m.update(a=10)
+    assert m["a"] == 10
+    m.update({"b": 11}, c=12)
+    assert m["b"] == 11
+    assert m["c"] == 12
+    del m["a"], m["b"], m["c"]
+
     assert m.popitem() in set({1: 8, 3: 4, 4: None, 6: 7, 8: 9}.items())
     assert len(m) == 4
     m.clear()
