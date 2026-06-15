@@ -18,6 +18,10 @@ myst:
 ## Unreleased
 
 
+- {{ Fix }} Deserialized JavaScript errors now keep their original type
+  (`TypeError`, `RangeError`, etc.) instead of always becoming a plain `Error`.
+  {pr}`6291`
+
 - {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
 
 - {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
