@@ -423,9 +423,10 @@ JsMethod_Construct_impl(JsVal func,
   _Defer
   {
     Py_LeaveRecursiveCall(/* " in JsMethod_Construct" */);
-    Js_static_string(msg,
-                     "This borrowed proxy was automatically destroyed. Try using "
-                     "create_proxy or create_once_callable.");
+    Js_static_string(
+      msg,
+      "This borrowed proxy was automatically destroyed. Try using "
+      "create_proxy or create_once_callable.");
     destroy_proxies(proxies, &msg);
   };
 

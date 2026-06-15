@@ -14,7 +14,7 @@
     } else {                                                                   \
       PyErr_Format(PyExc_ImportError, args);                                   \
     }                                                                          \
-    FAIL();                                                                   \
+    FAIL();                                                                    \
   } while (0)
 
 #define TRY_INIT(mod)                                                          \

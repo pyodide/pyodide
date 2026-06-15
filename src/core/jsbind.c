@@ -602,16 +602,16 @@ add_js2py_converter(PyObject* core_mod,
 }
 
 #define ADD_TYPE(type)                                                         \
-  FAIL_IF_MINUS_ONE(PyType_Ready(&type##Type));                               \
-  FAIL_IF_MINUS_ONE(                                                          \
+  FAIL_IF_MINUS_ONE(PyType_Ready(&type##Type));                                \
+  FAIL_IF_MINUS_ONE(                                                           \
     PyObject_SetAttrString(core_mod, #type, (PyObject*)&type##Type));
 
 #define ADD_PY2JS(name)                                                        \
-  FAIL_IF_MINUS_ONE(                                                          \
+  FAIL_IF_MINUS_ONE(                                                           \
     add_py2js_converter(core_mod, "py2js_" #name, Py2Js_func_##name))
 
 #define ADD_JS2PY(name)                                                        \
-  FAIL_IF_MINUS_ONE(                                                          \
+  FAIL_IF_MINUS_ONE(                                                           \
     add_js2py_converter(core_mod, "js2py_" #name, Js2Py_func_##name))
 
 PyObject* jsbind = NULL;

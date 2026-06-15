@@ -104,11 +104,11 @@ _python2js_bigint(PyObject* x)
       size_t ndigits = (nbits >> 5) + 1;
       unsigned int digits[ndigits];
       FAIL_IF_MINUS_ONE(_PyLong_AsByteArray((PyLongObject*)x,
-                                             (unsigned char*)digits,
-                                             4 * ndigits,
-                                             true /* little endian */,
-                                             true /* signed */,
-                                             true /* with_exceptions */));
+                                            (unsigned char*)digits,
+                                            4 * ndigits,
+                                            true /* little endian */,
+                                            true /* signed */,
+                                            true /* with_exceptions */));
       return JsvBigInt_fromDigits(digits, ndigits);
     }
   }
@@ -354,7 +354,7 @@ _python2js_set(ConversionContext* context, PyObject* x)
 #define RETURN_IF_HAS_VALUE(x)                                                 \
   do {                                                                         \
     JsVal _fresh_result = x;                                                   \
-    FAIL_IF_JS_ERROR(_fresh_result);                                          \
+    FAIL_IF_JS_ERROR(_fresh_result);                                           \
     if (!JsvNoValue_Check(_fresh_result)) {                                    \
       return _fresh_result;                                                    \
     }                                                                          \

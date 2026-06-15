@@ -175,12 +175,12 @@ console_error_obj(JsVal obj);
  * Failure apparatus.
  *
  * Error handling returns directly rather than jumping to a cleanup label. Use
- * `FAIL_RETURN_VALUE(val)` as the first statement of the function body (before any
- * DECLARE_PY_OBJECT / _Defer): it declares `fail_return` (the error sentinel
- * returned by FAIL) and a `success` flag (starts true, set false by FAIL) that
- * deferred cleanup blocks can branch on. Resource cleanup must be handled by
- * _Defer blocks, which run on every return (including the early returns
- * performed by FAIL).
+ * `FAIL_RETURN_VALUE(val)` as the first statement of the function body (before
+ * any DECLARE_PY_OBJECT / _Defer): it declares `fail_return` (the error
+ * sentinel returned by FAIL) and a `success` flag (starts true, set false by
+ * FAIL) that deferred cleanup blocks can branch on. Resource cleanup must be
+ * handled by _Defer blocks, which run on every return (including the early
+ * returns performed by FAIL).
  *
  * FAIL() -- set success = false and return the error sentinel `fail_return`.
  * FAIL_IF_NULL(ref) -- FAIL() if ref == NULL
