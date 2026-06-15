@@ -18,6 +18,9 @@ myst:
 ## Unreleased
 
 
+- {{ Fix }} `loadPyodide()` now rejects with the underlying error if WebAssembly
+  instantiation fails, instead of hanging forever. {pr}`6296`
+
 - {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
 
 - {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`

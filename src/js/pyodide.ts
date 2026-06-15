@@ -372,7 +372,13 @@ async function instantiatePyodideModule(
   createPyodideModule: CreatePyodideModuleFn,
   emscriptenSettings: EmscriptenSettings,
 ): Promise<PyodideModule> {
-  const module = await createPyodideModule(emscriptenSettings);
+  const modulePromise = createPyodideModule(emscriptenSettings);
+  // If wasm instantiation fails asynchronously, modulePromise never settles, so
+  // race it against the failure promise to surface the error instead of hanging.
+  const instantiateWasmFailed = emscriptenSettings.API._instantiateWasmFailed;
+  const module = await (instantiateWasmFailed
+    ? Promise.race([modulePromise, instantiateWasmFailed])
+    : modulePromise);
 
   // Handle early exit
   if (emscriptenSettings.exitCode !== undefined) {

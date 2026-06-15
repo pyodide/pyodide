@@ -70,7 +70,7 @@ export function createSettings(
     // means dependency resolution has already failed and we want to throw an
     // error anyways.
     locateFile: (path: string) => config.indexURL + path,
-    instantiateWasm: getInstantiateWasmFunc(config.indexURL),
+    instantiateWasm: getInstantiateWasmFunc(config.indexURL, API),
   };
   return settings;
 }
@@ -193,6 +193,7 @@ function getFileSystemInitializationFuncs(
 
 function getInstantiateWasmFunc(
   indexURL: string,
+  API: API,
 ): EmscriptenSettings["instantiateWasm"] {
   // @ts-ignore
   if (SOURCEMAP || typeof WasmOffsetConverter !== "undefined") {
@@ -207,6 +208,14 @@ function getInstantiateWasmFunc(
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
   const jsvErrorImportPromise = getJsvErrorImport();
+  // Emscripten wraps instantiateWasm in a Promise but only exposes its resolve
+  // (as successCallback) — there is no failure callback. If we just swallow an
+  // instantiation error, that Promise never settles and loadPyodide hangs
+  // forever. Expose a promise that rejects on failure so loadPyodide can reject.
+  let rejectFailure: (e: any) => void;
+  API._instantiateWasmFailed = new Promise<never>((_resolve, reject) => {
+    rejectFailure = reject;
+  });
   return function (
     imports: { [key: string]: { [key: string]: any } },
     successCallback: (
@@ -231,6 +240,7 @@ function getInstantiateWasmFunc(
       } catch (e) {
         console.warn("wasm instantiation failed!");
         console.warn(e);
+        rejectFailure(e);
       }
     })();
 

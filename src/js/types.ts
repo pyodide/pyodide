@@ -498,6 +498,10 @@ export interface API {
   capture_stderr: () => void;
   restore_stderr: () => string;
   fatal_loading_error: (...args: string[]) => never;
+  // Rejects if the asynchronous Module.instantiateWasm callback fails. Emscripten
+  // gives the callback no way to report failure, so we surface it here instead of
+  // letting loadPyodide hang forever. @private
+  _instantiateWasmFailed?: Promise<never>;
   PythonError: any;
   NoGilError: any;
   errorConstructors: Map<string, ErrorConstructor>;
