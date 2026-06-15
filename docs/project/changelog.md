@@ -18,6 +18,9 @@ myst:
 ## Unreleased
 
 
+- {{ Fix }} Fixed memory leaks of internal `JsFuncSignature` and `Buffer`
+  objects, whose deallocators never freed the object itself. {pr}`6293`
+
 - {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
 
 - {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
