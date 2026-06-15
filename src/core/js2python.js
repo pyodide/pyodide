@@ -6,14 +6,38 @@ function js2python_string(value) {
   // to determine if is needs to be a 1-, 2- or 4-byte string, since
   // Python handles all 3.
   let max_code_point = 0;
-  const code_points = [];
-  for (let c of value) {
-    let code_point = c.codePointAt(0);
-    code_points.push(code_point);
+  // `value.length` counts UTF-16 code units, which is an upper bound on the
+  // number of code points (a surrogate pair is two units but one code point),
+  // so a typed array of that length is large enough to hold every code point.
+  const length = value.length;
+  const code_points = new Uint32Array(length);
+  let num_code_points = 0;
+  for (let i = 0; i < length; i++) {
+    const unit = value.charCodeAt(i);
+    let code_point;
+    // A high surrogate (0xD800-0xDBFF) followed by a low surrogate
+    // (0xDC00-0xDFFF) is a surrogate pair encoding a single code point. We
+    // combine them with the standard UTF-16 decoding formula and then skip
+    // the trailing low surrogate. Lone surrogates (high without a following
+    // low, or a low surrogate) are left as-is as their bare code-unit value,
+    // matching the behavior of the previous string-iterator implementation.
+    // See:
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/charCodeAt
+    if (unit >= 0xd800 && unit <= 0xdbff) {
+      const next = value.charCodeAt(i + 1);
+      if (next >= 0xdc00 && next <= 0xdfff) {
+        code_point = (unit - 0xd800) * 0x400 + (next - 0xdc00) + 0x10000;
+        i++;
+      } else {
+        code_point = unit;
+      }
+    } else {
+      code_point = unit;
+    }
+    code_points[num_code_points++] = code_point;
     max_code_point = code_point > max_code_point ? code_point : max_code_point;
   }
 
-  let num_code_points = code_points.length;
   let result = _PyUnicode_New(num_code_points, max_code_point);
   if (result === 0) {
     throw new PropagateError();

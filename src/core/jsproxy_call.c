@@ -155,8 +155,8 @@ JsFuncSignature_repr(PyObject* o)
 {
   JsFuncSignature* self = (JsFuncSignature*)o;
   PyObject* result = NULL;
-  PyObject* inspect = NULL;
-  PyObject* sig = NULL;
+  DECLARE_PY_OBJECT(inspect);
+  DECLARE_PY_OBJECT(sig);
 
   inspect = PyImport_ImportModule("inspect");
   FAIL_IF_NULL(inspect);
@@ -167,8 +167,6 @@ JsFuncSignature_repr(PyObject* o)
   FAIL_IF_NULL(result);
 
 finally:
-  Py_CLEAR(inspect);
-  Py_CLEAR(sig);
   return result;
 }
 

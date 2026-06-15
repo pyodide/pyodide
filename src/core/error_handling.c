@@ -148,16 +148,16 @@ EMSCRIPTEN_KEEPALIVE JsVal
 wrap_exception()
 {
   bool success = false;
-  PyObject* exc = NULL;
-  PyObject* typestr = NULL;
+  DECLARE_PY_OBJECT(exc);
+  DECLARE_PY_OBJECT(typestr);
 
   exc = PyErr_GetRaisedException();
 
   if (PyErr_GivenExceptionMatches(exc, PyExc_ModuleNotFoundError)) {
-    PyObject* res = _PyObject_CallMethodIdOneArg(
+    DECLARE_PY_OBJECT(res);
+    res = _PyObject_CallMethodIdOneArg(
       _pyodide_importhook, &PyId_add_note_to_module_not_found_error, exc);
     FAIL_IF_NULL(res);
-    Py_CLEAR(res);
   }
 
   capture_stderr();
@@ -206,8 +206,6 @@ finally:
     Js_static_string(msg, "Error occurred while formatting traceback");
     jserror = new_error("PyodideInternalError", JsvString_FromId(&msg), 0);
   }
-  Py_CLEAR(exc);
-  Py_CLEAR(typestr);
   return jserror;
 }
 
@@ -261,7 +259,7 @@ int
 error_handling_init(PyObject* core_module)
 {
   bool success = false;
-  PyObject* _pyodide_core_docs = NULL;
+  DECLARE_PY_OBJECT(_pyodide_core_docs);
 
   _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(_pyodide_core_docs);
@@ -281,6 +279,5 @@ error_handling_init(PyObject* core_module)
 
   success = true;
 finally:
-  Py_CLEAR(_pyodide_core_docs);
   return success ? 0 : -1;
 }

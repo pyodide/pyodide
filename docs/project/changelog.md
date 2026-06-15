@@ -19,6 +19,10 @@ myst:
 
 - {{ Performance }} Sped up PyProxy creation. {pr}`6280`
 
+- {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
+
+- {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
+
 ## Version 314.0.0
 
 _June 09, 2026_
@@ -60,6 +64,12 @@ _June 09, 2026_
 - {{ Feature }} The `compression.zstd` module (new in CPython 3.14) is now bundled in
   Pyodide, providing native zstd compression and decompression support via `_zstd`.
   {pr}`6240`
+
+- {{ Fix }} Stack switching used to sometimes leak stack memory, this is now
+  fixed. As a side effect, `callPromising()` and `runPythonAsync()` now always
+  yields to the event loop once before Python begins executing, so the ordering
+  of such calls may change.
+  {pr}`6260`
 
 ### Python API
 
@@ -119,12 +129,6 @@ _May 7, 2026_
 - {{ Fix }} Fixed a bug where Python strings that contained codepoints above
   0x00FF would be corrupted when read from JavaScript when they were located at
   a WebAssembly memory address above 2GB. {pr}`6217`
-
-- {{ Fix }} Stack switching used to sometimes leak stack memory, this is now
-  fixed. As a side effect, `callPromising()` and `runPythonAsync()` now always
-  yields to the event loop once before Python begins executing, so the ordering
-  of such calls may change.
-  {pr}`6260`
 
 ## Version 0.29.3
 
