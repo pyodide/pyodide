@@ -18,6 +18,9 @@ myst:
 ## Unreleased
 
 
+- {{ Fix }} `SSLSocket.read()` no longer raises `TypeError` when called with a
+  buffer argument. {pr}`6295`
+
 - {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
 
 - {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
