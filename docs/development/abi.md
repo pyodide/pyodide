@@ -45,7 +45,7 @@ platform instead of the PyEmscripten platform (and used the form
 
 ### Platform Versions
 
-- [pyemscripten_2026_0](abi/314.md) (Python 3.14, under development)
+- [pyemscripten_2026_0](abi/314.md) (Python 3.14)
 - [pyemscripten_2025_0](abi/313.md) (Python 3.13)
 - [pyemscripten_2024_0](abi/312.md) (Python 3.12)
 
