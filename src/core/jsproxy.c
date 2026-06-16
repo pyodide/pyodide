@@ -3474,6 +3474,7 @@ Buffer_dealloc(PyObject* self)
 {
   PyMem_Free(((Buffer*)self)->data);
   ((Buffer*)self)->data = NULL;
+  Py_TYPE(self)->tp_free(self);
 }
 
 static int
@@ -3657,7 +3658,7 @@ JsBuffer_CopyIntoMemoryView(JsVal jsbuffer,
   Buffer* buffer = NULL;
   PyObject* result = NULL;
 
-  buffer = (Buffer*)BufferType.tp_alloc(&BufferType, byteLength);
+  buffer = (Buffer*)BufferType.tp_alloc(&BufferType, 0);
   FAIL_IF_NULL(buffer);
   FAIL_IF_MINUS_ONE(Buffer_cinit(buffer, byteLength, format, itemsize));
   FAIL_IF_MINUS_ONE(JsvBuffer_assignToPtr(jsbuffer, buffer->data));
