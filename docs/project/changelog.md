@@ -19,6 +19,10 @@ myst:
 
 - {{ Performance }} Sped up PyProxy creation. {pr}`6280`
 
+- {{ Fix }} `PyodideFuture.then()` and `finally_()` no longer hang when the
+  source future is cancelled; the cancellation now propagates to the chained
+  future. {pr}`6290`
+
 - {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
 
 - {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`

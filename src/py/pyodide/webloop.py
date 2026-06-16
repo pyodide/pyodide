@@ -106,6 +106,11 @@ class PyodideFuture(Future[T]):
                 raise x
 
         async def callback(fut: Future[T]) -> None:
+            if fut.cancelled():
+                # Propagate cancellation rather than calling fut.exception(),
+                # which would raise CancelledError and leave result pending.
+                result.cancel()
+                return
             e = fut.exception()
             try:
                 if e:
@@ -146,7 +151,6 @@ class PyodideFuture(Future[T]):
         result: PyodideFuture[T] = PyodideFuture()
 
         async def callback(fut: Future[T]) -> None:
-            exc = fut.exception()
             try:
                 r = onfinally()
                 while inspect.isawaitable(r):
@@ -154,7 +158,11 @@ class PyodideFuture(Future[T]):
             except Exception as e:
                 result.set_exception(e)
                 return
-            if exc:
+            # Read the outcome only after onfinally ran: fut.exception() raises
+            # if fut was cancelled, so check cancellation explicitly first.
+            if fut.cancelled():
+                result.cancel()
+            elif (exc := fut.exception()) is not None:
                 result.set_exception(exc)
             else:
                 result.set_result(fut.result())

@@ -356,6 +356,28 @@ async def test_pyodide_future():
         pass
     assert rf.exception() == e
 
+    # Cancelling the source future must propagate to chained futures rather
+    # than leaving them pending forever (gh-XXXX).
+    fut = PyodideFuture()
+    rf = fut.then(increment)
+    fut.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await rf
+
+    ran = 0
+
+    def incran():
+        nonlocal ran
+        ran += 1
+
+    fut = PyodideFuture()
+    rf = fut.finally_(incran)
+    fut.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await rf
+    # finally_ still runs on cancellation, then propagates the cancellation.
+    assert ran == 1
+
 
 @run_in_pyodide
 async def test_pyodide_future2(selenium):
