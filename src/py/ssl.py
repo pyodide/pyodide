@@ -749,10 +749,9 @@ class SSLSocket(socket):
 
     def read(self, len=1024, buffer=None):
         if buffer is not None:
-            data = socket.recv(self, len)
-            n = len(data)
-            buffer[:n] = data
-            return n
+            # `len` shadows the builtin here, so read straight into the buffer
+            # instead of recv()-ing and measuring the result.
+            return socket.recv_into(self, buffer, len)
 
         return socket.recv(self, len)
 
