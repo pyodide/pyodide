@@ -129,7 +129,9 @@ JsFuncSignature_clear(PyObject* o)
 static void
 JsFuncSignature_dealloc(PyObject* self)
 {
+  PyObject_GC_UnTrack(self);
   JsFuncSignature_clear(self);
+  Py_TYPE(self)->tp_free(self);
 }
 
 static int
