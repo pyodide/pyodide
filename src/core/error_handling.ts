@@ -393,7 +393,7 @@ API.errorConstructors = new Map(
     globalThis.SystemError,
   ]
     .filter((x) => x)
-    .map((x) => [x.constructor.name, x]),
+    .map((x) => [x.name, x]),
 );
 
 API.deserializeError = function (name: string, message: string, stack: string) {
