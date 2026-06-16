@@ -332,6 +332,7 @@ export interface PyodideModule extends PythonModule {
   _compat_to_string_repr: number;
   _compat_null_to_none: number;
   _compat_dict_to_literalmap: number;
+  _auto_convert_date: number;
   js2python_convert: (
     obj: any,
     options: {
@@ -505,6 +506,7 @@ export interface API {
   setPyProxyToStringMethod: (useRepr: boolean) => void;
   setCompatNullToNone: (compat: boolean) => void;
   setCompatToJsLiteralMap: (compat: boolean) => void;
+  setAutoConvertDate: (enable: boolean) => void;
 
   _pyodide: any;
   pyodide_py: any;

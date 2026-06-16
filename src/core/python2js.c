@@ -1,6 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "python2js.h"
 #include "Python.h"
+#include "datetime.h"
 #include "docstring.h"
 #include "error_handling.h"
 #include "js2python.h"
@@ -254,6 +255,53 @@ _python2js_unicode(PyObject* x)
   }
 }
 
+// clang-format off
+EM_JS_VAL(JsVal, _python2js_date_from_ms, (double timestamp_ms), {
+  return new Date(timestamp_ms);
+});
+// clang-format on
+
+// clang-format off
+EM_JS_VAL(JsVal, _python2js_date_from_utc_components,
+(int year, int month, int day, int hour, int minute, int second, int ms), {
+  return new Date(Date.UTC(year, month - 1, day, hour, minute, second, ms));
+});
+// clang-format on
+
+static JsVal
+_python2js_datetime(PyObject* x)
+{
+  PyObject* ts_obj = NULL;
+  JsVal result = JS_ERROR;
+
+  int has_tz = PyDateTime_DATE_GET_TZINFO(x) != Py_None;
+
+  if (has_tz) {
+    ts_obj = PyObject_CallMethod(x, "timestamp", NULL);
+    if (ts_obj == NULL) {
+      goto finally;
+    }
+    double ts = PyFloat_AsDouble(ts_obj);
+    if (ts == -1.0 && PyErr_Occurred()) {
+      goto finally;
+    }
+    result = _python2js_date_from_ms(ts * 1000.0);
+  } else {
+    result = _python2js_date_from_utc_components(
+      PyDateTime_GET_YEAR(x),
+      PyDateTime_GET_MONTH(x),
+      PyDateTime_GET_DAY(x),
+      PyDateTime_DATE_GET_HOUR(x),
+      PyDateTime_DATE_GET_MINUTE(x),
+      PyDateTime_DATE_GET_SECOND(x),
+      PyDateTime_DATE_GET_MICROSECOND(x) / 1000);
+  }
+
+finally:
+  Py_CLEAR(ts_obj);
+  return result;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Container Converters
@@ -444,6 +492,9 @@ _python2js_immutable(PyObject* x)
     return _python2js_float(x);
   } else if (PyUnicode_Check(x)) {
     return _python2js_unicode(x);
+  } else if (auto_convert_date && py_datetime_class != NULL &&
+             Py_TYPE(x) == (PyTypeObject*)py_datetime_class) {
+    return _python2js_datetime(x);
   }
   return Jsv_novalue;
 }
@@ -1078,6 +1129,8 @@ static PyMethodDef methods[] = {
 
 PyObject* py_jsnull = NULL;
 PyObject* py_JsBigInt = NULL;
+PyObject* py_datetime_class = NULL;
+PyObject* py_timezone_utc = NULL;
 
 int
 python2js_init(PyObject* core)
@@ -1092,6 +1145,21 @@ python2js_init(PyObject* core)
   FAIL_IF_NULL(py_jsnull);
   py_JsBigInt = PyObject_GetAttrString(docstring_source, "JsBigInt");
   FAIL_IF_NULL(py_JsBigInt);
+
+  PyDateTime_IMPORT;
+  if (PyDateTimeAPI == NULL) {
+    FAIL();
+  }
+  PyObject* datetime_mod = PyImport_ImportModule("datetime");
+  FAIL_IF_NULL(datetime_mod);
+  py_datetime_class = PyObject_GetAttrString(datetime_mod, "datetime");
+  FAIL_IF_NULL(py_datetime_class);
+  PyObject* tz = PyObject_GetAttrString(datetime_mod, "timezone");
+  FAIL_IF_NULL(tz);
+  py_timezone_utc = PyObject_GetAttrString(tz, "utc");
+  FAIL_IF_NULL(py_timezone_utc);
+  Py_CLEAR(tz);
+  Py_CLEAR(datetime_mod);
 
   success = true;
 finally:

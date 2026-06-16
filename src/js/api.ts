@@ -60,6 +60,10 @@ API.setCompatNullToNone = function (compat: boolean): void {
   Module.HEAP8[Module._compat_null_to_none] = +compat;
 };
 
+API.setAutoConvertDate = function (enable: boolean): void {
+  Module.HEAP8[Module._auto_convert_date] = +enable;
+};
+
 /** @hidden */
 export type NativeFS = {
   syncfs: () => Promise<void>;
