@@ -23,6 +23,8 @@ myst:
 
 - {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
 
+- {{ Performance }} Sped up conversion of ASCII strings from Python to JavaScript using TextDecoder. {pr}`6283`
+
 - {{ Performance }} Sped up JsProxy operations by caching type flags. {pr}`6282`
 
 ## Version 314.0.0
