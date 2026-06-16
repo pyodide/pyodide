@@ -33,6 +33,9 @@ myst:
 - {{ Fix }} Fixed memory leaks of internal `JsFuncSignature` and `Buffer`
   objects, whose deallocators never freed the object itself. {pr}`6293`
 
+- {{ Fix }} `update()` on a JavaScript `Map` proxy now applies keyword
+  arguments instead of silently dropping them. {pr}`6292`
+
 - {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
 
 - {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
