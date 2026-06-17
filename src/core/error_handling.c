@@ -144,14 +144,14 @@ EM_JS(void, log_python_error, (JsVal jserror), {
  * WARNING: dereferencing the error pointer stored on the PythonError is a
  * use-after-free bug.
  */
-EMSCRIPTEN_KEEPALIVE JsVal
-wrap_exception()
+// Does the fallible work of wrap_exception. `exc` is borrowed. Returns a JS
+// error on success or JS_ERROR if something went wrong while formatting (in
+// which case wrap_exception builds a fallback error).
+static JsVal
+wrap_exception_inner(PyObject* exc)
 {
-  bool success = false;
-  DECLARE_PY_OBJECT(exc);
+  FAIL_RETURN_VALUE(JS_ERROR);
   DECLARE_PY_OBJECT(typestr);
-
-  exc = PyErr_GetRaisedException();
 
   if (PyErr_GivenExceptionMatches(exc, PyExc_ModuleNotFoundError)) {
     DECLARE_PY_OBJECT(res);
@@ -192,9 +192,17 @@ wrap_exception()
   log_python_error(jserror);
 #endif
 
-  success = true;
-finally:
-  if (!success) {
+  return jserror;
+}
+
+EMSCRIPTEN_KEEPALIVE JsVal
+wrap_exception()
+{
+  DECLARE_PY_OBJECT(exc);
+  exc = PyErr_GetRaisedException();
+
+  JsVal jserror = wrap_exception_inner(exc);
+  if (JsvError_Check(jserror)) {
     fail_test();
     PySys_WriteStderr(
       "Pyodide: Internal error occurred while formatting traceback:\n");
@@ -258,7 +266,7 @@ PyObject* conversion_error;
 int
 error_handling_init(PyObject* core_module)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(-1);
   DECLARE_PY_OBJECT(_pyodide_core_docs);
 
   _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
@@ -277,7 +285,5 @@ error_handling_init(PyObject* core_module)
   tbmod = PyImport_ImportModule("traceback");
   FAIL_IF_NULL(tbmod);
 
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }

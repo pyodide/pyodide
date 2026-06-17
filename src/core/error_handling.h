@@ -154,21 +154,46 @@ console_error_obj(JsVal obj);
  * EM_JS calls behave just like Python API calls when it comes to errors
  * So these can be used equally well for both cases.
  *
- * These all use "goto finally;" so any function that uses them must have
- * a finally label. Luckily, the compiler errors triggered byforgetting
- * this are usually quite clear.
+ * These all return the error sentinel directly, so any function that uses them
+ * must begin with a FAIL_RETURN_VALUE(sentinel) statement (which declares
+ * `fail_return` and the `success` flag). Resource cleanup is handled by _Defer
+ * blocks, which run on every return.
  *
  * We define a feature flag "DEBUG_F" that will use "console.error" to
  * report a message whenever these functions exit with error. This should
  * particularly help to track down problems when C code fails to handle
  * the error generated.
  *
- * FAIL() -- unconditionally goto finally; (but also log it with
+ * FAIL() -- set success = false and return fail_return (also logs with
  *           console.error if DEBUG_F is enabled)
  * FAIL_IF_NULL(ref) -- FAIL() if ref == NULL
  * FAIL_IF_MINUS_ONE(num) -- FAIL() if num == -1
- * FAIL_IF_ERR_OCCURRED(num) -- FAIL() if PyErr_Occurred()
+ * FAIL_IF_ERR_OCCURRED() -- FAIL() if PyErr_Occurred()
  */
+
+/**
+ * Failure apparatus.
+ *
+ * Error handling returns directly rather than jumping to a cleanup label. Use
+ * `FAIL_RETURN_VALUE(val)` as the first statement of the function body (before
+ * any DECLARE_PY_OBJECT / _Defer): it declares `fail_return` (the error
+ * sentinel returned by FAIL) and a `success` flag (starts true, set false by
+ * FAIL) that deferred cleanup blocks can branch on. Resource cleanup must be
+ * handled by _Defer blocks, which run on every return (including the early
+ * returns performed by FAIL).
+ *
+ * FAIL() -- set success = false and return the error sentinel `fail_return`.
+ * FAIL_IF_NULL(ref) -- FAIL() if ref == NULL
+ * FAIL_IF_MINUS_ONE(num) -- FAIL() if num == -1
+ * FAIL_IF_NONZERO(num) -- FAIL() if num != 0
+ * FAIL_IF_ERR_OCCURRED() -- FAIL() if PyErr_Occurred()
+ * FAIL_IF_JS_ERROR(ref) -- FAIL() if the value is a JS error sentinel
+ */
+// Note: uses (!!1)/(!!0) rather than true/false because some files (e.g.
+// jslib.c) intentionally #undef true/false to use them as JS identifiers.
+#define FAIL_RETURN_VALUE(val)                                                 \
+  __auto_type fail_return = (val);                                             \
+  bool __attribute__((unused)) success = (!!1)
 
 #ifdef DEBUG_F
 #define FAIL()                                                                 \
@@ -181,19 +206,16 @@ console_error_obj(JsVal obj);
              __FILE__);                                                        \
     console_error(msg);                                                        \
     free(msg);                                                                 \
-    goto finally;                                                              \
+    success = (!!0);                                                           \
+    return fail_return;                                                        \
   } while (0)
-
 #else
-#define FAIL() goto finally
+#define FAIL()                                                                 \
+  do {                                                                         \
+    success = (!!0);                                                           \
+    return fail_return;                                                        \
+  } while (0)
 #endif
-
-#define DECLARE_PY_OBJECT(x)                                                   \
-  PyObject* x = NULL;                                                          \
-  _Defer                                                                       \
-  {                                                                            \
-    Py_CLEAR(x);                                                               \
-  }
 
 #define FAIL_IF_NULL(ref)                                                      \
   do {                                                                         \
@@ -229,5 +251,23 @@ console_error_obj(JsVal obj);
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
+
+#define DECLARE_PY_OBJECT(x)                                                   \
+  PyObject* x = NULL;                                                          \
+  _Defer                                                                       \
+  {                                                                            \
+    Py_CLEAR(x);                                                               \
+  }
+
+// Register cleanup that only runs on the failure path (i.e. when FAIL() was
+// hit and `success` is false). Place it after declaring the variables it
+// references. Usage: ON_FAIL({ Py_CLEAR(result); });
+#define ON_FAIL(...)                                                           \
+  _Defer                                                                       \
+  {                                                                            \
+    if (!success) {                                                            \
+      __VA_ARGS__                                                              \
+    }                                                                          \
+  }
 
 #endif // ERROR_HANDLING_H

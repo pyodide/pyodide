@@ -90,6 +90,7 @@ _python2js_float(PyObject* x)
 static JsVal
 _python2js_bigint(PyObject* x)
 {
+  FAIL_RETURN_VALUE(JS_ERROR);
   int overflow;
   long x_long = PyLong_AsLongAndOverflow(x, &overflow);
   if (x_long == -1) {
@@ -112,13 +113,12 @@ _python2js_bigint(PyObject* x)
     }
   }
   return JsvBigInt_fromInt(x_long);
-finally:
-  return JS_ERROR;
 }
 
 static JsVal
 _python2js_long(PyObject* x)
 {
+  FAIL_RETURN_VALUE(JS_ERROR);
   int overflow;
   long x_long = PyLong_AsLongAndOverflow(x, &overflow);
   if (x_long == -1 && !overflow) {
@@ -135,8 +135,6 @@ _python2js_long(PyObject* x)
   JsVal res = _python2js_bigint(x);
   FAIL_IF_JS_ERROR(res);
   return Jsv_BigIntToNum(res);
-finally:
-  return JS_ERROR;
 }
 
 // python2js string conversion
@@ -274,7 +272,7 @@ _python2js_unicode(PyObject* x)
 static JsVal
 _python2js_sequence(ConversionContext* context, PyObject* x)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(JS_ERROR);
 
   JsVal jsarray = JsvArray_New();
   FAIL_IF_MINUS_ONE(
@@ -295,9 +293,7 @@ _python2js_sequence(ConversionContext* context, PyObject* x)
       JsvArray_Push(jsarray, jsitem);
     }
   }
-  success = true;
-finally:
-  return success ? jsarray : JS_ERROR;
+  return jsarray;
 }
 
 /**
@@ -307,7 +303,7 @@ finally:
 static JsVal
 _python2js_dict(ConversionContext* context, PyObject* x)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(JS_ERROR);
   DECLARE_PY_OBJECT(items);
   DECLARE_PY_OBJECT(iter);
   DECLARE_PY_OBJECT(item);
@@ -358,9 +354,7 @@ _python2js_dict(ConversionContext* context, PyObject* x)
   }
   FAIL_IF_MINUS_ONE(
     _python2js_add_to_cache(hiwire_get(context->cache), x, jsdict));
-  success = true;
-finally:
-  return success ? jsdict : JS_ERROR;
+  return jsdict;
 }
 
 /**
@@ -376,7 +370,7 @@ finally:
 static JsVal
 _python2js_set(ConversionContext* context, PyObject* x)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(JS_ERROR);
   DECLARE_PY_OBJECT(iter);
   DECLARE_PY_OBJECT(pykey);
   // result:
@@ -400,9 +394,7 @@ _python2js_set(ConversionContext* context, PyObject* x)
   // Otherwise, we'd fail on the set that contains itself.
   FAIL_IF_MINUS_ONE(
     _python2js_add_to_cache(hiwire_get(context->cache), x, jsset));
-  success = true;
-finally:
-  return success ? jsset : JS_ERROR;
+  return jsset;
 }
 
 /**
@@ -476,6 +468,7 @@ python2js__default_converter(JsVal jscontext, PyObject* object);
 static JsVal
 _python2js_deep(ConversionContext* context, PyObject* x)
 {
+  FAIL_RETURN_VALUE(JS_ERROR);
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
   if (context->eager_converter) {
@@ -501,7 +494,6 @@ _python2js_deep(ConversionContext* context, PyObject* x)
     return pyproxy_new(x);
   }
   PyErr_SetString(conversion_error, "No conversion known for x.");
-finally:
   return JS_ERROR;
 }
 
@@ -549,6 +541,7 @@ EM_JS(JsVal, _python2js_cache_lookup, (JsVal cache, PyObject* pyparent), {
 EMSCRIPTEN_KEEPALIVE JsVal
 _python2js(ConversionContext *context, PyObject* x)
 {
+  FAIL_RETURN_VALUE(JS_ERROR);
   JsVal val = _python2js_cache_lookup(hiwire_get(context->cache), x);
   if (!JsvError_Check(val)) {
     return val;
@@ -570,8 +563,6 @@ _python2js(ConversionContext *context, PyObject* x)
     context->depth++;
     return result;
   }
-finally:
-  return JS_ERROR;
 }
 
 /**
@@ -582,6 +573,18 @@ finally:
 JsVal
 python2js_inner(PyObject* x, JsVal proxies, bool track_proxies, bool gc_register, bool is_json_adaptor)
 {
+  FAIL_RETURN_VALUE(JS_ERROR);
+  ON_FAIL({
+    if (PyErr_Occurred()) {
+      if (!PyErr_ExceptionMatches(conversion_error)) {
+        _PyErr_FormatFromCause(conversion_error,
+                               "Conversion from python to javascript failed");
+      }
+    } else {
+      fail_test();
+      PyErr_SetString(internal_error, "Internal error occurred in python2js");
+    }
+  });
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
   if (track_proxies && JsvError_Check(proxies)) {
@@ -594,17 +597,6 @@ python2js_inner(PyObject* x, JsVal proxies, bool track_proxies, bool gc_register
     JsvArray_Push(proxies, proxy);
   }
   return proxy;
-finally:
-  if (PyErr_Occurred()) {
-    if (!PyErr_ExceptionMatches(conversion_error)) {
-      _PyErr_FormatFromCause(conversion_error,
-                             "Conversion from python to javascript failed");
-    }
-  } else {
-    fail_test();
-    PyErr_SetString(internal_error, "Internal error occurred in python2js");
-  }
-  return JS_ERROR;
 }
 
 /**
@@ -915,6 +907,7 @@ to_js(PyObject* self,
       Py_ssize_t nargs,
       PyObject* kwnames)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* obj = NULL;
   int depth = -1;
   PyObject* pyproxies = NULL;
@@ -996,6 +989,18 @@ to_js(PyObject* self,
   if (py_eager_converter) {
     js_eager_converter = python2js(py_eager_converter);
   }
+  _Defer
+  {
+    if (pyproxy_Check(js_dict_converter)) {
+      destroy_proxy(js_dict_converter, NULL);
+    }
+    if (pyproxy_Check(js_default_converter)) {
+      destroy_proxy(js_default_converter, NULL);
+    }
+    if (pyproxy_Check(js_eager_converter)) {
+      destroy_proxy(js_eager_converter, NULL);
+    }
+  };
   JsVal js_result = python2js_custom(obj,
                                      depth,
                                      proxies,
@@ -1008,16 +1013,6 @@ to_js(PyObject* self,
     py_result = JsProxy_create(js_result);
   } else {
     py_result = js2python(js_result);
-  }
-finally:
-  if (pyproxy_Check(js_dict_converter)) {
-    destroy_proxy(js_dict_converter, NULL);
-  }
-  if (pyproxy_Check(js_default_converter)) {
-    destroy_proxy(js_default_converter, NULL);
-  }
-  if (pyproxy_Check(js_eager_converter)) {
-    destroy_proxy(js_eager_converter, NULL);
   }
   return py_result;
 }
@@ -1039,11 +1034,11 @@ EM_JS_NUM(errcode, destroy_proxies_js, (JsVal proxies_id), {
 static PyObject*
 destroy_proxies_(PyObject* self, PyObject* arg)
 {
+  FAIL_RETURN_VALUE(NULL);
   if (!JsProxy_Check(arg)) {
     PyErr_SetString(PyExc_TypeError, "Expected a JsProxy for the argument");
     return NULL;
   }
-  bool success = false;
 
   JsVal proxies = JsProxy_Val(arg);
   if (!JsvArray_Check(proxies)) {
@@ -1053,13 +1048,7 @@ destroy_proxies_(PyObject* self, PyObject* arg)
   }
   FAIL_IF_MINUS_ONE(destroy_proxies_js(proxies));
 
-  success = true;
-finally:
-  if (success) {
-    Py_RETURN_NONE;
-  } else {
-    return NULL;
-  }
+  Py_RETURN_NONE;
 }
 
 static PyMethodDef methods[] = {
@@ -1082,7 +1071,7 @@ PyObject* py_JsBigInt = NULL;
 int
 python2js_init(PyObject* core)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(-1);
   DECLARE_PY_OBJECT(docstring_source);
   docstring_source = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(docstring_source);
@@ -1093,7 +1082,5 @@ python2js_init(PyObject* core)
   py_JsBigInt = PyObject_GetAttrString(docstring_source, "JsBigInt");
   FAIL_IF_NULL(py_JsBigInt);
 
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
