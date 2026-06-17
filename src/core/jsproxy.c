@@ -329,12 +329,12 @@ JsProxy_clear(PyObject* self)
 static void
 JsProxy_dealloc(PyObject* self)
 {
-  FAIL_IF_MINUS_ONE(JsProxy_clear(self));
+  if (JsProxy_clear(self) == -1) {
+    printf("Internal Pyodide error Unraiseable error in JsProxy_dealloc:\n");
+    PyErr_Print();
+    return;
+  }
   Py_TYPE(self)->tp_free(self);
-  return;
-finally:
-  printf("Internal Pyodide error Unraiseable error in JsProxy_dealloc:\n");
-  PyErr_Print();
 }
 
 // attach a signature to a copy of the JsProxy.
@@ -355,6 +355,7 @@ static PyMethodDef JsProxy_bind_sig_MethodDef = {
 PyObject*
 JsProxy_bind_class(PyObject* self, PyObject* sig)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* result = NULL;
 
   // Call `sig = jsbind.bind_class_sig(sig)` and then delegate to
@@ -365,7 +366,6 @@ JsProxy_bind_class(PyObject* self, PyObject* sig)
   class_sig = _PyObject_CallMethodIdOneArg(jsbind, &PyId_bind_class_sig, sig);
   FAIL_IF_NULL(class_sig);
   result = JsProxy_bind_sig(self, class_sig);
-finally:
   return result;
 }
 
@@ -400,6 +400,7 @@ JsProxy_typeof(PyObject* self, void* _unused)
 static PyObject*
 JsProxy_js_id(PyObject* self, void* _unused)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* result = NULL;
 
   JsRef idval = JsProxy_REF(self);
@@ -407,7 +408,6 @@ JsProxy_js_id(PyObject* self, void* _unused)
   Py_hash_t result_c = Py_HashBuffer(x, 8);
   FAIL_IF_MINUS_ONE(result_c);
   result = PyLong_FromLong(result_c);
-finally:
   return result;
 }
 
@@ -555,17 +555,18 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
 static PyObject*
 JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* result = _PyObject_GenericGetAttrWithDict(self, attr, NULL, 1);
   if (result != NULL || PyErr_Occurred()) {
     return result;
   }
 
-  bool success = false;
   JsVal jsresult = JS_ERROR;
   DECLARE_PY_OBJECT(get_attr_sig_res);
   DECLARE_PY_OBJECT(attr_sig);
   // result:
   PyObject* pyresult = NULL;
+  ON_FAIL({ Py_CLEAR(pyresult); });
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
@@ -600,7 +601,7 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
     }
     if (got_converter) {
       pyresult = Js2PyConverter_convert(sig, jsresult, Jsv_null);
-      goto success;
+      return pyresult;
     }
     if (!Py_IsNone(sig)) {
       attr_sig = Py_XNewRef(sig);
@@ -611,7 +612,7 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
   if (pyproxy_Check(jsresult)) {
     pyresult = js2python(jsresult);
     FAIL_IF_NULL(pyresult);
-    goto success;
+    return pyresult;
   }
   if (is_method) {
     if (!JsvFunction_Check(jsresult)) {
@@ -625,7 +626,7 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
     method_call_singleton->this_ = JsProxy_REF(self);
     hiwire_incref(method_call_singleton->this_);
     method_call_singleton->signature = Py_XNewRef(attr_sig);
-    goto success;
+    return pyresult;
   }
   if (JsvFunction_Check(jsresult)) {
     pyresult =
@@ -638,12 +639,6 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
   }
   FAIL_IF_NULL(pyresult);
 
-success:
-  success = true;
-finally:
-  if (!success) {
-    Py_CLEAR(pyresult);
-  }
   return pyresult;
 }
 
@@ -669,7 +664,7 @@ EM_JS_NUM(errcode, JsProxy_DelAttr_js, (JsVal jsobj, const char* ptrkey), {
 static int
 JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(-1);
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
@@ -691,9 +686,7 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
     FAIL_IF_MINUS_ONE(JsProxy_SetAttr_js(JsProxy_VAL(self), key, jsvalue));
   }
 
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
 
 static PyObject*
@@ -752,11 +745,10 @@ EM_JS_VAL(JsVal, JsProxy_GetIter_js, (JsVal obj), {
 static PyObject*
 JsProxy_GetIter(PyObject* self)
 {
+  FAIL_RETURN_VALUE(NULL);
   JsVal iter = JsProxy_GetIter_js(JsProxy_VAL(self));
   FAIL_IF_JS_ERROR(iter);
   return js2python_objmap(iter, JsProxy_get_objmap_flags(self));
-finally:
-  return NULL;
 }
 
 // clang-format off
@@ -785,6 +777,7 @@ handle_next_result_js,
 
 PySendResult
 handle_next_result(JsVal next_res, PyObject** result, int objmap_flags){
+  FAIL_RETURN_VALUE(PYGEN_ERROR);
   PySendResult res = PYGEN_ERROR;
   char* msg = NULL;
   *result = NULL;
@@ -816,7 +809,6 @@ handle_next_result(JsVal next_res, PyObject** result, int objmap_flags){
   }
 
   res = done ? PYGEN_RETURN : PYGEN_NEXT;
-finally:
   return res;
 }
 
@@ -825,11 +817,18 @@ finally:
 PySendResult
 JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
 {
+  FAIL_RETURN_VALUE(PYGEN_ERROR);
   *result = NULL;
   PySendResult ret = PYGEN_ERROR;
 
   JsVal proxies = JsvArray_New();
   JsVal jsarg = Jsv_undefined;
+  _Defer
+  {
+    if (arg) {
+      destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
+    }
+  };
   if (arg) {
     jsarg = python2js_track_proxies(arg, proxies, true);
     FAIL_IF_JS_ERROR(jsarg);
@@ -838,10 +837,6 @@ JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
     JsvObject_CallMethodId_OneArg(JsProxy_VAL(self), &JsId_next, jsarg);
   FAIL_IF_JS_ERROR(next_res);
   ret = handle_next_result(next_res, result, JsProxy_get_objmap_flags(self));
-finally:
-  if (arg) {
-    destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
-  }
   return ret;
 }
 
@@ -889,6 +884,7 @@ JsException_reduce(PyObject* self, PyObject* Py_UNUSED(ignored))
 {
   // Record name, message, and stack.
   // See _core_docs.JsException._new_exc where the unpickling will happen.
+  FAIL_RETURN_VALUE(NULL);
   PyObject* res = NULL;
   DECLARE_PY_OBJECT(args);
   DECLARE_PY_OBJECT(name);
@@ -912,7 +908,6 @@ JsException_reduce(PyObject* self, PyObject* Py_UNUSED(ignored))
     res = PyTuple_Pack(2, Py_TYPE(self), args);
   }
 
-finally:
   return res;
 }
 
@@ -953,11 +948,10 @@ JsException_new(PyTypeObject* subtype, PyObject* args, PyObject* kwds)
         args, kwds, "s|ss:__new__", kwlist, &name, &message, &stack)) {
     return NULL;
   }
+  FAIL_RETURN_VALUE(NULL);
   JsVal result = JsException_new_helper(name, message, stack);
   FAIL_IF_JS_ERROR(result);
   return js2python(result);
-finally:
-  return NULL;
 }
 
 static int
@@ -1059,6 +1053,7 @@ JsGenerator_throw_inner(PyObject* self,
                         PyObject* val,
                         PyObject* tb)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* result = NULL;
   JsVal throw_res = process_throw_args(self, typ, val, tb);
   FAIL_IF_JS_ERROR(throw_res);
@@ -1071,7 +1066,6 @@ JsGenerator_throw_inner(PyObject* self,
     }
     Py_CLEAR(result);
   }
-finally:
   return result;
 }
 
@@ -1134,11 +1128,10 @@ EM_JS_VAL(JsVal, JsProxy_GetAsyncIter_js, (JsVal obj), {
 static PyObject*
 JsProxy_GetAsyncIter(PyObject* self)
 {
+  FAIL_RETURN_VALUE(NULL);
   JsVal iter = JsProxy_GetAsyncIter_js(JsProxy_VAL(self));
   FAIL_IF_JS_ERROR(iter);
   return js2python(iter);
-finally:
-  return NULL;
 }
 
 /**
@@ -1270,11 +1263,12 @@ _agen_handle_result_js,
 PyObject*
 _agen_handle_result(JsVal promise, bool closing)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(NULL);
   DECLARE_PY_OBJECT(loop);
   DECLARE_PY_OBJECT(set_result);
   DECLARE_PY_OBJECT(set_exception);
   PyObject* result = NULL;
+  ON_FAIL({ Py_CLEAR(result); });
 
   loop = _PyObject_CallMethodIdNoArgs(asyncio_mod, &PyId_get_event_loop);
   FAIL_IF_NULL(loop);
@@ -1298,21 +1292,23 @@ _agen_handle_result(JsVal promise, bool closing)
     FAIL();
   }
 
-  success = true;
-finally:
-  if (!success) {
-    Py_CLEAR(result);
-  }
   return result;
 }
 
 static PyObject*
 JsGenerator_asend(PyObject* self, PyObject* arg)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* result = NULL;
 
   JsVal proxies = JsvArray_New();
   JsVal jsarg = Jsv_undefined;
+  _Defer
+  {
+    if (arg) {
+      destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
+    }
+  };
   if (arg != NULL) {
     jsarg = python2js_track_proxies(arg, proxies, true);
     FAIL_IF_JS_ERROR(jsarg);
@@ -1322,10 +1318,6 @@ JsGenerator_asend(PyObject* self, PyObject* arg)
   FAIL_IF_JS_ERROR(next_res);
   result = _agen_handle_result(next_res, false);
 
-finally:
-  if (arg) {
-    destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
-  }
   return result;
 }
 
@@ -1352,13 +1344,13 @@ JsGenerator_athrow(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
     return NULL;
   }
 
+  FAIL_RETURN_VALUE(NULL);
   PyObject* result = NULL;
 
   JsVal throw_res = process_throw_args(self, typ, val, tb);
   FAIL_IF_JS_ERROR(throw_res);
   result = _agen_handle_result(throw_res, false);
 
-finally:
   return result;
 }
 
@@ -1371,13 +1363,13 @@ static PyMethodDef JsGenerator_athrow_MethodDef = {
 static PyObject*
 JsGenerator_aclose(PyObject* self, PyObject* ignored)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* result = NULL;
 
   JsVal throw_res = process_throw_args(self, PyExc_GeneratorExit, NULL, NULL);
   FAIL_IF_JS_ERROR(throw_res);
   result = _agen_handle_result(throw_res, true);
 
-finally:
   return result;
 }
 
@@ -1394,11 +1386,10 @@ static PyMethodDef JsGenerator_aclose_MethodDef = {
 static PyObject*
 JsProxy_object_entries(PyObject* self, PyObject* _args)
 {
+  FAIL_RETURN_VALUE(NULL);
   JsVal jsresult = JsvObject_Entries(JsProxy_VAL(self));
   FAIL_IF_JS_ERROR(jsresult);
   return JsProxy_create(jsresult);
-finally:
-  return NULL;
 }
 
 static PyMethodDef JsProxy_object_entries_MethodDef = {
@@ -1414,11 +1405,10 @@ static PyMethodDef JsProxy_object_entries_MethodDef = {
 static PyObject*
 JsProxy_object_keys(PyObject* self, PyObject* _args)
 {
+  FAIL_RETURN_VALUE(NULL);
   JsVal jsresult = JsvObject_Keys(JsProxy_VAL(self));
   FAIL_IF_JS_ERROR(jsresult);
   return JsProxy_create(jsresult);
-finally:
-  return NULL;
 }
 
 static PyMethodDef JsProxy_object_keys_MethodDef = {
@@ -1434,11 +1424,10 @@ static PyMethodDef JsProxy_object_keys_MethodDef = {
 static PyObject*
 JsProxy_object_values(PyObject* self, PyObject* _args)
 {
+  FAIL_RETURN_VALUE(NULL);
   JsVal jsresult = JsvObject_Values(JsProxy_VAL(self));
   FAIL_IF_JS_ERROR(jsresult);
   return JsProxy_create(jsresult);
-finally:
-  return NULL;
 }
 
 static PyMethodDef JsProxy_object_values_MethodDef = {
@@ -1541,11 +1530,11 @@ JsProxy_length(PyObject* self)
 static PyObject*
 JsProxy_item_array(PyObject* self, Py_ssize_t i)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* pyresult = NULL;
   JsVal jsresult = JsvArray_Get(JsProxy_VAL(self), i);
   FAIL_IF_JS_ERROR(jsresult);
   pyresult = js2python(jsresult);
-finally:
   return pyresult;
 }
 
@@ -1555,6 +1544,7 @@ finally:
 static PyObject*
 JsArray_subscript(PyObject* self, PyObject* item)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* pyresult = NULL;
 
   if (PyIndex_Check(item)) {
@@ -1574,7 +1564,7 @@ JsArray_subscript(PyObject* self, PyObject* item)
       FAIL();
     }
     pyresult = js2python_objmap(jsresult, JsProxy_get_objmap_flags(self));
-    goto success;
+    return pyresult;
   }
   if (PySlice_Check(item)) {
     Py_ssize_t start, stop, step;
@@ -1592,19 +1582,18 @@ JsArray_subscript(PyObject* self, PyObject* item)
     }
     FAIL_IF_JS_ERROR(jsresult);
     pyresult = js2python_objmap(jsresult, JsProxy_get_objmap_flags(self));
-    goto success;
+    return pyresult;
   }
   PyErr_Format(PyExc_TypeError,
                "list indices must be integers or slices, not %.200s",
                Py_TYPE(item)->tp_name);
-success:
-finally:
   return pyresult;
 }
 
 PyObject*
 JsArray_sq_item(PyObject* o, Py_ssize_t i)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* pyresult = NULL;
 
   JsVal jsresult = JsvArray_Get(JsProxy_VAL(o), i);
@@ -1616,30 +1605,26 @@ JsArray_sq_item(PyObject* o, Py_ssize_t i)
   }
   pyresult = js2python(jsresult);
   FAIL_IF_NULL(pyresult);
-finally:
   return pyresult;
 }
 
 Py_ssize_t
 JsArray_sq_ass_item(PyObject* o, Py_ssize_t i, PyObject* pyval)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(-1);
 
   if (pyval == NULL) {
     // Delete
     JsVal jsval = JsvArray_Delete(JsProxy_VAL(o), i);
     FAIL_IF_JS_ERROR(jsval);
-    success = true;
-    goto finally;
+    return 0;
   }
 
   JsVal jsval = python2js(pyval);
   FAIL_IF_JS_ERROR(jsval);
   FAIL_IF_MINUS_ONE(JsvArray_Set(JsProxy_VAL(o), i, jsval));
 
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
 
 Py_ssize_t
@@ -1672,7 +1657,7 @@ JsTypedArray_subscript(PyObject* o, PyObject* item)
 static int
 JsArray_ass_subscript(PyObject* self, PyObject* item, PyObject* pyvalue)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(-1);
   DECLARE_PY_OBJECT(seq);
   Py_ssize_t i;
   if (PySlice_Check(item)) {
@@ -1699,8 +1684,7 @@ JsArray_ass_subscript(PyObject* self, PyObject* item, PyObject* pyvalue)
     }
     if (pyvalue == NULL) {
       if (slicelength <= 0) {
-        success = true;
-        goto finally;
+        return 0;
       }
       if (step < 0) {
         // We have to delete in backwards order so make sure step > 0.
@@ -1714,8 +1698,7 @@ JsArray_ass_subscript(PyObject* self, PyObject* item, PyObject* pyvalue)
       if (step != 1 && !slicelength) {
         // At this point, assigning to an extended slice of length 0 must be a
         // no-op
-        success = true;
-        goto finally;
+        return 0;
       }
       FAIL_IF_MINUS_ONE(JsvArray_slice_assign(JsProxy_VAL(self),
                                               slicelength,
@@ -1725,8 +1708,7 @@ JsArray_ass_subscript(PyObject* self, PyObject* item, PyObject* pyvalue)
                                               PySequence_Fast_GET_SIZE(seq),
                                               PySequence_Fast_ITEMS(seq)));
     }
-    success = true;
-    goto finally;
+    return 0;
   } else if (PyIndex_Check(item)) {
     i = PyNumber_AsSsize_t(item, PyExc_IndexError);
     if (i == -1)
@@ -1755,9 +1737,7 @@ JsArray_ass_subscript(PyObject* self, PyObject* item, PyObject* pyvalue)
     FAIL_IF_JS_ERROR(jsvalue);
     FAIL_IF_MINUS_ONE(JsvArray_Set(JsProxy_VAL(self), i, jsvalue));
   }
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
 
 /**
@@ -1782,8 +1762,8 @@ JsTypedArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
 static int
 JsArray_extend_by_python_iterable(JsVal jsarray, PyObject* iterable)
 {
+  FAIL_RETURN_VALUE(-1);
   DECLARE_PY_OBJECT(it);
-  bool success = false;
 
   if (PyList_CheckExact(iterable) || PyTuple_CheckExact(iterable)) {
     iterable = PySequence_Fast(iterable, "argument must be iterable");
@@ -1792,8 +1772,7 @@ JsArray_extend_by_python_iterable(JsVal jsarray, PyObject* iterable)
     Py_ssize_t n = PySequence_Fast_GET_SIZE(iterable);
     if (n == 0) {
       /* short circuit when iterable is empty */
-      success = true;
-      goto finally;
+      return 0;
     }
     /* note that we may still have self == iterable here for the
      * situation a.extend(a), but the following code works
@@ -1831,9 +1810,7 @@ JsArray_extend_by_python_iterable(JsVal jsarray, PyObject* iterable)
       JsvArray_Push(jsarray, jsval);
     }
   }
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
 
 EM_JS(void, destroy_jsarray_entries, (JsVal array), {
@@ -1853,22 +1830,14 @@ EM_JS(void, destroy_jsarray_entries, (JsVal array), {
 static PyObject*
 JsArray_extend_meth(PyObject* o, PyObject* iterable)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(NULL);
 
   JsVal temp = JsvArray_New();
+  ON_FAIL({ destroy_jsarray_entries(temp); });
   // Make sure that if anything goes wrong the original array stays unmodified
   FAIL_IF_MINUS_ONE(JsArray_extend_by_python_iterable(temp, iterable));
   JsvArray_Extend(JsProxy_VAL(o), temp);
-  success = true;
-finally:
-  if (!success) {
-    destroy_jsarray_entries(temp);
-  }
-  if (success) {
-    Py_RETURN_NONE;
-  } else {
-    return NULL;
-  }
+  Py_RETURN_NONE;
 }
 
 static PyMethodDef JsArray_extend_MethodDef = {
@@ -1880,8 +1849,9 @@ static PyMethodDef JsArray_extend_MethodDef = {
 static PyObject*
 JsArray_sq_concat(PyObject* self, PyObject* other)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* pyresult = NULL;
-  bool success = true;
+  ON_FAIL({ Py_CLEAR(pyresult); });
 
   JsVal jsresult = JsvArray_ShallowCopy(JsProxy_VAL(self));
   FAIL_IF_JS_ERROR(jsresult);
@@ -1889,23 +1859,18 @@ JsArray_sq_concat(PyObject* self, PyObject* other)
   FAIL_IF_NULL(pyresult);
   FAIL_IF_MINUS_ONE(
     JsArray_extend_by_python_iterable(JsProxy_VAL(pyresult), other));
-finally:
-  if (!success) {
-    Py_CLEAR(pyresult);
-  }
   return pyresult;
 }
 
 static PyObject*
 JsArray_sq_inplace_concat(PyObject* self, PyObject* other)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* result = JsArray_extend_meth(self, other);
   FAIL_IF_NULL(result);
   Py_DECREF(result);
   Py_INCREF(self);
   return self;
-finally:
-  return NULL;
 }
 
 EM_JS_VAL(JsVal, JsArray_repeat_js, (JsVal o, Py_ssize_t count), {
@@ -1920,12 +1885,10 @@ EM_JS_VAL(JsVal, JsArray_repeat_js, (JsVal o, Py_ssize_t count), {
 static PyObject*
 JsArray_sq_repeat(PyObject* o, Py_ssize_t count)
 {
+  FAIL_RETURN_VALUE(NULL);
   JsVal jsresult = JsArray_repeat_js(JsProxy_Val(o), count);
   FAIL_IF_JS_ERROR(jsresult);
   return js2python(jsresult);
-
-finally:
-  return NULL;
 }
 
 EM_JS_NUM(errcode, JsArray_inplace_repeat_js, (JsVal o, Py_ssize_t count), {
@@ -1937,29 +1900,22 @@ EM_JS_NUM(errcode, JsArray_inplace_repeat_js, (JsVal o, Py_ssize_t count), {
 static PyObject*
 JsArray_sq_inplace_repeat(PyObject* o, Py_ssize_t count)
 {
+  FAIL_RETURN_VALUE(NULL);
   FAIL_IF_MINUS_ONE(JsArray_inplace_repeat_js(JsProxy_VAL(o), count));
   Py_INCREF(o);
   return o;
-finally:
-  return NULL;
 }
 
 static PyObject*
 JsArray_append(PyObject* self, PyObject* arg)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(NULL);
 
   JsVal jsarg = python2js(arg);
   FAIL_IF_JS_ERROR(jsarg);
   JsvArray_Push(JsProxy_VAL(self), jsarg);
 
-  success = true;
-finally:
-  if (success) {
-    Py_RETURN_NONE;
-  } else {
-    return NULL;
-  }
+  Py_RETURN_NONE;
 }
 
 static PyMethodDef JsArray_append_MethodDef = {
@@ -1985,6 +1941,7 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
 static PyObject*
 JsArray_pop(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* pyresult = NULL;
   DECLARE_PY_OBJECT(iobj);
   Py_ssize_t index = -1;
@@ -2020,7 +1977,6 @@ JsArray_pop(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
   FAIL_IF_JS_ERROR(jsresult);
   pyresult = js2python(jsresult);
 
-finally:
   return pyresult;
 }
 
@@ -2063,11 +2019,10 @@ class ReversedIterator {
 static PyObject*
 JsArray_reversed(PyObject* self, PyObject* ignored)
 {
+  FAIL_RETURN_VALUE(NULL);
   JsVal iter = JsArray_reversed_iterator(JsProxy_VAL(self));
   FAIL_IF_JS_ERROR(iter);
   return js2python(iter);
-finally:
-  return NULL;
 }
 
 static PyMethodDef JsArray_reversed_MethodDef = {
@@ -2253,12 +2208,11 @@ JsArray_insert(PyObject* self, PyObject* args)
   if (!PyArg_ParseTuple(args, "nO:insert", &index, &pyvalue)) {
     return NULL;
   }
+  FAIL_RETURN_VALUE(NULL);
   JsVal jsvalue = python2js(pyvalue);
   FAIL_IF_JS_ERROR(jsvalue);
   FAIL_IF_MINUS_ONE(JsvArray_Insert(JsProxy_VAL(self), index, jsvalue));
   Py_RETURN_NONE;
-finally:
-  return NULL;
 }
 
 static PyMethodDef JsArray_insert_MethodDef = {
@@ -2270,12 +2224,11 @@ static PyMethodDef JsArray_insert_MethodDef = {
 static PyObject*
 JsArray_remove(PyObject* self, PyObject* arg)
 {
+  FAIL_RETURN_VALUE(NULL);
   int index = JsArray_index_helper(self, arg, 0, PY_SSIZE_T_MAX);
   FAIL_IF_MINUS_ONE(index);
   JsvArray_Delete(JsProxy_VAL(self), index);
   Py_RETURN_NONE;
-finally:
-  return NULL;
 }
 
 static PyMethodDef JsArray_remove_MethodDef = {
@@ -2308,6 +2261,7 @@ EM_JS_VAL(JsVal, JsProxy_subscript_js, (JsVal obj, JsVal key), {
 static PyObject*
 JsProxy_subscript(PyObject* self, PyObject* pyidx)
 {
+  FAIL_RETURN_VALUE(NULL);
   JsVal idx = python2js(pyidx);
   FAIL_IF_JS_ERROR(idx);
   JsVal result = JsProxy_subscript_js(JsProxy_VAL(self), idx);
@@ -2318,8 +2272,6 @@ JsProxy_subscript(PyObject* self, PyObject* pyidx)
     FAIL();
   }
   return js2python(result);
-finally:
-  return NULL;
 }
 
 /**
@@ -2332,7 +2284,7 @@ finally:
 static int
 JsProxy_ass_subscript(PyObject* self, PyObject* pyidx, PyObject* pyvalue)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(-1);
 
   JsVal idx = python2js(pyidx);
   FAIL_IF_JS_ERROR(idx);
@@ -2352,9 +2304,7 @@ JsProxy_ass_subscript(PyObject* self, PyObject* pyidx, PyObject* pyvalue)
     FAIL_IF_JS_ERROR(
       JsvObject_CallMethodId_TwoArgs(JsProxy_VAL(self), &JsId_set, idx, value));
   }
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
 
 /**
@@ -2366,6 +2316,7 @@ finally:
 static int
 JsProxy_includes(JsProxy* self, PyObject* obj)
 {
+  FAIL_RETURN_VALUE(-1);
   int result = -1;
   JsVal jsobj = python2js(obj);
   FAIL_IF_JS_ERROR(jsobj);
@@ -2374,7 +2325,6 @@ JsProxy_includes(JsProxy* self, PyObject* obj)
   FAIL_IF_JS_ERROR(jsresult);
   result = Jsv_to_bool(jsresult);
 
-finally:
   return result;
 }
 
@@ -2386,6 +2336,7 @@ finally:
 static int
 JsProxy_has(JsProxy* self, PyObject* obj)
 {
+  FAIL_RETURN_VALUE(-1);
   int result = -1;
   JsVal jsobj = python2js(obj);
   FAIL_IF_JS_ERROR(jsobj);
@@ -2394,7 +2345,6 @@ JsProxy_has(JsProxy* self, PyObject* obj)
   FAIL_IF_JS_ERROR(jsresult);
   result = Jsv_to_bool(jsresult);
 
-finally:
   return result;
 }
 
@@ -2441,10 +2391,11 @@ EM_JS_VAL(JsVal, JsProxy_aexit_js, (JsVal obj), {
 static PyObject*
 JsProxy_aenter(JsProxy* self, PyObject* Py_UNUSED(ignored))
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(NULL);
   DECLARE_PY_OBJECT(loop);
   PyObject* result = NULL;
   DECLARE_PY_OBJECT(status);
+  ON_FAIL({ Py_CLEAR(result); });
 
   loop = _PyObject_CallMethodIdNoArgs(asyncio_mod, &PyId_get_event_loop);
   FAIL_IF_NULL(loop);
@@ -2455,12 +2406,6 @@ JsProxy_aenter(JsProxy* self, PyObject* Py_UNUSED(ignored))
   status =
     _PyObject_CallMethodIdOneArg(result, &PyId_set_result, (PyObject*)self);
   FAIL_IF_NULL(status);
-
-  success = true;
-finally:
-  if (!success) {
-    Py_CLEAR(result);
-  }
 
   return result;
 }
@@ -2475,6 +2420,7 @@ JsProxy_aexit(JsProxy* self, PyObject* const* args, Py_ssize_t nargs)
   if (!_PyArg_CheckPositional("__aexit__", nargs, 0, 3)) {
     return NULL;
   }
+  FAIL_RETURN_VALUE(NULL);
   PyObject* result = NULL;
 
   // We have to return an awaitable here but [Symbol.asyncDispose]() does not.
@@ -2486,7 +2432,6 @@ JsProxy_aexit(JsProxy* self, PyObject* const* args, Py_ssize_t nargs)
   result = wrap_promise(jsresult, Jsv_null, NULL);
   FAIL_IF_NULL(result);
 
-finally:
   return result;
 }
 
@@ -2514,11 +2459,10 @@ EM_JS_VAL(JsVal, JsMap_GetIter_js, (JsVal obj), {
 static PyObject*
 JsMap_GetIter(PyObject* self)
 {
+  FAIL_RETURN_VALUE(NULL);
   JsVal iter = JsMap_GetIter_js(JsProxy_VAL(self));
   FAIL_IF_JS_ERROR(iter);
   return js2python(iter);
-finally:
-  return NULL;
 }
 
 static PyObject*
@@ -2770,7 +2714,7 @@ EM_JS_VAL(JsVal, JsProxy_Dir_js, (JsVal jsobj), {
 static PyObject*
 JsProxy_Dir(PyObject* self, PyObject* _args)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(NULL);
   DECLARE_PY_OBJECT(object__dir__);
   DECLARE_PY_OBJECT(keys);
   DECLARE_PY_OBJECT(result_set);
@@ -2779,6 +2723,7 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   DECLARE_PY_OBJECT(keys_str);
 
   PyObject* result = NULL;
+  ON_FAIL({ Py_CLEAR(result); });
 
   // First get base __dir__ via object.__dir__(self)
   // Would have been nice if they'd supplied PyObject_GenericDir...
@@ -2807,11 +2752,6 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   FAIL_IF_MINUS_ONE(PyList_Extend(result, result_set));
   FAIL_IF_MINUS_ONE(PyList_Sort(result));
 
-  success = true;
-finally:
-  if (!success) {
-    Py_CLEAR(result);
-  }
   return result;
 }
 
@@ -2905,13 +2845,14 @@ JsProxy_Bool(PyObject* self)
 PyObject*
 wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(NULL);
   DECLARE_PY_OBJECT(loop);
   DECLARE_PY_OBJECT(helpers);
   DECLARE_PY_OBJECT(set_result);
   DECLARE_PY_OBJECT(set_exception);
 
   PyObject* result = NULL;
+  ON_FAIL({ Py_CLEAR(result); });
 
   loop = _PyObject_CallMethodIdNoArgs(asyncio_mod, &PyId_get_event_loop);
   FAIL_IF_NULL(loop);
@@ -2936,11 +2877,6 @@ wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter)
   FAIL_IF_JS_ERROR(
     JsvObject_CallMethodId(promise, &JsId_then, promise_handles));
 
-  success = true;
-finally:
-  if (!success) {
-    Py_CLEAR(result);
-  }
   return result;
 }
 
@@ -2961,6 +2897,7 @@ JsProxy_Await(PyObject* self)
                  str_utf8);
     return NULL;
   }
+  FAIL_RETURN_VALUE(NULL);
   DECLARE_PY_OBJECT(fut);
   PyObject* result = NULL;
 
@@ -2968,7 +2905,6 @@ JsProxy_Await(PyObject* self)
   FAIL_IF_NULL(fut);
   result = _PyObject_CallMethodIdNoArgs(fut, &PyId___await__);
 
-finally:
   return result;
 }
 
@@ -2991,6 +2927,7 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
     return NULL;
   }
 
+  FAIL_RETURN_VALUE(NULL);
   PyObject* result = NULL;
 
   if (Py_IsNone(onfulfilled)) {
@@ -3013,7 +2950,6 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
   }
   result = JsProxy_create(result_promise);
 
-finally:
   // don't clear onfulfilled, onrejected, they are borrowed from arguments.
   return result;
 }
@@ -3030,6 +2966,7 @@ static PyMethodDef JsProxy_then_MethodDef = {
 static PyObject*
 JsProxy_catch(JsProxy* self, PyObject* onrejected)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* result = NULL;
 
   JsVal promise = JsvPromise_Resolve(JsProxy_VAL(self));
@@ -3047,7 +2984,6 @@ JsProxy_catch(JsProxy* self, PyObject* onrejected)
   }
   result = JsProxy_create(result_promise);
 
-finally:
   return result;
 }
 
@@ -3067,6 +3003,7 @@ static PyMethodDef JsProxy_catch_MethodDef = {
 static PyObject*
 JsProxy_finally(JsProxy* self, PyObject* onfinally)
 {
+  FAIL_RETURN_VALUE(NULL);
   JsVal promise = JsvPromise_Resolve(JsProxy_VAL(self));
   FAIL_IF_JS_ERROR(promise);
   // Finally method is called no matter what so we can use
@@ -3081,8 +3018,6 @@ JsProxy_finally(JsProxy* self, PyObject* onfinally)
   }
 
   return JsProxy_create(result_promise);
-finally:
-  return NULL;
 }
 
 static PyMethodDef JsProxy_finally_MethodDef = {
@@ -3120,13 +3055,13 @@ JsProxy_as_object_map(PyObject* self,
     return NULL;
   }
 
+  FAIL_RETURN_VALUE(NULL);
   int type_flags = IS_OBJECT_MAP;
   PyObject* proxy = JsProxy_create_with_type(
     type_flags, JsProxy_VAL(self), JsMethod_THIS(self), NULL);
   FAIL_IF_NULL(proxy);
   JsObjMap_HEREDITARY(proxy) = hereditary;
 
-finally:
   return proxy;
 }
 
@@ -3162,11 +3097,10 @@ EM_JS_VAL(JsVal, JsObjMap_GetIter_js, (JsVal obj), {
 static PyObject*
 JsObjMap_GetIter(PyObject* self)
 {
+  FAIL_RETURN_VALUE(NULL);
   JsVal iter = JsObjMap_GetIter_js(JsProxy_VAL(self));
   FAIL_IF_JS_ERROR(iter);
   return js2python(iter);
-finally:
-  return NULL;
 }
 
 EM_JS_NUM(int, JsObjMap_length_js, (JsVal obj), {
@@ -3199,6 +3133,7 @@ JsObjMap_subscript(PyObject* self, PyObject* pyidx)
     return NULL;
   }
 
+  FAIL_RETURN_VALUE(NULL);
   PyObject* pyresult = NULL;
 
   JsVal key = python2js(pyidx);
@@ -3215,7 +3150,6 @@ JsObjMap_subscript(PyObject* self, PyObject* pyidx)
     pyresult = JsProxy_create_objmap(result, JsProxy_get_objmap_flags(self));
   }
 
-finally:
   return pyresult;
 }
 
@@ -3251,7 +3185,7 @@ JsObjMap_ass_subscript(PyObject* self, PyObject* pykey, PyObject* pyvalue)
     return -1;
   }
 
-  bool success = false;
+  FAIL_RETURN_VALUE(-1);
   JsVal value = JS_ERROR;
   JsVal key = python2js(pykey);
   if (pyvalue != NULL) {
@@ -3265,9 +3199,7 @@ JsObjMap_ass_subscript(PyObject* self, PyObject* pykey, PyObject* pyvalue)
     }
     FAIL();
   }
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
 
 EM_JS_NUM(int, JsObjMap_contains_js, (JsVal obj, JsVal key), {
@@ -3282,12 +3214,10 @@ JsObjMap_contains(PyObject* self, PyObject* obj)
     // TODO: maybe support symbols??
     return 0;
   }
+  FAIL_RETURN_VALUE(-1);
   JsVal jsobj = python2js(obj);
   FAIL_IF_JS_ERROR(jsobj);
   return JsObjMap_contains_js(JsProxy_VAL(self), jsobj);
-
-finally:
-  return -1;
 }
 
 // clang-format off
@@ -3350,8 +3280,8 @@ JsModule_GetAll(PyObject* self, PyObject** all)
   if (!JsProxy_Check(self)) {
     return 0;
   }
+  FAIL_RETURN_VALUE(-1);
   PyObject* pyresult;
-  int success = -1;
 
   JsVal jsresult = JsModule_GetAll_js(JsProxy_VAL(self));
   FAIL_IF_JS_ERROR(jsresult);
@@ -3359,9 +3289,7 @@ JsModule_GetAll(PyObject* self, PyObject** all)
   FAIL_IF_NULL(pyresult);
   *all = pyresult;
 
-  success = 0;
-finally:
-  return success;
+  return 0;
 }
 
 ////////////////////////////////////////////////////////////
@@ -3414,6 +3342,7 @@ static PyMethodDef JsMethod_Construct_MethodDef = {
 static PyObject*
 JsMethod_descr_get(PyObject* self, PyObject* obj, PyObject* type)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* result = NULL;
 
   if (Py_IsNone(obj) || obj == NULL) {
@@ -3425,7 +3354,6 @@ JsMethod_descr_get(PyObject* self, PyObject* obj, PyObject* type)
   FAIL_IF_JS_ERROR(jsobj);
   result = JsProxy_create_with_this(JsProxy_VAL(self), jsobj, NULL, false);
 
-finally:
   return result;
 }
 
@@ -3578,8 +3506,12 @@ static PyObject*
 JsBuffer_assign_to(PyObject* obj, PyObject* target)
 {
   JsProxy* self = (JsProxy*)obj;
-  bool success = false;
+  FAIL_RETURN_VALUE(NULL);
   Py_buffer view = { 0 };
+  _Defer
+  {
+    PyBuffer_Release(&view);
+  };
 
   FAIL_IF_MINUS_ONE(
     PyObject_GetBuffer(target, &view, PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE));
@@ -3588,13 +3520,7 @@ JsBuffer_assign_to(PyObject* obj, PyObject* target)
   FAIL_IF_MINUS_ONE(check_buffer_compatibility(self, view, safe, dir));
   FAIL_IF_MINUS_ONE(JsvBuffer_assignToPtr(JsProxy_VAL(self), view.buf));
 
-  success = true;
-finally:
-  PyBuffer_Release(&view);
-  if (success) {
-    Py_RETURN_NONE;
-  }
-  return NULL;
+  Py_RETURN_NONE;
 }
 
 static PyMethodDef JsBuffer_assign_to_MethodDef = {
@@ -3612,8 +3538,12 @@ static PyObject*
 JsBuffer_assign(PyObject* obj, PyObject* source)
 {
   JsProxy* self = (JsProxy*)obj;
-  bool success = false;
+  FAIL_RETURN_VALUE(NULL);
   Py_buffer view = { 0 };
+  _Defer
+  {
+    PyBuffer_Release(&view);
+  };
 
   FAIL_IF_MINUS_ONE(PyObject_GetBuffer(source, &view, PyBUF_ANY_CONTIGUOUS));
   bool safe = JsBuffer_CHECK_ASSIGNMENTS(self);
@@ -3621,13 +3551,7 @@ JsBuffer_assign(PyObject* obj, PyObject* source)
   FAIL_IF_MINUS_ONE(check_buffer_compatibility(self, view, safe, dir));
   FAIL_IF_MINUS_ONE(JsvBuffer_assignFromPtr(JsProxy_VAL(self), view.buf));
 
-  success = true;
-finally:
-  PyBuffer_Release(&view);
-  if (success) {
-    Py_RETURN_NONE;
-  }
-  return NULL;
+  Py_RETURN_NONE;
 }
 
 static PyMethodDef JsBuffer_assign_MethodDef = {
@@ -3656,9 +3580,14 @@ JsBuffer_CopyIntoMemoryView(JsVal jsbuffer,
                             char* format,
                             Py_ssize_t itemsize)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(NULL);
   Buffer* buffer = NULL;
   PyObject* result = NULL;
+  ON_FAIL({ Py_CLEAR(result); });
+  _Defer
+  {
+    Py_CLEAR(buffer);
+  };
 
   buffer = (Buffer*)BufferType.tp_alloc(&BufferType, 0);
   FAIL_IF_NULL(buffer);
@@ -3667,12 +3596,6 @@ JsBuffer_CopyIntoMemoryView(JsVal jsbuffer,
   result = PyMemoryView_FromObject((PyObject*)buffer);
   FAIL_IF_NULL(result);
 
-  success = true;
-finally:
-  Py_CLEAR(buffer);
-  if (!success) {
-    Py_CLEAR(result);
-  }
   return result;
 }
 
@@ -3683,17 +3606,13 @@ finally:
 static PyObject*
 JsBuffer_CopyIntoBytes(JsVal jsbuffer, Py_ssize_t byteLength)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(NULL);
 
   PyObject* result = PyBytes_FromStringAndSize(NULL, byteLength);
+  ON_FAIL({ Py_CLEAR(result); });
   FAIL_IF_NULL(result);
   char* data = PyBytes_AS_STRING(result);
   FAIL_IF_MINUS_ONE(JsvBuffer_assignToPtr(jsbuffer, data));
-  success = true;
-finally:
-  if (!success) {
-    Py_CLEAR(result);
-  }
   return result;
 }
 
@@ -3735,6 +3654,7 @@ JsBuffer_DecodeString_js,
 static PyObject*
 JsBuffer_ToString(JsVal jsbuffer, char* encoding)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* result = NULL;
 
   JsVal jsresult = JsBuffer_DecodeString_js(jsbuffer, encoding);
@@ -3747,7 +3667,6 @@ JsBuffer_ToString(JsVal jsbuffer, char* encoding)
   result = js2python(jsresult);
   FAIL_IF_NULL(result);
 
-finally:
   return result;
 }
 
@@ -3791,12 +3710,11 @@ get_fileno(PyObject* file)
 static PyObject*
 JsBuffer_write_to_file(PyObject* self, PyObject* file)
 {
+  FAIL_RETURN_VALUE(NULL);
   int fd = get_fileno(file);
   FAIL_IF_MINUS_ONE(fd);
   FAIL_IF_MINUS_ONE(JsvBuffer_writeToFile(JsProxy_VAL(self), fd));
   Py_RETURN_NONE;
-finally:
-  return NULL;
 }
 
 static PyMethodDef JsBuffer_write_to_file_MethodDef = {
@@ -3808,12 +3726,11 @@ static PyMethodDef JsBuffer_write_to_file_MethodDef = {
 static PyObject*
 JsBuffer_read_from_file(PyObject* jsbuffer, PyObject* file)
 {
+  FAIL_RETURN_VALUE(NULL);
   int fd = get_fileno(file);
   FAIL_IF_MINUS_ONE(fd);
   FAIL_IF_MINUS_ONE(JsvBuffer_readFromFile(JsProxy_VAL(jsbuffer), fd));
   Py_RETURN_NONE;
-finally:
-  return NULL;
 }
 
 static PyMethodDef JsBuffer_read_from_file_MethodDef = {
@@ -3825,12 +3742,11 @@ static PyMethodDef JsBuffer_read_from_file_MethodDef = {
 static PyObject*
 JsBuffer_into_file(PyObject* jsbuffer, PyObject* file)
 {
+  FAIL_RETURN_VALUE(NULL);
   int fd = get_fileno(file);
   FAIL_IF_MINUS_ONE(fd);
   FAIL_IF_MINUS_ONE(JsvBuffer_intoFile(JsProxy_VAL(jsbuffer), fd));
   Py_RETURN_NONE;
-finally:
-  return NULL;
 }
 
 static PyMethodDef JsBuffer_into_file_MethodDef = {
@@ -3883,7 +3799,7 @@ JsBuffer_get_info, (JsVal jsobj,
 int
 JsBuffer_cinit(PyObject* self)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(-1);
   // TODO: should logic here be any different if we're on wasm heap?
   // format string is borrowed from get_buffer_datatype, DO NOT DEALLOCATE!
   JsBuffer_get_info(JsProxy_VAL(self),
@@ -3903,9 +3819,7 @@ JsBuffer_cinit(PyObject* self)
     FAIL();
   }
 
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
 
 EM_JS_REF(PyObject*, JsDoubleProxy_unwrap_js, (JsVal id), {
@@ -3933,11 +3847,10 @@ EM_JS_VAL(JsVal, JsProxy_to_weakref_js, (JsVal pyproxy), {
 static PyObject*
 JsProxy_to_weakref(PyObject* self, PyObject* _ignored)
 {
+  FAIL_RETURN_VALUE(NULL);
   JsVal jsresult = JsProxy_to_weakref_js(JsProxy_VAL(self));
   FAIL_IF_JS_ERROR(jsresult);
   return js2python(jsresult);
-finally:
-  return NULL;
 }
 
 static PyMethodDef JsProxy_to_weakref_MethodDef = {
@@ -4264,11 +4177,16 @@ skip_container_slots:
   members[cur_member++] = (PyMemberDef){ 0 };
   getsets[cur_getset++] = (PyGetSetDef){ 0 };
 
-  bool success = false;
+  FAIL_RETURN_VALUE(NULL);
   void* mem = NULL;
   DECLARE_PY_OBJECT(bases);
   DECLARE_PY_OBJECT(flags_obj);
   PyObject* result = NULL;
+  ON_FAIL({
+    if (mem != NULL) {
+      PyMem_Free(mem);
+    }
+  });
 
   // PyType_FromSpecWithBases copies "members" automatically into the end of the
   // type. It doesn't store the slots. But it just copies the pointer to
@@ -4366,11 +4284,6 @@ skip_container_slots:
   FAIL_IF_MINUS_ONE(PyObject_SetAttr(
     result, _PyUnicode_FromId(&PyId__js_type_flags), flags_obj));
 
-  success = true;
-finally:
-  if (!success && mem != NULL) {
-    PyMem_Free(mem);
-  }
   return result;
 }
 
@@ -4384,17 +4297,17 @@ static PyObject* JsProxy_TypeDict;
 static PyTypeObject*
 JsProxy_get_subtype(int flags)
 {
+  FAIL_RETURN_VALUE(NULL);
   DECLARE_PY_OBJECT(flags_key);
   flags_key = PyLong_FromLong(flags);
   PyObject* type = PyDict_GetItemWithError(JsProxy_TypeDict, flags_key);
   Py_XINCREF(type);
   if (type != NULL || PyErr_Occurred()) {
-    goto finally;
+    return (PyTypeObject*)type;
   }
   type = JsProxy_create_subtype(flags);
   FAIL_IF_NULL(type);
   FAIL_IF_MINUS_ONE(PyDict_SetItem(JsProxy_TypeDict, flags_key, type));
-finally:
   return (PyTypeObject*)type;
 }
 
@@ -4517,9 +4430,14 @@ JsProxy_create_with_type(int type_flags,
                          JsVal this,
                          PyObject* sig)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(NULL);
   PyTypeObject* type = NULL;
   PyObject* result = NULL;
+  ON_FAIL({ Py_CLEAR(result); });
+  _Defer
+  {
+    Py_CLEAR(type);
+  };
 
   type = JsProxy_get_subtype(type_flags);
   FAIL_IF_NULL(type);
@@ -4542,12 +4460,6 @@ JsProxy_create_with_type(int type_flags,
     JsException_ARGS(result) = args;
   }
 
-  success = true;
-finally:
-  Py_CLEAR(type);
-  if (!success) {
-    Py_CLEAR(result);
-  }
   return result;
 }
 
@@ -4615,7 +4527,7 @@ JsProxy_Val(PyObject* x)
 int
 JsProxy_init_docstrings(PyObject* _pyodide_core_docs)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(-1);
 
   DECLARE_PY_OBJECT(_it);
   DECLARE_PY_OBJECT(JsProxy);
@@ -4693,24 +4605,20 @@ JsProxy_init_docstrings(PyObject* _pyodide_core_docs)
   SET_DOCSTRING(JsGenerator, JsGenerator_close_MethodDef);
 #undef SET_DOCSTRING
 
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
 
 static int
 add_flag(PyObject* dict, char* name, int value)
 {
+  FAIL_RETURN_VALUE(-1);
   DECLARE_PY_OBJECT(value_py);
-  bool success = false;
 
   value_py = PyLong_FromLong(value);
   FAIL_IF_NULL(value_py);
   FAIL_IF_MINUS_ONE(PyDict_SetItemString(dict, name, value_py));
 
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
 
 PyObject*
@@ -4731,16 +4639,28 @@ run_sync(PyObject* self, PyObject* pyarg)
                  Py_TYPE(pyarg)->tp_name);
     return NULL;
   }
+  FAIL_RETURN_VALUE(NULL);
   DECLARE_PY_OBJECT(ensured_future);
   PyObject* pyresult = NULL;
+  JsVal jsarg = JS_ERROR;
+  JsVal jsresult = JS_ERROR;
+  _Defer
+  {
+    if (pyproxy_Check(jsarg)) {
+      destroy_proxy(jsarg, NULL);
+    }
+    if (pyproxy_Check(jsresult)) {
+      destroy_proxy(jsresult, NULL);
+    }
+  };
 
   // For reasons that I absolutely do not comprehend, we leak memory if use a
   // coroutine directly, but if we ensure_future it first we don't.
   ensured_future =
     _PyObject_CallMethodIdOneArg(asyncio_mod, &PyId_ensure_future, pyarg);
-  JsVal jsarg = python2js(ensured_future);
+  jsarg = python2js(ensured_future);
   FAIL_IF_JS_ERROR(jsarg);
-  JsVal jsresult = JsvPromise_Syncify(jsarg);
+  jsresult = JsvPromise_Syncify(jsarg);
   if (JsvError_Check(jsresult)) {
     if (!PyErr_Occurred()) {
       PyErr_SetString(
@@ -4752,13 +4672,6 @@ run_sync(PyObject* self, PyObject* pyarg)
   }
   pyresult = js2python(jsresult);
 
-finally:
-  if (pyproxy_Check(jsarg)) {
-    destroy_proxy(jsarg, NULL);
-  }
-  if (pyproxy_Check(jsresult)) {
-    destroy_proxy(jsresult, NULL);
-  }
   return pyresult;
 }
 
@@ -4794,7 +4707,7 @@ static PyMethodDef* run_sync_MethodDef = &methods[0];
 int
 jsproxy_init(PyObject* core_module)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(-1);
   DECLARE_PY_OBJECT(_pyodide_core_docs);
   DECLARE_PY_OBJECT(flag_dict);
 
@@ -4881,7 +4794,5 @@ jsproxy_init(PyObject* core_module)
   FAIL_IF_MINUS_ONE(PyType_Ready(&JsMethodCallSingletonType));
   method_call_singleton = make_method_call_singleton();
 
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }

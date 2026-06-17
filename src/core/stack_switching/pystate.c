@@ -58,6 +58,7 @@ restoreThreadState(PyThreadState* state)
 EMSCRIPTEN_KEEPALIVE PyThreadState*
 captureThreadState()
 {
+  FAIL_RETURN_VALUE(NULL);
   DECLARE_PY_OBJECT(asyncio_module);
   DECLARE_PY_OBJECT(loop);
   DECLARE_PY_OBJECT(tmp);
@@ -85,8 +86,6 @@ captureThreadState()
     PyErr_SetString(PyExc_SystemError, "Unexpected error when stack switching");
     FAIL();
   }
-
-finally:
 
   return result;
 }

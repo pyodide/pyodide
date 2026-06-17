@@ -9,7 +9,7 @@ PyObject* py_docstring_mod;
 int
 set_method_docstring(PyMethodDef* method, PyObject* parent)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(-1);
   DECLARE_PY_OBJECT(py_method);
   DECLARE_PY_OBJECT(py_result);
 
@@ -38,9 +38,7 @@ set_method_docstring(PyMethodDef* method, PyObject* parent)
   memcpy(result, py_result_utf8, size + 1);
   method->ml_doc = result;
 
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
 
 int
@@ -48,7 +46,7 @@ add_methods_and_set_docstrings(PyObject* module,
                                PyMethodDef* methods,
                                PyObject* docstring_source)
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(-1);
 
   int i = 0;
   while (methods[i].ml_name != NULL) {
@@ -57,20 +55,16 @@ add_methods_and_set_docstrings(PyObject* module,
   }
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(module, methods));
 
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
 
 int
 docstring_init()
 {
-  bool success = false;
+  FAIL_RETURN_VALUE(-1);
 
   py_docstring_mod = PyImport_ImportModule("_pyodide.docstring");
   FAIL_IF_NULL(py_docstring_mod);
 
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
