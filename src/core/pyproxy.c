@@ -354,7 +354,6 @@ _pyproxy_repr(PyObject* pyobj)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
   DECLARE_PY_OBJECT(pyrepr);
-  JsVal jsrepr = JS_ERROR;
 
   if (compat_to_string_repr) {
     pyrepr = PyObject_Repr(pyobj);
@@ -362,9 +361,8 @@ _pyproxy_repr(PyObject* pyobj)
     pyrepr = PyObject_Str(pyobj);
   }
   FAIL_IF_NULL(pyrepr);
-  jsrepr = python2js(pyrepr);
 
-  return jsrepr;
+  return python2js(pyrepr);
 }
 
 /**
@@ -391,13 +389,11 @@ _pyproxy_hasattr(PyObject* pyobj, JsVal jskey)
 {
   FAIL_RETURN_VALUE(-1);
   DECLARE_PY_OBJECT(pykey);
-  int result = -1;
 
   pykey = js2python(jskey);
   FAIL_IF_NULL(pykey);
-  result = PyObject_HasAttr(pyobj, pykey);
 
-  return result;
+  return PyObject_HasAttr(pyobj, pykey);
 }
 
 /* Specialized version of _PyObject_GenericGetAttrWithDict
@@ -489,8 +485,7 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
   FAIL_IF_NULL(pydescr);
   JsVal cached_proxy = proxy_cache_get(proxyCache, pydescr); /* borrowed */
   if (!JsvError_Check(cached_proxy)) {
-    result = cached_proxy;
-    return result;
+    return cached_proxy;
   }
   if (PyErr_Occurred()) {
     FAIL();
@@ -504,6 +499,7 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
     Py_INCREF(pydescr);
   }
   result = python2js(pyresult);
+  FAIL_IF_JS_ERROR(result);
   if (pyproxy_Check(result)) {
     // If a getter returns a different object every time, this could potentially
     // fill up the cache with a lot of junk. If this is a problem, the user will
@@ -552,22 +548,17 @@ _pyproxy_getitem(PyObject* pyobj,
   FAIL_RETURN_VALUE(JS_ERROR);
   DECLARE_PY_OBJECT(pykey);
   DECLARE_PY_OBJECT(pyresult);
-  JsVal result;
-  ON_FAIL({
+  pykey = js2python(jskey);
+  FAIL_IF_NULL(pykey);
+  pyresult = PyObject_GetItem(pyobj, pykey);
+  if (pyresult == NULL) {
     if (PyErr_ExceptionMatches(PyExc_KeyError) ||
         PyErr_ExceptionMatches(PyExc_IndexError)) {
       PyErr_Clear();
     }
-  });
-
-  pykey = js2python(jskey);
-  FAIL_IF_NULL(pykey);
-  pyresult = PyObject_GetItem(pyobj, pykey);
-  FAIL_IF_NULL(pyresult);
-  result = python2js_json_adaptor(pyresult, proxyCache, is_json_adaptor);
-  FAIL_IF_JS_ERROR(result);
-
-  return result;
+    FAIL();
+  }
+  return python2js_json_adaptor(pyresult, proxyCache, is_json_adaptor);
 };
 
 EMSCRIPTEN_KEEPALIVE int
@@ -608,7 +599,6 @@ _pyproxy_slice_assign(PyObject* pyobj,
   FAIL_RETURN_VALUE(JS_ERROR);
   DECLARE_PY_OBJECT(pyval);
   DECLARE_PY_OBJECT(pyresult);
-  JsVal jsresult = JS_ERROR;
 
   pyval = js2python(val);
 
@@ -620,9 +610,7 @@ _pyproxy_slice_assign(PyObject* pyobj,
   FAIL_IF_NULL(pyresult);
   FAIL_IF_MINUS_ONE(PySequence_SetSlice(pyobj, start, stop, pyval));
   JsVal proxies = JsvArray_New();
-  jsresult = python2js_with_depth(pyresult, 1, proxies);
-
-  return jsresult;
+  return python2js_with_depth(pyresult, 1, proxies);
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
@@ -631,7 +619,6 @@ _pyproxy_pop(PyObject* pyobj, bool pop_start)
   FAIL_RETURN_VALUE(JS_ERROR);
   DECLARE_PY_OBJECT(idx);
   DECLARE_PY_OBJECT(pyresult);
-  JsVal jsresult = JS_ERROR;
   if (pop_start) {
     idx = PyLong_FromLong(0);
     FAIL_IF_NULL(idx);
@@ -640,17 +627,15 @@ _pyproxy_pop(PyObject* pyobj, bool pop_start)
     pyresult = _PyObject_CallMethodIdNoArgs(pyobj, &PyId_pop);
   }
   if (pyresult != NULL) {
-    jsresult = python2js(pyresult);
-    FAIL_IF_JS_ERROR(jsresult);
+    return python2js(pyresult);
   } else {
     if (PyErr_ExceptionMatches(PyExc_IndexError)) {
       PyErr_Clear();
-      jsresult = Jsv_undefined;
+      return Jsv_undefined;
     } else {
       FAIL();
     }
   }
-  return jsresult;
 }
 
 EMSCRIPTEN_KEEPALIVE int
@@ -658,13 +643,11 @@ _pyproxy_contains(PyObject* pyobj, JsVal idkey)
 {
   FAIL_RETURN_VALUE(-1);
   DECLARE_PY_OBJECT(pykey);
-  int result = -1;
 
   pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
-  result = PySequence_Contains(pyobj, pykey);
 
-  return result;
+  return PySequence_Contains(pyobj, pykey);
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
@@ -733,7 +716,6 @@ _pyproxy_apply(PyObject* callable,
             // method
   DECLARE_PY_OBJECT(pykwnames);
   DECLARE_PY_OBJECT(pyresult);
-  JsVal result = JS_ERROR;
   _Defer
   {
     // If we failed to convert one of the arguments, then pyargs is partially
@@ -768,9 +750,8 @@ _pyproxy_apply(PyObject* callable,
   size_t nargs_with_flag = numposargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
   pyresult = _PyObject_Vectorcall(callable, pyargs, nargs_with_flag, pykwnames);
   FAIL_IF_NULL(pyresult);
-  result = python2js(pyresult);
 
-  return result;
+  return python2js(pyresult);
 }
 
 void
@@ -939,7 +920,6 @@ _pyproxyGen_asend(PyObject* receiver, JsVal jsval)
   DECLARE_PY_OBJECT(v);
   DECLARE_PY_OBJECT(asend);
   DECLARE_PY_OBJECT(pyresult);
-  JsVal jsresult = JS_ERROR;
 
   v = js2python(jsval);
   FAIL_IF_NULL(v);
@@ -959,10 +939,7 @@ _pyproxyGen_asend(PyObject* receiver, JsVal jsval)
   }
   FAIL_IF_NULL(pyresult);
 
-  jsresult = python2js(pyresult);
-  FAIL_IF_JS_ERROR(jsresult);
-
-  return jsresult;
+  return python2js(pyresult);
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
@@ -972,16 +949,12 @@ _pyproxyGen_areturn(PyObject* receiver)
   DECLARE_PY_OBJECT(v);
   DECLARE_PY_OBJECT(asend);
   DECLARE_PY_OBJECT(pyresult);
-  JsVal jsresult = JS_ERROR;
 
   pyresult =
     _PyObject_CallMethodIdOneArg(receiver, &PyId_athrow, PyExc_GeneratorExit);
   FAIL_IF_NULL(pyresult);
 
-  jsresult = python2js(pyresult);
-  FAIL_IF_JS_ERROR(jsresult);
-
-  return jsresult;
+  return python2js(pyresult);
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
@@ -991,7 +964,6 @@ _pyproxyGen_athrow(PyObject* receiver, JsVal jsval)
   DECLARE_PY_OBJECT(v);
   DECLARE_PY_OBJECT(asend);
   DECLARE_PY_OBJECT(pyresult);
-  JsVal jsresult = JS_ERROR;
 
   v = js2python(jsval);
   FAIL_IF_NULL(v);
@@ -1006,10 +978,7 @@ _pyproxyGen_athrow(PyObject* receiver, JsVal jsval)
   pyresult = _PyObject_CallMethodIdOneArg(receiver, &PyId_athrow, v);
   FAIL_IF_NULL(pyresult);
 
-  jsresult = python2js(pyresult);
-  FAIL_IF_JS_ERROR(jsresult);
-
-  return jsresult;
+  return python2js(pyresult);
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
