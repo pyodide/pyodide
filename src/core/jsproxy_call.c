@@ -157,7 +157,6 @@ JsFuncSignature_repr(PyObject* o)
 {
   JsFuncSignature* self = (JsFuncSignature*)o;
   FAIL_RETURN_VALUE(NULL);
-  PyObject* result = NULL;
   DECLARE_PY_OBJECT(inspect);
   DECLARE_PY_OBJECT(sig);
 
@@ -166,10 +165,8 @@ JsFuncSignature_repr(PyObject* o)
   _Py_IDENTIFIER(signature);
   sig = _PyObject_CallMethodIdOneArg(inspect, &PyId_signature, self->func);
   FAIL_IF_NULL(sig);
-  result = PyUnicode_FromFormat("<JsSignature %S>", sig);
-  FAIL_IF_NULL(result);
 
-  return result;
+  return PyUnicode_FromFormat("<JsSignature %S>", sig);
 }
 
 static PyTypeObject JsFuncSignatureType = {
@@ -363,26 +360,12 @@ JsMethod_Vectorcall_impl(JsVal func,
                          PyObject* kwnames)
 {
   FAIL_RETURN_VALUE(NULL);
-  JsVal jsresult = JS_ERROR;
+
   JsFuncSignature* call_sig = NULL;
-  PyObject* pyresult = NULL;
-  JsVal proxies = JsvArray_New();
-  ON_FAIL({
-    if (!JsvError_Check(jsresult) && pyproxy_Check(jsresult)) {
-      // TODO: don't destroy proxies with roundtrip = true?
-      JsvArray_Push(proxies, jsresult);
-    }
-    destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
-    Py_CLEAR(pyresult);
-  });
   _Defer
   {
-    Py_LeaveRecursiveCall(/* " in JsMethod_Vectorcall" */);
     Py_CLEAR(call_sig);
   };
-
-  // Recursion error?
-  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" while calling a JavaScript object"));
   if (sig) {
     _Py_IDENTIFIER(func_to_sig);
     call_sig = (JsFuncSignature*)_PyObject_CallMethodIdOneArg(
@@ -395,9 +378,28 @@ JsMethod_Vectorcall_impl(JsVal func,
   if (!call_sig) {
     call_sig = (JsFuncSignature*)Py_NewRef(default_signature);
   }
+
+  JsVal jsresult = JS_ERROR;
+  JsVal proxies = JsvArray_New();
+  ON_FAIL({
+    if (!JsvError_Check(jsresult) && pyproxy_Check(jsresult)) {
+      // TODO: don't destroy proxies with roundtrip = true?
+      JsvArray_Push(proxies, jsresult);
+    }
+    destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
+  });
+
   JsVal jsargs =
     JsMethod_ConvertArgs(call_sig, pyargs, nargsf, kwnames, proxies);
   FAIL_IF_JS_ERROR(jsargs);
+
+  // Recursion error?
+  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" while calling a JavaScript object"));
+  _Defer
+  {
+    Py_LeaveRecursiveCall(/* " in JsMethod_Vectorcall" */);
+  };
+
   if (call_sig->should_construct) {
     jsresult = JsvFunction_Construct(func, jsargs);
   } else {
@@ -405,7 +407,8 @@ JsMethod_Vectorcall_impl(JsVal func,
   }
   FAIL_IF_JS_ERROR(jsresult);
   PyObject* result_converter = ((JsFuncSignature*)call_sig)->result;
-  pyresult = Js2PyConverter_convert(result_converter, jsresult, proxies);
+  PyObject* pyresult =
+    Js2PyConverter_convert(result_converter, jsresult, proxies);
   FAIL_IF_NULL(pyresult);
 
   return pyresult;
@@ -419,9 +422,7 @@ JsMethod_Construct_impl(JsVal func,
                         PyObject* kwnames)
 {
   FAIL_RETURN_VALUE(NULL);
-  PyObject* pyresult = NULL;
   JsVal proxies = JsvArray_New();
-  ON_FAIL({ Py_CLEAR(pyresult); });
   _Defer
   {
     Py_LeaveRecursiveCall(/* " in JsMethod_Construct" */);
@@ -440,10 +441,8 @@ JsMethod_Construct_impl(JsVal func,
   FAIL_IF_JS_ERROR(jsargs);
   JsVal jsresult = JsvFunction_Construct(func, jsargs);
   FAIL_IF_JS_ERROR(jsresult);
-  pyresult = js2python(jsresult);
-  FAIL_IF_NULL(pyresult);
 
-  return pyresult;
+  return js2python(jsresult);
 }
 
 int

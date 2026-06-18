@@ -118,7 +118,6 @@ Py2JsConverter_convert(PyObject* converter, PyObject* pyval, JsVal proxies)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
   DECLARE_PY_OBJECT(pre_converted);
-  JsVal result = JS_ERROR;
 
   int status = PyObject_IsInstance(converter, (PyObject*)&Py2JsConverterType);
   if (status == 0) {
@@ -135,9 +134,7 @@ Py2JsConverter_convert(PyObject* converter, PyObject* pyval, JsVal proxies)
     pre_converted = Py_NewRef(pyval);
   }
 
-  result =
-    Py2JsConverter_converter(converter)(converter, pre_converted, proxies);
-  return result;
+  return Py2JsConverter_converter(converter)(converter, pre_converted, proxies);
 }
 
 // Js2PyConverter
