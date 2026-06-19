@@ -273,8 +273,8 @@ def test_opfs_basic(request, selenium_webworker_standalone):
     # OPFS is origin-scoped so the worker will see these files.
     selenium.run_js(
         """
-        const root = await.navigator.storage.getDirectory();
-        const testdir = await root.getDirectoryHandle('opfs_test', {create: true });
+        const root = await navigator.storage.getDirectory();
+        const testDir = await root.getDirectoryHandle('opfs_test', {create: true });
         const fileHandle = await testDir.getFileHandle('test_read', {create: true});
         const writable = await fileHandle.createWritable();
         await writable.write("hello_read");
@@ -476,7 +476,9 @@ def test_opfs_large_file(request, selenium_webworker_standalone):
             f"have grown by ~{FILE_SIZE} bytes."
         )
 
-        {"size": size, "growth": growth}
+        from pyodide.ffi import to_js
+        from js import Object
+        to_js({"size": size, "growth": growth}, dict_converter=Object.fromEntries)
         """
     )
     assert result["size"] == 10 * 1024 * 1024
@@ -505,9 +507,9 @@ def test_opfs_pandas_compatibility(request, selenium_webworker_standalone):
         const fileHandle = await testDir.getFileHandle('test.csv', {create: true});
         const writable = await fileHandle.createWritable();
 
-        let csv = "id,name,value\n";
+        let csv = "id,name,value\\n";
         for (let i = 0; i < 1000; i++) {
-            csv += `${i},name${i},${i * 10}\n`;
+            csv += `${i},name${i},${i * 10}\\n`;
         }
         await writable.write(csv);
         await writable.close();
@@ -531,7 +533,9 @@ def test_opfs_pandas_compatibility(request, selenium_webworker_standalone):
         assert df.iloc[999]["value"] == 9990, f"Unexpected value in last row: {df.iloc[999]['value']}"
         assert df["value"].sum() == sum(i * 10 for i in range(1000)), f"Unexpected sum of 'value' column: {df['value'].sum()}"
 
-        {"rows": len(df)}
+        from pyodide.ffi import to_js
+        from js import Object
+        to_js({"rows": len(df)}, dict_converter=Object.fromEntries)
         """
     )
     assert result["rows"] == 1000
@@ -610,11 +614,16 @@ def test_opfs_parquet_partial_read(request, selenium_webworker_standalone):
         assert name_col["name"][0].as_py() == "row_0"
         assert name_col["name"][9999].as_py() == "row_9999"
 
-        {
-            "rows": name_col.num_rows,
-            "growth": growth,
-            "file_size": len(parquet_bytes),
-        }
+        from pyodide.ffi import to_js
+        from js import Object
+        to_js(
+            {
+                "rows": name_col.num_rows,
+                "growth": growth,
+                "file_size": len(parquet_bytes),
+            },
+            dict_converter=Object.fromEntries,
+        )
         """
     )
     assert result["rows"] == 10000
