@@ -331,6 +331,62 @@ def test_sqlalchemy_mysql(selenium_nodesock, mysql_test_db):
     run(selenium_nodesock, host, port, user, password, db)
 
 
+# MySQL 8.0+ auto-generates TLS certificates at startup.
+# No extra server configuration needed — just pass ssl=True on the client.
+@pytest.mark.skip_refcount_check
+@pytest.mark.db
+@only_node
+def test_mysql_pymysql_tls(selenium_nodesock, mysql_test_db):
+    cfg = mysql_test_db
+
+    host = cfg["host"]
+    port = cfg["port"]
+    user = cfg["user"]
+    password = cfg["password"]
+    db = cfg["db"]
+
+    @run_in_pyodide(packages=["micropip"])
+    async def run(selenium, host, port, user, password, db):
+        import micropip
+
+        await micropip.install("pymysql==1.1.0")
+
+        import pymysql
+
+        conn = pymysql.connect(
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=db,
+            unix_socket=False,
+            ssl={"check_hostname": False},
+            autocommit=True,
+        )
+        try:
+            with conn.cursor() as cur:
+                cur.execute("DROP TABLE IF EXISTS tls_test")
+                cur.execute(
+                    "CREATE TABLE tls_test (id INT PRIMARY KEY, msg VARCHAR(100))"
+                )
+                cur.execute(
+                    "INSERT INTO tls_test (id, msg) VALUES (%s, %s)",
+                    (1, "over TLS"),
+                )
+                cur.execute("SELECT msg FROM tls_test WHERE id = 1")
+                row = cur.fetchone()
+
+                cur.execute("SHOW STATUS LIKE 'Ssl_cipher'")
+                ssl_status = cur.fetchone()
+        finally:
+            conn.close()
+
+        assert row[0] == "over TLS"
+        assert ssl_status[1], "Expected active TLS cipher, got empty string"
+
+    run(selenium_nodesock, host, port, user, password, db)
+
+
 @pytest.fixture(scope="session")
 def pg_admin_config():
     host = os.environ.get("POSTGRES_HOST", "127.0.0.1")
@@ -640,3 +696,204 @@ def test_sqlalchemy_pg8000(selenium_nodesock, pg_test_db):
         engine.dispose()
 
     run(selenium_nodesock, host, port, user, password, db)
+
+
+@pytest.fixture(scope="session")
+def redis_config():
+    host = os.environ.get("REDIS_HOST", "127.0.0.1")
+    port = int(os.environ.get("REDIS_PORT", "6379"))
+    password = os.environ.get("REDIS_PASSWORD", "")
+    db = int(os.environ.get("REDIS_DB", "15"))
+
+    return {
+        "host": host,
+        "port": port,
+        "password": password or None,
+        "db": db,
+    }
+
+
+@pytest.fixture()
+def redis_test_db(redis_config):
+    import redis
+
+    def cleanup_db():
+        r = redis.Redis(**redis_config)
+        r.flushdb()
+        r.close()
+
+    cleanup_db()
+
+    try:
+        yield redis_config
+    finally:
+        cleanup_db()
+
+
+# When running this test locally, start a Redis server and install dependencies:
+#   docker run -d --name redis-server -p 6379:6379 redis:7
+#   pip install redis
+#   pytest src/tests/test_database_driver.py::test_redis_py_features -m db
+@pytest.mark.skip_refcount_check
+@pytest.mark.db
+@only_node
+def test_redis_py_features(selenium_nodesock, redis_test_db):
+    cfg = redis_test_db
+
+    host = cfg["host"]
+    port = cfg["port"]
+    password = cfg["password"] or ""
+    db = cfg["db"]
+
+    @run_in_pyodide(packages=["micropip"])
+    async def run(selenium, host, port, password, db):
+        import contextlib
+
+        import micropip
+
+        await micropip.install("redis")
+
+        import redis
+
+        def connect(**kwargs):
+            conn = redis.Redis(
+                host=host,
+                port=port,
+                password=password if password else None,
+                db=db,
+                decode_responses=True,
+                **kwargs,
+            )
+
+            return contextlib.closing(conn)
+
+        # 1) Connectivity + string operations
+        with connect() as r:
+            assert r.ping() is True
+            r.flushdb()
+            assert r.dbsize() == 0
+
+            # SET / GET / DELETE
+            assert r.set("key1", "hello") is True
+            assert r.get("key1") == "hello"
+            assert r.get("nonexistent") is None
+            assert r.delete("key1") == 1
+            assert r.get("key1") is None
+
+            # APPEND
+            r.set("appendkey", "hello")
+            new_len = r.append("appendkey", " world")
+            assert new_len == 11
+            assert r.get("appendkey") == "hello world"
+
+            # INCR / DECR
+            r.set("counter", "10")
+            assert r.incr("counter") == 11
+            assert r.incrby("counter", 5) == 16
+            assert r.decr("counter") == 15
+            assert r.decrby("counter", 10) == 5
+
+            # MSET / MGET
+            assert r.mset({"a": "1", "b": "2", "c": "3"}) is True
+            assert r.mget(["a", "b", "c"]) == ["1", "2", "3"]
+            assert r.delete("a", "b", "c") == 3
+        # 2) List operations
+        with connect() as r:
+            r.delete("mylist")
+            assert r.rpush("mylist", "a", "b", "c") == 3
+            assert r.lpush("mylist", "z") == 4
+            assert r.llen("mylist") == 4
+            assert r.lrange("mylist", 0, -1) == ["z", "a", "b", "c"]
+            assert r.lpop("mylist") == "z"
+            assert r.rpop("mylist") == "c"
+            assert r.lrange("mylist", 0, -1) == ["a", "b"]
+
+        # 3) Hash operations
+        with connect() as r:
+            r.delete("myhash")
+            assert r.hset("myhash", mapping={"f1": "v1", "f2": "v2", "f3": "v3"}) == 3
+            assert r.hget("myhash", "f1") == "v1"
+            assert r.hgetall("myhash") == {"f1": "v1", "f2": "v2", "f3": "v3"}
+            assert r.hdel("myhash", "f1") == 1
+            assert r.hget("myhash", "f1") is None
+            assert r.hgetall("myhash") == {"f2": "v2", "f3": "v3"}
+
+        # 4) Set operations
+        with connect() as r:
+            r.delete("myset")
+            assert r.sadd("myset", "a", "b", "c") == 3
+            assert r.scard("myset") == 3
+            assert r.sismember("myset", "a")
+            assert not r.sismember("myset", "z")
+            assert r.smembers("myset") == {"a", "b", "c"}
+            assert r.srem("myset", "c") == 1
+            assert r.scard("myset") == 2
+            assert r.smembers("myset") == {"a", "b"}
+
+        # 5) Sorted set operations
+        with connect() as r:
+            r.delete("myzset")
+            assert r.zadd("myzset", {"alice": 1.0, "bob": 2.0, "charlie": 3.0}) == 3
+            assert r.zcard("myzset") == 3
+            assert r.zscore("myzset", "bob") == 2.0
+            assert r.zrank("myzset", "alice") == 0
+            assert r.zrange("myzset", 0, -1) == ["alice", "bob", "charlie"]
+            scored = r.zrange("myzset", 0, -1, withscores=True)
+            assert scored == [("alice", 1.0), ("bob", 2.0), ("charlie", 3.0)]
+            assert r.zrangebyscore("myzset", 1, 2) == ["alice", "bob"]
+
+        # 6) Key operations (EXISTS, EXPIRE, TTL, TYPE)
+        with connect() as r:
+            r.set("typetest_str", "hello")
+            r.rpush("typetest_list", "a")
+            r.hset("typetest_hash", "k", "v")
+            r.sadd("typetest_set", "a")
+            r.zadd("typetest_zset", {"a": 1.0})
+
+            assert r.exists("typetest_str") == 1
+            assert r.exists("nonexistent") == 0
+            assert r.type("typetest_str") == "string"
+            assert r.type("typetest_list") == "list"
+            assert r.type("typetest_hash") == "hash"
+            assert r.type("typetest_set") == "set"
+            assert r.type("typetest_zset") == "zset"
+
+            assert r.expire("typetest_str", 10) is True
+            ttl_val = r.ttl("typetest_str")
+            assert 0 < ttl_val <= 10
+
+            # SET with EX (expiry)
+            r.set("expiring", "value", ex=60)
+            assert r.get("expiring") == "value"
+            exp_ttl = r.ttl("expiring")
+            assert 0 < exp_ttl <= 60
+
+            # SET with NX (only if not exists)
+            r.set("nxkey", "first")
+            assert r.set("nxkey", "second", nx=True) is None
+            assert r.get("nxkey") == "first"
+
+        # 7) Pipeline (non-transactional batching)
+        with connect() as r:
+            r.delete("p1", "p2")
+            pipe = r.pipeline(transaction=False)
+            pipe.set("p1", "v1")
+            pipe.set("p2", "v2")
+            pipe.get("p1")
+            pipe.get("p2")
+            pipe_results = pipe.execute()
+            assert pipe_results == [True, True, "v1", "v2"]
+
+        # 8) Transaction (MULTI/EXEC)
+        with connect() as r:
+            r.delete("tx1", "tx2")
+            pipe = r.pipeline()  # transaction=True by default
+            pipe.set("tx1", "a")
+            pipe.set("tx2", "b")
+            pipe.get("tx1")
+            tx_results = pipe.execute()
+            assert tx_results == [True, True, "a"]
+            assert r.get("tx1") == "a"
+            assert r.get("tx2") == "b"
+
+    run(selenium_nodesock, host, port, password, db)

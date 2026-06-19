@@ -1,17 +1,23 @@
 name: deploy-release
+
 on:
   workflow_dispatch:
   release:
     types: [published]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions: {}
 
 jobs:
-  deploy-pyodide-py-pypi:
+  build-pyodide-py-pypi:
+    name: Build pyodide-py Python distributions
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
 
@@ -37,7 +43,7 @@ jobs:
 
   publish-pyodide-py-pypi:
     name: Publish pyodide-py to PyPI
-    needs: deploy-pyodide-py-pypi
+    needs: build-pyodide-py-pypi
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'published'
     environment:

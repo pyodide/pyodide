@@ -37,6 +37,7 @@
 - [Online Laboratory for Climate Science and Meteorology](https://github.com/climet-eu/lab) is a
   JupyterLite-based environment that comes with additional packages from the weather and climate
   community, and patches to support loading and working with large (remote) datasets.
+- [Cubite](https://cubite.io) is a multi-tenant LMS platform that uses Pyodide for in-browser Python execution in course content via a custom [EditorJS plugin](https://github.com/amirtds/editorjs-code-editor). Read more about [how Cubite uses Pyodide for interactive learning](https://cubite.io/blogs/run-python-in-browser-pyodide-editorjs).
 
 ## Workarounds for common WASM and browser limitations
 

@@ -129,7 +129,9 @@ JsFuncSignature_clear(PyObject* o)
 static void
 JsFuncSignature_dealloc(PyObject* self)
 {
+  PyObject_GC_UnTrack(self);
   JsFuncSignature_clear(self);
+  Py_TYPE(self)->tp_free(self);
 }
 
 static int
@@ -154,22 +156,17 @@ static PyObject*
 JsFuncSignature_repr(PyObject* o)
 {
   JsFuncSignature* self = (JsFuncSignature*)o;
-  PyObject* result = NULL;
-  PyObject* inspect = NULL;
-  PyObject* sig = NULL;
+  FAIL_RETURN_VALUE(NULL);
+  DECLARE_PY_OBJECT(inspect);
+  DECLARE_PY_OBJECT(sig);
 
   inspect = PyImport_ImportModule("inspect");
   FAIL_IF_NULL(inspect);
   _Py_IDENTIFIER(signature);
   sig = _PyObject_CallMethodIdOneArg(inspect, &PyId_signature, self->func);
   FAIL_IF_NULL(sig);
-  result = PyUnicode_FromFormat("<JsSignature %S>", sig);
-  FAIL_IF_NULL(result);
 
-finally:
-  Py_CLEAR(inspect);
-  Py_CLEAR(sig);
-  return result;
+  return PyUnicode_FromFormat("<JsSignature %S>", sig);
 }
 
 static PyTypeObject JsFuncSignatureType = {
@@ -224,9 +221,14 @@ JsMethod_ConvertArgs(JsFuncSignature* sig,
                      PyObject* kwnames,
                      JsVal proxies)
 {
+  FAIL_RETURN_VALUE(JS_ERROR);
   JsVal kwargs;
   JsVal jsargs = JsvArray_New();
-  bool success = false;
+  ON_FAIL({
+    if (!PyErr_Occurred()) {
+      PyErr_SetString(PyExc_SystemError, "Oops");
+    }
+  });
 
   int nargs = PyVectorcall_NARGS(nargsf);
   int pos_params_size = PyTuple_GET_SIZE(sig->posparams);
@@ -269,7 +271,7 @@ JsMethod_ConvertArgs(JsFuncSignature* sig,
   Py_ssize_t nkwargs = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
   bool has_kwargs = (nkwargs > 0) || (PyTuple_GET_SIZE(sig->kwparam_names) > 0);
   if (!has_kwargs) {
-    goto success;
+    return jsargs;
   }
   // store kwargs into an object which we'll use as the last argument.
   kwargs = JsvObject_New();
@@ -327,7 +329,7 @@ JsMethod_ConvertArgs(JsFuncSignature* sig,
   JsvArray_Push(jsargs, kwargs);
 
   FAIL_IF_ERR_OCCURRED();
-  goto success;
+  return jsargs;
 set_args_error: {
   // Calling the template function with the same args should raise an
   // appropriate error
@@ -335,26 +337,15 @@ set_args_error: {
   if (res) {
     Py_CLEAR(res);
     PyErr_SetString(PyExc_SystemError, "Expected an error but none was raised");
-    goto finally;
+    FAIL();
   }
   if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-    goto finally;
+    FAIL();
   }
   PyErr_SetString(PyExc_SystemError,
                   "Expected a TypeError but other type of error was raised");
-  goto finally;
+  FAIL();
 }
-
-success:
-  success = true;
-finally:
-  if (!success) {
-    jsargs = JS_ERROR;
-    if (!PyErr_Occurred()) {
-      PyErr_SetString(PyExc_SystemError, "Oops");
-    }
-  }
-  return jsargs;
 }
 
 /**
@@ -368,14 +359,13 @@ JsMethod_Vectorcall_impl(JsVal func,
                          size_t nargsf,
                          PyObject* kwnames)
 {
-  bool success = false;
-  JsVal jsresult = JS_ERROR;
-  JsFuncSignature* call_sig = NULL;
-  PyObject* pyresult = NULL;
-  JsVal proxies = JsvArray_New();
+  FAIL_RETURN_VALUE(NULL);
 
-  // Recursion error?
-  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" while calling a JavaScript object"));
+  JsFuncSignature* call_sig = NULL;
+  _Defer
+  {
+    Py_CLEAR(call_sig);
+  };
   if (sig) {
     _Py_IDENTIFIER(func_to_sig);
     call_sig = (JsFuncSignature*)_PyObject_CallMethodIdOneArg(
@@ -388,9 +378,28 @@ JsMethod_Vectorcall_impl(JsVal func,
   if (!call_sig) {
     call_sig = (JsFuncSignature*)Py_NewRef(default_signature);
   }
+
+  JsVal jsresult = JS_ERROR;
+  JsVal proxies = JsvArray_New();
+  ON_FAIL({
+    if (!JsvError_Check(jsresult) && pyproxy_Check(jsresult)) {
+      // TODO: don't destroy proxies with roundtrip = true?
+      JsvArray_Push(proxies, jsresult);
+    }
+    destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
+  });
+
   JsVal jsargs =
     JsMethod_ConvertArgs(call_sig, pyargs, nargsf, kwnames, proxies);
   FAIL_IF_JS_ERROR(jsargs);
+
+  // Recursion error?
+  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" while calling a JavaScript object"));
+  _Defer
+  {
+    Py_LeaveRecursiveCall(/* " in JsMethod_Vectorcall" */);
+  };
+
   if (call_sig->should_construct) {
     jsresult = JsvFunction_Construct(func, jsargs);
   } else {
@@ -398,22 +407,10 @@ JsMethod_Vectorcall_impl(JsVal func,
   }
   FAIL_IF_JS_ERROR(jsresult);
   PyObject* result_converter = ((JsFuncSignature*)call_sig)->result;
-  pyresult = Js2PyConverter_convert(result_converter, jsresult, proxies);
+  PyObject* pyresult =
+    Js2PyConverter_convert(result_converter, jsresult, proxies);
   FAIL_IF_NULL(pyresult);
 
-  success = true;
-finally:
-  Py_LeaveRecursiveCall(/* " in JsMethod_Vectorcall" */);
-  if (!success) {
-
-    if (!JsvError_Check(jsresult) && pyproxy_Check(jsresult)) {
-      // TODO: don't destroy proxies with roundtrip = true?
-      JsvArray_Push(proxies, jsresult);
-    }
-    destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
-    Py_CLEAR(pyresult);
-  }
-  Py_CLEAR(call_sig);
   return pyresult;
 }
 
@@ -424,9 +421,17 @@ JsMethod_Construct_impl(JsVal func,
                         size_t nargs,
                         PyObject* kwnames)
 {
-  bool success = false;
-  PyObject* pyresult = NULL;
+  FAIL_RETURN_VALUE(NULL);
   JsVal proxies = JsvArray_New();
+  _Defer
+  {
+    Py_LeaveRecursiveCall(/* " in JsMethod_Construct" */);
+    Js_static_string(
+      msg,
+      "This borrowed proxy was automatically destroyed. Try using "
+      "create_proxy or create_once_callable.");
+    destroy_proxies(proxies, &msg);
+  };
 
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsMethod_Construct"));
@@ -436,30 +441,17 @@ JsMethod_Construct_impl(JsVal func,
   FAIL_IF_JS_ERROR(jsargs);
   JsVal jsresult = JsvFunction_Construct(func, jsargs);
   FAIL_IF_JS_ERROR(jsresult);
-  pyresult = js2python(jsresult);
-  FAIL_IF_NULL(pyresult);
 
-  success = true;
-finally:
-  Py_LeaveRecursiveCall(/* " in JsMethod_Construct" */);
-  Js_static_string(msg,
-                   "This borrowed proxy was automatically destroyed. Try using "
-                   "create_proxy or create_once_callable.");
-  destroy_proxies(proxies, &msg);
-  if (!success) {
-    Py_CLEAR(pyresult);
-  }
-  return pyresult;
+  return js2python(jsresult);
 }
 
 int
 jsproxy_call_init(PyObject* core_mod)
 {
+  FAIL_RETURN_VALUE(-1);
   FAIL_IF_MINUS_ONE(PyType_Ready(&JsFuncSignatureType));
   FAIL_IF_MINUS_ONE(PyObject_SetAttrString(
     core_mod, "JsFuncSignature", (PyObject*)&JsFuncSignatureType));
 
   return 0;
-finally:
-  return -1;
 }

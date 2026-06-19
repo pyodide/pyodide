@@ -3,6 +3,7 @@ argcomplete
 build~=1.2.0
 click<8.2
 cmake<4 # required to build ccache, zstd recipe not compatible with cmake 4.0
+cryptography  # Used for db testing
 hypothesis
 mypy==1.11.0
 # lint

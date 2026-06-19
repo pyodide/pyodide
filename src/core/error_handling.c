@@ -144,20 +144,20 @@ EM_JS(void, log_python_error, (JsVal jserror), {
  * WARNING: dereferencing the error pointer stored on the PythonError is a
  * use-after-free bug.
  */
-EMSCRIPTEN_KEEPALIVE JsVal
-wrap_exception()
+// Does the fallible work of wrap_exception. `exc` is borrowed. Returns a JS
+// error on success or JS_ERROR if something went wrong while formatting (in
+// which case wrap_exception builds a fallback error).
+static JsVal
+wrap_exception_inner(PyObject* exc)
 {
-  bool success = false;
-  PyObject* exc = NULL;
-  PyObject* typestr = NULL;
-
-  exc = PyErr_GetRaisedException();
+  FAIL_RETURN_VALUE(JS_ERROR);
+  DECLARE_PY_OBJECT(typestr);
 
   if (PyErr_GivenExceptionMatches(exc, PyExc_ModuleNotFoundError)) {
-    PyObject* res = _PyObject_CallMethodIdOneArg(
+    DECLARE_PY_OBJECT(res);
+    res = _PyObject_CallMethodIdOneArg(
       _pyodide_importhook, &PyId_add_note_to_module_not_found_error, exc);
     FAIL_IF_NULL(res);
-    Py_CLEAR(res);
   }
 
   capture_stderr();
@@ -192,9 +192,17 @@ wrap_exception()
   log_python_error(jserror);
 #endif
 
-  success = true;
-finally:
-  if (!success) {
+  return jserror;
+}
+
+EMSCRIPTEN_KEEPALIVE JsVal
+wrap_exception()
+{
+  DECLARE_PY_OBJECT(exc);
+  exc = PyErr_GetRaisedException();
+
+  JsVal jserror = wrap_exception_inner(exc);
+  if (JsvError_Check(jserror)) {
     fail_test();
     PySys_WriteStderr(
       "Pyodide: Internal error occurred while formatting traceback:\n");
@@ -206,8 +214,6 @@ finally:
     Js_static_string(msg, "Error occurred while formatting traceback");
     jserror = new_error("PyodideInternalError", JsvString_FromId(&msg), 0);
   }
-  Py_CLEAR(exc);
-  Py_CLEAR(typestr);
   return jserror;
 }
 
@@ -260,8 +266,8 @@ PyObject* conversion_error;
 int
 error_handling_init(PyObject* core_module)
 {
-  bool success = false;
-  PyObject* _pyodide_core_docs = NULL;
+  FAIL_RETURN_VALUE(-1);
+  DECLARE_PY_OBJECT(_pyodide_core_docs);
 
   _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(_pyodide_core_docs);
@@ -279,8 +285,5 @@ error_handling_init(PyObject* core_module)
   tbmod = PyImport_ImportModule("traceback");
   FAIL_IF_NULL(tbmod);
 
-  success = true;
-finally:
-  Py_CLEAR(_pyodide_core_docs);
-  return success ? 0 : -1;
+  return 0;
 }

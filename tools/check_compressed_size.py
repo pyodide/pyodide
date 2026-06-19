@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+# /// script
+# dependencies = [
+#   "brotli",
+# ]
+# ///
+
 # A short script to check the size of files when compressed.
 # Usage:
 #   check_compressed_size.py pyodide.asm.mjs pyodide.asm.wasm
@@ -15,8 +21,8 @@ except ImportError:
     brotli = None
 
 
-def kb(size: int) -> int:
-    return size // 1024
+def fmt(size: int) -> str:
+    return f"{size:,} bytes ({size / 1024:.2f} KB)"
 
 
 def check_size(file: str | Path) -> None:
@@ -28,20 +34,20 @@ def check_size(file: str | Path) -> None:
 
     print(f"- {file.name}:")
 
-    print(f"    Original size: {kb(file.stat().st_size)} KB")
+    print(f"    Original size: {fmt(file.stat().st_size)}")
 
     data = file.read_bytes()
     compressed_data_1 = gzip.compress(data, compresslevel=1)
     compressed_data_6 = gzip.compress(data, compresslevel=6)
     compressed_data_9 = gzip.compress(data, compresslevel=9)
 
-    print(f"    Gzip compressed size (level 1): {kb(len(compressed_data_1))} KB")
-    print(f"    Gzip compressed size (level 6): {kb(len(compressed_data_6))} KB")
-    print(f"    Gzip compressed size (level 9): {kb(len(compressed_data_9))} KB")
+    print(f"    Gzip compressed size (level 1): {fmt(len(compressed_data_1))}")
+    print(f"    Gzip compressed size (level 6): {fmt(len(compressed_data_6))}")
+    print(f"    Gzip compressed size (level 9): {fmt(len(compressed_data_9))}")
 
     if brotli:
         compress_data_brotli = brotli.compress(data)
-        print(f"    Brotli compressed size: {kb(len(compress_data_brotli))} KB")
+        print(f"    Brotli compressed size: {fmt(len(compress_data_brotli))}")
 
 
 def main():

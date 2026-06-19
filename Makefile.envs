@@ -1,6 +1,6 @@
 export PYVERSION ?= 3.14.2
 export PYODIDE_EMSCRIPTEN_VERSION ?= 5.0.3
-export PYODIDE_VERSION ?= 314.0.0.dev0
+export PYODIDE_VERSION ?= 314.1.0.dev0
 export PYODIDE_ABI_VERSION ?= 2026_0
 
 export PYTHON_ARCHIVE_SHA256=c609e078adab90e2c6bacb6afafacd5eaf60cd94cf670f1e159565725fcd448d
@@ -11,7 +11,7 @@ export RUST_TOOLCHAIN ?= 1.93.0
 export RUSTFLAGS = -C link-arg=-sSIDE_MODULE=2
 
 # URL to the prebuilt packages
-export PYODIDE_PREBUILT_PACKAGES_BASE=https://github.com/pyodide/pyodide-recipes/releases/download/314-20260408
+export PYODIDE_PREBUILT_PACKAGES_BASE=https://github.com/pyodide/pyodide-recipes/releases/download/314-20260521
 export PYODIDE_PREBUILT_PACKAGES_URL=$(PYODIDE_PREBUILT_PACKAGES_BASE)/packages.tar.gz
 export PYODIDE_PREBUILT_PACKAGES_LOCKFILE=$(PYODIDE_PREBUILT_PACKAGES_BASE)/pyodide-lock.json
 export ENABLE_PREBUILT_PACKAGES ?= 0
@@ -163,12 +163,12 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
 	-s FORCE_FILESYSTEM=1 \
-	-s INITIAL_MEMORY=20971520 \
+	-s INITIAL_MEMORY=31457280 \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s MAXIMUM_MEMORY=4GB \
 	-s EXPORT_ALL=1 \
 	-s FS_DEBUG=1 \
-	-s STACK_SIZE=5MB \
+	-s STACK_SIZE=10MB \
 	-s AUTO_JS_LIBRARIES=0 \
 	-s AUTO_NATIVE_LIBRARIES=0 \
 	-s NODEJS_CATCH_EXIT=0 \
@@ -180,6 +180,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lffi \
 	-llzma \
 	-lsqlite3 \
+	-lzstd \
 	-lstdc++ \
 	-lidbfs.js \
 	-lnodefs.js \
@@ -252,6 +253,9 @@ EXPORTS=_main \
    ,_PyUnicode_New \
    ,_emscripten_stack_get_current \
    ,_Py_Version \
+   \
+   ,___stack_low \
+   ,___stack_high \
 
 
 ifeq ($(DISABLE_DYLINK), 1)
@@ -283,10 +287,10 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-s USE_ZLIB \
 		-s USE_BZIP2 \
 		-s FORCE_FILESYSTEM=1 \
-		-s INITIAL_MEMORY=20971520 \
+		-s INITIAL_MEMORY=31457280 \
 		-s ALLOW_MEMORY_GROWTH=1 \
 		-s MAXIMUM_MEMORY=4GB \
-		-s STACK_SIZE=5MB \
+		-s STACK_SIZE=10MB \
 		-s ALLOW_TABLE_GROWTH \
 		-s FS_DEBUG=1 \
 		-sWASM_BIGINT \
@@ -297,6 +301,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lhiwire \
 		-llzma \
 		-lsqlite3 \
+		-lzstd \
 		-lidbfs.js \
 		-lnodefs.js \
 		-lproxyfs.js
@@ -312,6 +317,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Werror=incompatible-pointer-types \
 	-Werror=unused-result \
 	-mreference-types \
+	-fdefer-ts \
 	-I$(PYTHONINCLUDE) \
 	-I$(PYTHONINCLUDE)/..
 

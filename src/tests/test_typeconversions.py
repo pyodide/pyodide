@@ -142,6 +142,117 @@ def test_large_string_conversion(selenium):
     )("ab" * 20_000)
 
 
+@run_in_pyodide
+def test_js2python_string_codepoints(selenium):
+    """JS string -> Python str conversion (js2python_string) must handle all
+    three Python internal representations (UCS1/UCS2/UCS4) and decode UTF-16
+    surrogate pairs into a single astral code point, while passing lone
+    surrogates through as their bare code-unit value.
+    """
+    from pyodide.code import run_js
+
+    # A JS string returned to Python is converted by js2python_string.
+    js_string = run_js("(s) => s")
+
+    # UCS1 (<= U+00FF), UCS2 (<= U+FFFF), UCS4 (astral / emoji).
+    assert js_string("pyodidé") == "pyodidé"
+    assert js_string("碘化物") == "碘化物"
+    assert js_string("🐍") == "🐍"
+    assert js_string("a😀b漢c") == "a😀b漢c"
+
+    # A surrogate pair built from its two UTF-16 code units must decode to the
+    # single astral code point, not two separate characters.
+    pair = run_js("() => String.fromCharCode(0xD83D, 0xDE00)")()
+    assert pair == "😀"
+    assert len(pair) == 1
+    assert ord(pair) == 0x1F600
+
+    # Lone surrogates pass through as their bare code-unit value.
+    lone_high = run_js("() => String.fromCharCode(0xD83D)")()
+    assert len(lone_high) == 1
+    assert ord(lone_high) == 0xD83D
+    lone_low = run_js("() => String.fromCharCode(0xDE00)")()
+    assert len(lone_low) == 1
+    assert ord(lone_low) == 0xDE00
+
+    # A high surrogate not followed by a low surrogate stays lone, and the
+    # following character is preserved.
+    mixed = run_js("() => String.fromCharCode(0xD83D, 0x0041)")()
+    assert len(mixed) == 2
+    assert ord(mixed[0]) == 0xD83D
+    assert mixed[1] == "A"
+
+
+@run_in_pyodide
+def test_string_conversion_above_2gb(selenium):
+    """Regression test for a Python str -> JS string conversion bug that
+    fired only when the str's data buffer was allocated above the 2 GB WASM
+    heap boundary.
+
+    The DEREF_U16/U32/etc macros in src/core/jsmemops.h must use unsigned
+    right shift (>>>) to convert byte address -> typed-array element index;
+    with signed >>, an address >= 0x80000000 (allowed by MAXIMUM_MEMORY=4GB)
+    arrives in JS as a negative Number, and the shift sign-extends to an
+    out-of-bounds index. The result is a JS string with correct .length but
+    every charCodeAt() is 0.
+
+    To trigger we (1) grow the heap past 2 GB and (2) fragment with small
+    varied allocations until a fresh str data buffer lands above the
+    boundary. UCS2 is forced by including a codepoint > U+00FF, which routes
+    the conversion through _python2js_ucs2 / DEREF_U16.
+    """
+    import gc
+
+    from pyodide.code import run_js
+
+    inspect = run_js(
+        """
+        (s) => {
+            let nulCount = 0;
+            for (let i = 0; i < s.length; i++) {
+                if (s.charCodeAt(i) === 0) nulCount++;
+            }
+            return [s.length, nulCount];
+        }
+        """
+    )
+
+    def check(label):
+        s = chr(0x0100) + "x" * 1023
+        assert s.count("\x00") == 0, "source str corrupted on Python side"
+        length, nul_count = inspect(s).to_py()
+        assert length == len(s)
+        assert nul_count == 0, (
+            f"{label}: Python str -> JS string corruption "
+            f"({nul_count}/{length} chars are U+0000); str buffer likely "
+            "lives above 2 GB and DEREF_U16 sign-extended the byte address"
+        )
+
+    check("baseline (heap < 2 GB)")
+
+    # Grow the heap past 2 GB.
+    ballast = []
+    for _ in range(21):
+        try:
+            ballast.append(bytes(100 * 1024 * 1024))
+        except MemoryError:
+            break
+    check("after 2 GB ballast")
+
+    # Fragment with small varied allocations until something lands above the
+    # boundary. In practice the bug fires within ~15k iterations.
+    small = []
+    try:
+        for i in range(20000):
+            small.append(bytes(1000 + (i % 4000)))
+            if i and i % 1000 == 0:
+                check(f"during small allocs i={i}")
+    finally:
+        del small
+        del ballast
+        gc.collect()
+
+
 @given(
     n=st.one_of(
         st.integers(),

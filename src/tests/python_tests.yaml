@@ -988,4 +988,6 @@
 - test_zlib
 - test_zoneinfo.test_zoneinfo
 - test_zoneinfo.test_zoneinfo_property
-- test_zstd
+- test_zstd:
+    skip:
+    - FreeThreadingMethodTests

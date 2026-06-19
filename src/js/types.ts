@@ -54,6 +54,7 @@ declare global {
   // _PyList_New, _PyDict_New, _PyDict_SetItem, _PySet_New, _PySet_Add
   // _PyEval_SaveThread, _PyEval_RestoreThread,
   //   _PyErr_CheckSignals, _PyErr_SetString
+  export const _malloc: (sz: number) => number;
   export const _free: (a: number) => void;
   export const __PyTraceback_Add: (a: number, b: number, c: number) => void;
   export const _PyRun_SimpleString: (ptr: number) => number;
@@ -189,17 +190,25 @@ export type FSNode = {
   rdev: number;
   contents: Uint8Array;
   mode: number;
+  sock?: any;
 };
 
 /** @hidden */
+export type TtyOps<T> = {
+  ioctl_tiocgwinsz(tty: T): readonly [number, number];
+};
+
+type FSTty = {
+  ops: TtyOps<FSTty>;
+} & Record<string, unknown>;
+
+/** @hidden */
 export type FSStream = {
-  tty?: {
-    ops: object;
-  };
+  tty: FSTty | undefined;
   seekable?: boolean;
   stream_ops: FSStreamOps;
   node: FSNode;
-};
+} & FS.FSStream;
 
 /** @hidden */
 export type FSStreamOps = FSStreamOpsGen<FSStream>;
@@ -240,7 +249,7 @@ declare global {
       mode: number,
       dev: number,
     ): any;
-    function createStream(stream: any, fd?: number): any;
+    function createStream(stream: any, fd?: number): FSStream;
   }
 }
 
@@ -287,7 +296,9 @@ export interface EmscriptenModule {
   stringToUTF8OnStack: (str: string) => number;
   HEAP8: Uint8Array;
   HEAPU8: Uint8Array;
+  HEAP32: Int32Array;
   HEAPU32: Uint32Array;
+  HEAP16: Int16Array;
   SOCKFS: any;
   getSocketAddress: (addr: number, addrlen: number) => any;
   getExceptionMessage(e: number): [string, string];
@@ -564,6 +575,13 @@ export interface API {
     mount: any,
     opfsHandle: FileSystemDirectoryHandle,
   ) => Promise<void>;
+
+  _nodeSock: {
+    connect: (fd: number, host: string, port: number) => Promise<void>;
+    recv: (fd: number, nbytes: number) => Promise<Uint8Array | number>;
+    send: (fd: number, data: any) => Promise<number>;
+    startTls: (fd: number) => number;
+  };
 }
 
 // Subset of the API and Module that the package manager needs

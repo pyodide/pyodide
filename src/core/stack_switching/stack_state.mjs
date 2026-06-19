@@ -39,6 +39,85 @@
  */
 const stackStates = [];
 
+// Keep track of the running average task size. We could have a special case for
+// taskSizeCount = 0 to prevent dividing by zero, but it's simpler just to start
+// with some single value in the running average.
+let taskSizeTotal = 500;
+let taskSizeCount = 1;
+
+function setStackPosition(stackPosition) {
+  evictStackUpTo(stackPosition);
+  stackRestore(stackPosition);
+}
+
+let stackTop;
+
+/**
+ * Decide where the stack stop for a new task should be and evict any tasks that
+ * are in the way.
+ * @private
+ */
+export function enterTask() {
+  // If this is the first task we enter, record the current stack position as
+  // the top of the entire stack and leave it alone.
+  if (stackTop === undefined) {
+    stackTop = stackSave();
+    return;
+  }
+  // Search for a gap in the stack large enough that we feel like sticking a
+  // task in it. We search from bottom to top because insertion is cheaper
+  // closer to the bottom. (More specifically, if the tasks run a long time then
+  // it costs the same no matter where we insert but if they are short lived
+  // inserting lower is better).
+
+  // If we make threshold bigger, we will use up more stack space but also copy
+  // less stack around. If we make it smaller, we use less stack space but copy
+  // more stack.
+  const threshold = (taskSizeTotal / taskSizeCount) * 0.8;
+  let lastStop = stackStates.at(-1)?.stop;
+  for (let idx = stackStates.length - 2; idx >= -1; idx--) {
+    const state =
+      idx >= 0 ? stackStates[idx] : { start: stackTop, stop: stackTop };
+    if (state.start - lastStop > threshold) {
+      setStackPosition(state.start);
+      return;
+    }
+    lastStop = state.stop;
+  }
+  // No large enough gaps found. Last, check if the current stack position is
+  // below the bottom used stack position and if so move the stack up. This can
+  // happen if a task higher on the stack exited first followed by a task lower
+  // on the stack.
+  const bottomUsed = stackStates.at(-1)?.start ?? stackTop;
+  if (bottomUsed > stackSave()) {
+    setStackPosition(bottomUsed);
+    return;
+  }
+}
+
+function evictStackUpTo(stop) {
+  let total = 0;
+  // Search up the stack for things that need to be ejected in their entirety
+  // and save them
+  while (stackStates.length > 0 && stackStates.at(-1).stop < stop) {
+    total += stackStates.pop()._save();
+  }
+  // Part of one more object may need to be ejected.
+  const last = stackStates.at(-1);
+  if (last && last.stop !== stop) {
+    total += last._save_up_to(stop);
+  }
+  // If we just saved all of the last stackState it needs to be removed.
+  // Alternatively, the current StackState may be on the stackStates list.
+  // Technically it would make sense to leave it there, but we will add it
+  // back if we suspend again and if we exit normally it gets removed from the
+  // stack.
+  if (last && last.stop === stop) {
+    stackStates.pop();
+  }
+  return total;
+}
+
 /**
  * A class to help us keep track of the argument stack data for our individual
  * continuations. The suspender automatically and opaquely handles the call
@@ -66,6 +145,8 @@ export class StackState {
      * stack.
      */
     this._copy = new Uint8Array(0);
+    taskSizeTotal += this.stop - this.start;
+    taskSizeCount++;
     if (this.start !== this.stop) {
       // Edge case that probably never happens: If start and stop are equal, the
       // current continuation occupies no arg stack space.
@@ -78,28 +159,7 @@ export class StackState {
    * @returns How much data we copied. (Only for debugging purposes.)
    */
   restore() {
-    let total = 0;
-    // Search up the stack for things that need to be ejected in their entirety
-    // and save them
-    while (
-      stackStates.length > 0 &&
-      stackStates[stackStates.length - 1].stop < this.stop
-    ) {
-      total += stackStates.pop()._save();
-    }
-    // Part of one more object may need to be ejected.
-    const last = stackStates[stackStates.length - 1];
-    if (last && last !== this) {
-      total += last._save_up_to(this.stop);
-    }
-    // If we just saved all of the last stackState it needs to be removed.
-    // Alternatively, the current StackState may be on the stackStates list.
-    // Technically it would make sense to leave it there, but we will add it
-    // back if we suspend again and if we exit normally it gets removed from the
-    // stack.
-    if (last && last.stop === this.stop) {
-      stackStates.pop();
-    }
+    let total = evictStackUpTo(this.stop);
     if (this._copy.length !== 0) {
       // Now that we've saved everything that might be in our way we can restore
       // the current stack data if need be.

@@ -1,6 +1,7 @@
 import contextlib
 import socket
 import threading
+from pathlib import Path
 
 import pytest
 from pytest_pyodide import run_in_pyodide
@@ -561,6 +562,119 @@ def test_socket_shutdown(selenium_nodesock):
         run(selenium_nodesock, host, port)
 
 
+def test_socket_shutdown_pairs(selenium_nodesock):
+    """All 9 combinations of two consecutive shutdown() calls should succeed (Linux behavior)."""
+
+    server_conns = []
+
+    def handler(conn, _addr):
+        server_conns.append(conn)
+        try:
+            while True:
+                data = conn.recv(1024)
+                if not data:
+                    break
+                conn.sendall(data)
+        except OSError:
+            pass
+
+    @run_in_pyodide
+    def run(selenium, host, port, first, second):
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+        s.sendall(b"ping")
+        s.recv(1024)
+
+        s.shutdown(first)
+        s.shutdown(second)
+        s.close()
+
+    shut_values = [0, 1, 2]
+    for first in shut_values:
+        for second in shut_values:
+            with tcp_server(handler) as (host, port):
+                run(selenium_nodesock, host, port, first, second)
+            server_conns.clear()
+
+
+def test_socket_nonblocking_recv_with_buffered_data(selenium_nodesock):
+    """Non-blocking recv should return data that arrived while nobody was reading.
+
+    This tests that the socket layer eagerly buffers incoming data (like the
+    kernel receive queue), so a non-blocking recv finds it immediately.
+    """
+
+    def handler(conn, _addr):
+        data = conn.recv(1024)
+        conn.sendall(data)
+
+    @run_in_pyodide
+    def run(selenium, host, port):
+        import socket
+        import time
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+        s.setblocking(True)
+
+        s.sendall(b"hello")
+        time.sleep(0.5)
+
+        s.setblocking(False)
+        data = s.recv(1024)
+        s.close()
+        return data
+
+    with tcp_server(handler) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert result == b"hello"
+
+
+def test_socket_recv_backpressure(selenium_nodesock):
+    """Receiving large data doesn't cause unbounded memory growth.
+
+    The recv pump pauses when its internal buffer exceeds the high-water mark
+    (256KB), which propagates backpressure to the sender via TCP flow control.
+    This test verifies that a 1MB transfer works correctly despite the cap.
+    """
+    DATA_SIZE = 1024 * 1024
+
+    server_sent = []
+
+    def handler(conn, _addr):
+        conn.recv(1024)
+        data = b"A" * DATA_SIZE
+        conn.sendall(data)
+        server_sent.append(len(data))
+        conn.close()
+
+    @run_in_pyodide
+    def run(selenium, host, port, data_size):
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        s.sendall(b"go")
+
+        received = b""
+        while len(received) < data_size:
+            chunk = s.recv(65536)
+            if not chunk:
+                break
+            received += chunk
+
+        s.close()
+        return len(received)
+
+    with tcp_server(handler, timeout=15.0) as (host, port):
+        nbytes = run(selenium_nodesock, host, port, DATA_SIZE)
+        assert nbytes == DATA_SIZE
+        assert server_sent[0] == DATA_SIZE
+
+
 def test_socket_shutdown_non_nodesock(selenium_standalone):
     """
     Calling shutdown on a non-node socket will raise "Function not implemented"
@@ -584,3 +698,442 @@ def test_socket_shutdown_non_nodesock(selenium_standalone):
         s.close()
 
     run(selenium_standalone)
+
+
+def test_socket_settimeout_nonblocking(selenium_nodesock):
+    """settimeout(0) makes recv raise socket.timeout when no data is available."""
+
+    def handler(conn, _addr):
+        import time
+
+        time.sleep(2)
+        conn.sendall(b"delayed")
+        conn.close()
+
+    @run_in_pyodide(packages=["pytest"])
+    def run(selenium, host, port):
+        import socket
+
+        import pytest
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        s.settimeout(0)
+
+        with pytest.raises(OSError):
+            s.recv(1024)
+
+    with tcp_server(handler) as (host, port):
+        run(selenium_nodesock, host, port)
+
+
+def test_socket_settimeout_restore_blocking(selenium_nodesock):
+    """settimeout(0) then settimeout(None) restores blocking mode."""
+
+    def handler(conn, _addr):
+        conn.sendall(b"hello")
+        conn.close()
+
+    @run_in_pyodide
+    def run(selenium, host, port):
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        s.settimeout(0)
+        s.settimeout(None)
+
+        data = s.recv(1024)
+        s.close()
+        return data.decode()
+
+    with tcp_server(handler) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert result == "hello"
+
+
+# ---------------------------------------------------------------------------
+# asyncio webloop tests
+# ---------------------------------------------------------------------------
+
+
+def test_asyncio_sock_connect_recv_sendall(selenium_nodesock):
+    """Test low-level sock_connect + sock_recv + sock_sendall via asyncio."""
+    TEST_MESSAGE = b"async hello"
+    RESPONSE = b"async reply"
+
+    def handler(conn, _addr):
+        _ = conn.recv(1024)
+        conn.sendall(RESPONSE)
+
+    @run_in_pyodide
+    async def run(selenium, host, port, message):
+        import asyncio
+        import socket
+
+        loop = asyncio.get_event_loop()
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setblocking(False)
+
+        await loop.sock_connect(s, (host, port))
+        await loop.sock_sendall(s, message)
+        data = await loop.sock_recv(s, 1024)
+        s.close()
+        return data.decode()
+
+    with tcp_server(handler) as (host, port):
+        result = run(selenium_nodesock, host, port, TEST_MESSAGE)
+        assert result == RESPONSE.decode()
+
+
+def test_asyncio_create_connection_echo(selenium_nodesock):
+    """Test create_connection with an echo protocol."""
+
+    def handler(conn, _addr):
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            conn.sendall(data)
+
+    @run_in_pyodide
+    async def run(selenium, host, port):
+        import asyncio
+
+        class EchoClient(asyncio.Protocol):
+            def __init__(self):
+                self.received = bytearray()
+                self.done = asyncio.get_event_loop().create_future()
+
+            def data_received(self, data):
+                self.received.extend(data)
+
+            def connection_lost(self, exc):
+                if not self.done.done():
+                    self.done.set_result(None)
+
+        loop = asyncio.get_event_loop()
+        transport, proto = await loop.create_connection(EchoClient, host, port)
+
+        transport.write(b"First")
+        transport.write(b"Second")
+        transport.write(b"Third")
+
+        await asyncio.sleep(1)
+        transport.close()
+        await asyncio.wait_for(proto.done, timeout=5.0)
+        return proto.received.decode()
+
+    with tcp_server(handler) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert "First" in result
+        assert "Second" in result
+        assert "Third" in result
+
+
+def test_asyncio_create_connection_server_closes(selenium_nodesock):
+    """Server sends data then closes; transport should detect EOF."""
+
+    def handler(conn, _addr):
+        conn.sendall(b"goodbye")
+        conn.close()
+
+    @run_in_pyodide
+    async def run(selenium, host, port):
+        import asyncio
+
+        class Receiver(asyncio.Protocol):
+            def __init__(self):
+                self.received = bytearray()
+                self.lost_exc = "not_called"
+                self.done = asyncio.get_event_loop().create_future()
+
+            def data_received(self, data):
+                self.received.extend(data)
+
+            def connection_lost(self, exc):
+                self.lost_exc = repr(exc)
+                if not self.done.done():
+                    self.done.set_result(None)
+
+        loop = asyncio.get_event_loop()
+        _, proto = await loop.create_connection(Receiver, host, port)
+
+        await asyncio.wait_for(proto.done, timeout=5.0)
+        return (proto.received.decode(), proto.lost_exc)
+
+    with tcp_server(handler) as (host, port):
+        data, exc = run(selenium_nodesock, host, port)
+        assert data == "goodbye"
+        assert exc == "None"
+
+
+def test_asyncio_open_connection(selenium_nodesock):
+    """Test asyncio.open_connection (StreamReader/Writer API)."""
+    RESPONSE = b"stream reply"
+
+    def handler(conn, _addr):
+        _ = conn.recv(1024)
+        conn.sendall(RESPONSE)
+        conn.close()
+
+    @run_in_pyodide
+    async def run(selenium, host, port):
+        import asyncio
+
+        reader, writer = await asyncio.open_connection(host, port)
+
+        writer.write(b"hello")
+        await writer.drain()
+
+        data = await reader.read(1024)
+        writer.close()
+        return data.decode()
+
+    with tcp_server(handler) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert result == RESPONSE.decode()
+
+
+def test_asyncio_sock_recv_into(selenium_nodesock):
+    """Test sock_recv_into fills a buffer."""
+    RESPONSE = b"buffer test"
+
+    def handler(conn, _addr):
+        conn.sendall(RESPONSE)
+
+    @run_in_pyodide
+    async def run(selenium, host, port, expected_len):
+        import asyncio
+        import socket
+
+        loop = asyncio.get_event_loop()
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setblocking(False)
+
+        await loop.sock_connect(s, (host, port))
+
+        buf = bytearray(1024)
+        n = await loop.sock_recv_into(s, buf)
+        s.close()
+        return (n, buf[:n].decode())
+
+    with tcp_server(handler) as (host, port):
+        n, data = run(selenium_nodesock, host, port, len(RESPONSE))
+        assert n == len(RESPONSE)
+        assert data == RESPONSE.decode()
+
+
+def test_asyncio_concurrent_connections(selenium_nodesock):
+    """Two concurrent open_connection calls via asyncio.gather."""
+
+    def handler(conn, _addr):
+        data = conn.recv(1024)
+        conn.sendall(data)
+
+    @run_in_pyodide
+    async def run(selenium, host1, port1, host2, port2):
+        import asyncio
+
+        async def do_echo(host, port, msg):
+            reader, writer = await asyncio.open_connection(host, port)
+            writer.write(msg)
+            await writer.drain()
+            data = await reader.read(1024)
+            writer.close()
+            return data.decode()
+
+        r1, r2 = await asyncio.gather(
+            do_echo(host1, port1, b"conn1"),
+            do_echo(host2, port2, b"conn2"),
+        )
+        return (r1, r2)
+
+    with (
+        tcp_server(handler) as (host1, port1),
+        tcp_server(handler) as (host2, port2),
+    ):
+        result = run(selenium_nodesock, host1, port1, host2, port2)
+        assert result[0] == "conn1"
+        assert result[1] == "conn2"
+
+
+def test_asyncio_client_close_lifecycle(selenium_nodesock):
+    """Verify transport.close() triggers connection_lost(None)."""
+
+    def handler(conn, _addr):
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            conn.sendall(data)
+
+    @run_in_pyodide
+    async def run(selenium, host, port):
+        import asyncio
+
+        events = []
+
+        class Tracker(asyncio.Protocol):
+            def __init__(self):
+                self.done = asyncio.get_event_loop().create_future()
+
+            def connection_made(self, transport):
+                events.append("connection_made")
+                self.transport = transport
+
+            def data_received(self, data):
+                events.append(f"data:{data.decode()}")
+
+            def connection_lost(self, exc):
+                events.append(f"connection_lost:{exc}")
+                if not self.done.done():
+                    self.done.set_result(None)
+
+        loop = asyncio.get_event_loop()
+        transport, proto = await loop.create_connection(Tracker, host, port)
+
+        transport.write(b"ping")
+        await asyncio.sleep(0.5)
+
+        assert not transport.is_closing()
+        transport.close()
+        # Give some time for the close to propagate
+        await asyncio.sleep(0.1)
+        assert transport.is_closing()
+
+        await asyncio.wait_for(proto.done, timeout=5.0)
+        return ",".join(events)
+
+    with tcp_server(handler) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert "connection_made" in result
+        assert "connection_lost:None" in result
+
+
+# ---------------------------------------------------------------------------
+# TLS tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def self_signed_cert(tmp_path):
+    import datetime
+    import ipaddress
+
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import NameOID
+
+    certfile = tmp_path / "cert.pem"
+    keyfile = tmp_path / "key.pem"
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")]))
+        .issuer_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")]))
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(datetime.datetime.now(datetime.UTC))
+        .not_valid_after(
+            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=1)
+        )
+        .add_extension(
+            x509.SubjectAlternativeName(
+                [
+                    x509.DNSName("localhost"),
+                    x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
+                ]
+            ),
+            critical=False,
+        )
+        .sign(key, hashes.SHA256())
+    )
+    Path(certfile).write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+    Path(keyfile).write_bytes(
+        key.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.TraditionalOpenSSL,
+            serialization.NoEncryption(),
+        )
+    )
+    return certfile, keyfile
+
+
+@contextlib.contextmanager
+def tls_server(handler, certfile, keyfile, *, timeout=5.0):
+    """Start a TLS server with a self-signed cert. Yields (host, port)."""
+    import ssl as host_ssl
+
+    server_ctx = host_ssl.SSLContext(host_ssl.PROTOCOL_TLS_SERVER)  # type: ignore[attr-defined]
+    server_ctx.load_cert_chain(certfile, keyfile)
+
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind(("127.0.0.1", 0))
+    server_socket.listen(1)
+    server_socket.settimeout(timeout)
+    host, port = server_socket.getsockname()
+    tls_sock = server_ctx.wrap_socket(server_socket, server_side=True)
+
+    errors: list[str] = []
+    ready = threading.Event()
+
+    def _serve():
+        ready.set()
+        try:
+            conn, addr = tls_sock.accept()
+            try:
+                handler(conn, addr)
+            finally:
+                conn.close()
+        except Exception as e:
+            errors.append(str(e))
+        finally:
+            tls_sock.close()
+
+    thread = threading.Thread(target=_serve, daemon=True)
+    thread.start()
+    ready.wait(timeout=timeout)
+
+    try:
+        yield host, port
+    finally:
+        thread.join(timeout=timeout)
+        assert not errors, f"TLS server error: {errors[0]}"
+
+
+@pytest.mark.skip_refcount_check
+def test_tls_starttls_send_recv(selenium_nodesock, self_signed_cert):
+    """Connect plain TCP, upgrade via wrap_socket/startTls, exchange data over TLS."""
+    RESPONSE = b"TLS OK"
+
+    def handler(conn, _addr):
+        conn.recv(1024)
+        conn.sendall(RESPONSE)
+
+    @run_in_pyodide
+    def run(selenium, host, port):
+        import socket
+        import ssl
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)  # type: ignore[attr-defined]
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2  # type: ignore[attr-defined]
+        ctx.check_hostname = False
+
+        ss = ctx.wrap_socket(s, server_hostname="localhost")
+        ss.sendall(b"Hello TLS")
+        response = ss.recv(1024)
+        ss.close()
+        return response.decode()
+
+    with tls_server(handler, *self_signed_cert) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert result == RESPONSE.decode()
