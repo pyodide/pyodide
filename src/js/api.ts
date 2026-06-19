@@ -588,15 +588,15 @@ export class PyodideAPI_ {
       throw new Error("OPFS is not supported in this environment");
     }
 
+    ensureMountPathExists(path);
+
     const opfsHandle = await navigator.storage.getDirectory();
 
-    const mount = Module.FS.mount(
-      Module.FS.filesystems.OPFS_WORKER_FS,
-      { opfsHandle },
-      path,
-    );
+    Module.FS.mount(Module.FS.filesystems.OPFS_WORKER_FS, { opfsHandle }, path);
 
-    await Module.API.loadOPFS(mount, opfsHandle);
+    // Note: FS.mount() returns the mount's root node, not the mount object, so
+    // we pass the mountpoint path explicitly rather than reading it back.
+    await Module.API.loadOPFS(path, opfsHandle);
   }
 
   /**

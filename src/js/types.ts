@@ -572,7 +572,7 @@ export interface API {
   sitePackages: string;
   initializeNodeSockFS: typeof initializeNodeSockFS;
   loadOPFS: (
-    mount: any,
+    mountpoint: string,
     opfsHandle: FileSystemDirectoryHandle,
   ) => Promise<void>;
 
