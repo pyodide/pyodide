@@ -398,6 +398,8 @@ def test_call_later_infinite_delay(monkeypatch):
         handle = loop.call_later(math.inf, lambda: None)
         assert scheduled == []
         assert not handle.cancelled()
+        handle.cancel()
+        assert handle.cancelled()
 
         loop.call_later(1.5, lambda: None)
         assert scheduled == [1500.0]
