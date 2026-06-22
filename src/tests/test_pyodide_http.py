@@ -540,7 +540,6 @@ def xhr_urls(xhr_test_server):
 
 @pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
 class TestPyxhr:
-
     def test_xhr_basic_get(self, selenium, xhr_urls):
         @run_in_pyodide
         def inner(selenium, url):
@@ -641,7 +640,11 @@ class TestPyxhr:
             headers = response.headers
 
             assert isinstance(headers, http.client.HTTPMessage)
-            assert headers["content-type"] == headers["Content-Type"] == headers["CONTENT-TYPE"]
+            assert (
+                headers["content-type"]
+                == headers["Content-Type"]
+                == headers["CONTENT-TYPE"]
+            )
             assert headers.get("content-type") is not None
             assert "content-type" in headers
             assert "Content-Type" in headers
