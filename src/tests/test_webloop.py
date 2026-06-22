@@ -380,6 +380,7 @@ async def test_pyodide_future():
 
 
 def test_call_later_infinite_delay(monkeypatch):
+    import asyncio
     import math
 
     from pyodide import webloop
@@ -393,13 +394,43 @@ def test_call_later_infinite_delay(monkeypatch):
     monkeypatch.setattr(webloop, "scheduleCallback", fake_schedule, raising=False)
 
     loop = WebLoop()
+    try:
+        handle = loop.call_later(math.inf, lambda: None)
+        assert scheduled == []
+        assert not handle.cancelled()
 
-    handle = loop.call_later(math.inf, lambda: None)
-    assert scheduled == []
-    assert not handle.cancelled()
+        loop.call_later(1.5, lambda: None)
+        assert scheduled == [1500.0]
+    finally:
+        asyncio._set_running_loop(None)
 
-    loop.call_later(1.5, lambda: None)
-    assert scheduled == [1500.0]
+
+def test_asyncio_sleep_infinite_delay(monkeypatch):
+    import asyncio
+    import math
+
+    from pyodide import webloop
+
+    scheduled = []
+
+    def fake_schedule(callback, timeout=0):
+        scheduled.append(timeout)
+
+    monkeypatch.setattr(webloop, "scheduleCallback", fake_schedule, raising=False)
+
+    webloop.WebLoop()
+    try:
+        coro = asyncio.sleep(math.inf)
+        fut = coro.send(None)
+
+        assert not fut.done()
+        assert scheduled == []
+
+        fut.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            coro.send(None)
+    finally:
+        asyncio._set_running_loop(None)
 
 
 @run_in_pyodide
