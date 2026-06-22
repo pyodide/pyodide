@@ -79,6 +79,13 @@ versionwarning_message = (
     "versioned (`dev`) URLs from the CDN for deployed applications!"
 )
 
+domain_notice_message = (
+    'This website, <strong><a href="https://pyodide.org">https://pyodide.org</a>'
+    "</strong>, is the sole official website of the Pyodide project. Any other "
+    "website purporting to represent Pyodide is not affiliated with, endorsed by, "
+    "or authorized by the Pyodide project or its maintainers in any capacity."
+)
+
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
 
@@ -126,9 +133,10 @@ html_logo = "_static/img/pyodide-logo.png"
 
 # theme-specific options
 html_theme_options: dict[str, Any] = {
-    "announcement": "",
+    "announcement": domain_notice_message,
     "repository_url": "https://github.com/pyodide/pyodide",
     "use_repository_button": True,
+    "extra_footer": f"<p>{domain_notice_message}</p>",
 }
 
 # paths that contain custom static files (such as style sheets)
@@ -229,9 +237,10 @@ def calculate_pyodide_version(app):
 
 
 def set_announcement_message():
-    html_theme_options["announcement"] = (
-        versionwarning_message if IN_READTHEDOCS_LATEST else ""
-    )
+    messages = [domain_notice_message]
+    if IN_READTHEDOCS_LATEST:
+        messages.append(versionwarning_message)
+    html_theme_options["announcement"] = "<br><br>".join(messages)
 
 
 def write_console_html(app):
