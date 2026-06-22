@@ -34,6 +34,25 @@ def test_asyncio_sleep(selenium):
     )
 
 
+def test_asyncio_sleep_infinite_delay(selenium):
+    @run_in_pyodide
+    async def test(selenium):
+        import asyncio
+        import math
+
+        import pytest
+
+        task = asyncio.ensure_future(asyncio.sleep(math.inf))
+        await asyncio.sleep(0)
+        assert not task.done()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    test(selenium)
+    assert "TimeoutOverflowWarning" not in selenium.logs
+
+
 def test_cancel_handle(selenium_standalone_refresh):
     selenium_standalone_refresh.run_js(
         """
