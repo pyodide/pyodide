@@ -418,8 +418,9 @@ def test_asyncio_sleep_infinite_delay(monkeypatch):
 
     monkeypatch.setattr(webloop, "scheduleCallback", fake_schedule, raising=False)
 
-    webloop.WebLoop()
+    loop = webloop.WebLoop()
     try:
+        assert asyncio.get_running_loop() is loop
         coro = asyncio.sleep(math.inf)
         fut = coro.send(None)
 
