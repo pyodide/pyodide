@@ -133,7 +133,7 @@ html_logo = "_static/img/pyodide-logo.png"
 
 # theme-specific options
 html_theme_options: dict[str, Any] = {
-    "announcement": domain_notice_message,
+    "announcement": "",
     "repository_url": "https://github.com/pyodide/pyodide",
     "use_repository_button": True,
     "extra_footer": f"<p>{domain_notice_message}</p>",
@@ -237,10 +237,9 @@ def calculate_pyodide_version(app):
 
 
 def set_announcement_message():
-    messages = [domain_notice_message]
-    if IN_READTHEDOCS_LATEST:
-        messages.append(versionwarning_message)
-    html_theme_options["announcement"] = "<br><br>".join(messages)
+    html_theme_options["announcement"] = (
+        versionwarning_message if IN_READTHEDOCS_LATEST else ""
+    )
 
 
 def write_console_html(app):
