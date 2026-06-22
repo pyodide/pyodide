@@ -43,7 +43,10 @@ def test_asyncio_sleep_infinite_delay(selenium):
         import pytest
 
         task = asyncio.ensure_future(asyncio.sleep(math.inf))
-        await asyncio.sleep(0)
+        # Without the clamp in WebLoop.call_later(), browsers convert the
+        # Infinity delay to 0 and fire (almost) immediately, so check after
+        # a real wait rather than just yielding once.
+        await asyncio.sleep(0.1)
         assert not task.done()
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
