@@ -453,6 +453,8 @@ class WebLoop(asyncio.AbstractEventLoop):
             raise ValueError("Can't schedule in the past")
         h = asyncio.Handle(callback, args, self, context=context)
         if math.isinf(delay):
+            # Match asyncio.sleep(math.inf): leave the handle pending until it is
+            # explicitly cancelled instead of handing Infinity to setTimeout.
             return h
 
         def run_handle():
