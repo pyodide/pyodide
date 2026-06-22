@@ -379,6 +379,29 @@ async def test_pyodide_future():
     assert ran == 1
 
 
+def test_call_later_infinite_delay(monkeypatch):
+    import math
+
+    from pyodide import webloop
+    from pyodide.webloop import WebLoop
+
+    scheduled = []
+
+    def fake_schedule(callback, timeout=0):
+        scheduled.append(timeout)
+
+    monkeypatch.setattr(webloop, "scheduleCallback", fake_schedule, raising=False)
+
+    loop = WebLoop()
+
+    handle = loop.call_later(math.inf, lambda: None)
+    assert scheduled == []
+    assert not handle.cancelled()
+
+    loop.call_later(1.5, lambda: None)
+    assert scheduled == [1500.0]
+
+
 @run_in_pyodide
 async def test_pyodide_future2(selenium):
     from js import fetch

@@ -1,6 +1,7 @@
 import asyncio
 import contextvars
 import inspect
+import math
 import os
 import sys
 import time
@@ -451,6 +452,8 @@ class WebLoop(asyncio.AbstractEventLoop):
         if delay < 0:
             raise ValueError("Can't schedule in the past")
         h = asyncio.Handle(callback, args, self, context=context)
+        if math.isinf(delay):
+            return h
 
         def run_handle():
             self._install_asyncgen_hooks()
