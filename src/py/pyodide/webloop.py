@@ -20,6 +20,9 @@ if IN_PYODIDE:
 T = TypeVar("T")
 S = TypeVar("S")
 
+# setTimeout()'s max delay: a 32-bit signed int, in ms.
+_MAX_TIMEOUT_MS = 2**31 - 1
+
 
 class PyodideFuture(Future[T]):
     """A :py:class:`~asyncio.Future` with extra :js:meth:`~Promise.then`,
@@ -471,7 +474,8 @@ class WebLoop(asyncio.AbstractEventLoop):
                     raise
 
         scheduleCallback(
-            create_once_callable(run_handle, _may_syncify=True), delay * 1000
+            create_once_callable(run_handle, _may_syncify=True),
+            min(delay * 1000, _MAX_TIMEOUT_MS),
         )
 
         return h
