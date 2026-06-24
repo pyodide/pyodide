@@ -22,6 +22,10 @@ myst:
   `TimeoutOverflowWarning` for very long delays and for
   `asyncio.sleep(math.inf)`. {pr}`6306`
 
+- {{ Fix }} `asyncio.sleep(math.inf)` no longer resolves on its own after
+  ~24.8 days; it now stays pending until cancelled, matching
+  `asyncio.BaseEventLoop`. {pr}`6310`
+
 - {{ Performance }} Sped up PyProxy creation. {pr}`6280`
 
 - {{ Fix }} `PyodideFuture.then()` and `finally_()` no longer hang when the
