@@ -329,7 +329,10 @@ export async function initializeNodeSockFS(
           // cancel() settles any pending read(), then releaseLock() frees
           // the stream lock. Direct releaseLock() throws when a read is outstanding.
           const reader = sock.reader;
-          reader.cancel().then(() => reader.releaseLock(), () => {});
+          reader.cancel().then(
+            () => reader.releaseLock(),
+            () => {},
+          );
           sock.reader = null;
         }
         if (sock.writer) {
@@ -450,7 +453,10 @@ export async function initializeNodeSockFS(
       if (how === SHUT_RD || how === SHUT_RDWR) {
         if (sock.reader) {
           const reader = sock.reader;
-          reader.cancel().then(() => reader.releaseLock(), () => {});
+          reader.cancel().then(
+            () => reader.releaseLock(),
+            () => {},
+          );
           sock.reader = null;
           sock.recvBuffer = [];
           sock.recvBufferBytes = 0;
