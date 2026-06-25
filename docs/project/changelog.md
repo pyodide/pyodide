@@ -17,10 +17,11 @@ myst:
 
 - {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
 
-- {{ Fix }} `WebLoop.call_later()` now clamps delays past `setTimeout()`'s
-  32-bit signed integer limit instead of passing them through, fixing a
-  `TimeoutOverflowWarning` for very long delays and for
-  `asyncio.sleep(math.inf)`. {pr}`6306`
+- {{ Fix }} `setTimeout()`'s 32-bit signed integer limit was causing a
+  `TimeoutOverflowWarning` for delays past ~24.8 days in
+  `WebLoop.call_later()`. Finite delays past that limit are now clamped to
+  it, and an infinite delay (`asyncio.sleep(math.inf)`) now stays pending
+  until cancelled. {pr}`6306`, {pr}`6310`
 
 - {{ Performance }} Sped up PyProxy creation. {pr}`6280`
 
