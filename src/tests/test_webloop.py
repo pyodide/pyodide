@@ -34,15 +34,14 @@ def test_asyncio_sleep(selenium):
     )
 
 
-def test_asyncio_sleep_infinite_delay(selenium):
+def test_asyncio_sleep_overflowing_delay(selenium):
     @run_in_pyodide
     async def test(selenium):
         import asyncio
-        import math
 
         import pytest
 
-        task = asyncio.ensure_future(asyncio.sleep(math.inf))
+        task = asyncio.ensure_future(asyncio.sleep(1e9))
         await asyncio.sleep(0.1)
         assert not task.done()
         task.cancel()
@@ -53,30 +52,27 @@ def test_asyncio_sleep_infinite_delay(selenium):
     assert "TimeoutOverflowWarning" not in selenium.logs
 
 
-def test_call_later_skips_scheduling_for_infinite_delay(selenium):
-    @run_in_pyodide
-    async def test(selenium):
-        import asyncio
-        import math
+@run_in_pyodide
+async def test_call_later_skips_scheduling_for_infinite_delay(selenium):
+    import asyncio
+    import math
 
-        from pyodide import webloop
+    from pyodide import webloop
 
-        scheduled = []
-        orig_scheduleCallback = webloop.scheduleCallback  # type: ignore[attr-defined]
-        webloop.scheduleCallback = lambda cb, ms: scheduled.append(ms)  # type: ignore[attr-defined]
-        try:
-            loop = asyncio.get_event_loop()
-            # math.inf must never be scheduled; a finite overflow still clamps.
-            h = loop.call_later(math.inf, lambda: None)
-            assert scheduled == []
-            assert not h.cancelled()
+    scheduled = []
+    orig_scheduleCallback = webloop.scheduleCallback  # type: ignore[attr-defined]
+    webloop.scheduleCallback = lambda cb, ms: scheduled.append(ms)  # type: ignore[attr-defined]
+    try:
+        loop = asyncio.get_event_loop()
+        # math.inf must never be scheduled; a finite overflow still clamps.
+        h = loop.call_later(math.inf, lambda: None)
+        assert scheduled == []
+        assert not h.cancelled()
 
-            loop.call_later(1e9, lambda: None)
-            assert scheduled == [webloop._MAX_TIMEOUT_MS]
-        finally:
-            webloop.scheduleCallback = orig_scheduleCallback  # type: ignore[attr-defined]
-
-    test(selenium)
+        loop.call_later(1e9, lambda: None)
+        assert scheduled == [webloop._MAX_TIMEOUT_MS]
+    finally:
+        webloop.scheduleCallback = orig_scheduleCallback  # type: ignore[attr-defined]
 
 
 def test_cancel_handle(selenium_standalone_refresh):
