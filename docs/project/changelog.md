@@ -15,15 +15,15 @@ myst:
 
 # Change Log
 
-- {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
+## Version 314.0.1
+
+_June 26, 2026_
 
 - {{ Fix }} `setTimeout()`'s 32-bit signed integer limit was causing a
   `TimeoutOverflowWarning` for delays past ~24.8 days in
   `WebLoop.call_later()`. Finite delays past that limit are now clamped to
   it, and an infinite delay (`asyncio.sleep(math.inf)`) now stays pending
   until cancelled. {pr}`6306`, {pr}`6310`
-
-- {{ Performance }} Sped up PyProxy creation. {pr}`6280`
 
 - {{ Fix }} `PyodideFuture.then()` and `finally_()` no longer hang when the
   source future is cancelled; the cancellation now propagates to the chained
@@ -42,6 +42,10 @@ myst:
 - {{ Fix }} `update()` on a JavaScript `Map` proxy now applies keyword
   arguments instead of silently dropping them. {pr}`6292`
 
+- {{ Fix }} Fixed Node.js socket stream lock release order. {pr}`6312`
+
+- {{ Performance }} Sped up PyProxy creation. {pr}`6280`
+
 - {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
 
 - {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
@@ -49,8 +53,6 @@ myst:
 - {{ Performance }} Sped up conversion of ASCII strings from Python to JavaScript using TextDecoder. {pr}`6283`
 
 - {{ Performance }} Sped up JsProxy operations by caching type flags. {pr}`6282`
-
-- {{ Fix }} Fixed Node.js socket stream lock release order. {pr}`6312`
 
 ## Version 314.0.0
 
