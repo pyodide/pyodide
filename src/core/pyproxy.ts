@@ -274,10 +274,17 @@ function pyproxy_new(
     _Py_IncRef(ptr);
   }
 
-  props = Object.assign(
-    { isBound: false, captureThis: false, boundArgs: [], roundtrip: false },
-    props,
-  );
+  // Fill in defaults with an explicit object literal rather than
+  // Object.assign. See the comment in gc_register_proxy below: the equivalent
+  // Object.assign call there accounted for over 20% of PyProxy creation time
+  // and the literal version was 100x faster. This is an even hotter path.
+  props = {
+    isBound: !!props?.isBound,
+    captureThis: !!props?.captureThis,
+    boundArgs: props?.boundArgs ?? [],
+    boundThis: props?.boundThis,
+    roundtrip: !!props?.roundtrip,
+  };
   let handlers;
   if (is_dict_adaptor) {
     handlers = PyProxyJsonAdaptorDictHandlers;

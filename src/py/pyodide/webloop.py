@@ -1,6 +1,7 @@
 import asyncio
 import contextvars
 import inspect
+import math
 import os
 import sys
 import time
@@ -19,6 +20,9 @@ if IN_PYODIDE:
 
 T = TypeVar("T")
 S = TypeVar("S")
+
+# setTimeout()'s max delay: a 32-bit signed int, in ms.
+_MAX_TIMEOUT_MS = 2**31 - 1
 
 
 class PyodideFuture(Future[T]):
@@ -106,6 +110,11 @@ class PyodideFuture(Future[T]):
                 raise x
 
         async def callback(fut: Future[T]) -> None:
+            if fut.cancelled():
+                # Propagate cancellation rather than calling fut.exception(),
+                # which would raise CancelledError and leave result pending.
+                result.cancel()
+                return
             e = fut.exception()
             try:
                 if e:
@@ -146,7 +155,6 @@ class PyodideFuture(Future[T]):
         result: PyodideFuture[T] = PyodideFuture()
 
         async def callback(fut: Future[T]) -> None:
-            exc = fut.exception()
             try:
                 r = onfinally()
                 while inspect.isawaitable(r):
@@ -154,7 +162,11 @@ class PyodideFuture(Future[T]):
             except Exception as e:
                 result.set_exception(e)
                 return
-            if exc:
+            # Read the outcome only after onfinally ran: fut.exception() raises
+            # if fut was cancelled, so check cancellation explicitly first.
+            if fut.cancelled():
+                result.cancel()
+            elif (exc := fut.exception()) is not None:
                 result.set_exception(exc)
             else:
                 result.set_result(fut.result())
@@ -443,6 +455,8 @@ class WebLoop(asyncio.AbstractEventLoop):
         if delay < 0:
             raise ValueError("Can't schedule in the past")
         h = asyncio.Handle(callback, args, self, context=context)
+        if delay == math.inf:
+            return h
 
         def run_handle():
             self._install_asyncgen_hooks()
@@ -463,7 +477,8 @@ class WebLoop(asyncio.AbstractEventLoop):
                     raise
 
         scheduleCallback(
-            create_once_callable(run_handle, _may_syncify=True), delay * 1000
+            create_once_callable(run_handle, _may_syncify=True),
+            min(delay * 1000, _MAX_TIMEOUT_MS),
         )
 
         return h
