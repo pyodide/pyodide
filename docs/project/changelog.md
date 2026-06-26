@@ -15,7 +15,9 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 314.0.1
+
+_June 26, 2026_
 
 - {{ Fix }} `setTimeout()`'s 32-bit signed integer limit was causing a
   `TimeoutOverflowWarning` for delays past ~24.8 days in
