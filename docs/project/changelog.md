@@ -46,6 +46,10 @@ _June 26, 2026_
 
 - {{ Performance }} Sped up PyProxy creation. {pr}`6280`
 
+- {{ Fix }} Fixed a reference-counting bug when copying FFI converters that
+  could free a converter's pre/post-convert callback while still in use.
+  {pr}`6294`
+
 - {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
 
 - {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
