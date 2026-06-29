@@ -325,17 +325,6 @@ export async function initializeNodeSockFS(
       maybeResumePump(sock);
 
       if (sock.wcgSocket) {
-        const reader = sock.reader;
-        const writer = sock.writer;
-        reader
-          ?.cancel()
-          .then(() => reader?.releaseLock())
-          .catch(() => {});
-        writer
-          ?.abort()
-          .then(() => writer?.releaseLock())
-          .catch(() => {});
-
         sock.reader = null;
         sock.writer = null;
         sock.wcgSocket.close().catch(() => {});
@@ -451,11 +440,6 @@ export async function initializeNodeSockFS(
 
       if (how === SHUT_RD || how === SHUT_RDWR) {
         if (sock.reader) {
-          const reader = sock.reader;
-          reader
-            .cancel()
-            .then(() => reader.releaseLock())
-            .catch(() => {});
           sock.reader = null;
           sock.recvBuffer = [];
           sock.recvBufferBytes = 0;
@@ -467,11 +451,6 @@ export async function initializeNodeSockFS(
 
       if (how === SHUT_WR || how === SHUT_RDWR) {
         if (sock.writer) {
-          const writer = sock.writer;
-          writer
-            .abort()
-            .then(() => writer.releaseLock())
-            .catch(() => {});
           sock.writer = null;
         }
       }
