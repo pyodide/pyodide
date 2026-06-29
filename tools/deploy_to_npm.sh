@@ -2,7 +2,10 @@
 
 set -e
 
-echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+if [[ -z "${NPM_ID_TOKEN}" ]]; then
+    echo "Error: NPM_ID_TOKEN is not set. OIDC token is required for npm trusted publishing." >&2
+    exit 1
+fi
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd "$SCRIPT_DIR"/..
