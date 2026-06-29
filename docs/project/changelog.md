@@ -15,6 +15,17 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Enhancement }} Package changes in the lockfile:
+  - healpy is added back to the lockfile, which was removed in 314.0.0 release.
+  - scipy is updated from 1.17.1 to 1.18.0
+  - Following packages are removed from the lockfile as these packages now have PyEmscripten wheels in PyPI.
+    - blosc2
+    - fastcan
+    - gsw
+    - RobotRaconteur
+
 ## Version 314.0.1
 
 _June 26, 2026_
