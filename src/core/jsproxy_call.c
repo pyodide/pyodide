@@ -157,12 +157,12 @@ JsFuncSignature_repr(PyObject* o)
 {
   JsFuncSignature* self = (JsFuncSignature*)o;
   FAIL_RETURN_VALUE(NULL);
-  DECLARE_PY_OBJECT(inspect);
-  DECLARE_PY_OBJECT(sig);
 
+  DECLARE_PY_OBJECT(inspect);
   inspect = PyImport_ImportModule("inspect");
   FAIL_IF_NULL(inspect);
   _Py_IDENTIFIER(signature);
+  DECLARE_PY_OBJECT(sig);
   sig = _PyObject_CallMethodIdOneArg(inspect, &PyId_signature, self->func);
   FAIL_IF_NULL(sig);
 
@@ -222,8 +222,6 @@ JsMethod_ConvertArgs(JsFuncSignature* sig,
                      JsVal proxies)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  JsVal kwargs;
-  JsVal jsargs = JsvArray_New();
   ON_FAIL({
     if (!PyErr_Occurred()) {
       PyErr_SetString(PyExc_SystemError, "Oops");
@@ -236,6 +234,7 @@ JsMethod_ConvertArgs(JsFuncSignature* sig,
   if (nargs < sig->posparams_nmandatory) {
     goto set_args_error;
   }
+  JsVal jsargs = JsvArray_New();
   // present positional arguments
   for (Py_ssize_t i = 0; i < pos_args; ++i) {
     PyObject* converter = PyTuple_GET_ITEM(sig->posparams, i); /* borrowed! */
@@ -274,7 +273,7 @@ JsMethod_ConvertArgs(JsFuncSignature* sig,
     return jsargs;
   }
   // store kwargs into an object which we'll use as the last argument.
-  kwargs = JsvObject_New();
+  JsVal kwargs = JsvObject_New();
   FAIL_IF_JS_ERROR(kwargs);
   uint64_t found_indices = 0;
   for (uint64_t i = 0, k = nargs; i < nkwargs; ++i, ++k) {

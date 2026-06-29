@@ -11,7 +11,6 @@ set_method_docstring(PyMethodDef* method, PyObject* parent)
 {
   FAIL_RETURN_VALUE(-1);
   DECLARE_PY_OBJECT(py_method);
-  DECLARE_PY_OBJECT(py_result);
 
   py_method = PyObject_GetAttrString(parent, method->ml_name);
   if (py_method == NULL) {
@@ -23,6 +22,7 @@ set_method_docstring(PyMethodDef* method, PyObject* parent)
     FAIL();
   }
 
+  DECLARE_PY_OBJECT(py_result);
   py_result = _PyObject_CallMethodIdOneArg(
     py_docstring_mod, &PyId_get_cmeth_docstring, py_method);
   FAIL_IF_NULL(py_result);

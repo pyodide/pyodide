@@ -117,7 +117,6 @@ JsVal
 Py2JsConverter_convert(PyObject* converter, PyObject* pyval, JsVal proxies)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  DECLARE_PY_OBJECT(pre_converted);
 
   int status = PyObject_IsInstance(converter, (PyObject*)&Py2JsConverterType);
   if (status == 0) {
@@ -127,6 +126,7 @@ Py2JsConverter_convert(PyObject* converter, PyObject* pyval, JsVal proxies)
   }
   FAIL_IF_MINUS_ONE(status);
   PyObject* pre_convert = Py2JsConverter_pre_convert(converter);
+  DECLARE_PY_OBJECT(pre_converted);
   if (pre_convert != NULL) {
     pre_converted = PyObject_CallOneArg(pre_convert, pyval);
     FAIL_IF_NULL(pre_converted);
@@ -522,7 +522,6 @@ static PyObject*
 Js2Py_func_default_call_result(PyObject* self, JsVal jsresult, JsVal proxies)
 {
   FAIL_RETURN_VALUE(NULL);
-  PyObject* pyresult = NULL;
   // various cases where we want to extend the lifetime of the arguments:
   // 1. if the return value is a promise we extend arguments lifetime until the
   //    promise resolves.
@@ -539,6 +538,7 @@ Js2Py_func_default_call_result(PyObject* self, JsVal jsresult, JsVal proxies)
     jsresult = wrap_async_generator(jsresult, proxies);
   }
   FAIL_IF_JS_ERROR(jsresult);
+  PyObject* pyresult = NULL;
   if (is_promise) {
     // Since we will destroy the result of the Promise when it resolves we deny
     // the user access to the Promise (which would destroyed proxy exceptions).
