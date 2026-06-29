@@ -495,19 +495,11 @@ export async function initializeNodeSockFS(
       }
 
       if (sock.reader) {
-        const reader = sock.reader;
-        reader
-          .cancel()
-          .then(() => reader.releaseLock())
-          .catch(() => {});
+        sock.reader.releaseLock();
         sock.reader = null;
       }
       if (sock.writer) {
-        const writer = sock.writer;
-        writer
-          .abort()
-          .then(() => writer.releaseLock())
-          .catch(() => {});
+        sock.writer.releaseLock();
         sock.writer = null;
       }
 
