@@ -2160,6 +2160,45 @@ def test_bind_pre_convert(selenium):
 
 
 @run_in_pyodide
+def test_converter_copy_refcount(selenium):
+    # Regression test: Converter.copy() used to share pre_convert/post_convert/extra
+    # without incrementing their refcounts, so deallocating a copy released a
+    # reference still owned by the original (double free / use-after-free).
+    import sys
+
+    from _pyodide_core import (
+        create_promise_converter,
+        js2py_deep,
+        py2js_deep,
+    )
+
+    # pre_convert (Py2JsConverter) and post_convert (Js2PyConverter) are settable
+    # members. Work on copies of the shared singletons so we never mutate them.
+    for base, attr in [(py2js_deep, "pre_convert"), (js2py_deep, "post_convert")]:
+        conv = base.copy()
+        sentinel = ["sentinel"]
+        setattr(conv, attr, sentinel)
+        rc = sys.getrefcount(sentinel)
+        copy = conv.copy()
+        assert sys.getrefcount(sentinel) == rc + 1  # copy() took its own reference
+        assert getattr(copy, attr) is sentinel
+        del copy
+        # Deallocating the copy must release only its own reference.
+        assert sys.getrefcount(sentinel) == rc
+        assert getattr(conv, attr) is sentinel
+
+    # `extra` has no public member; create_promise_converter stores the result
+    # converter there, and copy() must propagate and incref it.
+    result_conv = js2py_deep.copy()
+    promise_conv = create_promise_converter(result_conv)
+    rc = sys.getrefcount(result_conv)
+    copy = promise_conv.copy()
+    assert sys.getrefcount(result_conv) == rc + 1
+    del copy
+    assert sys.getrefcount(result_conv) == rc
+
+
+@run_in_pyodide
 def test_bind_construct(selenium):
     from typing import Annotated, Any, NotRequired, TypedDict
 
