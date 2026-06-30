@@ -3,10 +3,14 @@ Various common utilities for testing.
 """
 
 import contextlib
+import logging
 import os
 import pathlib
+import platform
 import re
+import subprocess
 import sys
+import time
 from collections.abc import Sequence
 
 import pytest
@@ -346,6 +350,36 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
             continue
         res.append(msg)
     return res
+
+
+logger = logging.getLogger(__name__)
+
+SAFARIDRIVER_CRASH_MSG = "safaridriver unexpectedly exited"
+
+
+def _cleanup_stale_safari():
+    if platform.system() != "Darwin":
+        return
+    subprocess.run(["pkill", "-9", "Safari"], capture_output=True, check=False)
+    subprocess.run(["pkill", "-9", "safaridriver"], capture_output=True, check=False)
+    time.sleep(3)
+    logger.warning("Killed stale Safari/safaridriver processes after crash")
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report = outcome.get_result()
+    if (
+        report.when == "setup"
+        and report.outcome in ("error", "failed")
+        and SAFARIDRIVER_CRASH_MSG in str(report.longrepr)
+    ):
+        logger.warning(
+            "Detected safaridriver crash during setup of %s, attempting recovery...",
+            item.nodeid,
+        )
+        _cleanup_stale_safari()
 
 
 @pytest.fixture(scope="function")
