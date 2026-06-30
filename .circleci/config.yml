@@ -1,5 +1,18 @@
 version: 2.1
 
+default_env: &default_env
+  EMSDK_NUM_CORES: 3
+  EMCC_CORES: 3
+  PYODIDE_JOBS: 3
+  # Make sure the ccache dir is consistent between core and package builds
+  # (it's not the case otherwise)
+  CCACHE_DIR: /root/.ccache/
+  # Disable the compression of wheels, so they are better compressed by the CDN
+  PYODIDE_ZIP_COMPRESSION_LEVEL: 0
+  # For maintainers: set this to 0 if you are making an ABI break, and
+  # reset to 1 after updating the packages to the new ABI.
+  USE_PREBUILT_PACKAGES: 1
+
 defaults: &defaults
   working_directory: ~/repo
   docker:
@@ -8,17 +21,7 @@ defaults: &defaults
     #       (e.g. `rg -F --hidden <old_tag>`)
     - image: pyodide/pyodide-env:20260211-chrome145-firefox146-py314
   environment:
-    EMSDK_NUM_CORES: 3
-    EMCC_CORES: 3
-    PYODIDE_JOBS: 3
-    # Make sure the ccache dir is consistent between core and package builds
-    # (it's not the case otherwise)
-    CCACHE_DIR: /root/.ccache/
-    # Disable the compression of wheels, so they are better compressed by the CDN
-    PYODIDE_ZIP_COMPRESSION_LEVEL: 0
-    # For maintainers: set this to 0 if you are making an ABI break, and
-    # reset to 1 after updating the packages to the new ABI.
-    USE_PREBUILT_PACKAGES: 1
+    <<: *default_env
 
 jobs:
   build-core:
@@ -29,7 +32,8 @@ jobs:
         default: 0
     <<: *defaults
     environment:
-      - DISABLE_DYLINK: << parameters.disable_dylink >>
+      <<: *default_env
+      DISABLE_DYLINK: << parameters.disable_dylink >>
     steps:
       - checkout
       - run: git submodule sync
@@ -37,9 +41,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
-            - -core-v20220915-{{ checksum "cpython/Makefile" }}
-            - -core-v20220915
+            - -core-v20260423.3-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+            - -core-v20260423.3-{{ checksum "cpython/Makefile" }}
+            - -core-v20260423.3
 
       - run:
           name: calculate build hash for ccache
@@ -70,6 +74,9 @@ jobs:
 
             ccache -z
             make -C cpython
+            echo CCACHE_CONFIGPATH: $CCACHE_CONFIGPATH
+            echo CCACHE_DIR: $CCACHE_DIR
+            ccache -p
             ccache -s
 
       - run:
@@ -81,6 +88,9 @@ jobs:
 
             ccache -z
             PYODIDE_PACKAGES="tag:pytest,tag:pyodide.test" make -j${PYODIDE_JOBS}
+            echo CCACHE_CONFIGPATH: $CCACHE_CONFIGPATH
+            echo CCACHE_DIR: $CCACHE_DIR
+            ccache -p
             ccache -s
 
       - run:
@@ -100,7 +110,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+          key: -core-v20260423.3-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Clean up workspace
@@ -155,7 +165,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg3-v20220915-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
+            - -pkg3-v20260423-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
 
       - run:
           name: build packages
@@ -172,6 +182,7 @@ jobs:
             ENABLE_PREBUILT_PACKAGES='<< parameters.enable_prebuilt_packages >>' PYODIDE_PACKAGES='<< parameters.packages >>' make dist/pyodide-lock.json
             ccache -s
           environment:
+            <<: *default_env
             PYODIDE_JOBS: 5
 
       - run:
@@ -202,7 +213,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -pkg3-v20220915-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
+          key: -pkg3-v20260423-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
 
   build-pyodide-debug:
     <<: *defaults
