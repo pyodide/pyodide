@@ -500,6 +500,12 @@ jobs:
             mv ghr_v0.16.2_linux_amd64/ghr /tmp/ghr-bin
 
       - run:
+          name: Deploy to npm
+          command: |
+            export NPM_ID_TOKEN=$(circleci run oidc get --claims '{"aud": "npm:registry.npmjs.org"}')
+            ./tools/deploy_to_npm.sh
+
+      - run:
           name: Deploy Github Releases
           command: |
             make clean-dist-dir
@@ -530,12 +536,6 @@ jobs:
               ${MAYBE_PRE_RELEASE} \
               "${CIRCLE_TAG}" \
               dist
-
-      - run:
-          name: Deploy to npm
-          command: |
-            export NPM_ID_TOKEN=$(circleci run oidc get --claims '{"aud": "npm:registry.npmjs.org"}')
-            ./tools/deploy_to_npm.sh
 
       - run:
           name: Set PYODIDE_BASE_URL
