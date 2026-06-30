@@ -15,7 +15,13 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 314.0.2
+
+_June 30, 2026_
+
+- {{ Fix }} Fixed a reference-counting bug when copying FFI converters that
+  could free a converter's pre/post-convert callback while still in use.
+  {pr}`6294`
 
 - {{ Enhancement }} Package changes in the lockfile:
   - healpy is added back to the lockfile, which was removed in 314.0.0 release.
@@ -56,10 +62,6 @@ _June 26, 2026_
 - {{ Fix }} Fixed Node.js socket stream lock release order. {pr}`6312`
 
 - {{ Performance }} Sped up PyProxy creation. {pr}`6280`
-
-- {{ Fix }} Fixed a reference-counting bug when copying FFI converters that
-  could free a converter's pre/post-convert callback while still in use.
-  {pr}`6294`
 
 - {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
 
