@@ -440,7 +440,6 @@ export async function initializeNodeSockFS(
 
       if (how === SHUT_RD || how === SHUT_RDWR) {
         if (sock.reader) {
-          sock.reader.releaseLock();
           sock.reader = null;
           sock.recvBuffer = [];
           sock.recvBufferBytes = 0;
@@ -452,7 +451,6 @@ export async function initializeNodeSockFS(
 
       if (how === SHUT_WR || how === SHUT_RDWR) {
         if (sock.writer) {
-          sock.writer.releaseLock();
           sock.writer = null;
         }
       }
