@@ -34,7 +34,7 @@ RUN if [ $CHROME_VERSION = "latest" ]; then SE_CHROME_VERSION="stable"; \
   && mv $(dirname ${SE_CHROME_DRIVER_PATH}) /opt/chromedriver
 
 
-FROM node:24.7-bookworm-slim AS node-image
+FROM node:24.13-bookworm-slim AS node-image
 FROM golang:1.21-alpine AS golang-image
 
 FROM python:3.14.2-slim-bookworm
