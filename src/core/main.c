@@ -9,12 +9,10 @@
 static void
 initialize_python(int argc, char** argv)
 {
-  PyStatus status;
-
   PyPreConfig preconfig;
   PyPreConfig_InitPythonConfig(&preconfig);
 
-  status = Py_PreInitializeFromBytesArgs(&preconfig, argc, argv);
+  PyStatus status = Py_PreInitializeFromBytesArgs(&preconfig, argc, argv);
   if (PyStatus_Exception(status)) {
     // This will exit().
     Py_ExitStatusException(status);
@@ -76,12 +74,12 @@ pymain_run_python(int* exitcode);
 EMSCRIPTEN_KEEPALIVE int
 run_main()
 {
-  int exitcode;
   // run_python may call exit() if `-h` or `-V` have been passed. If we stop it
   // from exiting, we'll segfault. So pop the keep alive, so that exit() will
   // call onExit and shut down the runtime. We notice this in pyodide.ts and
   // throw a ExitStatus error.
   emscripten_runtime_keepalive_pop();
+  int exitcode;
   pymain_run_python(&exitcode);
   emscripten_runtime_keepalive_push();
   return exitcode;
