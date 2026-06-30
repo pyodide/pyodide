@@ -3,10 +3,10 @@
     "314.0.2": {
       "version": "314.0.2",
       "url": "https://github.com/pyodide/pyodide/releases/download/314.0.2/xbuildenv-314.0.2.tar.bz2",
-      "sha256": "96ed0bdbc6db92b994e7cbda616a2a435b310117c4dd2e0599dd9ae539db96bf",
+      "sha256": "765141ff02f2d292208d233567a393b2929f0808b596e5a7cfb3002c1c369c37",
       "python_version": "3.14.2",
       "emscripten_version": "5.0.3",
-      "published_at": "2026-06-30T12:39:55Z",
+      "published_at": "2026-06-30T12:50:07Z",
       "min_pyodide_build_version": "0.26.0"
     },
     "314.0.1": {
