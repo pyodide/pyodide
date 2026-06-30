@@ -15,7 +15,9 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 314.0.2
+
+_June 30, 2026_
 
 - {{ Enhancement }} Package changes in the lockfile:
   - healpy is added back to the lockfile, which was removed in 314.0.0 release.
