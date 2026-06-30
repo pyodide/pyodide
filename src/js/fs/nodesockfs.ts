@@ -319,15 +319,14 @@ export async function initializeNodeSockFS(
     },
 
     close(sock: NodeSock): number {
+      // Signal the pump to stop before touching the reader.
+      sock.closed = true;
+      notifyDataAvailable(sock);
+      maybeResumePump(sock);
+
       if (sock.wcgSocket) {
-        if (sock.reader) {
-          sock.reader.releaseLock();
-          sock.reader = null;
-        }
-        if (sock.writer) {
-          sock.writer.releaseLock();
-          sock.writer = null;
-        }
+        sock.reader = null;
+        sock.writer = null;
         sock.wcgSocket.close().catch(() => {});
         sock.wcgSocket = null;
       }
@@ -335,10 +334,6 @@ export async function initializeNodeSockFS(
       sock.recvBufferBytes = 0;
       sock.connected = false;
       sock.connecting = false;
-      sock.closed = true;
-
-      notifyDataAvailable(sock);
-      maybeResumePump(sock);
       return 0;
     },
 
@@ -445,7 +440,6 @@ export async function initializeNodeSockFS(
 
       if (how === SHUT_RD || how === SHUT_RDWR) {
         if (sock.reader) {
-          sock.reader.releaseLock();
           sock.reader = null;
           sock.recvBuffer = [];
           sock.recvBufferBytes = 0;
@@ -457,7 +451,6 @@ export async function initializeNodeSockFS(
 
       if (how === SHUT_WR || how === SHUT_RDWR) {
         if (sock.writer) {
-          sock.writer.releaseLock();
           sock.writer = null;
         }
       }
