@@ -67,6 +67,16 @@ class JsFinder(MetaPathFinder):
 
         jsproxy :
             JavaScript object backing the module
+
+        Examples
+        --------
+        >>> from pyodide.code import run_js # doctest: +RUN_IN_PYODIDE
+        >>> from pyodide.ffi import register_js_module
+        >>> my_js_module = run_js("({greet: (name) => 'hello, ' + name})")
+        >>> register_js_module("my_js_module", my_js_module)
+        >>> import my_js_module
+        >>> my_js_module.greet("world")
+        'hello, world'
         """
         assert JsProxy is not None
         if not isinstance(name, str):
@@ -93,6 +103,13 @@ class JsFinder(MetaPathFinder):
         ----------
         name :
             Name of the module to unregister
+
+        Examples
+        --------
+        >>> from pyodide.code import run_js # doctest: +RUN_IN_PYODIDE
+        >>> from pyodide.ffi import register_js_module, unregister_js_module
+        >>> register_js_module("tmp_js_module", run_js("({value: 42})"))
+        >>> unregister_js_module("tmp_js_module")
         """
         try:
             del self.jsproxies[name]
