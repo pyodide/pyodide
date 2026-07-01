@@ -571,6 +571,10 @@ export interface API {
   LiteralMap: any;
   sitePackages: string;
   initializeNodeSockFS: typeof initializeNodeSockFS;
+  loadOPFS: (
+    mountpoint: string,
+    opfsHandle: FileSystemDirectoryHandle,
+  ) => Promise<void>;
 
   _nodeSock: {
     connect: (fd: number, host: string, port: number) => Promise<void>;
