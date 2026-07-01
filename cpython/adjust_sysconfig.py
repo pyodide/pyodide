@@ -48,6 +48,11 @@ def adjust_sysconfig(config_vars: dict[str, str]):
         CXX="c++",
         LDCXXSHARED="c++",
     )
+    # Pyodide links the main module itself and never uses LINKFORSHARED, but
+    # configure --enable-wasm-pthreads puts -sPROXY_TO_PTHREAD in it, which
+    # must not leak into package builds via sysconfigdata.
+    if "LINKFORSHARED" in config_vars:
+        config_vars["LINKFORSHARED"] = ""
     config_vars["PYODIDE_ABI_VERSION"] = os.environ["PYODIDE_ABI_VERSION"]
     config_vars["PYEMSCRIPTEN_PLATFORM_VERSION"] = os.environ["PYODIDE_ABI_VERSION"]
     config_vars["PYEMSCRIPTEN_ABI_VERSION"] = os.environ["PYODIDE_ABI_VERSION"]

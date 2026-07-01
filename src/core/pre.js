@@ -1,4 +1,6 @@
-const API = Module.API;
+// In pthread workers Module.API does not exist; the assignments below then
+// write into a throwaway object. EM_JS bodies still need the API global.
+const API = Module.API ?? {};
 const Hiwire = {};
 const Tests = {};
 API.tests = Tests;
