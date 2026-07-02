@@ -19,6 +19,10 @@ myst:
 
 _June 30, 2026_
 
+- {{ Enhancement }} Reduced the standard library size by excluding the
+  `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
+  to use the `_zoneinfo` C extension. {pr}`6331`
+
 - {{ Fix }} Fixed a reference-counting bug when copying FFI converters that
   could free a converter's pre/post-convert callback while still in use.
   {pr}`6294`
