@@ -92,6 +92,16 @@ def test_ctypes_util_find_library(selenium):
 
 
 @run_in_pyodide
+def test_zoneinfo_uses_c_extension(selenium):
+    import _zoneinfo
+    import importlib.util
+    from zoneinfo import ZoneInfo
+
+    assert _zoneinfo.ZoneInfo is ZoneInfo
+    assert importlib.util.find_spec("zoneinfo._zoneinfo") is None
+
+
+@run_in_pyodide
 def test_zipimport_traceback(selenium):
     """
     Test that traceback of modules loaded from zip file are shown as intended.

@@ -15,6 +15,12 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Enhancement }} Reduced the standard library size by excluding the
+  `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
+  to use the `_zoneinfo` C extension. {pr}`6331`
+
 ## Version 314.0.2
 
 _June 30, 2026_
