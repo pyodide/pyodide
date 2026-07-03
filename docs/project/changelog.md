@@ -15,13 +15,15 @@ myst:
 
 # Change Log
 
-## Version 314.0.2
-
-_June 30, 2026_
+## Unreleased
 
 - {{ Enhancement }} Reduced the standard library size by excluding the
   `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
   to use the `_zoneinfo` C extension. {pr}`6331`
+
+## Version 314.0.2
+
+_June 30, 2026_
 
 - {{ Fix }} Fixed a reference-counting bug when copying FFI converters that
   could free a converter's pre/post-convert callback while still in use.
