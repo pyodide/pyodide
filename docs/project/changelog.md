@@ -17,6 +17,10 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Updated the Pyodide logo to SVG format with light and dark
+  theme variants, replacing the previous PNG logos in the README and
+  documentation.
+
 - {{ Enhancement }} Reduced the standard library size by excluding the
   `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
   to use the `_zoneinfo` C extension. {pr}`6331`

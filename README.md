@@ -1,7 +1,9 @@
 <div align="center">
-  <a href="https://github.com/pyodide/pyodide">
-  <img src="./docs/_static/img/pyodide-logo-readme.png" alt="Pyodide">
-  </a>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/_static/img/pyodide-logo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/_static/img/pyodide-logo-light.svg">
+  <img height="200" src="docs/_static/img/pyodide-logo-dark.svg">
+</picture>
 </div>
 
 [![NPM Latest Release](https://img.shields.io/npm/v/pyodide)](https://www.npmjs.com/package/pyodide)
