@@ -2,9 +2,19 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 const DEBUG = !!process.env.PYODIDE_DEBUG_JS;
-const SOURCEMAP = !!(
-  process.env.PYODIDE_SOURCEMAP || process.env.PYODIDE_SYMBOLS
-);
+
+
+// According to the docs:
+//
+// "Sanitizers or source map is currently not supported if overriding
+// WebAssembly instantiation with Module.instantiateWasm."
+// https://emscripten.org/docs/api_reference/module.html?highlight=instantiatewasm#Module.instantiateWasm
+//
+// But this isn't apparently true anymore with sanitizers, only with
+// `-gseparate-dwarf`. I think builds with DISABLE_INSTANTIATE_WASM are broken
+// anyways...
+// TODO: Fix.
+const DISABLE_INSTANTIATE_WASM = !!process.env.PYODIDE_SOURCEMAP;
 
 const __dirname = dirname(new URL(import.meta.url).pathname);
 
@@ -28,7 +38,11 @@ function toDefines(o, path = "") {
 
 const cdefsFile = join(__dirname, "struct_info_generated.json");
 const origConstants = JSON.parse(readFileSync(cdefsFile));
-const constants = { DEBUG, SOURCEMAP, cDefs: origConstants.defines };
+const constants = {
+  DEBUG,
+  DISABLE_INSTANTIATE_WASM,
+  cDefs: origConstants.defines,
+};
 const DEFINES = Object.fromEntries(toDefines(constants));
 
 export const dest = (output) => join(__dirname, "..", "..", output);

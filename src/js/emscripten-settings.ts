@@ -195,14 +195,10 @@ function getInstantiateWasmFunc(
   indexURL: string,
 ): EmscriptenSettings["instantiateWasm"] {
   // @ts-ignore
-  if (SOURCEMAP || typeof WasmOffsetConverter !== "undefined") {
-    // According to the docs:
-    //
-    // "Sanitizers or source map is currently not supported if overriding
-    // WebAssembly instantiation with Module.instantiateWasm."
-    // https://emscripten.org/docs/api_reference/module.html?highlight=instantiatewasm#Module.instantiateWasm
-    //
-    // typeof WasmOffsetConverter !== "undefined" checks for asan.
+  if (DISABLE_INSTANTIATE_WASM) {
+    // Some build configurations don't work with instantiate-wasm.
+    // This will be broken because of the lack of initialization for JsvError stuff.
+    // TODO: Fix this...
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
