@@ -3,7 +3,6 @@ import { dirname, join } from "node:path";
 
 const DEBUG = !!process.env.PYODIDE_DEBUG_JS;
 
-
 // According to the docs:
 //
 // "Sanitizers or source map is currently not supported if overriding
