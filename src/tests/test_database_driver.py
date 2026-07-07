@@ -42,7 +42,7 @@ def mysql_test_db(mysql_admin_config):
     import contextlib
 
     import cryptography  # noqa: F401  # for mysql_native_password
-    import pymysql  # type: ignore[import-untyped]
+    import pymysql
 
     suffix = uuid.uuid4().hex[:10]
     db = f"pyodide_it_{suffix}"
