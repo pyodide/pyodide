@@ -11,6 +11,7 @@ initialize_python(int argc, char** argv)
 {
   PyPreConfig preconfig;
   PyPreConfig_InitPythonConfig(&preconfig);
+  preconfig.utf8_mode = 1;
 
   PyStatus status = Py_PreInitializeFromBytesArgs(&preconfig, argc, argv);
   if (PyStatus_Exception(status)) {
