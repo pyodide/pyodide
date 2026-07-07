@@ -9,7 +9,7 @@
 // In U8/I8 case, use an explicit >>>0 to force correct sign.
 
 #define DEREF_U8(addr, offset) HEAPU8[(addr >>> 0) + offset]
-#define DEREF_I8(addr, offset) HEAP8[(addr  >>> 0) + offset]
+#define DEREF_I8(addr, offset) HEAP8[(addr >>> 0) + offset]
 
 #define DEREF_U16(addr, offset) HEAPU16[(addr >>> 1) + offset]
 #define DEREF_I16(addr, offset) HEAP16[(addr >>> 1) + offset]
