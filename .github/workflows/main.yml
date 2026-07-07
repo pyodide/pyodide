@@ -532,7 +532,7 @@ jobs:
 
       - name: run scipy tests inside node
         shell: bash -l {0}
-        run: |
+        run: | # zizmor: ignore[adhoc-packages]
           npm install pyodide
           cp -f dist/* node_modules/pyodide
 
