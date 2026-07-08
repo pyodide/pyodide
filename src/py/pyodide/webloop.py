@@ -11,7 +11,7 @@ import weakref
 from asyncio import Future, Task, sleep
 from collections.abc import AsyncGenerator, Awaitable, Callable, Coroutine
 from functools import wraps
-from typing import Any, Optional, TypeVar, overload
+from typing import Any, TypeVar, overload
 
 from .ffi import IN_PYODIDE, can_run_sync, create_once_callable, run_sync
 
@@ -1077,7 +1077,7 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore[name-define
     """
 
     def __init__(self):
-        self._default_loop: Optional[WebLoop] = None
+        self._default_loop: WebLoop | None = None
 
     def get_event_loop(self) -> WebLoop:
         """Get the current event loop"""
