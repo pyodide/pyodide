@@ -11,7 +11,7 @@ import weakref
 from asyncio import Future, Task, sleep
 from collections.abc import AsyncGenerator, Awaitable, Callable, Coroutine
 from functools import wraps
-from typing import Any, TypeVar, overload
+from typing import Any, Optional, TypeVar, overload
 
 from .ffi import IN_PYODIDE, can_run_sync, create_once_callable, run_sync
 
@@ -217,7 +217,6 @@ class WebLoop(asyncio.AbstractEventLoop):
 
     def __init__(self):
         self._task_factory = None
-        asyncio._set_running_loop(self)
         self._exception_handler = None
         self._current_handle = None
         self._in_progress = 0
@@ -1078,18 +1077,18 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore[name-define
     """
 
     def __init__(self):
-        self._default_loop = None
+        self._default_loop: Optional[WebLoop] = None
 
-    def get_event_loop(self):
+    def get_event_loop(self) -> WebLoop:
         """Get the current event loop"""
-        if self._default_loop:
+        if self._default_loop is not None:
             return self._default_loop
-        return self.new_event_loop()
+        self._default_loop = self.new_event_loop()
+        return self._default_loop
 
     def new_event_loop(self) -> WebLoop:
         """Create a new event loop"""
-        self._default_loop = WebLoop()
-        return self._default_loop
+        return WebLoop()
 
     def set_event_loop(self, loop: Any) -> None:
         """Set the current event loop"""
@@ -1129,7 +1128,8 @@ def _initialize_event_loop():
     time.sleep = _sleep
     policy = WebLoopPolicy()
     asyncio.set_event_loop_policy(policy)
-    policy.get_event_loop()
+    loop = policy.get_event_loop()
+    asyncio._set_running_loop(loop)
 
 
 __all__ = ["WebLoop", "WebLoopPolicy", "PyodideFuture", "PyodideTask"]
