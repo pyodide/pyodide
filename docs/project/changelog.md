@@ -21,6 +21,9 @@ myst:
   `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
   to use the `_zoneinfo` C extension. {pr}`6331`
 
+- {{ Fix }} Fixed a new event loop silently replacing the current running loop when
+  `asyncio.new_event_loop()` is called. {pr}`6342`
+
 ## Version 314.0.2
 
 _June 30, 2026_
