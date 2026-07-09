@@ -21,6 +21,9 @@ myst:
   `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
   to use the `_zoneinfo` C extension. {pr}`6331`
 
+- {{ Fix }} Fixed startTls() not releasing the stream lock when upgrading a
+  socket to TLS, which could cause a crash in some JS runtimes. {pr}`6344`
+
 ## Version 314.0.2
 
 _June 30, 2026_
