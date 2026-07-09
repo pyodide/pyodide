@@ -24,7 +24,7 @@ myst:
 - {{ Enhancement }} Release archives for cross build envs are now
   also published as `.tar.gz` alongside the existing `.tar.bz2` archives. New
   releases will use `.tar.gz` as the primary format in the cross-build
-  environment metadata. {issue}`6343`
+  environment metadata. {pr}`6346`
 
 ## Version 314.0.2
 
