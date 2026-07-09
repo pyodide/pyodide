@@ -21,6 +21,11 @@ myst:
   `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
   to use the `_zoneinfo` C extension. {pr}`6331`
 
+- {{ Enhancement }} Release archives for cross build envs are now
+  also published as `.tar.gz` alongside the existing `.tar.bz2` archives. New
+  releases will use `.tar.gz` as the primary format in the cross-build
+  environment metadata. {issue}`6343`
+
 ## Version 314.0.2
 
 _June 30, 2026_
