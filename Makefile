@@ -2,7 +2,7 @@ PYODIDE_ROOT=$(abspath .)
 
 include Makefile.envs
 
-.PHONY: check check-emcc
+.PHONY: check
 
 CC=emcc
 CXX=em++
@@ -17,7 +17,6 @@ all: \
 
 all-but-packages: \
 	check \
-	check-emcc \
 	$(CPYTHONINSTALL)/.installed-pyodide \
 	dist/pyodide.asm.mjs \
 	dist/pyodide.js \
@@ -67,7 +66,7 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 # Don't use ccache here because it does not support #embed properly.
 # https://github.com/ccache/ccache/discussions/1366
 src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat emsdk/emsdk/.complete
-	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
+	unset EM_COMPILER_WRAPPER && emcc --std=c23 -c $< -o $@
 
 src/core/jsverror.wasm: src/core/jsverror.wat emsdk/emsdk/.complete
 	./emsdk/emsdk/upstream/bin/wasm-as $< -o $@ -all
@@ -341,9 +340,6 @@ rust:
 
 check:
 	@./tools/dependency-check.sh
-
-check-emcc: emsdk/emsdk/.complete
-	@python3 tools/check_ccache.py
 
 debug:
 	EXTRA_CFLAGS+=" -D DEBUG_F" \
