@@ -30,8 +30,6 @@ export interface PythonPaths {
   prefix: string;
   sitePackages: string;
   dsoDir: string;
-  soabi: string;
-  extensionSuffixes: string[];
   extensionTags: string[];
 }
 
@@ -40,7 +38,7 @@ export interface PythonPaths {
  * version.
  *
  * @param version The `[major, minor, micro]` Python version tuple.
- * Needed to compute the SOABI and extension tags.
+ * Needed to compute the extension tags.
  * @returns The computed paths and extension tags.
  * @private
  */
@@ -60,8 +58,6 @@ export function computePythonPaths(
     prefix: PREFIX,
     sitePackages,
     dsoDir: DSO_DIR,
-    soabi,
-    extensionSuffixes,
     extensionTags,
   };
 }

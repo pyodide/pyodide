@@ -18,16 +18,6 @@ describe("computePythonPaths", () => {
     assert.equal(paths.sitePackages, "/lib/python3.14/site-packages");
   });
 
-  it("computes the SOABI and extension suffixes", () => {
-    const paths = computePythonPaths([3, 14, 0]);
-    assert.equal(paths.soabi, "cpython-314-wasm32-emscripten");
-    assert.deepEqual(paths.extensionSuffixes, [
-      ".cpython-314-wasm32-emscripten.so",
-      ".abi3.so",
-      ".so",
-    ]);
-  });
-
   it("computes extension tags by stripping .so", () => {
     const paths = computePythonPaths([3, 14, 0]);
     assert.deepEqual(paths.extensionTags, [

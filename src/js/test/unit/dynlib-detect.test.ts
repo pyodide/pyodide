@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { shouldLoadDynlib, getDynlibs } from "../../package-loading/dynlib-detect.ts";
+import {
+  shouldLoadDynlib,
+  getDynlibs,
+} from "../../package-loading/dynlib-detect.ts";
 import { computePythonPaths } from "../../package-loading/python-paths.ts";
 
 const { extensionTags } = computePythonPaths([3, 14, 2]);
@@ -43,7 +46,11 @@ describe("getDynlibs", () => {
       "pkg/_other.cpython-39-x86_64-linux-gnu.so",
       "pkg/libhelper.so",
     ];
-    const result = getDynlibs(paths, "/lib/python3.14/site-packages", extensionTags);
+    const result = getDynlibs(
+      paths,
+      "/lib/python3.14/site-packages",
+      extensionTags,
+    );
     assert.deepEqual(result, [
       "/lib/python3.14/site-packages/pkg/_core.cpython-314-wasm32-emscripten.so",
       "/lib/python3.14/site-packages/pkg/libhelper.so",
@@ -51,7 +58,11 @@ describe("getDynlibs", () => {
   });
 
   it("normalizes . and .. segments in member paths", () => {
-    const result = getDynlibs(["./pkg/../pkg/mod.so"], "/usr/lib", extensionTags);
+    const result = getDynlibs(
+      ["./pkg/../pkg/mod.so"],
+      "/usr/lib",
+      extensionTags,
+    );
     assert.deepEqual(result, ["/usr/lib/pkg/mod.so"]);
   });
 

@@ -38,7 +38,10 @@ describe("extractArchiveToFS", () => {
     const { fs, dirs, files } = makeMockFS();
     const result = extractArchiveToFS(fs, entries, SITE, extensionTags);
 
-    assert.deepEqual(files.get(`${SITE}/pkg/__init__.py`), enc.encode("x = 1\n"));
+    assert.deepEqual(
+      files.get(`${SITE}/pkg/__init__.py`),
+      enc.encode("x = 1\n"),
+    );
     assert.deepEqual(
       files.get(`${SITE}/pkg/_core.cpython-314-wasm32-emscripten.so`),
       soData,
@@ -53,7 +56,9 @@ describe("extractArchiveToFS", () => {
   });
 
   it("creates directories for explicit directory entries without writing files", () => {
-    const entries: ArchiveEntry[] = [{ name: "pkg/empty/", data: new Uint8Array() }];
+    const entries: ArchiveEntry[] = [
+      { name: "pkg/empty/", data: new Uint8Array() },
+    ];
     const { fs, dirs, files } = makeMockFS();
     extractArchiveToFS(fs, entries, SITE, extensionTags);
     assert.ok(dirs.includes(`${SITE}/pkg/empty`));

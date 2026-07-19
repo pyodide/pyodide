@@ -29,6 +29,7 @@ import { Installer } from "./installer";
 import {
   computePythonPaths,
   getInstallDir,
+  type PythonPaths,
 } from "./package-loading/python-paths";
 import { createContextWrapper } from "./common/contextManager";
 
@@ -99,6 +100,7 @@ export class PackageManager {
   #api: PackageManagerAPI;
   #module: PackageManagerModule;
   #installer: Installer;
+  #pythonPaths: PythonPaths;
 
   /**
    * Only used in Node. If we can't find a package in node_modules, we'll use this
@@ -141,7 +143,13 @@ export class PackageManager {
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
     this.#api = api;
     this.#module = pyodideModule;
-    this.#installer = new Installer(api, pyodideModule);
+    this.#pythonPaths = computePythonPaths(api.pyVersionTuple);
+    this.#installer = new Installer(
+      api,
+      pyodideModule,
+      this.#pythonPaths.prefix,
+      this.#pythonPaths.extensionTags,
+    );
 
     if (RUNTIME_ENV.IN_NODE) {
       // In node, we'll try first to load from the packageCacheDir and then fall
@@ -508,10 +516,7 @@ export class PackageManager {
 
     const filename = pkg.file_name;
 
-    const installDir = getInstallDir(
-      computePythonPaths(this.#api.pyVersionTuple),
-      pkg.install_dir,
-    );
+    const installDir = getInstallDir(this.#pythonPaths, pkg.install_dir);
 
     DEBUG &&
       console.debug(

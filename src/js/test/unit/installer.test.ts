@@ -4,11 +4,13 @@ import { zipSync, strToU8 } from "fflate";
 import { Installer } from "../../installer.ts";
 import { genMockAPI, genMockModule } from "./test-helper.ts";
 import type { PackageManagerModule } from "../../types.ts";
+import { computePythonPaths } from "../../package-loading/python-paths.ts";
 
 // @ts-ignore
 globalThis.DEBUG = false;
 
 const dec = new TextDecoder();
+const { prefix, extensionTags } = computePythonPaths([3, 14, 2]);
 
 function moduleWithRecordingFS() {
   const files = new Map<string, Uint8Array>();
@@ -41,14 +43,23 @@ function makeWheel() {
 
 describe("Installer", () => {
   it("initializes with API and Module", () => {
-    const _ = new Installer(genMockAPI(), genMockModule());
+    const _ = new Installer(
+      genMockAPI(),
+      genMockModule(),
+      prefix,
+      extensionTags,
+    );
   });
 
   it("extracts wheel contents into the install directory", async () => {
     const { mod, files } = moduleWithRecordingFS();
-    const installer = new Installer(genMockAPI(), mod);
+    const installer = new Installer(genMockAPI(), mod, prefix, extensionTags);
 
-    await installer.install(makeWheel(), "dummy_pkg-0.1.0-py3-none-any.whl", "/site");
+    await installer.install(
+      makeWheel(),
+      "dummy_pkg-0.1.0-py3-none-any.whl",
+      "/site",
+    );
 
     assert.equal(
       dec.decode(files.get("/site/dummy_pkg/__init__.py")),
@@ -62,7 +73,7 @@ describe("Installer", () => {
 
   it("writes metadata files into the dist-info directory", async () => {
     const { mod, files } = moduleWithRecordingFS();
-    const installer = new Installer(genMockAPI(), mod);
+    const installer = new Installer(genMockAPI(), mod, prefix, extensionTags);
 
     await installer.install(
       makeWheel(),
@@ -86,9 +97,13 @@ describe("Installer", () => {
 
   it("installs data files relative to sys.prefix", async () => {
     const { mod, files } = moduleWithRecordingFS();
-    const installer = new Installer(genMockAPI(), mod);
+    const installer = new Installer(genMockAPI(), mod, prefix, extensionTags);
 
-    await installer.install(makeWheel(), "dummy_pkg-0.1.0-py3-none-any.whl", "/site");
+    await installer.install(
+      makeWheel(),
+      "dummy_pkg-0.1.0-py3-none-any.whl",
+      "/site",
+    );
 
     assert.equal(dec.decode(files.get("/share/dummy/data.txt")), "hello");
   });
@@ -96,9 +111,13 @@ describe("Installer", () => {
   it("loads the shared libraries found in the wheel", async (t) => {
     const { mod } = moduleWithRecordingFS();
     const dlopenSpy = t.mock.method(mod, "_emscripten_dlopen_promise", () => 0);
-    const installer = new Installer(genMockAPI(), mod);
+    const installer = new Installer(genMockAPI(), mod, prefix, extensionTags);
 
-    await installer.install(makeWheel(), "dummy_pkg-0.1.0-py3-none-any.whl", "/site");
+    await installer.install(
+      makeWheel(),
+      "dummy_pkg-0.1.0-py3-none-any.whl",
+      "/site",
+    );
 
     assert.equal(dlopenSpy.mock.callCount(), 1);
   });

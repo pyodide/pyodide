@@ -38,7 +38,12 @@ function tarHeader(
 }
 
 function makeTar(
-  files: { name: string; data?: Uint8Array; typeflag?: string; prefix?: string }[],
+  files: {
+    name: string;
+    data?: Uint8Array;
+    typeflag?: string;
+    prefix?: string;
+  }[],
 ): Uint8Array {
   const blocks: Uint8Array[] = [];
   for (const f of files) {
@@ -130,11 +135,12 @@ describe("unpackZip with a real wheel", () => {
     const buffer = new Uint8Array(readFileSync(resolve(distDir, wheel)));
     const entries = unpackZip(buffer);
 
-    const metadata = entries.find((e) =>
-      /\.dist-info\/METADATA$/.test(e.name),
-    );
+    const metadata = entries.find((e) => /\.dist-info\/METADATA$/.test(e.name));
     assert.ok(metadata, `no dist-info/METADATA found in ${wheel}`);
-    assert.match(new TextDecoder().decode(metadata!.data), /^Metadata-Version:/m);
+    assert.match(
+      new TextDecoder().decode(metadata!.data),
+      /^Metadata-Version:/m,
+    );
 
     const reference = unzipSync(buffer);
     assert.equal(entries.length, Object.keys(reference).length);
@@ -162,7 +168,11 @@ describe("unpackTar", () => {
 
   it("joins the ustar prefix field with the name", () => {
     const tar = makeTar([
-      { name: "deep/file.py", data: enc.encode("y = 2\n"), prefix: "very/long" },
+      {
+        name: "deep/file.py",
+        data: enc.encode("y = 2\n"),
+        prefix: "very/long",
+      },
     ]);
     const entries = unpackTar(tar);
     assert.equal(entries.length, 1);
@@ -196,11 +206,10 @@ describe("unpackArchive dispatch", () => {
     assert.equal(entries[0].name, "a.py");
   });
 
-  it("rejects compressed tar before bootstrap", () => {
+  it("rejects unsupported archive formats", () => {
     assert.throws(
       () => unpackArchive(new Uint8Array(0), "pkg.tar.gz"),
-      /not supported before bootstrap/,
+      /Unsupported archive format/,
     );
   });
 });
-

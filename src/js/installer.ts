@@ -20,10 +20,19 @@ export class Installer {
   #api: PackageManagerAPI;
   #module: PackageManagerModule;
   #dynlibLoader: DynlibLoader;
+  #prefix: string;
+  #extensionTags: readonly string[];
 
-  constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
+  constructor(
+    api: PackageManagerAPI,
+    pyodideModule: PackageManagerModule,
+    prefix: string,
+    extensionTags: readonly string[],
+  ) {
     this.#api = api;
     this.#module = pyodideModule;
+    this.#prefix = prefix;
+    this.#extensionTags = extensionTags;
     this.#dynlibLoader = new DynlibLoader(api, pyodideModule);
   }
 
@@ -33,16 +42,12 @@ export class Installer {
     installDir: string,
     metadata?: ReadonlyMap<string, string>,
   ) {
-    const { prefix, extensionTags } = computePythonPaths(
-      this.#api.pyVersionTuple,
-    );
-
     const entries = unpackArchive(buffer, filename);
     const { dynlibs, distInfoDir, dataDir } = extractArchiveToFS(
       this.#module.FS,
       entries,
       installDir,
-      extensionTags,
+      this.#extensionTags,
     );
 
     if (metadata && distInfoDir) {
@@ -50,7 +55,7 @@ export class Installer {
     }
 
     if (dataDir) {
-      this.#installDataFiles(entries, dataDir, prefix);
+      this.#installDataFiles(entries, dataDir, this.#prefix);
     }
 
     DEBUG &&
@@ -100,7 +105,8 @@ export class Installer {
 export let install: typeof Installer.prototype.install;
 
 if (typeof API !== "undefined" && typeof Module !== "undefined") {
-  const singletonInstaller = new Installer(API, Module);
+  const { prefix, extensionTags } = computePythonPaths(API.pyVersionTuple);
+  const singletonInstaller = new Installer(API, Module, prefix, extensionTags);
 
   install = singletonInstaller.install.bind(singletonInstaller);
 
