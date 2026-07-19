@@ -1,4 +1,4 @@
-From 93a70e7841f3765cc70af8eebf0e050b492688df Mon Sep 17 00:00:00 2001
+From 69811bec43200e58bbefcc8106d5c5181b8536ae Mon Sep 17 00:00:00 2001
 From: Gyeongjae Choi <def6488@gmail.com>
 Date: Sun, 1 Jun 2025 15:35:17 +0000
 Subject: [PATCH 2/4] Fix promise order
@@ -10,10 +10,10 @@ Upstream PR:
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/system/lib/libc/dynlink.c b/system/lib/libc/dynlink.c
-index f826c1b7c..2b1baa9da 100644
+index e2cf70df3..33c493d0b 100644
 --- a/system/lib/libc/dynlink.c
 +++ b/system/lib/libc/dynlink.c
-@@ -623,12 +623,14 @@ em_promise_t emscripten_dlopen_promise(const char* filename, int flags) {
+@@ -616,12 +616,14 @@ em_promise_t emscripten_dlopen_promise(const char* filename, int flags) {
    // Create a promise that is resolved (and destroyed) once the operation
    // succeeds.
    em_promise_t p = emscripten_promise_create();
