@@ -16,13 +16,10 @@ static PyObject* _pyodide_importhook = NULL;
 _Py_IDENTIFIER(__qualname__);
 _Py_IDENTIFIER(add_note_to_module_not_found_error);
 
-void
-_Py_DumpTraceback(int fd, PyThreadState* tstate);
-
 EMSCRIPTEN_KEEPALIVE void
 dump_traceback()
 {
-  _Py_DumpTraceback(fileno(stdout), PyGILState_GetThisThreadState());
+  PyUnstable_DumpTraceback(fileno(stdout), PyGILState_GetThisThreadState());
 }
 
 EM_JS(void, console_error, (char* msg), {
