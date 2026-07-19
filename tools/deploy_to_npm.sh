@@ -9,7 +9,7 @@ fi
 
 # Trusted publishing requires npm >= 11.5.1. Older versions produce misleading
 # E404 / ENEEDAUTH errors instead of proper diagnostics (npm/cli#9088).
-npm install -g npm@latest
+npm install -g npm@11.18.0
 
 # Ensure leftover token auth does not interfere with OIDC trusted publishing.
 if [[ -n "${NODE_AUTH_TOKEN}" ]]; then
