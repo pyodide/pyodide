@@ -31,8 +31,8 @@ METADATA_FILE_DEBUG_V2 = (
     / "pyodide-cross-build-environments-debug-v2.json"
 )
 
-BASE_URL = "https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-{version}.tar.bz2"
-DEBUG_BASE_URL = "https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-debug-{version}.tar.bz2"
+BASE_URL = "https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-{version}.tar.gz"
+DEBUG_BASE_URL = "https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-debug-{version}.tar.gz"
 
 # Pyodide build version that is compatible with the latest cross-build environment
 # Note for maintainers: update this value when there are breaking changes in the cross-build environment
@@ -81,7 +81,7 @@ def parse_env_var(content: str, var_name: str) -> str:
 def extract_archive(archive: bytes) -> Generator[Path]:
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_dir_path = Path(tmp_dir)
-        archive_path = tmp_dir_path / "xbuildenv.tar.bz2"
+        archive_path = tmp_dir_path / "xbuildenv.tar.gz"
         archive_path.write_bytes(archive)
 
         # Extract the archive
