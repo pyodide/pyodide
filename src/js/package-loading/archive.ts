@@ -51,7 +51,6 @@ export function unpackZip(buffer: Uint8Array): ArchiveEntry[] {
 }
 
 const TAR_BLOCK_SIZE = 512;
-const tarTextDecoder = new TextDecoder();
 
 /**
  * Unpack an uncompressed tar archive into a flat list of entries.
@@ -68,6 +67,7 @@ const tarTextDecoder = new TextDecoder();
  * @private
  */
 export function unpackTar(buffer: Uint8Array): ArchiveEntry[] {
+  const tarTextDecoder = new TextDecoder();
   const entries: ArchiveEntry[] = [];
   let offset = 0;
   let longName: string | undefined;
