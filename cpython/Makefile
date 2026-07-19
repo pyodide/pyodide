@@ -71,6 +71,17 @@ $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched
 	# Ensure build-details.json is present before installing the library
 	# This is included in the CPython `build_wasm` target, but not in our custom build
 	emmake make -C $(PYBUILD) build-details.json
+	# Generate _missing_stdlib_info.py (used by traceback for better ModuleNotFound
+	# messages, new in 3.15). libinstall installs it, but the normal generator runs
+	# via `checksharedmods` which depends on sharedmods/BUILDPYTHON that we don't
+	# build in our cross build, so we invoke the generator directly in
+	# cross-compiling mode (checks file existence instead of importing modules).
+	cd $(PYBUILD) && \
+		_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) \
+		_PYTHON_SYSCONFIGDATA_PATH=$(PYBUILD)/`cat pybuilddir.txt` \
+		_PYTHON_PROJECT_BASE=$(PYBUILD) \
+		PYTHONPATH=Lib \
+		$(HOSTPYTHON) Tools/build/check_extension_modules.py --cross-compiling --generate-missing-stdlib-info
 	CFLAGS="$(CFLAGS_BASE)" emmake make -C $(PYBUILD) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
 	cp $(PYBUILD)/$(PYLIB) $(PYINSTALL)/lib/
 
@@ -235,7 +246,7 @@ $(PYINSTALL)/lib/libsqlite3.a:
 
 python-makefile: $(PYBUILD)/Makefile
 
-CONFIG_SITE_FILE=./Tools/wasm/emscripten/config.site-wasm32-emscripten
+CONFIG_SITE_FILE=./Platforms/emscripten/config.site-wasm32-emscripten
 
 $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 	# ac_cv_func_shutdown :
@@ -262,6 +273,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 			  --disable-ipv6 \
 			  --enable-big-digits=30 \
 			  --enable-optimizations \
+			  --with-system-libmpdec=no \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(PYBUILD)/config.guess) \
 			  --prefix=$(PYINSTALL)  \
