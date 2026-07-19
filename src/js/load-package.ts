@@ -26,6 +26,10 @@ import {
   isAbsolute,
 } from "./compat";
 import { Installer } from "./installer";
+import {
+  computePythonPaths,
+  getInstallDir,
+} from "./package-loading/python-paths";
 import { createContextWrapper } from "./common/contextManager";
 
 /**
@@ -504,8 +508,8 @@ export class PackageManager {
 
     const filename = pkg.file_name;
 
-    // This Python helper function unpacks the buffer and lists out any .so files in it.
-    const installDir: string = this.#api.package_loader.get_install_dir(
+    const installDir = getInstallDir(
+      computePythonPaths(this.#api.pyVersionTuple),
       pkg.install_dir,
     );
 

@@ -1,6 +1,11 @@
 import { DynlibLoader } from "./dynload";
-import { uriToPackageData } from "./packaging-utils";
 import { PackageManagerAPI, PackageManagerModule } from "./types";
+import { unpackArchive } from "./package-loading/archive";
+import { extractArchiveToFS } from "./package-loading/fs-extract";
+import { computePythonPaths } from "./package-loading/python-paths";
+import { dirname, resolvePosix } from "./package-loading/posix-path";
+
+const textEncoder = new TextEncoder();
 
 /**
  * The Installer class is responsible for installing packages into the Pyodide filesystem.
@@ -13,10 +18,12 @@ import { PackageManagerAPI, PackageManagerModule } from "./types";
  */
 export class Installer {
   #api: PackageManagerAPI;
+  #module: PackageManagerModule;
   #dynlibLoader: DynlibLoader;
 
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
     this.#api = api;
+    this.#module = pyodideModule;
     this.#dynlibLoader = new DynlibLoader(api, pyodideModule);
   }
 
@@ -26,15 +33,25 @@ export class Installer {
     installDir: string,
     metadata?: ReadonlyMap<string, string>,
   ) {
-    const dynlibs: string[] = this.#api.package_loader.unpack_buffer.callKwargs(
-      {
-        buffer,
-        filename,
-        extract_dir: installDir,
-        metadata,
-        calculate_dynlibs: true,
-      },
+    const { prefix, extensionTags } = computePythonPaths(
+      this.#api.pyVersionTuple,
     );
+
+    const entries = unpackArchive(buffer, filename);
+    const { dynlibs, distInfoDir, dataDir } = extractArchiveToFS(
+      this.#module.FS,
+      entries,
+      installDir,
+      extensionTags,
+    );
+
+    if (metadata && distInfoDir) {
+      this.#writeWheelMetadata(installDir, distInfoDir, metadata);
+    }
+
+    if (dataDir) {
+      this.#installDataFiles(entries, dataDir, prefix);
+    }
 
     DEBUG &&
       console.debug(
@@ -45,6 +62,37 @@ export class Installer {
       { file_name: filename },
       dynlibs,
     );
+  }
+
+  #writeWheelMetadata(
+    installDir: string,
+    distInfoDir: string,
+    metadata: ReadonlyMap<string, string>,
+  ) {
+    for (const [key, value] of metadata) {
+      this.#module.FS.writeFile(
+        `${installDir}/${distInfoDir}/${key}`,
+        textEncoder.encode(value),
+      );
+    }
+  }
+
+  // Wheel `.data/data/<path>` entries are installed relative to sys.prefix, per
+  // the "data" install scheme. Mirrors `install_datafiles` in _package_loader.py.
+  #installDataFiles(
+    entries: readonly { name: string; data: Uint8Array }[],
+    dataDir: string,
+    prefix: string,
+  ) {
+    const dataScheme = `${dataDir}/data/`;
+    for (const { name, data } of entries) {
+      if (name.endsWith("/") || !name.startsWith(dataScheme)) {
+        continue;
+      }
+      const target = resolvePosix(prefix, name.slice(dataScheme.length));
+      this.#module.FS.mkdirTree(dirname(target));
+      this.#module.FS.writeFile(target, data, { canOwn: true });
+    }
   }
 }
 
