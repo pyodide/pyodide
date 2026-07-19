@@ -59,7 +59,7 @@ jobs:
             ccache -s
 
             # Set mtime for EM_CONFIG to avoid ccache cache misses
-            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
+            touch -m -d '1 Jan 2021 12:00' "$EM_CONFIG"
 
       - run:
           name: build cpython
@@ -165,7 +165,7 @@ jobs:
             make pyodide_build
 
             # Set mtime for EM_CONFIG to avoid ccache cache misses
-            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
+            touch -m -d '1 Jan 2021 12:00' "$EM_CONFIG"
 
             rm dist/pyodide-lock.json
             ccache -z
