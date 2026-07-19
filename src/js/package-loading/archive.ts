@@ -53,7 +53,6 @@ export function unpackZip(buffer: Uint8Array): ArchiveEntry[] {
 const TAR_BLOCK_SIZE = 512;
 let tarTextDecoder: TextDecoder | undefined;
 
-
 // Cache TextDecoder to avoid creating new instances
 // We cannot use global TextDecoder because it may not be available in all environments (e.g. D8)
 function getTarTextDecoder(): TextDecoder {
@@ -129,12 +128,16 @@ export function unpackTar(buffer: Uint8Array): ArchiveEntry[] {
 
 function readTarName(header: Uint8Array): string {
   const name = stripNull(getTarTextDecoder().decode(header.subarray(0, 100)));
-  const prefix = stripNull(getTarTextDecoder().decode(header.subarray(345, 500)));
+  const prefix = stripNull(
+    getTarTextDecoder().decode(header.subarray(345, 500)),
+  );
   return prefix ? `${prefix}/${name}` : name;
 }
 
 function readOctal(header: Uint8Array, start: number, length: number): number {
-  const text = getTarTextDecoder().decode(header.subarray(start, start + length));
+  const text = getTarTextDecoder().decode(
+    header.subarray(start, start + length),
+  );
   const trimmed = text.replace(/[\0 ]+$/, "").trim();
   return trimmed ? parseInt(trimmed, 8) : 0;
 }
