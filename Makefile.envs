@@ -199,7 +199,13 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lsdl.js \
 	--js-library=src/core/libjsverror.js \
 	-sMAX_WEBGL_VERSION=2  \
-	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
+	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0 \
+	-Wl,--wrap=__syscall_connect \
+	-Wl,--wrap=__syscall_recvfrom \
+	-Wl,--wrap=__syscall_sendto \
+	-Wl,--wrap=__syscall_shutdown \
+	-Wl,--wrap=__syscall_fcntl64 \
+	-Wl,--wrap=__syscall_poll
 
 EXPORTS=_main \
    ,_free \
