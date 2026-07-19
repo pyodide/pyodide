@@ -51,6 +51,17 @@ export function unpackZip(buffer: Uint8Array): ArchiveEntry[] {
 }
 
 const TAR_BLOCK_SIZE = 512;
+let tarTextDecoder: TextDecoder | undefined;
+
+
+// Cache TextDecoder to avoid creating new instances
+// We cannot use global TextDecoder because it may not be available in all environments (e.g. D8)
+function getTarTextDecoder(): TextDecoder {
+  if (!tarTextDecoder) {
+    tarTextDecoder = new TextDecoder();
+  }
+  return tarTextDecoder;
+}
 
 /**
  * Unpack an uncompressed tar archive into a flat list of entries.
@@ -67,7 +78,6 @@ const TAR_BLOCK_SIZE = 512;
  * @private
  */
 export function unpackTar(buffer: Uint8Array): ArchiveEntry[] {
-  const tarTextDecoder = new TextDecoder();
   const entries: ArchiveEntry[] = [];
   let offset = 0;
   let longName: string | undefined;
@@ -87,12 +97,12 @@ export function unpackTar(buffer: Uint8Array): ArchiveEntry[] {
 
     if (typeflag === "L") {
       // GNU long name: this block's data is the name of the next entry.
-      longName = stripNull(tarTextDecoder.decode(data));
+      longName = stripNull(getTarTextDecoder().decode(data));
       continue;
     }
     if (typeflag === "x") {
       // PAX extended header: a `path=` record overrides the next entry's name.
-      const path = parsePaxPath(tarTextDecoder.decode(data));
+      const path = parsePaxPath(getTarTextDecoder().decode(data));
       if (path !== undefined) {
         longName = path;
       }
@@ -118,13 +128,13 @@ export function unpackTar(buffer: Uint8Array): ArchiveEntry[] {
 }
 
 function readTarName(header: Uint8Array): string {
-  const name = stripNull(tarTextDecoder.decode(header.subarray(0, 100)));
-  const prefix = stripNull(tarTextDecoder.decode(header.subarray(345, 500)));
+  const name = stripNull(getTarTextDecoder().decode(header.subarray(0, 100)));
+  const prefix = stripNull(getTarTextDecoder().decode(header.subarray(345, 500)));
   return prefix ? `${prefix}/${name}` : name;
 }
 
 function readOctal(header: Uint8Array, start: number, length: number): number {
-  const text = tarTextDecoder.decode(header.subarray(start, start + length));
+  const text = getTarTextDecoder().decode(header.subarray(start, start + length));
   const trimmed = text.replace(/[\0 ]+$/, "").trim();
   return trimmed ? parseInt(trimmed, 8) : 0;
 }
