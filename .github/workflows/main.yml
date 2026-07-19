@@ -29,21 +29,12 @@ jobs:
       - name: Read the Python version from Makefile.envs
         id: get_python_version
         run: |
-<<<<<<< HEAD
           PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)
           # Raw CPython version format (e.g. 3.15.0b3), understood by uv.
           echo "PYVERSION=$PYVERSION"  >> "$GITHUB_OUTPUT"
           # Convert CPython version format (e.g. 3.15.0b3) to setup-python format (e.g. 3.15.0-beta.3)
           PYVERSION_SETUP_PYTHON=$(echo "$PYVERSION" | sed -E 's/a([0-9]+)$/-alpha.\1/; s/b([0-9]+)$/-beta.\1/; s/rc([0-9]+)$/-rc.\1/')
           echo "PYVERSION_SETUP_PYTHON=$PYVERSION_SETUP_PYTHON"  >> "$GITHUB_OUTPUT"
-||||||| parent of 846205a7 (Try more)
-          echo "PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)"  >> "$GITHUB_OUTPUT"
-=======
-          PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)
-          # Convert CPython version format (e.g. 3.15.0b3) to setup-python format (e.g. 3.15.0-beta.3)
-          PYVERSION=$(echo "$PYVERSION" | sed -E 's/a([0-9]+)$/-alpha.\1/; s/b([0-9]+)$/-beta.\1/; s/rc([0-9]+)$/-rc.\1/')
-          echo "PYVERSION=$PYVERSION"  >> "$GITHUB_OUTPUT"
->>>>>>> 846205a7 (Try more)
 
   check-docs:
     name: Check documentation
@@ -62,7 +53,7 @@ jobs:
       - name: Install Python requirements
         shell: bash -l {0}
         run: |
-          python3 -m pip install -r docs/requirements-doc.txt
+          unset RUSTFLAGS && python3 -m pip install -r docs/requirements-doc.txt
       - name: Install node requirements
         shell: bash -l {0}
         run: |
@@ -95,7 +86,7 @@ jobs:
         run: |
           mkdir test-results
           make pyodide_build
-          python3 -m pip install -r requirements.txt -r requirements-deploy.txt
+          unset RUSTFLAGS && python3 -m pip install -r requirements.txt -r requirements-deploy.txt
       - name: Check test collection
         shell: bash -l {0}
         run: |
@@ -246,7 +237,7 @@ jobs:
         run: |
           ls -lh dist/
 
-          pip install brotli
+          unset RUSTFLAGS && pip install brotli
           ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
       - name: Store artifacts build
@@ -311,7 +302,7 @@ jobs:
 
       - name: install test requirements
         run: |
-          pip install -r requirements.txt -r requirements-deploy.txt
+          unset RUSTFLAGS && pip install -r requirements.txt -r requirements-deploy.txt
           make pyodide_build
 
       - uses: pyodide/pyodide-actions/install-browser@012fa537869d343726d01863a34b773fc4d96a14 # v2
@@ -490,8 +481,8 @@ jobs:
         run: |
           set -e -x
           mkdir -p test-results
-          python -m pip install -r requirements.txt
-          python -m pip install pymysql cryptography pg8000 redis
+          unset RUSTFLAGS && python -m pip install -r requirements.txt
+          unset RUSTFLAGS && python -m pip install pymysql cryptography pg8000 redis
           make npm-link
 
       - name: Run database integration tests (node)
