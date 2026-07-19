@@ -2,7 +2,10 @@ import { DynlibLoader } from "./dynload";
 import { PackageManagerAPI, PackageManagerModule } from "./types";
 import { unpackArchive } from "./package-loading/archive";
 import { extractArchiveToFS } from "./package-loading/fs-extract";
-import { computePythonPaths } from "./package-loading/python-paths";
+import {
+  computePythonPaths,
+  type PythonPaths,
+} from "./package-loading/python-paths";
 import { dirname, resolvePosix } from "./package-loading/posix-path";
 
 const textEncoder = new TextEncoder();
@@ -20,20 +23,18 @@ export class Installer {
   #api: PackageManagerAPI;
   #module: PackageManagerModule;
   #dynlibLoader: DynlibLoader;
-  #prefix: string;
-  #extensionTags: readonly string[];
+  #pythonPaths?: PythonPaths;
 
-  constructor(
-    api: PackageManagerAPI,
-    pyodideModule: PackageManagerModule,
-    prefix: string,
-    extensionTags: readonly string[],
-  ) {
+  constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
     this.#api = api;
     this.#module = pyodideModule;
-    this.#prefix = prefix;
-    this.#extensionTags = extensionTags;
     this.#dynlibLoader = new DynlibLoader(api, pyodideModule);
+  }
+
+  // pyVersionTuple is only set during the stdlib preRun step, which runs after
+  // this class is constructed. Compute the paths lazily on first use and cache.
+  #getPythonPaths(): PythonPaths {
+    return (this.#pythonPaths ??= computePythonPaths(this.#api.pyVersionTuple));
   }
 
   async install(
@@ -42,12 +43,13 @@ export class Installer {
     installDir: string,
     metadata?: ReadonlyMap<string, string>,
   ) {
+    const { prefix, extensionTags } = this.#getPythonPaths();
     const entries = unpackArchive(buffer, filename);
     const { dynlibs, distInfoDir, dataDir } = extractArchiveToFS(
       this.#module.FS,
       entries,
       installDir,
-      this.#extensionTags,
+      extensionTags,
     );
 
     if (metadata && distInfoDir) {
@@ -55,7 +57,7 @@ export class Installer {
     }
 
     if (dataDir) {
-      this.#installDataFiles(entries, dataDir, this.#prefix);
+      this.#installDataFiles(entries, dataDir, prefix);
     }
 
     DEBUG &&
@@ -105,8 +107,7 @@ export class Installer {
 export let install: typeof Installer.prototype.install;
 
 if (typeof API !== "undefined" && typeof Module !== "undefined") {
-  const { prefix, extensionTags } = computePythonPaths(API.pyVersionTuple);
-  const singletonInstaller = new Installer(API, Module, prefix, extensionTags);
+  const singletonInstaller = new Installer(API, Module);
 
   install = singletonInstaller.install.bind(singletonInstaller);
 

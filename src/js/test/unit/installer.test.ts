@@ -4,13 +4,11 @@ import { zipSync, strToU8 } from "fflate";
 import { Installer } from "../../installer.ts";
 import { genMockAPI, genMockModule } from "./test-helper.ts";
 import type { PackageManagerModule } from "../../types.ts";
-import { computePythonPaths } from "../../package-loading/python-paths.ts";
 
 // @ts-ignore
 globalThis.DEBUG = false;
 
 const dec = new TextDecoder();
-const { prefix, extensionTags } = computePythonPaths([3, 14, 2]);
 
 function moduleWithRecordingFS() {
   const files = new Map<string, Uint8Array>();
@@ -43,17 +41,12 @@ function makeWheel() {
 
 describe("Installer", () => {
   it("initializes with API and Module", () => {
-    const _ = new Installer(
-      genMockAPI(),
-      genMockModule(),
-      prefix,
-      extensionTags,
-    );
+    const _ = new Installer(genMockAPI(), genMockModule());
   });
 
   it("extracts wheel contents into the install directory", async () => {
     const { mod, files } = moduleWithRecordingFS();
-    const installer = new Installer(genMockAPI(), mod, prefix, extensionTags);
+    const installer = new Installer(genMockAPI(), mod);
 
     await installer.install(
       makeWheel(),
@@ -73,7 +66,7 @@ describe("Installer", () => {
 
   it("writes metadata files into the dist-info directory", async () => {
     const { mod, files } = moduleWithRecordingFS();
-    const installer = new Installer(genMockAPI(), mod, prefix, extensionTags);
+    const installer = new Installer(genMockAPI(), mod);
 
     await installer.install(
       makeWheel(),
@@ -97,7 +90,7 @@ describe("Installer", () => {
 
   it("installs data files relative to sys.prefix", async () => {
     const { mod, files } = moduleWithRecordingFS();
-    const installer = new Installer(genMockAPI(), mod, prefix, extensionTags);
+    const installer = new Installer(genMockAPI(), mod);
 
     await installer.install(
       makeWheel(),
@@ -111,7 +104,7 @@ describe("Installer", () => {
   it("loads the shared libraries found in the wheel", async (t) => {
     const { mod } = moduleWithRecordingFS();
     const dlopenSpy = t.mock.method(mod, "_emscripten_dlopen_promise", () => 0);
-    const installer = new Installer(genMockAPI(), mod, prefix, extensionTags);
+    const installer = new Installer(genMockAPI(), mod);
 
     await installer.install(
       makeWheel(),

@@ -100,7 +100,7 @@ export class PackageManager {
   #api: PackageManagerAPI;
   #module: PackageManagerModule;
   #installer: Installer;
-  #pythonPaths: PythonPaths;
+  #pythonPaths?: PythonPaths;
 
   /**
    * Only used in Node. If we can't find a package in node_modules, we'll use this
@@ -143,13 +143,7 @@ export class PackageManager {
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
     this.#api = api;
     this.#module = pyodideModule;
-    this.#pythonPaths = computePythonPaths(api.pyVersionTuple);
-    this.#installer = new Installer(
-      api,
-      pyodideModule,
-      this.#pythonPaths.prefix,
-      this.#pythonPaths.extensionTags,
-    );
+    this.#installer = new Installer(api, pyodideModule);
 
     if (RUNTIME_ENV.IN_NODE) {
       // In node, we'll try first to load from the packageCacheDir and then fall
@@ -191,6 +185,12 @@ export class PackageManager {
         this.#module.stackRestore(sp);
       }
     };
+  }
+
+  // pyVersionTuple is only set during the stdlib preRun step, which runs after
+  // this class is constructed. Compute the paths lazily on first use and cache.
+  #getPythonPaths(): PythonPaths {
+    return (this.#pythonPaths ??= computePythonPaths(this.#api.pyVersionTuple));
   }
 
   /**
@@ -516,7 +516,7 @@ export class PackageManager {
 
     const filename = pkg.file_name;
 
-    const installDir = getInstallDir(this.#pythonPaths, pkg.install_dir);
+    const installDir = getInstallDir(this.#getPythonPaths(), pkg.install_dir);
 
     DEBUG &&
       console.debug(
