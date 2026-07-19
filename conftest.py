@@ -6,6 +6,8 @@ import contextlib
 import os
 import pathlib
 import re
+import shutil
+import subprocess
 import sys
 from collections.abc import Sequence
 
@@ -20,6 +22,9 @@ from pytest_pyodide import get_global_config
 from pytest_pyodide.utils import package_is_built as _package_is_built
 
 os.environ["IN_PYTEST"] = "1"
+
+# Set when testing an experimental pthreads build (PYODIDE_PTHREADS=1 make).
+PYODIDE_PTHREADS = os.environ.get("PYODIDE_PTHREADS", "") not in ("", "0")
 
 
 def set_configs():
@@ -39,11 +44,19 @@ def set_configs():
         ],
     )
 
-    pytest_pyodide_config.set_flags(
-        "node",
-        pytest_pyodide_config.get_flags("node")
-        + ["--experimental-wasm-stack-switching"],
+    # Node >= 24 enables JSPI by default and rejects the old flag.
+    node_major = 0
+    node_version = shutil.which("node") and subprocess.run(
+        ["node", "--version"], capture_output=True, text=True, check=False
     )
+    if node_version and node_version.stdout.startswith("v"):
+        node_major = int(node_version.stdout[1:].split(".")[0])
+    if node_major < 24:
+        pytest_pyodide_config.set_flags(
+            "node",
+            pytest_pyodide_config.get_flags("node")
+            + ["--experimental-wasm-stack-switching"],
+        )
 
     # There are a bunch of global objects that occasionally enter the hiwire cache
     # but never leave. The refcount checks get angry about them if they aren't preloaded.
@@ -75,22 +88,61 @@ def set_configs():
         """,
     )
 
-    pytest_pyodide_config.set_load_pyodide_script(
-        "node",
-        """
-        const {readFileSync} = require("fs");
-        let snap = readFileSync("snapshot.bin");
-        snap = new Uint8Array(snap.buffer);
-        let pyodide = await loadPyodide({
-            jsglobals: self,
-            _loadSnapshot: snap,
-        });
-        """,
-    )
+    if PYODIDE_PTHREADS:
+        # Snapshots don't work with shared memory (the snapshot code copies
+        # Module.HEAP8, which is a SharedArrayBuffer view in pthread builds).
+        pytest_pyodide_config.set_load_pyodide_script(
+            "node",
+            """
+            let pyodide = await loadPyodide({
+                jsglobals: self,
+            });
+            """,
+        )
+    else:
+        pytest_pyodide_config.set_load_pyodide_script(
+            "node",
+            """
+            const {readFileSync} = require("fs");
+            let snap = readFileSync("snapshot.bin");
+            snap = new Uint8Array(snap.buffer);
+            let pyodide = await loadPyodide({
+                jsglobals: self,
+                _loadSnapshot: snap,
+            });
+            """,
+        )
     pytest_pyodide_config.add_node_extra_globals(["URL", "Headers", "Response"])
 
 
 set_configs()
+
+if PYODIDE_PTHREADS:
+    # Browsers only expose SharedArrayBuffer (required by pthreads) on
+    # cross-origin isolated pages, so the test servers must send COOP/COEP.
+    from pytest_pyodide.server import spawn_web_server
+
+    COI_HEADERS = {
+        "Cross-Origin-Opener-Policy": "same-origin",
+        "Cross-Origin-Embedder-Policy": "require-corp",
+    }
+
+    @pytest.fixture(scope="session")
+    def web_server_main(request):
+        with spawn_web_server(
+            request.config.option.dist_dir, extra_headers=COI_HEADERS
+        ) as output:
+            yield output
+
+    @pytest.fixture(scope="session")
+    def web_server_secondary(request):
+        # CORP lets the COEP-isolated main page load this server's resources.
+        headers = COI_HEADERS | {"Cross-Origin-Resource-Policy": "cross-origin"}
+        with spawn_web_server(
+            request.config.option.dist_dir, extra_headers=headers
+        ) as output:
+            yield output
+
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"

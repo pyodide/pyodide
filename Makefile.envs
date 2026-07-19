@@ -131,6 +131,17 @@ ifdef PYODIDE_ASSERTIONS
 	EXTRA_CFLAGS+= -DDEBUG_F
 endif
 
+# Experimental pthreads support (see docs/development/pthreads-prototype.md).
+# Opt in with PYODIDE_PTHREADS=1. Every object linked into the main module and
+# every side module must be compiled with -pthread, so it goes into the base
+# flags, which pyodide-build also picks up for package builds.
+ifdef PYODIDE_PTHREADS
+	export PTHREAD_FLAG=-pthread
+	EXTRA_CFLAGS+= -pthread
+	EXTRA_LDFLAGS+= -pthread -Wno-pthreads-mem-growth
+	MAIN_MODULE_PTHREAD_LDFLAGS=-sPTHREAD_POOL_SIZE=8 -sPTHREAD_POOL_SIZE_STRICT=0
+endif
+
 
 export OPTFLAGS=-O2
 export CFLAGS_BASE=\
@@ -199,7 +210,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lsdl.js \
 	--js-library=src/core/libjsverror.js \
 	-sMAX_WEBGL_VERSION=2  \
-	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
+	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0 \
+	$(MAIN_MODULE_PTHREAD_LDFLAGS)
 
 EXPORTS=_main \
    ,_free \

@@ -33,6 +33,16 @@ ifdef CPYTHON_DEBUG
 	MAYBE_WITH_PYDEBUG=--with-pydebug
 endif
 
+# Experimental pthreads support, opt in with PYODIDE_PTHREADS=1.
+# wasm-ld refuses to link shared memory if any object lacks the atomics and
+# bulk-memory features, so every vendored static library needs -pthread too.
+ifdef PYODIDE_PTHREADS
+	MAYBE_ENABLE_WASM_PTHREADS=--enable-wasm-pthreads
+	SQLITE_THREADSAFE_FLAG=--enable-threadsafe
+else
+	SQLITE_THREADSAFE_FLAG=--disable-threadsafe
+endif
+
 all: $(PYINSTALL)/lib/$(PYLIB) libffi libhiwire liblzma libzstd
 
 libffi: $(PYINSTALL)/lib/libffi.a
@@ -125,7 +135,7 @@ $(PYINSTALL)/lib/libffi.a :
 		&& git fetch --depth 1 $(LIBFFIREPO) $(LIBFFI_COMMIT) \
 		&& git checkout FETCH_HEAD \
 		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
-		&& ./testsuite/emscripten/build.sh --wasm-bigint \
+		&& EMCC_CFLAGS="$(PTHREAD_FLAG)" ./testsuite/emscripten/build.sh --wasm-bigint \
 		&& make install \
 	)
 	cp $(FFIBUILD)/target/include/*.h $(PYBUILD)/Include/
@@ -141,7 +151,8 @@ $(PYINSTALL)/lib/libhiwire.a :
 		&& git fetch --depth 1 $(HIWIREREPO) $(HIWIRE_COMMIT) \
 		&& git checkout FETCH_HEAD \
 		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
-		&& CC=emcc EMSCRIPTEN_DEDUPLICATE=1 EXTERN_FAIL=1 make \
+		&& . $(PYODIDE_ROOT)/pyodide_env.sh \
+		&& CC=emcc EMSCRIPTEN_DEDUPLICATE=1 EXTERN_FAIL=1 EMCC_CFLAGS="$(PTHREAD_FLAG)" make \
 	)
 	cp -r $(HIWIREBUILD)/dist/lib $(PYINSTALL)/
 	rm -rf $(PYINSTALL)/include/hiwire
@@ -156,7 +167,7 @@ $(PYINSTALL)/lib/liblzma.a :
 		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
 		&& . $(PYODIDE_ROOT)/pyodide_env.sh \
 		&& emconfigure ./configure \
-			CFLAGS="-fPIC -Os" \
+			CFLAGS="-fPIC -Os $(PTHREAD_FLAG)" \
 			--disable-xz \
 			--disable-xzdec \
 			--disable-lzmadec \
@@ -187,7 +198,7 @@ $(PYINSTALL)/lib/libzstd.a:
 		&& emcmake cmake build/cmake \
 			-B build-wasm \
 			-DCMAKE_BUILD_TYPE=MinSizeRel \
-			-DCMAKE_C_FLAGS="-fPIC" \
+			-DCMAKE_C_FLAGS="-fPIC $(PTHREAD_FLAG)" \
 			-DZSTD_BUILD_SHARED=OFF \
 			-DZSTD_BUILD_STATIC=ON \
 			-DZSTD_BUILD_PROGRAMS=OFF \
@@ -214,9 +225,9 @@ $(PYINSTALL)/lib/libsqlite3.a:
 		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
 		&& . $(PYODIDE_ROOT)/pyodide_env.sh \
 		&& emconfigure ./configure \
-			CFLAGS="-fPIC -Os" \
+			CFLAGS="-fPIC -Os $(PTHREAD_FLAG)" \
 			--disable-readline \
-			--disable-threadsafe \
+			$(SQLITE_THREADSAFE_FLAG) \
 			--disable-shared \
 			--enable-static \
 			--disable-static-shell \
@@ -267,6 +278,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 			  --prefix=$(PYINSTALL)  \
 			  --with-build-python=$$(which python$(PYMAJOR).$(PYMINOR)) \
 			  $(MAYBE_WITH_PYDEBUG) \
+			  $(MAYBE_ENABLE_WASM_PTHREADS) \
 	)
 
 

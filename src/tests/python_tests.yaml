@@ -199,7 +199,10 @@
 - test_concurrent_futures.test_interpreter_pool
 - test_concurrent_futures.test_process_pool
 - test_concurrent_futures.test_shutdown
-- test_concurrent_futures.test_thread_pool
+- test_concurrent_futures.test_thread_pool:
+    # In pthreads builds the tests run but fail at import:
+    # InterpreterPoolExecutor needs the _interpreters module (not built).
+    xfail: needs _interpreters module
 - test_concurrent_futures.test_wait
 - test_configparser
 - test_contains
@@ -847,7 +850,10 @@
 - test_threadedtempfile
 - test_threading
 - test_threading_local
-- test_threadsignals
+- test_threadsignals:
+    # In pthreads builds the tests run but use signal.alarm, which does not
+    # exist on Emscripten.
+    xfail: needs signal.alarm
 - test_time:
     skip:
     - test_pthread_getcpuclockid   #  time.pthread_getcpuclockid(threading.get_ident()) fails
