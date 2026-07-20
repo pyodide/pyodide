@@ -206,7 +206,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-Wl,--wrap=__syscall_sendto \
 	-Wl,--wrap=__syscall_shutdown \
 	-Wl,--wrap=__syscall_fcntl64 \
-	-Wl,--wrap=__syscall_poll
+	-Wl,--wrap=__syscall_poll \
+	-Wl,--wrap=getentropy
 
 EXPORTS=_main \
    ,_free \
