@@ -56,7 +56,6 @@ build:
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
     -fwasm-exceptions
-    -sFAKE_DYLIBS
 
 
   # Exclude tests via Meson's install tags functionality.
