@@ -139,6 +139,7 @@ build:
     - "*bws_test.py"
 
   cross-build-env: true
+  cross-build-env-skip-install: true
   cross-build-files:
     - scipy/linalg/cython_lapack.pxd
     - scipy/linalg/cython_blas.pxd
