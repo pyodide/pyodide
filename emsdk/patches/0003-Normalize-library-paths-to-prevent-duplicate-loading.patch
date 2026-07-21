@@ -1,4 +1,4 @@
-From 724e985a5ae4604dae1fc3f5f2e1fe1a13c87681 Mon Sep 17 00:00:00 2001
+From d6cf03fbe35ecf0448e7377cdb719014daa0172a Mon Sep 17 00:00:00 2001
 From: Pepijn de Vos <pepijndevos@gmail.com>
 Date: Fri, 6 Mar 2026 08:37:22 +0100
 Subject: [PATCH 3/5] Normalize library paths to prevent duplicate loading
@@ -18,7 +18,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/src/lib/libdylink.js b/src/lib/libdylink.js
-index 8c2801b51..5b78f7d0c 100644
+index f667de882..6c409ecc5 100644
 --- a/src/lib/libdylink.js
 +++ b/src/lib/libdylink.js
 @@ -1102,6 +1102,8 @@ var LibraryDylink = {
