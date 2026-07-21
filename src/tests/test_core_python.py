@@ -9,7 +9,7 @@ import yaml
 try:
     from yaml import CLoader as Loader
 except ImportError:
-    from yaml import Loader
+    from yaml import Loader  # type:ignore[assignment]
 
 
 def filter_info(info: dict[str, Any], browser: str) -> dict[str, Any]:

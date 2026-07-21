@@ -2587,16 +2587,16 @@ JsMap_update(JsProxy* self, PyObject* args, PyObject* kwds)
   FAIL_IF_NULL(update_name);
   if (arg != NULL) {
     DECLARE_PY_OBJECT(status);
-    status = PyObject_CallMethodObjArgs(
-      MutableMapping, update_name, self, arg, NULL);
+    status =
+      PyObject_CallMethodObjArgs(MutableMapping, update_name, self, arg, NULL);
     FAIL_IF_NULL(status);
   }
   if (kwds != NULL) {
     DECLARE_PY_OBJECT(status);
     // kwds is a dict; passing it positionally applies its entries the same way
     // dict.update(**kwds) would.
-    status = PyObject_CallMethodObjArgs(
-      MutableMapping, update_name, self, kwds, NULL);
+    status =
+      PyObject_CallMethodObjArgs(MutableMapping, update_name, self, kwds, NULL);
     FAIL_IF_NULL(status);
   }
   Py_RETURN_NONE;

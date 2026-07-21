@@ -37,7 +37,6 @@ _PyObject_CallMethodIdOneArg(PyObject* self,
   return _PyObject_VectorcallMethodId(name, args, nargsf, _Py_NULL);
 }
 
-
 extern int
 _PyObject_SetAttrId(PyObject*, _Py_Identifier*, PyObject*);
 
