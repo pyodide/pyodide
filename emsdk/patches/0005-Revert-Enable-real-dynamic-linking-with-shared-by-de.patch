@@ -1,4 +1,4 @@
-From 4e07b94b7a20f626b50cbe059d6787167705a0ef Mon Sep 17 00:00:00 2001
+From 9bb22a782596a52a657fcc03e77e9ce120d709f8 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 21 Jul 2026 10:49:58 +0200
 Subject: [PATCH 5/5] Revert "Enable real dynamic linking with `-shared` by
@@ -6,17 +6,15 @@ Subject: [PATCH 5/5] Revert "Enable real dynamic linking with `-shared` by
 
 This reverts commit bbc19e213e4c182efe1a1b5cdbb03ccf8c60fc45.
 ---
- cmake/Modules/Platform/Emscripten.cmake       |  9 +-
- .../source/docs/compiling/Dynamic-Linking.rst | 21 ++---
- .../tools_reference/settings_reference.rst    | 12 +--
- src/settings.js                               | 12 +--
- test/common.py                                | 12 +--
- test/test_core.py                             | 40 +++------
- test/test_other.py                            | 83 +++++++++++--------
- tools/building.py                             | 16 ++--
- tools/cmdline.py                              |  3 +-
- tools/link.py                                 | 13 ++-
- 10 files changed, 104 insertions(+), 117 deletions(-)
+ cmake/Modules/Platform/Emscripten.cmake |  9 +--
+ src/settings.js                         | 12 ++--
+ test/common.py                          | 12 ++--
+ test/test_core.py                       | 40 ++++--------
+ test/test_other.py                      | 83 ++++++++++++++-----------
+ tools/building.py                       | 16 ++---
+ tools/cmdline.py                        |  3 +-
+ tools/link.py                           | 13 ++--
+ 8 files changed, 87 insertions(+), 101 deletions(-)
 
 diff --git a/cmake/Modules/Platform/Emscripten.cmake b/cmake/Modules/Platform/Emscripten.cmake
 index 9919234ef..16a3b6583 100644
@@ -38,72 +36,6 @@ index 9919234ef..16a3b6583 100644
  
  # Advertise Emscripten as a 32-bit platform (as opposed to
  # CMAKE_SYSTEM_PROCESSOR=x86_64 for 64-bit platform), since some projects (e.g.
-diff --git a/site/source/docs/compiling/Dynamic-Linking.rst b/site/source/docs/compiling/Dynamic-Linking.rst
-index b443152fa..82cea6e82 100644
---- a/site/source/docs/compiling/Dynamic-Linking.rst
-+++ b/site/source/docs/compiling/Dynamic-Linking.rst
-@@ -111,8 +111,7 @@ before your application starts to run.
- -  Build one part of your code as the main module, linking it using
-    ``-sMAIN_MODULE`` (See :ref:`MAIN_MODULE`).
- -  Build other parts of your code as side modules, linking it using
--   ``-shared``.  You can also used the emscripten-specific :ref:`SIDE_MODULE`
--   setting which does the same thing by default.
-+   ``-sSIDE_MODULE`` (See :ref:`SIDE_MODULE`).
- 
- For the main module the output suffix should be ``.js`` (the WebAssembly
- file will be generated alongside it just like normal).  For the side
-@@ -150,17 +149,19 @@ Building Dynamic Libraries using ``-shared``
- ============================================
- 
- In traditional toolchains the ``-shared`` flag is used to generated dynamic
--libraries.  Historically, due to early limitations, Emscripten would produce a
--fake dynamic library (along with a warning) when the ``-shared`` flag was used.
--When your main program is linked against these fake dynamic library they would
--be linked into your main program like regular static other object files.
-+libraries.  However, because dynamic linking in Emscripten comes with caveats
-+and has some overhead, Emscripten does not currently produce real dynamic
-+libraries when this flag is used.  Instead, Emscripten will produce a fake
-+dynamic library (along with a warning) that is actually a single static object
-+file.  When your main program is linked against this fake dynamic library it
-+gets linked into your main program like any other object file.
- 
--These days Emscripten will produce real dynamic libraries by default and
--``-shared`` is essentially the same as ``-sSIDE_MODULE``.
-+The reason for this behaviour is to allow projects (and build systems) that
-+assume a working ``-shared`` flag to build successfully (albeit using static
-+linking).
- 
- This behaviour can be controlled using the :ref:`FAKE_DYLIBS` settings.  If you
--prefer the older behaviour with fake dynamic libraryies you can enable this
--setting.
-+disable `FAKE_DYLIBS` then ``-shared`` will act like ``-sSIDE_MODULE``.
- 
- Code Size
- =========
-diff --git a/site/source/docs/tools_reference/settings_reference.rst b/site/source/docs/tools_reference/settings_reference.rst
-index c61cd19e1..290987919 100644
---- a/site/source/docs/tools_reference/settings_reference.rst
-+++ b/site/source/docs/tools_reference/settings_reference.rst
-@@ -3356,13 +3356,13 @@ Default value: false
- FAKE_DYLIBS
- ===========
- 
--This setting changes the behaviour of the ``-shared`` flag.  When set to true
--you get the old emscripten behaviour where the ``-shared`` flag actually
--produces a normal object file (i.e. ``ld -r``).  When set to true (the
--default) the ``-shared`` flag is equivelent to :ref:`SIDE_MODULE` and will
--produce a Wasn dynamic library.
-+This setting changes the behaviour of the ``-shared`` flag.  The default
-+setting of ``true`` means the ``-shared`` flag actually produces a normal
-+object file (i.e. ``ld -r``).  Setting this to false will cause ``-shared``
-+to behave like :ref:`SIDE_MODULE` and produce a dynamically linked
-+library.
- 
--Default value: false
-+Default value: true
- 
- .. _executable:
- 
 diff --git a/src/settings.js b/src/settings.js
 index c9e8ad2f6..4a06139d6 100644
 --- a/src/settings.js
