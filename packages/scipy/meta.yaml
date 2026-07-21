@@ -150,6 +150,12 @@ requirements:
     - libboost
   run:
     - numpy
+  build:
+    # Redirect the (transitive, via pythran) gast build dependency to a fork
+    # that constructs ast nodes with their required fields, which is mandatory
+    # on Python 3.15. pythran pins gast~=0.6.0, so the fork is based on 0.6.0.
+    # Drop once a released gast in the 0.6.x range supports Python 3.15.
+    - gast @ git+https://github.com/hoodmane/gast@6f897e63f26ad00521053d5c2c0059acb3591f7e
   executable:
     - gfortran
   constraint:
