@@ -5,7 +5,11 @@ from typing import Any
 
 import pytest
 import yaml
-from yaml import CLoader as Loader
+
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader
 
 
 def filter_info(info: dict[str, Any], browser: str) -> dict[str, Any]:
