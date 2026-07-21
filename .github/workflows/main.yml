@@ -178,8 +178,10 @@ jobs:
         uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
 
       - name: Set up Python ${{ needs.get_python_version.outputs.PYVERSION }}
+        env:
+          PYVERSION: ${{ needs.get_python_version.outputs.PYVERSION }}
         run: |
-          uv venv --seed --python "${{ needs.get_python_version.outputs.PYVERSION }}" .venv
+          uv venv --seed --python "$PYVERSION" .venv
           echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
           echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
@@ -291,8 +293,10 @@ jobs:
         uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
 
       - name: Set up Python ${{ needs.get_python_version.outputs.PYVERSION }}
+        env:
+          PYVERSION: ${{ needs.get_python_version.outputs.PYVERSION }}
         run: |
-          uv venv --seed --python "${{ needs.get_python_version.outputs.PYVERSION }}" .venv
+          uv venv --seed --python "$PYVERSION" .venv
           echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
           echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
