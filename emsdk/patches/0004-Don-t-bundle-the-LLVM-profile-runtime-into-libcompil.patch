@@ -1,7 +1,7 @@
-From 5903ceaafbb2e71d836f74727143f767a6138768 Mon Sep 17 00:00:00 2001
+From 1d61dfbe11747fd9228196806b1e887db4b5f2aa Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 7 Jul 2026 16:00:05 -0700
-Subject: [PATCH 4/4] Don't bundle the LLVM profile runtime into libcompiler_rt
+Subject: [PATCH 4/5] Don't bundle the LLVM profile runtime into libcompiler_rt
 
 Emscripten #24160 (released in 4.0.11) started globbing the
 compiler-rt profile runtime (system/lib/compiler-rt/lib/profile/*)
@@ -22,20 +22,20 @@ Refs: https://github.com/pyodide/pyodide/issues/6339
  1 file changed, 3 deletions(-)
 
 diff --git a/tools/system_libs.py b/tools/system_libs.py
-index 5a08d3871..73231c16d 100644
+index de51ca14f..59d054755 100644
 --- a/tools/system_libs.py
 +++ b/tools/system_libs.py
-@@ -951,7 +951,6 @@ class libcompiler_rt(MTLibrary, SjLjLibrary):
+@@ -963,7 +963,6 @@ class libcompiler_rt(MTLibrary, SjLjLibrary):
        '-Wno-unused-but-set-variable',
    ]
    src_dir = 'system/lib/compiler-rt/lib/builtins'
 -  profile_src_dir = 'system/lib/compiler-rt/lib/profile'
    includes = ['system/lib/libc', 'system/lib/compiler-rt/include']
-   excludes = [
+   excludes = {
      # gcc_personality_v0.c depends on libunwind, which don't include by default.
-@@ -984,8 +983,6 @@ class libcompiler_rt(MTLibrary, SjLjLibrary):
+@@ -996,8 +995,6 @@ class libcompiler_rt(MTLibrary, SjLjLibrary):
      'truncxfhf2.c',
-   ]
+   }
    src_files = glob_in_path(src_dir, '*.c', excludes=excludes)
 -  src_files += glob_in_path(profile_src_dir, '*.c')
 -  src_files += glob_in_path(profile_src_dir, '*.cpp')
