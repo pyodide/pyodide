@@ -7,6 +7,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 
+import attrs
 import requests
 from packaging.version import Version
 
