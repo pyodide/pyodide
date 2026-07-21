@@ -5,6 +5,12 @@
 #include <jslib.h>
 #include <stdbool.h>
 
+// The standard library is shipped as a zip file mounted at
+// /lib/python<major><minor>.zip
+#define STDLIB_ZIP_HELPER(major, minor) "/lib/python" #major #minor ".zip"
+#define STDLIB_ZIP_(major, minor) STDLIB_ZIP_HELPER(major, minor)
+#define STDLIB_ZIP STDLIB_ZIP_(PY_MAJOR_VERSION, PY_MINOR_VERSION)
+
 // Initialize python. exit() and print message to stderr on failure.
 static void
 initialize_python(int argc, char** argv)
@@ -32,6 +38,12 @@ initialize_python(int argc, char** argv)
   }
 
   status = PyConfig_SetBytesString(&config, &config.home, "/");
+  if (PyStatus_Exception(status)) {
+    Py_ExitStatusException(status);
+  }
+
+  // Point the standard library directory at the stdlib zip
+  status = PyConfig_SetBytesString(&config, &config.stdlib_dir, STDLIB_ZIP);
   if (PyStatus_Exception(status)) {
     Py_ExitStatusException(status);
   }
