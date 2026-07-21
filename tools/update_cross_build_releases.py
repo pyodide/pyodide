@@ -1,6 +1,5 @@
 import argparse
 import hashlib
-import json
 import os
 import shutil
 import tempfile
@@ -8,6 +7,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 
+import attrs
 import requests
 from packaging.version import Version
 
@@ -101,7 +101,7 @@ def add_version(
     min_pyodide_build_version: str | None = None,
     max_pyodide_build_version: str | None = None,
 ) -> str:
-    metadata = CrossBuildEnvMetaSpec.model_validate_json(raw_metadata)
+    metadata = CrossBuildEnvMetaSpec.from_json(raw_metadata)
     new_release = CrossBuildEnvReleaseSpec(
         version=version,
         url=url,
@@ -120,8 +120,7 @@ def add_version(
     metadata.releases = dict(
         sorted(metadata.releases.items(), reverse=True, key=lambda x: Version(x[0]))
     )
-    dictionary = metadata.model_dump(exclude_none=True)
-    return json.dumps(dictionary, indent=2)
+    return metadata.to_json()
 
 
 def main():
