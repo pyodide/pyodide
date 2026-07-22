@@ -110,7 +110,8 @@
 - test_capi.test_complex
 - test_capi.test_config
 - test_capi.test_dict
-- test_capi.test_emscripten
+- test_capi.test_emscripten:
+    xfail: We removed FS.createAsyncInputDevice in our patch
 - test_capi.test_eval
 - test_capi.test_eval_code_ex
 - test_capi.test_exceptions
@@ -927,8 +928,6 @@
 - test_capi.test_complex
 - test_capi.test_config
 - test_capi.test_dict
-# We removed FS.createAsyncInputDevice in our patch
-# - test_capi.test_emscripten
 - test_capi.test_eval
 - test_capi.test_eval_code_ex
 - test_capi.test_exceptions
