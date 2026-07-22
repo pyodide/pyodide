@@ -1,0 +1,25 @@
+From f768c4794b43804440d729fd6c46bfbb98461975 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 22 Jul 2026 11:22:15 +0200
+Subject: [PATCH 5/5] emcc 6.0.0: Don't pass -Bstatic
+
+---
+ tools/building.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/building.py b/tools/building.py
+index ce88d3031..7c75a78e6 100644
+--- a/tools/building.py
++++ b/tools/building.py
+@@ -166,7 +166,7 @@ def lld_flags_for_executable(external_symbols):
+     cmd.append(stub)
+ 
+   if settings.FAKE_DYLIBS or (not settings.MAIN_MODULE and not settings.SIDE_MODULE):
+-    cmd.append('-Bstatic')
++    pass
+   else:
+     # wasm-ld still defaults to static linking by default. If that ever changes, we can remove this line.
+     cmd.append('-Bdynamic')
+-- 
+2.54.0
+
