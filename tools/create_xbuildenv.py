@@ -58,8 +58,7 @@ def _copy_xbuild_files_from_wheel(
             if path not in names:
                 if skip_missing_files:
                     logging.warning(
-                        f"Cross-build file '{path}' not found in wheel "
-                        f"'{wheel.name}'"
+                        f"Cross-build file '{path}' not found in wheel '{wheel.name}'"
                     )
                     continue
 
