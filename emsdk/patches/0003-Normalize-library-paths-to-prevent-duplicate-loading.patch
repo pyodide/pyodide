@@ -1,4 +1,4 @@
-From 0cf8134089448e504746a205648acb2d0a8f0eb0 Mon Sep 17 00:00:00 2001
+From 1c1e75985a20c336e958010235ae3f77f89fb2ad Mon Sep 17 00:00:00 2001
 From: Pepijn de Vos <pepijndevos@gmail.com>
 Date: Fri, 6 Mar 2026 08:37:22 +0100
 Subject: [PATCH 3/5] Normalize library paths to prevent duplicate loading
