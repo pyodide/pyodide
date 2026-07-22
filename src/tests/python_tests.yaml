@@ -486,7 +486,8 @@
     # seeking out of 32-bit memory boundary
     # RangeError: Array buffer allocation failed
     - test_large_file_ops
-- test_io.test_largefile
+- test_io.test_largefile:
+    xfail: writes >2GiB file, fails to allocate ArrayBuffer in MEMFS
 - test_io.test_memoryio
 - test_io.test_signals
 - test_io.test_textio:
