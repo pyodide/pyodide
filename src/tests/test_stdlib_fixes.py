@@ -152,6 +152,10 @@ def test_zipimport_check_non_stdlib(selenium):
         "__phello__",
         "__hello__",
         "_sysconfigdata__emscripten_wasm32-emscripten",
+        # Generated at build time by Tools/build/check_extension_modules.py and
+        # used by traceback for better ModuleNotFoundError messages. It is not
+        # listed in sys.stdlib_module_names.
+        "_missing_stdlib_info",
         "site-packages",
         "lib-dynload",
         "pyodide",

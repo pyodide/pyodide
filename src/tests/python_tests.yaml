@@ -473,14 +473,25 @@
 - test_interpreters.test_lifecycle
 - test_interpreters.test_queues
 - test_interpreters.test_stress
-- test_io.test_bufferedio
+- test_io.test_bufferedio:
+    skip:
+    - test_recursive_repr
 - test_io.test_file
-- test_io.test_fileio
-- test_io.test_general
+- test_io.test_fileio:
+    skip:
+      # stack overflow in v8
+    - '*Recursive*'
+- test_io.test_general:
+    skip:
+    # seeking out of 32-bit memory boundary
+    # RangeError: Array buffer allocation failed
+    - test_large_file_ops
 - test_io.test_largefile
 - test_io.test_memoryio
 - test_io.test_signals
-- test_io.test_textio
+- test_io.test_textio:
+    skip:
+    - test_recursive_repr
 - test_io.test_univnewlines
 - test_ioctl
 - test_ipaddress
@@ -558,8 +569,14 @@
 - test_optimizer
 - test_optparse
 - test_ordered_dict
-- test_os.test_os
-- test_os.test_posix
+- test_os.test_os:
+    skip:
+    - test_utime*
+    # os.umask is not supported
+    - test_mode
+- test_os.test_posix:
+    skip:
+    - test_utime*
 - test_os.test_windows
 - test_osx_env
 - test_pathlib.test_copy
