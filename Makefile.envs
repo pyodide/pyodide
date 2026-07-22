@@ -155,43 +155,48 @@ export LDFLAGS_BASE=\
 
 export CXXFLAGS_BASE=
 
-export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
-	-s ENVIRONMENT=web,webview,worker,node,shell \
-	-s MAIN_MODULE=1 \
-	-s LZ4=1 \
+# Flags and libraries shared between the default (dynamic linking) and the
+# DISABLE_DYLINK builds of MAIN_MODULE_LDFLAGS.
+export MAIN_MODULE_LDFLAGS_COMMON= $(LDFLAGS_BASE) \
 	-s EXPORT_NAME="'_createPyodideModule'" \
-	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
-	-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
+	-s LZ4=1 \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
 	-s FORCE_FILESYSTEM=1 \
 	-s INITIAL_MEMORY=31457280 \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s MAXIMUM_MEMORY=4GB \
-	-s EXPORT_ALL=1 \
-	-s FS_DEBUG=1 \
 	-s STACK_SIZE=10MB \
+	-s FS_DEBUG=1 \
 	-s AUTO_JS_LIBRARIES=0 \
 	-s AUTO_NATIVE_LIBRARIES=0 \
 	-s NODEJS_CATCH_EXIT=0 \
 	-s NODEJS_CATCH_REJECTION=0 \
 	-sGROWABLE_ARRAYBUFFERS=0 \
-	-s EXPORTED_FUNCTIONS='$(EXPORTS)'\
-	-s EXIT_RUNTIME \
+	-s EXPORTED_FUNCTIONS='$(EXPORTS)' \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 	-lffi \
+	-lhiwire \
 	-llzma \
 	-lsqlite3 \
 	-lzstd \
-	-lstdc++ \
 	-lidbfs.js \
 	-lnodefs.js \
-	-lproxyfs.js \
+	-lproxyfs.js
+
+export MAIN_MODULE_LDFLAGS= $(MAIN_MODULE_LDFLAGS_COMMON) \
+	-s ENVIRONMENT=web,webview,worker,node,shell \
+	-s MAIN_MODULE=1 \
+	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
+	-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
+	-s EXPORT_ALL=1 \
+	-s EXIT_RUNTIME \
+	\
+	-lstdc++ \
 	-lworkerfs.js \
 	-lwebsocket.js \
 	-leventloop.js \
-	-lhiwire \
 	\
 	-lGL \
 	-legl.js \
@@ -290,31 +295,10 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,HEAPU64 \
 		,HEAPF32 \
 		,HEAPF64
-	export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
-		-s EXPORT_NAME="'_createPyodideModule'" \
+	export MAIN_MODULE_LDFLAGS= $(MAIN_MODULE_LDFLAGS_COMMON) \
 		-sEXPORTED_RUNTIME_METHODS='$(EXPORTED_RUNTIME_METHODS)' \
-		-s LZ4=1 \
-		-s USE_ZLIB \
-		-s USE_BZIP2 \
-		-s FORCE_FILESYSTEM=1 \
-		-s INITIAL_MEMORY=31457280 \
-		-s ALLOW_MEMORY_GROWTH=1 \
-		-s MAXIMUM_MEMORY=4GB \
-		-s STACK_SIZE=10MB \
 		-s ALLOW_TABLE_GROWTH \
-		-s FS_DEBUG=1 \
-		-sWASM_BIGINT \
-		-sEXPORTED_FUNCTIONS='$(EXPORTS)'\
-		-sERROR_ON_UNDEFINED_SYMBOLS=0 \
-		-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
-		-lffi \
-		-lhiwire \
-		-llzma \
-		-lsqlite3 \
-		-lzstd \
-		-lidbfs.js \
-		-lnodefs.js \
-		-lproxyfs.js
+		-sERROR_ON_UNDEFINED_SYMBOLS=0
 
 endif
 
