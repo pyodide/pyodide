@@ -1,3 +1,4 @@
+import os
 import re
 import shutil
 import subprocess
@@ -140,7 +141,11 @@ def test_dash_m_pip(selenium, monkeypatch, tmp_path):
 @only_node
 def test_invalid_cmdline_option(selenium):
     result = subprocess.run(
-        [script_path, "-c"], capture_output=True, encoding="utf8", check=False
+        [script_path, "-c"],
+        capture_output=True,
+        encoding="utf8",
+        check=False,
+        env={**os.environ, "PYTHON_COLORS": "0"},
     )
     assert result.returncode != 0
     assert result.stdout == ""

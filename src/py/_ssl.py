@@ -111,6 +111,7 @@ HAS_TLSv1_1 = True
 HAS_TLSv1_2 = True
 HAS_TLSv1_3 = False
 HAS_PSK = True
+HAS_PSK_TLS13 = False
 HAS_PHA = False
 
 HOSTFLAG_NEVER_CHECK_SUBJECT = 0x4
@@ -231,4 +232,8 @@ def enum_certificates(store_name):
 
 
 def enum_crls(store_name):
+    return []
+
+
+def get_sigalgs():
     return []

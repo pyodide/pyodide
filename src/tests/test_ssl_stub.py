@@ -8,7 +8,7 @@ def test_ssl_import(selenium):
     # See src/py/{ssl.py, _ssl.py} for details.
 
     # Test all public attributes of the ssl module can be accessed
-    # https://docs.python.org/3.13/library/ssl.html
+    # https://docs.python.org/3.15/library/ssl.html
 
     # If you are not sure, you can generate this list by running:
     """
@@ -18,7 +18,7 @@ print("from ssl import (\n{})".format(",\n    ".join(public_attrs)))
     """
 
     # Guardrail to ensure we don't forget to update this test when Python version changes
-    assert sys.version_info.minor == 14
+    assert sys.version_info.minor == 15
 
     from ssl import (  # type: ignore[attr-defined]  # noqa: F401
         ALERT_DESCRIPTION_ACCESS_DENIED,
@@ -58,6 +58,7 @@ print("from ssl import (\n{})".format(",\n    ".join(public_attrs)))
         HAS_NPN,
         HAS_PHA,
         HAS_PSK,
+        HAS_PSK_TLS13,
         HAS_SNI,
         OP_ALL,
         OP_CIPHER_SERVER_PREFERENCE,
@@ -148,6 +149,7 @@ print("from ssl import (\n{})".format(",\n    ".join(public_attrs)))
         get_default_verify_paths,
         get_protocol_name,
         get_server_certificate,
+        get_sigalgs,
         socket_error,
     )
 

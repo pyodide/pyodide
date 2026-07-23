@@ -37,7 +37,7 @@ RUN if [ $CHROME_VERSION = "latest" ]; then SE_CHROME_VERSION="stable"; \
 FROM node:24.7-bookworm-slim AS node-image
 FROM golang:1.21-alpine AS golang-image
 
-FROM python:3.14.2-slim-bookworm
+FROM python:3.15.0b4-slim-bookworm
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -45,7 +45,7 @@ RUN apt-get update \
         bzip2 ccache f2c g++ gfortran git make \
         patch pkg-config swig unzip wget xz-utils \
         autoconf autotools-dev automake texinfo dejagnu \
-        build-essential libltdl-dev \
+        build-essential libltdl-dev libffi-dev \
         gnupg2 libdbus-glib-1-2 sudo sqlite3 \
         ninja-build jq cmake bison \
         # Dependencies of Chrome and Firefox \

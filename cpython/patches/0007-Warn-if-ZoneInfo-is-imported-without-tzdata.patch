@@ -1,14 +1,14 @@
-From ed8839cb9af25461c12a8d2403931ccd5c07e5e8 Mon Sep 17 00:00:00 2001
+From f7948be5af18ab5a00b4c31a3fd4b8b351b5646f Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 25 Jul 2024 14:28:57 +0200
-Subject: [PATCH 7/9] Warn if ZoneInfo is imported without tzdata
+Subject: [PATCH 7/8] Warn if ZoneInfo is imported without tzdata
 
 ---
  Lib/zoneinfo/_common.py | 6 ++++++
  1 file changed, 6 insertions(+)
 
 diff --git a/Lib/zoneinfo/_common.py b/Lib/zoneinfo/_common.py
-index 03cc42149f9..2767edb9c6a 100644
+index 98668c15d8b..9b6ec0fa43b 100644
 --- a/Lib/zoneinfo/_common.py
 +++ b/Lib/zoneinfo/_common.py
 @@ -15,6 +15,12 @@ def load_tzdata(key):
@@ -25,5 +25,5 @@ index 03cc42149f9..2767edb9c6a 100644
          # to "we cannot find this key":
          #
 -- 
-2.43.0
+2.54.0
 
