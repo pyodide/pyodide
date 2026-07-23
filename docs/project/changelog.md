@@ -82,6 +82,9 @@ _June 26, 2026_
 
 - {{ Performance }} Sped up JsProxy operations by caching type flags. {pr}`6282`
 
+- {{ Fix }} Accessing `headers` property of the `pyfetch` and `pyxhr` responses
+  now returns a `http.client.HTTPMessage` object instead of a `dict`. {pr}`6303`
+
 ## Version 314.0.0
 
 _June 09, 2026_
