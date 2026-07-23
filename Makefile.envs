@@ -166,7 +166,6 @@ export MAIN_MODULE_LDFLAGS_COMMON= $(LDFLAGS_BASE) \
 	-s MAXIMUM_MEMORY=4GB \
 	-s FS_DEBUG=1 \
 	-s STACK_SIZE=10MB \
-	-s GROWABLE_ARRAYBUFFERS=0 \
 	-s EXPORTED_FUNCTIONS='$(EXPORTS)' \
 	-sEXPORTED_RUNTIME_METHODS='$(EXPORTED_RUNTIME_METHODS)' \
 	\
@@ -212,8 +211,7 @@ export MAIN_MODULE_LDFLAGS= $(MAIN_MODULE_LDFLAGS_COMMON) \
 	-Wl,--wrap=__syscall_sendto \
 	-Wl,--wrap=__syscall_shutdown \
 	-Wl,--wrap=__syscall_fcntl64 \
-	-Wl,--wrap=__syscall_poll \
-	-Wl,--wrap=getentropy
+	-Wl,--wrap=__syscall_poll
 
 EXPORTS=_main \
    ,_free \
