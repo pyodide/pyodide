@@ -26,6 +26,11 @@ import {
   isAbsolute,
 } from "./compat";
 import { Installer } from "./installer";
+import {
+  computePythonPaths,
+  getInstallDir,
+  type PythonPaths,
+} from "./package-loading/python-paths";
 import { createContextWrapper } from "./common/contextManager";
 
 /**
@@ -95,6 +100,7 @@ export class PackageManager {
   #api: PackageManagerAPI;
   #module: PackageManagerModule;
   #installer: Installer;
+  #pythonPaths?: PythonPaths;
 
   /**
    * Only used in Node. If we can't find a package in node_modules, we'll use this
@@ -179,6 +185,12 @@ export class PackageManager {
         this.#module.stackRestore(sp);
       }
     };
+  }
+
+  // pyVersionTuple is only set during the stdlib preRun step, which runs after
+  // this class is constructed. Compute the paths lazily on first use and cache.
+  #getPythonPaths(): PythonPaths {
+    return (this.#pythonPaths ??= computePythonPaths(this.#api.pyVersionTuple));
   }
 
   /**
@@ -504,10 +516,7 @@ export class PackageManager {
 
     const filename = pkg.file_name;
 
-    // This Python helper function unpacks the buffer and lists out any .so files in it.
-    const installDir: string = this.#api.package_loader.get_install_dir(
-      pkg.install_dir,
-    );
+    const installDir = getInstallDir(this.#getPythonPaths(), pkg.install_dir);
 
     DEBUG &&
       console.debug(
