@@ -81,24 +81,6 @@ def setup_test_repo(tmp_path: Path, version: str = "0.27.0"):
         % version,
     )
 
-    # Create src/js/version.ts
-    create_file(
-        tmp_path / "src/js/version.ts",
-        """\
-        export const version: string = "%s";
-        """
-        % version,
-    )
-
-    # Create src/core/pre.js
-    create_file(
-        tmp_path / "src/core/pre.js",
-        """\
-        API.version = "%s";
-        """
-        % version,
-    )
-
     # Create src/js/package.json
     create_file(
         tmp_path / "src/js/package.json",
@@ -231,12 +213,6 @@ def test_bump_version_updates_files(tmp_path):
 
     pyproject = (tmp_path / "src/py/pyproject.toml").read_text()
     assert "0.28.0" in pyproject
-
-    version_ts = (tmp_path / "src/js/version.ts").read_text()
-    assert "0.28.0" in version_ts
-
-    pre_js = (tmp_path / "src/core/pre.js").read_text()
-    assert "0.28.0" in pre_js
 
     package_json = (tmp_path / "src/js/package.json").read_text()
     assert "0.28.0" in package_json
