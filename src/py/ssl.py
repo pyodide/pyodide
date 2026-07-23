@@ -42,9 +42,11 @@ from _ssl import (
     HAS_TLSv1_2,
     HAS_TLSv1_3,
     HAS_PSK,
+    HAS_PSK_TLS13,
     HAS_PHA,
     txt2obj as _txt2obj,
     nid2obj as _nid2obj,
+    get_sigalgs,
     RAND_status,
     RAND_add,
     RAND_bytes,
@@ -533,6 +535,25 @@ class SSLContext:
     def set_ecdh_curve(self, curve_name):
         pass
 
+    def set_groups(self, grouplist):
+        if not isinstance(grouplist, str):
+            raise TypeError("grouplist must be a string")
+
+    def get_groups(self, *, include_aliases=False):
+        return []
+
+    def set_ciphersuites(self, ciphersuites):
+        if not isinstance(ciphersuites, str):
+            raise TypeError("ciphersuites must be a string")
+
+    def set_client_sigalgs(self, sigalgslist):
+        if not isinstance(sigalgslist, str):
+            raise TypeError("sigalgslist must be a string")
+
+    def set_server_sigalgs(self, sigalgslist):
+        if not isinstance(sigalgslist, str):
+            raise TypeError("sigalgslist must be a string")
+
 
 def create_default_context(
     purpose=Purpose.SERVER_AUTH, *, cafile=None, capath=None, cadata=None
@@ -667,6 +688,15 @@ class SSLObject:
     def cipher(self):
         pass
 
+    def group(self):
+        pass
+
+    def client_sigalg(self):
+        pass
+
+    def server_sigalg(self):
+        pass
+
     def shared_ciphers(self):
         pass
 
@@ -776,6 +806,15 @@ class SSLSocket(socket):
         pass
 
     def cipher(self):
+        return None
+
+    def group(self):
+        return None
+
+    def client_sigalg(self):
+        return None
+
+    def server_sigalg(self):
         return None
 
     def shared_ciphers(self):
