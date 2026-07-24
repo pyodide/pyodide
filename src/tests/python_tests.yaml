@@ -149,7 +149,11 @@
 - test_capi.test_object
 - test_capi.test_opt
 - test_capi.test_pyatomic
-- test_capi.test_run
+- test_capi.test_run:
+    skip:
+      # module '__main__' has no attribute '__file__' when run under Pyodide
+      - test_run_anyfile*
+      - test_run_simplefile*
 - test_capi.test_set
 - test_capi.test_slots
 - test_capi.test_structmembers
@@ -443,7 +447,10 @@
 - test_future_stmt.test_future_multiple_features
 - test_future_stmt.test_future_multiple_imports
 - test_future_stmt.test_future_single_import
-- test_gc
+- test_gc:
+    skip:
+      # GC duration comparison fails due to coarse timer resolution
+      - test_get_stats
 - test_gc_stats
 - test_gdb.test_backtrace
 - test_gdb.test_cfunction
@@ -510,7 +517,10 @@
 - test_importlib.resources.test_compatibilty_files
 - test_importlib.resources.test_contents
 - test_importlib.resources.test_custom
-- test_importlib.resources.test_files
+- test_importlib.resources.test_files:
+    skip:
+      # relies on compiling a C extension (c_resources) which isn't available
+      - test_implicit_files_with_compiled_importlib
 - test_importlib.resources.test_functional
 - test_importlib.resources.test_open
 - test_importlib.resources.test_path
@@ -544,6 +554,8 @@
       - test_getsource_stdlib_collections_abc
         # no _pydecimal
       - test_getsource_stdlib_decimal
+        # frozen module details unavailable with zipimported stdlib
+      - test_get_cli_details_for_frozen_module
 - test_int
 - test_int_literal
 - test_interpreters.test_api
@@ -854,6 +866,13 @@
       - test_unwrap # MemoryBIO stub
       - test_bad_server_hostname # socket not supported
       - test_options #
+      - test_refcycle_psk_client_callback # set_psk_client_callback stub missing
+      - test_refcycle_psk_server_callback # set_psk_server_callback stub missing
+      - test_sni_callback_on_dead_references # SSL not supported in Pyodide
+      - test_msg_callback_exception # no thread
+      - test_set_client_sigalgs # No raise
+      - test_set_server_sigalgs # No raise
+      - test_set_groups # No raise
 - test_stable_abi_ctypes
 - test_startfile
 - test_stat
@@ -1037,7 +1056,8 @@
     skip:
       - test_trashcan
 - test_xmlrpc
-- test_xpickle
+- test_xpickle:
+    xfail: imports test.pickletester which imports dbm (removed in Pyodide)
 - test_xxlimited
 - test_xxtestfuzz
 - test_yield_from
