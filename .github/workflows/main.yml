@@ -313,6 +313,10 @@ jobs:
       - name: Safari pre-test cleanup
         if: matrix.browser == 'safari'
         run: |
+          # Enable safaridriver diagnostics for crash debugging
+          rm -rf ~/Library/Logs/com.apple.WebDriver/
+          defaults write com.apple.WebDriver DiagnosticsEnabled 1
+
           # Kill any stale Safari/safaridriver processes
           pkill -9 Safari 2>/dev/null || true
           pkill -9 safaridriver 2>/dev/null || true
@@ -364,6 +368,14 @@ jobs:
             --runner "${RUNNER}" \
             --durations 50 \
             --junitxml=test-results/packages_test.xml
+
+      - name: Upload safaridriver diagnostics
+        if: always() && matrix.browser == 'safari'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: safaridriver-diagnostics
+          path: ~/Library/Logs/com.apple.WebDriver/
+          if-no-files-found: ignore
 
       - name: Test Summary
         uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # v2.6
