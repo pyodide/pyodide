@@ -66,6 +66,11 @@ WORKDIR /
 RUN pip3 --no-cache-dir install -r requirements.txt \
     && rm requirements.txt
 
+# numpy is used by the benchmark job to compute native reference timings. There
+# are no numpy wheels for prerelease CPython, so this builds it from source
+# against the interpreter in this image.
+RUN pip3 --no-cache-dir install numpy
+
 RUN cd / \
     && git clone --recursive https://github.com/WebAssembly/wabt \
     && cd wabt \
