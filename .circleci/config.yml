@@ -456,7 +456,12 @@ jobs:
       - run:
           name: install requirements
           command: |
-            pip3 install numpy
+            # No numpy wheels are published on PyPI for prerelease CPython yet,
+            # so a plain `pip install numpy` builds from source and fails.
+            # Install a prebuilt wheel from the scientific-python nightly index.
+            pip3 install --pre --only-binary :all: \
+              --extra-index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple \
+              numpy
             pip install -r requirements.txt
       - run:
           name: benchmark
