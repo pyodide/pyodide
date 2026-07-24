@@ -17,7 +17,7 @@ myst:
 
 ## Version 314.0.3
 
-_Jul 24, 2026_
+_July 24, 2026_
 
 - {{ Enhancement }} Reduced the standard library size by excluding the
   `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
