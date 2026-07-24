@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyodide-py"
-version = "314.0.2"
+version = "314.0.3"
 authors = [{name = "Pyodide developers"}]
 description = "A Python package providing core interpreter functionality for Pyodide"
 classifiers = [
