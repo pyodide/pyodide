@@ -124,7 +124,7 @@ $(PYINSTALL)/lib/libffi.a :
 		&& git init \
 		&& git fetch --depth 1 $(LIBFFIREPO) $(LIBFFI_COMMIT) \
 		&& git checkout FETCH_HEAD \
-		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
+		&& . $(PYODIDE_EMSDK_DIR)/emsdk_env.sh \
 		&& ./testsuite/emscripten/build.sh --wasm-bigint \
 		&& make install \
 	)
@@ -140,7 +140,7 @@ $(PYINSTALL)/lib/libhiwire.a :
 		&& git init \
 		&& git fetch --depth 1 $(HIWIREREPO) $(HIWIRE_COMMIT) \
 		&& git checkout FETCH_HEAD \
-		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
+		&& . $(PYODIDE_EMSDK_DIR)/emsdk_env.sh \
 		&& CC=emcc EMSCRIPTEN_DEDUPLICATE=1 EXTERN_FAIL=1 make \
 	)
 	cp -r $(HIWIREBUILD)/dist/lib $(PYINSTALL)/
@@ -153,7 +153,7 @@ $(PYINSTALL)/lib/liblzma.a :
 	(\
 		cd $(LZMABUILD) \
 		&& wget -q -O - $(LZMATARBALL) | tar -xz --strip-components=1 \
-		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
+		&& . $(PYODIDE_EMSDK_DIR)/emsdk_env.sh \
 		&& . $(PYODIDE_ROOT)/pyodide_env.sh \
 		&& emconfigure ./configure \
 			CFLAGS="-fPIC -Os" \
@@ -182,7 +182,7 @@ $(PYINSTALL)/lib/libzstd.a:
 	(\
 		cd $(ZSTDBUILD) \
 		&& wget -q -O - $(ZSTDTARBALL) | tar -xz --strip-components=1 \
-		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
+		&& . $(PYODIDE_EMSDK_DIR)/emsdk_env.sh \
 		&& . $(PYODIDE_ROOT)/pyodide_env.sh \
 		&& emcmake cmake build/cmake \
 			-B build-wasm \
@@ -211,7 +211,7 @@ $(PYINSTALL)/lib/libsqlite3.a:
 	(\
 		cd $(SQLITE3BUILD) \
 		&& wget -q -O - $(SQLITE3TARBALL) | tar -xz --strip-components=1 \
-		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
+		&& . $(PYODIDE_EMSDK_DIR)/emsdk_env.sh \
 		&& . $(PYODIDE_ROOT)/pyodide_env.sh \
 		&& emconfigure ./configure \
 			CFLAGS="-fPIC -Os" \

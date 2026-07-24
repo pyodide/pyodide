@@ -15,7 +15,7 @@ def test_add_version():
     "releases": {
         "0.17.0": {
             "version": "0.17.0",
-            "url": "https://example.com/xbuildenv-0.17.0.tar.bz2",
+            "url": "https://example.com/xbuildenv-0.17.0.tar.gz",
             "sha256": "1234567890abcdef",
             "python_version": "3.8.10",
             "emscripten_version": "2.0.10",
@@ -24,7 +24,7 @@ def test_add_version():
         },
         "0.16.0": {
             "version": "0.16.0",
-            "url": "https://example.com/xbuildenv-0.16.0.tar.bz2",
+            "url": "https://example.com/xbuildenv-0.16.0.tar.gz",
             "sha256": "abcdef1234567890",
             "python_version": "3.8.10",
             "emscripten_version": "2.0.10",
@@ -39,7 +39,7 @@ def test_add_version():
     new_metadata_raw = add_version(
         metadata.json(),
         "0.18.0",
-        "https://example.com/xbuildenv-0.18.0.tar.bz2",
+        "https://example.com/xbuildenv-0.18.0.tar.gz",
         "abcdef1234567890",
     )
 
@@ -47,7 +47,7 @@ def test_add_version():
     assert new_metadata.releases["0.18.0"].version == "0.18.0"
     assert (
         new_metadata.releases["0.18.0"].url
-        == "https://example.com/xbuildenv-0.18.0.tar.bz2"
+        == "https://example.com/xbuildenv-0.18.0.tar.gz"
     )
     assert new_metadata.releases["0.18.0"].sha256 == "abcdef1234567890"
 
@@ -59,7 +59,7 @@ def test_add_version():
     new_metadata_raw = add_version(
         metadata.json(),
         "0.16.1",
-        "https://example.com/xbuildenv-0.16.1.tar.bz2",
+        "https://example.com/xbuildenv-0.16.1.tar.gz",
         "abcdef1234567890",
     )
 
@@ -67,7 +67,7 @@ def test_add_version():
     assert new_metadata.releases["0.16.1"].version == "0.16.1"
     assert (
         new_metadata.releases["0.16.1"].url
-        == "https://example.com/xbuildenv-0.16.1.tar.bz2"
+        == "https://example.com/xbuildenv-0.16.1.tar.gz"
     )
     assert new_metadata.releases["0.16.1"].sha256 == "abcdef1234567890"
 
@@ -78,7 +78,7 @@ def test_add_version():
     new_metadata_raw = add_version(
         metadata.json(),
         "0.17.0a1",
-        "https://example.com/xbuildenv-0.17.0a1.tar.bz2",
+        "https://example.com/xbuildenv-0.17.0a1.tar.gz",
         "abcdef1234567890",
     )
 
@@ -86,7 +86,7 @@ def test_add_version():
     assert new_metadata.releases["0.17.0a1"].version == "0.17.0a1"
     assert (
         new_metadata.releases["0.17.0a1"].url
-        == "https://example.com/xbuildenv-0.17.0a1.tar.bz2"
+        == "https://example.com/xbuildenv-0.17.0a1.tar.gz"
     )
     assert new_metadata.releases["0.17.0a1"].sha256 == "abcdef1234567890"
 
@@ -102,7 +102,7 @@ def test_add_version_full():
     "releases": {
         "0.17.0": {
             "version": "0.17.0",
-            "url": "https://example.com/xbuildenv-0.17.0.tar.bz2",
+            "url": "https://example.com/xbuildenv-0.17.0.tar.gz",
             "sha256": "1234567890abcdef",
             "python_version": "3.8.10",
             "emscripten_version": "2.0.10",
@@ -111,7 +111,7 @@ def test_add_version_full():
         },
         "0.16.0": {
             "version": "0.16.0",
-            "url": "https://example.com/xbuildenv-0.16.0.tar.bz2",
+            "url": "https://example.com/xbuildenv-0.16.0.tar.gz",
             "sha256": "abcdef1234567890",
             "python_version": "3.8.10",
             "emscripten_version": "2.0.10",
@@ -126,7 +126,7 @@ def test_add_version_full():
     new_metadata_raw = add_version(
         metadata.json(),
         "0.18.0",
-        "https://example.com/xbuildenv-0.18.0.tar.bz2",
+        "https://example.com/xbuildenv-0.18.0.tar.gz",
         "abcdef1234567890",
         python_version="3.8.11",
         emscripten_version="2.0.11",
@@ -138,7 +138,7 @@ def test_add_version_full():
     assert new_metadata.releases["0.18.0"].version == "0.18.0"
     assert (
         new_metadata.releases["0.18.0"].url
-        == "https://example.com/xbuildenv-0.18.0.tar.bz2"
+        == "https://example.com/xbuildenv-0.18.0.tar.gz"
     )
     assert new_metadata.releases["0.18.0"].sha256 == "abcdef1234567890"
     assert new_metadata.releases["0.18.0"].python_version == "3.8.11"
@@ -154,7 +154,7 @@ def test_exclude_none():
     "releases": {
         "0.17.0": {
             "version": "0.17.0",
-            "url": "https://example.com/xbuildenv-0.17.0.tar.bz2",
+            "url": "https://example.com/xbuildenv-0.17.0.tar.gz",
             "sha256": "1234567890abcdef",
             "python_version": "3.8.10",
             "emscripten_version": "2.0.10"
@@ -167,7 +167,7 @@ def test_exclude_none():
     new_metadata_raw = add_version(
         metadata.json(),
         "0.18.0",
-        "https://example.com/xbuildenv-0.18.0.tar.bz2",
+        "https://example.com/xbuildenv-0.18.0.tar.gz",
         "abcdef1234567890",
     )
 

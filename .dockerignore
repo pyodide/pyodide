@@ -1,4 +1,5 @@
 emsdk/emsdk/
+emsdk/emsdk-*/
 cpython/installs/
 cpython/build/
 packages/*/build/

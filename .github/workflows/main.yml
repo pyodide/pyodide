@@ -21,6 +21,7 @@ jobs:
       contents: read
     outputs:
       PYVERSION: ${{ steps.get_python_version.outputs.PYVERSION }}
+      PYVERSION_SETUP_PYTHON: ${{ steps.get_python_version.outputs.PYVERSION_SETUP_PYTHON }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -28,7 +29,12 @@ jobs:
       - name: Read the Python version from Makefile.envs
         id: get_python_version
         run: |
-          echo "PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)"  >> "$GITHUB_OUTPUT"
+          PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)
+          # Raw CPython version format (e.g. 3.15.0b3), understood by uv.
+          echo "PYVERSION=$PYVERSION"  >> "$GITHUB_OUTPUT"
+          # Convert CPython version format (e.g. 3.15.0b3) to setup-python format (e.g. 3.15.0-beta.3)
+          PYVERSION_SETUP_PYTHON=$(echo "$PYVERSION" | sed -E 's/a([0-9]+)$/-alpha.\1/; s/b([0-9]+)$/-beta.\1/; s/rc([0-9]+)$/-rc.\1/')
+          echo "PYVERSION_SETUP_PYTHON=$PYVERSION_SETUP_PYTHON"  >> "$GITHUB_OUTPUT"
 
   check-docs:
     name: Check documentation
@@ -74,7 +80,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
-          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION_SETUP_PYTHON }}
       - name: Install requirements
         shell: bash -l {0}
         run: |
@@ -109,7 +115,7 @@ jobs:
           - os: macos-14
             pyodide_packages: "tag:core,tag:pyodide.test,numpy"
     runs-on: ${{ matrix.os }}
-    needs: [test-scipy-trigger]
+    needs: [test-scipy-trigger, get_python_version]
     permissions:
       contents: read
     env:
@@ -117,6 +123,10 @@ jobs:
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
       CCACHE_DIR: /tmp/ccache
+    # Use a non-login bash shell everywhere.
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -130,18 +140,56 @@ jobs:
             /tmp/ccache
           key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
 
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.21"
 
-      - uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5 # v4.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          activate-environment: pyodide-env
-          environment-file: environment.yml
-          channels: conda-forge
+          node-version: "24"
+
+      - name: Install system dependencies (ubuntu)
+        if: ${{ contains(runner.os, 'Linux') }}
+        run: |
+          sudo apt-get update
+          # f2c/gfortran are only required by the scipy build (not the
+          # numpy-only core build) but are cheap to install unconditionally.
+          sudo apt-get install -y \
+            build-essential git xxd \
+            ccache swig f2c gfortran \
+            autoconf automake libtool libltdl-dev \
+            pkg-config texinfo bison ninja-build
+
+      - name: Install system dependencies (macos)
+        if: ${{ contains(runner.os, 'macOS') }}
+        run: |
+          # The macOS core build only builds numpy, so gfortran/f2c/swig are
+          # not required here. cmake is installed via pip (see requirements.txt).
+          brew install coreutils autoconf automake libtool libffi ccache wget gpatch gnu-sed
+          # Expose the GNU tools (sed/patch/coreutils) with their standard names,
+          # ahead of the BSD versions in /usr/bin.
+          mkdir -p "$HOME/gnu-bin"
+          ln -sf "$(brew --prefix)/bin/gpatch" "$HOME/gnu-bin/patch"
+          echo "$HOME/gnu-bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix)/opt/gnu-sed/libexec/gnubin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix)/opt/coreutils/libexec/gnubin" >> "$GITHUB_PATH"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+
+      - name: Set up Python ${{ needs.get_python_version.outputs.PYVERSION }}
+        env:
+          PYVERSION: ${{ needs.get_python_version.outputs.PYVERSION }}
+        run: |
+          uv venv --seed --python "$PYVERSION" .venv
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Install dependencies (Python)
+        run: |
+          unset RUSTFLAGS && python -m pip install -r requirements.txt
 
       - name: Check Versions
-        shell: bash -l {0}
         run: |
           python --version
           node --version
@@ -151,25 +199,7 @@ jobs:
           which npm
           which go
 
-      - name: Install dependencies (ubuntu)
-        shell: bash -l {0}
-        if: ${{ contains(runner.os, 'ubuntu') }}
-        run: |
-          sudo apt install -y build-essential git xxd
-
-      - name: Install dependencies (macos)
-        shell: bash -l {0}
-        if: ${{ contains(runner.os, 'macos') }}
-        run: |
-          brew install coreutils
-
-      - name: Install dependencies (Python)
-        shell: bash -l {0}
-        run: |
-          python -m pip install -r requirements.txt
-
       - name: Build emsdk
-        shell: bash -l {0}
         run: |
           which ccache
 
@@ -178,7 +208,6 @@ jobs:
           ccache -s
 
       - name: Build Cpython
-        shell: bash -l {0}
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
@@ -190,7 +219,6 @@ jobs:
           ccache -s
 
       - name: build Pyodide with packages ${{ matrix.pyodide_packages }}
-        shell: bash -l {0}
         env:
           PYODIDE_PACKAGES: ${{ matrix.pyodide_packages }}
           PYODIDE_JOBS: ${{ env.PYODIDE_JOBS }}
@@ -202,12 +230,10 @@ jobs:
           ccache -s
 
       - name: Build windows python.exe
-        shell: bash -l {0}
         run: |
           make dist/python.exe
 
       - name: check-size
-        shell: bash -l {0}
         run: |
           ls -lh dist/
 
@@ -236,7 +262,10 @@ jobs:
     env:
       DISPLAY: :99
 
-    needs: [build-core]
+    needs: [build-core, get_python_version]
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -256,17 +285,22 @@ jobs:
           name: core-build-${{ runner.os }}
           path: ./dist/
 
-      - uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5 # v4.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          activate-environment: pyodide-env
-          python-version: "3.14"
-          channels: conda-forge
-          # pin, as a workaround to avoid macOS conda activation bug in 26.3.2-2
-          # see https://github.com/conda-incubator/setup-miniconda/issues/501
-          miniconda-version: "py312_26.1.1-1"
+          node-version: "24"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+
+      - name: Set up Python ${{ needs.get_python_version.outputs.PYVERSION }}
+        env:
+          PYVERSION: ${{ needs.get_python_version.outputs.PYVERSION }}
+        run: |
+          uv venv --seed --python "$PYVERSION" .venv
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
       - name: install test requirements
-        shell: bash -l {0}
         run: |
           pip install -r requirements.txt -r requirements-deploy.txt
           make pyodide_build
@@ -278,7 +312,6 @@ jobs:
 
       - name: Safari pre-test cleanup
         if: matrix.browser == 'safari'
-        shell: bash -l {0}
         run: |
           # Kill any stale Safari/safaridriver processes
           pkill -9 Safari 2>/dev/null || true
@@ -306,7 +339,6 @@ jobs:
         env:
           BROWSER: ${{ matrix.browser }}
           RUNNER: ${{ matrix.runner }}
-        shell: bash -l {0}
         run: |
           ls -lh
           ls -lh dist/
@@ -322,7 +354,6 @@ jobs:
         env:
           BROWSER: ${{ matrix.browser }}
           RUNNER: ${{ matrix.runner }}
-        shell: bash -l {0}
         run: |
           ls -lh
           ls -lh dist/
@@ -358,7 +389,7 @@ jobs:
 
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
-          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION_SETUP_PYTHON }}
 
       - name: Download build artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -433,9 +464,9 @@ jobs:
 
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
-          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION_SETUP_PYTHON }}
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
 
