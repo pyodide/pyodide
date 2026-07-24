@@ -986,8 +986,10 @@
 - test_zipimport
 - test_zipimport_support
 - test_zlib
-- test_zoneinfo.test_zoneinfo
-- test_zoneinfo.test_zoneinfo_property
+- test_zoneinfo.test_zoneinfo:
+    xfail: requires zoneinfo._zoneinfo Python implementation
+- test_zoneinfo.test_zoneinfo_property:
+    xfail: requires zoneinfo._zoneinfo Python implementation
 - test_zstd:
     skip:
     - FreeThreadingMethodTests

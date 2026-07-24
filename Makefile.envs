@@ -1,6 +1,6 @@
 export PYVERSION ?= 3.14.2
 export PYODIDE_EMSCRIPTEN_VERSION ?= 5.0.3
-export PYODIDE_VERSION ?= 314.0.2
+export PYODIDE_VERSION ?= 314.0.3
 export PYODIDE_ABI_VERSION ?= 2026_0
 
 export PYTHON_ARCHIVE_SHA256=c609e078adab90e2c6bacb6afafacd5eaf60cd94cf670f1e159565725fcd448d
@@ -83,6 +83,7 @@ export PYZIP_EXCLUDE_FILES=\
 	turtledemo/ \
 	test/ \
 	_pydecimal.py \
+	zoneinfo/_zoneinfo.py \
 	pydoc_data/ \
   _sysconfig_vars__emscripten_wasm32-emscripten.json \
   build-details.json
@@ -198,7 +199,13 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lsdl.js \
 	--js-library=src/core/libjsverror.js \
 	-sMAX_WEBGL_VERSION=2  \
-	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
+	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0 \
+	-Wl,--wrap=__syscall_connect \
+	-Wl,--wrap=__syscall_recvfrom \
+	-Wl,--wrap=__syscall_sendto \
+	-Wl,--wrap=__syscall_shutdown \
+	-Wl,--wrap=__syscall_fcntl64 \
+	-Wl,--wrap=__syscall_poll
 
 EXPORTS=_main \
    ,_free \

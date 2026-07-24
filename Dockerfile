@@ -88,8 +88,7 @@ RUN npm install -g \
 # but this docker image is only for building packages, so I hope it is ok.
 ENV RUSTUP_HOME=/usr
 ENV CARGO_HOME=/usr
-RUN wget -q -O  -  https://sh.rustup.rs | \
-  sh -s -- -y --profile minimal --no-modify-path
+RUN ["/bin/bash", "-o", "pipefail", "-c", "wget -q -O - https://sh.rustup.rs | sh -s -- -y --profile minimal --no-modify-path"]
 
 COPY --from=selenium-manager-image /opt/firefox /opt/firefox
 COPY --from=selenium-manager-image /opt/geckodriver /opt/geckodriver

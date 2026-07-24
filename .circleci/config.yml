@@ -253,7 +253,7 @@ jobs:
       - run:
           name: Zip xbuild environment
           command: |
-            tar cjf xbuildenv.tar.gz ./xbuildenv/
+            tar czf xbuildenv.tar.gz ./xbuildenv/
 
       - store_artifacts:
           path: /root/repo/xbuildenv.tar.gz
@@ -286,7 +286,7 @@ jobs:
       - run:
           name: Zip debug xbuild environment
           command: |
-            tar cjf xbuildenv-debug.tar.gz ./xbuildenv-debug/
+            tar czf xbuildenv-debug.tar.gz ./xbuildenv-debug/
 
       - store_artifacts:
           path: /root/repo/xbuildenv-debug.tar.gz
@@ -500,6 +500,12 @@ jobs:
             mv ghr_v0.16.2_linux_amd64/ghr /tmp/ghr-bin
 
       - run:
+          name: Deploy to npm
+          command: |
+            export NPM_ID_TOKEN=$(circleci run oidc get --claims '{"aud": "npm:registry.npmjs.org"}')
+            ./tools/deploy_to_npm.sh
+
+      - run:
           name: Deploy Github Releases
           command: |
             make clean-dist-dir
@@ -514,6 +520,8 @@ jobs:
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
             tar cjf dist/xbuildenv-debug-${CIRCLE_TAG}.tar.bz2  xbuildenv-debug/
             tar cjf dist/static-libraries-${CIRCLE_TAG}.tar.bz2  static-libraries/
+            tar czf dist/xbuildenv-${CIRCLE_TAG}.tar.gz  xbuildenv/
+            tar czf dist/xbuildenv-debug-${CIRCLE_TAG}.tar.gz  xbuildenv-debug/
 
             # If it has an 'a' in the tag it's an alpha so mark it as a prelease
             [[ "${CIRCLE_TAG}" =~ a ]] && export MAYBE_PRE_RELEASE=-prerelease
@@ -530,12 +538,6 @@ jobs:
               ${MAYBE_PRE_RELEASE} \
               "${CIRCLE_TAG}" \
               dist
-
-      - run:
-          name: Deploy to npm
-          command: |
-            export NPM_ID_TOKEN=$(circleci run oidc get --claims '{"aud": "npm:registry.npmjs.org"}')
-            ./tools/deploy_to_npm.sh
 
       - run:
           name: Set PYODIDE_BASE_URL
@@ -610,6 +612,8 @@ jobs:
             tar cjf dist/xbuildenv.tar.bz2  xbuildenv/
             tar cjf dist/xbuildenv-debug.tar.bz2  xbuildenv-debug/
             tar cjf dist/static-libraries.tar.bz2  static-libraries/
+            tar czf dist/xbuildenv.tar.gz  xbuildenv/
+            tar czf dist/xbuildenv-debug.tar.gz  xbuildenv-debug/
 
             cd -
             python3 tools/deploy_s3.py /tmp/ghr/dist/ "xbuildenv/dev" --bucket "pyodide-cache" --cache-control 'max-age=3600, public' --overwrite \

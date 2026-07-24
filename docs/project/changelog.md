@@ -15,6 +15,22 @@ myst:
 
 # Change Log
 
+## Version 314.0.3
+
+_July 24, 2026_
+
+- {{ Enhancement }} Reduced the standard library size by excluding the
+  `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
+  to use the `_zoneinfo` C extension. {pr}`6331`
+
+- {{ Fix }} Fixed startTls() not releasing the stream lock when upgrading a
+  socket to TLS, which could cause a crash in some JS runtimes. {pr}`6344`
+
+- {{ Enhancement }} Release archives for cross build envs are now
+  also published as `.tar.gz` alongside the existing `.tar.bz2` archives. New
+  releases will use `.tar.gz` as the primary format in the cross-build
+  environment metadata. {pr}`6346`
+
 ## Version 314.0.2
 
 _June 30, 2026_

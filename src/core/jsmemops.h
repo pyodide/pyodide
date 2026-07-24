@@ -5,12 +5,11 @@
 // the high bit set (i.e., heap > 2 GB, which Pyodide allows via
 // MAXIMUM_MEMORY=4GB), the value is negative. We must use *unsigned* right
 // shift `>>>` to convert byte address → element index, otherwise the
-// arithmetic shift sign-extends and produces a wildly wrong index. Emscripten
-// wraps the final array index in `>>>0`, which patches up the U8/I8 cases
-// (no shift), but cannot rescue a sign-extended intermediate.
+// arithmetic shift sign-extends and produces a wildly wrong index.
+// In U8/I8 case, use an explicit >>>0 to force correct sign.
 
-#define DEREF_U8(addr, offset) HEAPU8[addr + offset]
-#define DEREF_I8(addr, offset) HEAP8[addr + offset]
+#define DEREF_U8(addr, offset) HEAPU8[(addr >>> 0) + offset]
+#define DEREF_I8(addr, offset) HEAP8[(addr >>> 0) + offset]
 
 #define DEREF_U16(addr, offset) HEAPU16[(addr >>> 1) + offset]
 #define DEREF_I16(addr, offset) HEAP16[(addr >>> 1) + offset]

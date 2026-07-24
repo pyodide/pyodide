@@ -18,21 +18,21 @@ repos:
       - id: requirements-txt-fixer
 
   - repo: https://github.com/biomejs/pre-commit
-    rev: 6bd3572fb0d3b1d1dc055223e5470ac2dc0f2d87  # frozen: v2.4.10
+    rev: 3ceccd6e1c33e8ad2c2f1162f2ac524e43d47f0d  # frozen: v2.5.2
     hooks:
       - id: biome-format
         additional_dependencies: ["@biomejs/biome@2.1.1"]
         types_or: [javascript, ts]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: c60c980e561ed3e73101667fe8365c609d19a438  # frozen: v0.15.9
+    rev: c59bba8fb259db0fec2bbb77ad8ba51ea7341b56  # frozen: v0.15.20
     hooks:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: d730ad6820486029c4fd4cd291a6461a0b6501a3  # frozen: v22.1.3
+    rev: dd18dad857d6133e90bbe478f4f2f22ec0030269  # frozen: v22.1.5
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]
@@ -64,13 +64,13 @@ repos:
         exclude: ^(benchmark/benchmarks/pystone_benchmarks/pystone\.py|src/js/package-lock\.json|packages/matplotlib/extras/fontlist\.json)$
 
   - repo: https://github.com/woodruffw/zizmor-pre-commit
-    rev: "a4727cbbcd26d7098e96b9cb738169b59711ae51" # frozen: v1.24.1
+    rev: "e3eebf65325ccc992422292cb7a4baee967cf815"  # frozen: v1.26.1
     hooks:
       - id: zizmor
         args: ["--pedantic", "--fix=safe"]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 8e5c80792e2ec0c87804d8ef915bf35e2caea6da  # frozen: v1.20.0
+    rev: d2823d321df3af8f878f7ee3414dc94d037145b9  # frozen: v2.1.0
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src)

@@ -129,10 +129,13 @@ html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
 # a list of builtin themes.
 #
 html_theme = "sphinx_book_theme"
-html_logo = "_static/img/pyodide-logo.png"
 
 # theme-specific options
 html_theme_options: dict[str, Any] = {
+    "logo": {
+        "image_light": "_static/img/pyodide-logo-light.svg",
+        "image_dark": "_static/img/pyodide-logo-dark.svg",
+    },
     "announcement": "",
     "repository_url": "https://github.com/pyodide/pyodide",
     "use_repository_button": True,

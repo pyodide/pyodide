@@ -304,9 +304,6 @@ static JsVal
 _python2js_dict(ConversionContext* context, PyObject* x)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  DECLARE_PY_OBJECT(items);
-  DECLARE_PY_OBJECT(iter);
-  DECLARE_PY_OBJECT(item);
 
   _Py_IDENTIFIER(items);
   JsVal jsdict = context->dict_new(context);
@@ -316,10 +313,13 @@ _python2js_dict(ConversionContext* context, PyObject* x)
 
   // PyDict_Next may or may not work on dict subclasses, so get the `.items()`
   // and iterate that instead. See issue #4636.
+  DECLARE_PY_OBJECT(items);
   items = _PyObject_CallMethodIdNoArgs(x, &PyId_items);
   FAIL_IF_NULL(items);
+  DECLARE_PY_OBJECT(iter);
   iter = PyObject_GetIter(items);
   FAIL_IF_NULL(iter);
+  DECLARE_PY_OBJECT(item);
   while ((item = PyIter_Next(iter))) {
     if (!PyTuple_Check(item)) {
       PyErr_SetString(PyExc_TypeError, "expected tuple");
@@ -371,13 +371,13 @@ static JsVal
 _python2js_set(ConversionContext* context, PyObject* x)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  DECLARE_PY_OBJECT(iter);
-  DECLARE_PY_OBJECT(pykey);
   // result:
 
   JsVal jsset = JsvSet_New();
+  DECLARE_PY_OBJECT(iter);
   iter = PyObject_GetIter(x);
   FAIL_IF_NULL(iter);
+  DECLARE_PY_OBJECT(pykey);
   while ((pykey = PyIter_Next(iter))) {
     JsVal jskey = _python2js_immutable(pykey);
     if (JsvError_Check(jskey) || JsvNoValue_Check(jskey)) {
@@ -957,7 +957,6 @@ to_js(PyObject* self,
     Py_INCREF(obj);
     return obj;
   }
-  PyObject* py_result = NULL;
 
   JsVal proxies;
   if (!create_proxies) {
@@ -1008,6 +1007,7 @@ to_js(PyObject* self,
                                      js_default_converter,
                                      js_eager_converter);
   FAIL_IF_JS_ERROR(js_result);
+  PyObject* py_result = NULL;
   if (pyproxy_Check(js_result)) {
     // Oops, just created a PyProxy. Wrap it I guess?
     py_result = JsProxy_create(js_result);

@@ -462,16 +462,13 @@ EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  DECLARE_PY_OBJECT(pykey);
-  DECLARE_PY_OBJECT(pydescr);
-  DECLARE_PY_OBJECT(pyresult);
-  JsVal result = JS_ERROR;
   ON_FAIL({
     if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
       PyErr_Clear();
     }
   });
 
+  DECLARE_PY_OBJECT(pykey);
   pykey = js2python(key);
   FAIL_IF_NULL(pykey);
   // If it's a method, we use the descriptor pointer as the cache key rather
@@ -481,6 +478,7 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
   // the attribute we are looking up is a method, otherwise it will return false
   // and set pydescr to the actual attribute (in particular, I believe that it
   // will resolve other types of getter descriptors automatically).
+  DECLARE_PY_OBJECT(pydescr);
   int is_method = _PyObject_GetMethod(pyobj, pykey, &pydescr);
   FAIL_IF_NULL(pydescr);
   JsVal cached_proxy = proxy_cache_get(proxyCache, pydescr); /* borrowed */
@@ -490,6 +488,7 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
   if (PyErr_Occurred()) {
     FAIL();
   }
+  DECLARE_PY_OBJECT(pyresult);
   if (is_method) {
     pyresult =
       Py_TYPE(pydescr)->tp_descr_get(pydescr, pyobj, (PyObject*)Py_TYPE(pyobj));
@@ -498,7 +497,7 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
     pyresult = pydescr;
     Py_INCREF(pydescr);
   }
-  result = python2js(pyresult);
+  JsVal result = python2js(pyresult);
   FAIL_IF_JS_ERROR(result);
   if (pyproxy_Check(result)) {
     // If a getter returns a different object every time, this could potentially
@@ -515,10 +514,9 @@ _pyproxy_setattr(PyObject* pyobj, JsVal key, JsVal value)
 {
   FAIL_RETURN_VALUE(-1);
   DECLARE_PY_OBJECT(pykey);
-  DECLARE_PY_OBJECT(pyval);
-
   pykey = js2python(key);
   FAIL_IF_NULL(pykey);
+  DECLARE_PY_OBJECT(pyval);
   pyval = js2python(value);
   FAIL_IF_NULL(pyval);
   FAIL_IF_MINUS_ONE(PyObject_SetAttr(pyobj, pykey, pyval));
@@ -547,9 +545,9 @@ _pyproxy_getitem(PyObject* pyobj,
 {
   FAIL_RETURN_VALUE(JS_ERROR);
   DECLARE_PY_OBJECT(pykey);
-  DECLARE_PY_OBJECT(pyresult);
   pykey = js2python(jskey);
   FAIL_IF_NULL(pykey);
+  DECLARE_PY_OBJECT(pyresult);
   pyresult = PyObject_GetItem(pyobj, pykey);
   if (pyresult == NULL) {
     if (PyErr_ExceptionMatches(PyExc_KeyError) ||
@@ -566,10 +564,9 @@ _pyproxy_setitem(PyObject* pyobj, JsVal jskey, JsVal jsval)
 {
   FAIL_RETURN_VALUE(-1);
   DECLARE_PY_OBJECT(pykey);
-  DECLARE_PY_OBJECT(pyval);
-
   pykey = js2python(jskey);
   FAIL_IF_NULL(pykey);
+  DECLARE_PY_OBJECT(pyval);
   pyval = js2python(jsval);
   FAIL_IF_NULL(pyval);
   FAIL_IF_MINUS_ONE(PyObject_SetItem(pyobj, pykey, pyval));
@@ -598,14 +595,13 @@ _pyproxy_slice_assign(PyObject* pyobj,
 {
   FAIL_RETURN_VALUE(JS_ERROR);
   DECLARE_PY_OBJECT(pyval);
-  DECLARE_PY_OBJECT(pyresult);
-
   pyval = js2python(val);
 
   Py_ssize_t len = PySequence_Length(pyobj);
   if (len <= stop) {
     stop = len;
   }
+  DECLARE_PY_OBJECT(pyresult);
   pyresult = PySequence_GetSlice(pyobj, start, stop);
   FAIL_IF_NULL(pyresult);
   FAIL_IF_MINUS_ONE(PySequence_SetSlice(pyobj, start, stop, pyval));
@@ -617,9 +613,9 @@ EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_pop(PyObject* pyobj, bool pop_start)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  DECLARE_PY_OBJECT(idx);
   DECLARE_PY_OBJECT(pyresult);
   if (pop_start) {
+    DECLARE_PY_OBJECT(idx);
     idx = PyLong_FromLong(0);
     FAIL_IF_NULL(idx);
     pyresult = _PyObject_CallMethodIdOneArg(pyobj, &PyId_pop, idx);
@@ -714,8 +710,6 @@ _pyproxy_apply(PyObject* callable,
   PyObject** pyargs = pyargs_array;
   pyargs++; // leave a space for self argument in case callable is a bound
             // method
-  DECLARE_PY_OBJECT(pykwnames);
-  DECLARE_PY_OBJECT(pyresult);
   _Defer
   {
     // If we failed to convert one of the arguments, then pyargs is partially
@@ -736,6 +730,7 @@ _pyproxy_apply(PyObject* callable,
     }
     pyargs[i] = pyitem; // pyitem is moved into pyargs.
   }
+  DECLARE_PY_OBJECT(pykwnames);
   if (numkwargs > 0) {
     // Put names of keyword arguments into a tuple
     pykwnames = PyTuple_New(numkwargs);
@@ -748,6 +743,7 @@ _pyproxy_apply(PyObject* callable,
   }
   // Tell callee that we left space for a self argument
   size_t nargs_with_flag = numposargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
+  DECLARE_PY_OBJECT(pyresult);
   pyresult = _PyObject_Vectorcall(callable, pyargs, nargs_with_flag, pykwnames);
   FAIL_IF_NULL(pyresult);
 
@@ -835,10 +831,9 @@ _pyproxyGen_Send(PyObject* receiver, JsVal jsval)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
   DECLARE_PY_OBJECT(v);
-  DECLARE_PY_OBJECT(retval);
-
   v = js2python(jsval);
   FAIL_IF_NULL(v);
+  DECLARE_PY_OBJECT(retval);
   PySendResult status = PyIter_Send(receiver, v, &retval);
   if (status == PYGEN_ERROR) {
     FAIL();
@@ -855,11 +850,11 @@ _pyproxyGen_return(PyObject* receiver, JsVal jsval)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
   PySendResult status = PYGEN_ERROR;
-  DECLARE_PY_OBJECT(pyresult);
 
   JsVal result;
 
   // Throw GeneratorExit into generator
+  DECLARE_PY_OBJECT(pyresult);
   pyresult =
     _PyObject_CallMethodIdOneArg(receiver, &PyId_throw, PyExc_GeneratorExit);
   if (pyresult == NULL) {
@@ -885,12 +880,11 @@ EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxyGen_throw(PyObject* receiver, JsVal jsval)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  DECLARE_PY_OBJECT(pyvalue);
-  DECLARE_PY_OBJECT(pyresult);
   PySendResult status = PYGEN_ERROR;
 
   JsVal result;
 
+  DECLARE_PY_OBJECT(pyvalue);
   pyvalue = js2python(jsval);
   FAIL_IF_NULL(pyvalue);
   if (!PyExceptionInstance_Check(pyvalue)) {
@@ -901,6 +895,7 @@ _pyproxyGen_throw(PyObject* receiver, JsVal jsval)
                  Py_TYPE(pyvalue)->tp_name);
     FAIL();
   }
+  DECLARE_PY_OBJECT(pyresult);
   pyresult = _PyObject_CallMethodIdOneArg(receiver, &PyId_throw, pyvalue);
   if (pyresult == NULL) {
     FAIL_IF_MINUS_ONE(_PyGen_FetchStopIterationValue(&pyresult));
@@ -918,12 +913,11 @@ _pyproxyGen_asend(PyObject* receiver, JsVal jsval)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
   DECLARE_PY_OBJECT(v);
-  DECLARE_PY_OBJECT(asend);
-  DECLARE_PY_OBJECT(pyresult);
-
   v = js2python(jsval);
   FAIL_IF_NULL(v);
+  DECLARE_PY_OBJECT(asend);
   asend = _PyObject_GetAttrId(receiver, &PyId_asend);
+  DECLARE_PY_OBJECT(pyresult);
   if (asend) {
     pyresult = PyObject_CallOneArg(asend, v);
   } else {
@@ -946,10 +940,7 @@ EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxyGen_areturn(PyObject* receiver)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  DECLARE_PY_OBJECT(v);
-  DECLARE_PY_OBJECT(asend);
   DECLARE_PY_OBJECT(pyresult);
-
   pyresult =
     _PyObject_CallMethodIdOneArg(receiver, &PyId_athrow, PyExc_GeneratorExit);
   FAIL_IF_NULL(pyresult);
@@ -962,9 +953,6 @@ _pyproxyGen_athrow(PyObject* receiver, JsVal jsval)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
   DECLARE_PY_OBJECT(v);
-  DECLARE_PY_OBJECT(asend);
-  DECLARE_PY_OBJECT(pyresult);
-
   v = js2python(jsval);
   FAIL_IF_NULL(v);
   if (!PyExceptionInstance_Check(v)) {
@@ -975,6 +963,7 @@ _pyproxyGen_athrow(PyObject* receiver, JsVal jsval)
                  Py_TYPE(v)->tp_name);
     FAIL();
   }
+  DECLARE_PY_OBJECT(pyresult);
   pyresult = _PyObject_CallMethodIdOneArg(receiver, &PyId_athrow, v);
   FAIL_IF_NULL(pyresult);
 
@@ -984,16 +973,14 @@ _pyproxyGen_athrow(PyObject* receiver, JsVal jsval)
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_aiter_next(PyObject* aiterator)
 {
-  PyTypeObject* t;
-  DECLARE_PY_OBJECT(awaitable);
-
-  t = Py_TYPE(aiterator);
+  PyTypeObject* t = Py_TYPE(aiterator);
   if (t->tp_as_async == NULL || t->tp_as_async->am_anext == NULL) {
     PyErr_Format(
       PyExc_TypeError, "'%.200s' object is not an async iterator", t->tp_name);
     return JS_ERROR;
   }
 
+  DECLARE_PY_OBJECT(awaitable);
   awaitable = (*t->tp_as_async->am_anext)(aiterator);
   if (awaitable == NULL) {
     return JS_ERROR;
@@ -1390,20 +1377,20 @@ create_once_callable_py(PyObject* _mod,
 EMSCRIPTEN_KEEPALIVE int
 create_promise_handles_result_helper(PyObject* handle_result, PyObject* converter, JsVal jsval) {
   FAIL_RETURN_VALUE(-1);
-  DECLARE_PY_OBJECT(pyval);
-  DECLARE_PY_OBJECT(result);
   ON_FAIL({
     // Not sure what we'll do if this function fails tbh...
     printf("Unexpected error:\n");
     PyErr_Print();
   });
 
+  DECLARE_PY_OBJECT(pyval);
   if (converter == NULL || Py_IsNone(converter)) {
     pyval = js2python(jsval);
   } else {
     pyval = Js2PyConverter_convert(converter, jsval, Jsv_null);
   }
   FAIL_IF_NULL(pyval);
+  DECLARE_PY_OBJECT(result);
   result = PyObject_CallOneArg(handle_result, pyval);
   FAIL_IF_NULL(result);
 
@@ -1544,9 +1531,6 @@ pyproxy_init(PyObject* core)
   FAIL_RETURN_VALUE(-1);
 
   DECLARE_PY_OBJECT(collections_abc);
-  DECLARE_PY_OBJECT(docstring_source);
-  DECLARE_PY_OBJECT(inspect);
-
   collections_abc = PyImport_ImportModule("collections.abc");
   FAIL_IF_NULL(collections_abc);
   Generator = PyObject_GetAttrString(collections_abc, "Generator");
@@ -1558,6 +1542,7 @@ pyproxy_init(PyObject* core)
   MutableSequence = PyObject_GetAttrString(collections_abc, "MutableSequence");
   FAIL_IF_NULL(MutableSequence);
 
+  DECLARE_PY_OBJECT(docstring_source);
   docstring_source = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(docstring_source);
   FAIL_IF_MINUS_ONE(
@@ -1566,6 +1551,7 @@ pyproxy_init(PyObject* core)
   FAIL_IF_NULL(asyncio);
   FAIL_IF_MINUS_ONE(PyType_Ready(&FutureDoneCallbackType));
 
+  DECLARE_PY_OBJECT(inspect);
   inspect = PyImport_ImportModule("inspect");
   FAIL_IF_NULL(inspect);
   iscoroutinefunction = PyObject_GetAttrString(inspect, "iscoroutinefunction");

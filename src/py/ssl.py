@@ -838,10 +838,11 @@ class SSLSocket(socket):
     def do_handshake(self, block=False):
         try:
             from pyodide_js._api import _nodeSock
+            from pyodide.ffi import run_sync
         except ImportError:
             raise RuntimeError("TLS not supported in this environment") from None
 
-        result = _nodeSock.startTls(self.fileno())
+        result = run_sync(_nodeSock.startTls(self.fileno()))
         if result < 0:
             raise SSLError(1, f"TLS handshake failed (errno={-result})")
 

@@ -262,6 +262,40 @@ def test_socket_recv_after_close(selenium_nodesock):
         assert result == "Final message"
 
 
+def test_socket_recv_after_close_chunked(selenium_nodesock):
+    """Drain a full message in small reads after the server has closed.
+
+    Exercises reading across several on-demand reads once the peer has closed,
+    followed by a clean EOF (empty recv).
+    """
+
+    def handler(conn, _addr):
+        conn.sendall(b"".join(b"line%02d\n" % i for i in range(50)))
+
+    @run_in_pyodide
+    def run(selenium, host, port):
+        import socket
+        import time
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        time.sleep(0.5)
+
+        chunks = []
+        while True:
+            chunk = s.recv(8)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        s.close()
+        return b"".join(chunks)
+
+    with tcp_server(handler) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert result == b"".join(b"line%02d\n" % i for i in range(50))
+
+
 def test_socket_fileno(selenium_nodesock):
     """Test that socket.fileno() returns a valid file descriptor."""
 
@@ -600,11 +634,7 @@ def test_socket_shutdown_pairs(selenium_nodesock):
 
 
 def test_socket_nonblocking_recv_with_buffered_data(selenium_nodesock):
-    """Non-blocking recv should return data that arrived while nobody was reading.
-
-    This tests that the socket layer eagerly buffers incoming data (like the
-    kernel receive queue), so a non-blocking recv finds it immediately.
-    """
+    """Non-blocking recv returns buffered data once the socket is readable."""
 
     def handler(conn, _addr):
         data = conn.recv(1024)
@@ -612,17 +642,17 @@ def test_socket_nonblocking_recv_with_buffered_data(selenium_nodesock):
 
     @run_in_pyodide
     def run(selenium, host, port):
+        import select
         import socket
-        import time
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((host, port))
-        s.setblocking(True)
 
         s.sendall(b"hello")
-        time.sleep(0.5)
 
         s.setblocking(False)
+        readable, _, _ = select.select([s], [], [], 5.0)
+        assert readable, "socket should become readable"
         data = s.recv(1024)
         s.close()
         return data
@@ -632,13 +662,76 @@ def test_socket_nonblocking_recv_with_buffered_data(selenium_nodesock):
         assert result == b"hello"
 
 
-def test_socket_recv_backpressure(selenium_nodesock):
-    """Receiving large data doesn't cause unbounded memory growth.
+def test_socket_nonblocking_recv_eagain_then_data(selenium_nodesock):
+    """A non-blocking recv reports EAGAIN until an on-demand read surfaces data.
 
-    The recv pump pauses when its internal buffer exceeds the high-water mark
-    (256KB), which propagates backpressure to the sender via TCP flow control.
-    This test verifies that a 1MB transfer works correctly despite the cap.
+    Without select(), a plain retry loop still makes progress: the first recv
+    kicks a read and raises BlockingIOError, and a later retry returns the data.
     """
+
+    def handler(conn, _addr):
+        data = conn.recv(1024)
+        conn.sendall(data)
+
+    @run_in_pyodide(packages=["pytest"])
+    def run(selenium, host, port):
+        import socket
+        import time
+
+        import pytest
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+        s.sendall(b"hello")
+        time.sleep(0.5)
+
+        s.setblocking(False)
+
+        with pytest.raises(BlockingIOError):
+            s.recv(1024)
+
+        data = b""
+        for _ in range(100):
+            try:
+                data = s.recv(1024)
+                break
+            except BlockingIOError:
+                time.sleep(0.05)
+        s.close()
+        return data
+
+    with tcp_server(handler) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert result == b"hello"
+
+
+def test_socket_select_readable_on_eof(selenium_nodesock):
+    """select() reports a peer-closed socket as readable; recv then returns b''."""
+
+    def handler(conn, _addr):
+        conn.close()
+
+    @run_in_pyodide
+    def run(selenium, host, port):
+        import select
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        readable, _, _ = select.select([s], [], [], 5.0)
+        assert readable, "a closed peer should be reported readable"
+        data = s.recv(1024)
+        s.close()
+        return len(data)
+
+    with tcp_server(handler) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert result == 0
+
+
+def test_socket_recv_backpressure(selenium_nodesock):
+    """Receiving large data doesn't cause unbounded memory growth."""
     DATA_SIZE = 1024 * 1024
 
     server_sent = []
@@ -1107,6 +1200,56 @@ def tls_server(handler, certfile, keyfile, *, timeout=5.0):
         assert not errors, f"TLS server error: {errors[0]}"
 
 
+@contextlib.contextmanager
+def starttls_server(handler, certfile, keyfile, *, greeting=b"GREETING", timeout=5.0):
+    """Start a server that speaks plaintext first, then upgrades in place to TLS.
+
+    It sends *greeting* in the clear, reads one plaintext upgrade request, then
+    wraps the same connection with TLS server-side before invoking *handler*.
+    This models the STARTTLS/PyMySQL flow. Yields (host, port).
+    """
+    import ssl as host_ssl
+
+    server_ctx = host_ssl.SSLContext(host_ssl.PROTOCOL_TLS_SERVER)  # type: ignore[attr-defined]
+    server_ctx.load_cert_chain(certfile, keyfile)
+
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind(("127.0.0.1", 0))
+    server_socket.listen(1)
+    server_socket.settimeout(timeout)
+    host, port = server_socket.getsockname()
+
+    errors: list[str] = []
+    ready = threading.Event()
+
+    def _serve():
+        ready.set()
+        try:
+            conn, addr = server_socket.accept()
+            conn.sendall(greeting)
+            conn.recv(1024)
+            tls_conn = server_ctx.wrap_socket(conn, server_side=True)
+            try:
+                handler(tls_conn, addr)
+            finally:
+                tls_conn.close()
+        except Exception as e:
+            errors.append(str(e))
+        finally:
+            server_socket.close()
+
+    thread = threading.Thread(target=_serve, daemon=True)
+    thread.start()
+    ready.wait(timeout=timeout)
+
+    try:
+        yield host, port
+    finally:
+        thread.join(timeout=timeout)
+        assert not errors, f"STARTTLS server error: {errors[0]}"
+
+
 @pytest.mark.skip_refcount_check
 def test_tls_starttls_send_recv(selenium_nodesock, self_signed_cert):
     """Connect plain TCP, upgrade via wrap_socket/startTls, exchange data over TLS."""
@@ -1137,3 +1280,84 @@ def test_tls_starttls_send_recv(selenium_nodesock, self_signed_cert):
     with tls_server(handler, *self_signed_cert) as (host, port):
         result = run(selenium_nodesock, host, port)
         assert result == RESPONSE.decode()
+
+
+@pytest.mark.skip_refcount_check
+def test_tls_starttls_after_plaintext_greeting(selenium_nodesock, self_signed_cert):
+    """Consume a plaintext greeting with a blocking recv, then upgrade to TLS.
+
+    This is the PyMySQL/SMTP STARTTLS flow: the on-demand reader must reach a
+    quiescent point after the greeting so startTls can release the stream lock
+    (a pending read here crashes releaseLock in workerd).
+    """
+    GREETING = b"GREETING"
+    RESPONSE = b"TLS OK"
+
+    def handler(conn, _addr):
+        conn.recv(1024)
+        conn.sendall(RESPONSE)
+
+    @run_in_pyodide
+    def run(selenium, host, port, greeting):
+        import socket
+        import ssl
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        assert s.recv(1024) == greeting
+        s.sendall(b"STARTTLS")
+
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)  # type: ignore[attr-defined]
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2  # type: ignore[attr-defined]
+        ctx.check_hostname = False
+
+        ss = ctx.wrap_socket(s, server_hostname="localhost")
+        ss.sendall(b"Hello TLS")
+        response = ss.recv(1024)
+        ss.close()
+        return response.decode()
+
+    with starttls_server(handler, *self_signed_cert, greeting=GREETING) as (host, port):
+        result = run(selenium_nodesock, host, port, GREETING)
+        assert result == RESPONSE.decode()
+
+
+@pytest.mark.skip_refcount_check
+def test_tls_starttls_multiple_roundtrips(selenium_nodesock, self_signed_cert):
+    """Exchange several messages over TLS after the upgrade.
+
+    Verifies that the reader swapped in by startTls keeps re-arming on-demand
+    reads across multiple recv calls.
+    """
+
+    def handler(conn, _addr):
+        for _ in range(3):
+            data = conn.recv(1024)
+            if not data:
+                break
+            conn.sendall(b"echo:" + data)
+
+    @run_in_pyodide
+    def run(selenium, host, port):
+        import socket
+        import ssl
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)  # type: ignore[attr-defined]
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2  # type: ignore[attr-defined]
+        ctx.check_hostname = False
+
+        ss = ctx.wrap_socket(s, server_hostname="localhost")
+        results = []
+        for i in range(3):
+            ss.sendall(f"msg{i}".encode())
+            results.append(ss.recv(1024).decode())
+        ss.close()
+        return results
+
+    with tls_server(handler, *self_signed_cert) as (host, port):
+        result = run(selenium_nodesock, host, port)
+        assert result == ["echo:msg0", "echo:msg1", "echo:msg2"]
