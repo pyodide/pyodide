@@ -10,6 +10,10 @@ concurrency:
 
 env:
   FORCE_COLOR: 3
+  # Copy (don't hardlink) files out of uv's cache. pyodide-build overlays
+  # cross-build files into build environment in place. Hardlinks corrupt the
+  # shared cache and cause problems.
+  UV_LINK_MODE: copy
 
 permissions: {}
 
