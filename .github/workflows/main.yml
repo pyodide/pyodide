@@ -62,7 +62,7 @@ jobs:
       - name: Install Python requirements
         shell: bash -l {0}
         run: |
-          unset RUSTFLAGS && python3 -m pip install -r docs/requirements-doc.txt
+          python3 -m pip install -r docs/requirements-doc.txt
       - name: Install node requirements
         shell: bash -l {0}
         run: |
@@ -95,7 +95,7 @@ jobs:
         run: |
           mkdir test-results
           make pyodide_build
-          unset RUSTFLAGS && python3 -m pip install -r requirements.txt -r requirements-deploy.txt
+          python3 -m pip install -r requirements.txt -r requirements-deploy.txt
       - name: Check test collection
         shell: bash -l {0}
         run: |
@@ -196,7 +196,7 @@ jobs:
 
       - name: Install dependencies (Python)
         run: |
-          unset RUSTFLAGS && python -m pip install -r requirements.txt
+          python -m pip install -r requirements.txt
 
       - name: Check Versions
         run: |
@@ -246,7 +246,7 @@ jobs:
         run: |
           ls -lh dist/
 
-          unset RUSTFLAGS && pip install brotli
+          pip install brotli
           ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
       - name: Store artifacts build
@@ -314,7 +314,7 @@ jobs:
 
       - name: install test requirements
         run: |
-          unset RUSTFLAGS && pip install -r requirements.txt -r requirements-deploy.txt
+          pip install -r requirements.txt -r requirements-deploy.txt
           make pyodide_build
 
       - uses: pyodide/pyodide-actions/install-browser@012fa537869d343726d01863a34b773fc4d96a14 # v2
@@ -557,8 +557,8 @@ jobs:
         run: |
           set -e -x
           mkdir -p test-results
-          unset RUSTFLAGS && python -m pip install -r requirements.txt
-          unset RUSTFLAGS && python -m pip install pymysql cryptography pg8000 redis
+          python -m pip install -r requirements.txt
+          python -m pip install pymysql cryptography pg8000 redis
           make npm-link
 
       - name: Run database integration tests (node)
