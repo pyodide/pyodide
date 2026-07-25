@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import sys
 import textwrap
+import zipfile
 from pathlib import Path
 
 try:
@@ -15,6 +16,58 @@ try:
 except ImportError:
     print("Requires pyodide-build package to be installed")
     sys.exit(1)
+
+
+def _find_wheel(pyodide_root: Path, package_name: str) -> Path | None:
+    """Find the built wheel for a package in its recipe dist directory."""
+    dist_dir = pyodide_root / "packages" / package_name / "dist"
+    wheels = sorted(dist_dir.glob("*.whl"))
+    if not wheels:
+        return None
+    return wheels[0]
+
+
+def _copy_xbuild_files_from_wheel(
+    pyodide_root: Path,
+    package_name: str,
+    xbuild_files: list[str],
+    site_packages_extras: Path,
+    skip_missing_files: bool = False,
+) -> None:
+    # When cross-build-env-skip-install is set, the package is not installed
+    # into HOSTSITEPACKAGES during the build, so the cross-build files are not
+    # available there. Extract them directly from the built wheel instead.
+    wheel = _find_wheel(pyodide_root, package_name)
+    if wheel is None:
+        if skip_missing_files:
+            logging.warning(f"Built wheel for '{package_name}' not found")
+            return
+
+        raise FileNotFoundError(
+            f"Built wheel for '{package_name}' not found. "
+            "It is required to extract cross-build files because "
+            "cross-build-env-skip-install is set."
+        )
+
+    with zipfile.ZipFile(wheel) as zf:
+        names = set(zf.namelist())
+        for path in xbuild_files:
+            target = site_packages_extras / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+
+            if path not in names:
+                if skip_missing_files:
+                    logging.warning(
+                        f"Cross-build file '{path}' not found in wheel '{wheel.name}'"
+                    )
+                    continue
+
+                raise FileNotFoundError(
+                    f"Cross-build file '{path}' not found in wheel '{wheel.name}'"
+                )
+
+            with zf.open(path) as src, open(target, "wb") as dst:
+                shutil.copyfileobj(src, dst)
 
 
 def _copy_xbuild_files(
@@ -30,6 +83,19 @@ def _copy_xbuild_files(
     recipes = load_all_recipes(pyodide_root / "packages")
     for recipe in recipes.values():
         xbuild_files = recipe.build.cross_build_files
+        if not xbuild_files:
+            continue
+
+        if recipe.build.cross_build_env_skip_install:
+            _copy_xbuild_files_from_wheel(
+                pyodide_root,
+                recipe.package.name,
+                xbuild_files,
+                site_packages_extras,
+                skip_missing_files,
+            )
+            continue
+
         for path in xbuild_files:
             source = site_packages / path
             target = site_packages_extras / path
