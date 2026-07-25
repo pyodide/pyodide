@@ -9,7 +9,7 @@ from update_cross_build_releases import add_version, parse_env_var
 
 
 def test_add_version():
-    metadata = CrossBuildEnvMetaSpec.parse_raw(
+    metadata = CrossBuildEnvMetaSpec.from_json(
         """
 {
     "releases": {
@@ -37,13 +37,13 @@ def test_add_version():
     )
 
     new_metadata_raw = add_version(
-        metadata.json(),
+        metadata.to_json(),
         "0.18.0",
         "https://example.com/xbuildenv-0.18.0.tar.gz",
         "abcdef1234567890",
     )
 
-    new_metadata = CrossBuildEnvMetaSpec.parse_raw(new_metadata_raw)
+    new_metadata = CrossBuildEnvMetaSpec.from_json(new_metadata_raw)
     assert new_metadata.releases["0.18.0"].version == "0.18.0"
     assert (
         new_metadata.releases["0.18.0"].url
@@ -57,13 +57,13 @@ def test_add_version():
     assert list(new_metadata.releases.keys())[2] == "0.16.0"
 
     new_metadata_raw = add_version(
-        metadata.json(),
+        metadata.to_json(),
         "0.16.1",
         "https://example.com/xbuildenv-0.16.1.tar.gz",
         "abcdef1234567890",
     )
 
-    new_metadata = CrossBuildEnvMetaSpec.parse_raw(new_metadata_raw)
+    new_metadata = CrossBuildEnvMetaSpec.from_json(new_metadata_raw)
     assert new_metadata.releases["0.16.1"].version == "0.16.1"
     assert (
         new_metadata.releases["0.16.1"].url
@@ -76,13 +76,13 @@ def test_add_version():
     assert list(new_metadata.releases.keys())[2] == "0.16.0"
 
     new_metadata_raw = add_version(
-        metadata.json(),
+        metadata.to_json(),
         "0.17.0a1",
         "https://example.com/xbuildenv-0.17.0a1.tar.gz",
         "abcdef1234567890",
     )
 
-    new_metadata = CrossBuildEnvMetaSpec.parse_raw(new_metadata_raw)
+    new_metadata = CrossBuildEnvMetaSpec.from_json(new_metadata_raw)
     assert new_metadata.releases["0.17.0a1"].version == "0.17.0a1"
     assert (
         new_metadata.releases["0.17.0a1"].url
@@ -96,7 +96,7 @@ def test_add_version():
 
 
 def test_add_version_full():
-    metadata = CrossBuildEnvMetaSpec.parse_raw(
+    metadata = CrossBuildEnvMetaSpec.from_json(
         """
 {
     "releases": {
@@ -124,7 +124,7 @@ def test_add_version_full():
     )
 
     new_metadata_raw = add_version(
-        metadata.json(),
+        metadata.to_json(),
         "0.18.0",
         "https://example.com/xbuildenv-0.18.0.tar.gz",
         "abcdef1234567890",
@@ -134,7 +134,7 @@ def test_add_version_full():
         max_pyodide_build_version="0.18.0",
     )
 
-    new_metadata = CrossBuildEnvMetaSpec.parse_raw(new_metadata_raw)
+    new_metadata = CrossBuildEnvMetaSpec.from_json(new_metadata_raw)
     assert new_metadata.releases["0.18.0"].version == "0.18.0"
     assert (
         new_metadata.releases["0.18.0"].url
@@ -148,7 +148,7 @@ def test_add_version_full():
 
 
 def test_exclude_none():
-    metadata = CrossBuildEnvMetaSpec.parse_raw(
+    metadata = CrossBuildEnvMetaSpec.from_json(
         """
 {
     "releases": {
@@ -165,7 +165,7 @@ def test_exclude_none():
     )
 
     new_metadata_raw = add_version(
-        metadata.json(),
+        metadata.to_json(),
         "0.18.0",
         "https://example.com/xbuildenv-0.18.0.tar.gz",
         "abcdef1234567890",
