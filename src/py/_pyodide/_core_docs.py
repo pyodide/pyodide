@@ -1335,16 +1335,16 @@ def create_once_callable(
 
     Examples
     --------
-    .. code-block:: python
-
-        from pyodide.ffi import create_once_callable
-        
-        def f():
-            print("Function called!")
-            
-        proxy = create_once_callable(f)
-        proxy()  # Prints: "Function called!"
-        # Calling proxy() a second time will raise an exception
+    >>> from pyodide.ffi import create_once_callable # doctest: +RUN_IN_PYODIDE
+    >>> def f():
+    ...     return "Function called!"
+    >>> proxy = create_once_callable(f)
+    >>> proxy()
+    'Function called!'
+    >>> proxy()
+    Traceback (most recent call last):
+      ...
+    Exception: Object has already been destroyed
     """
     return obj  # type:ignore[return-value]
 
