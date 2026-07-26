@@ -15,6 +15,16 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} Argument handling in the Windows launchers. `python.exe` lost the
+  quoting around the path to `python.bat`, breaking any interpreter under a
+  directory with a space in its name such as `C:\Program Files`, and let
+  characters `cmd.exe` treats as syntax escape out of arguments. `python.bat`
+  reported "Cannot find pyodide pip" for every `python -m pip`, dropped
+  exclamation marks from arguments, and wrote its Node version check to a fixed
+  file name. {pr}`6381`
+
 ## Version 314.0.3
 
 _July 24, 2026_
