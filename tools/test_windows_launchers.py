@@ -5,9 +5,10 @@ pip.bat or hands off to node. The first two classes swap in stubs so a failure
 points at the argument handling rather than at the build, and the last runs the
 whole chain against a real dist.
 
-Point PYODIDE_DIST at a built dist to run these:
+They read the launchers out of dist/, so run `make dist/python.exe` or unpack a
+build there first:
 
-    PYODIDE_DIST=dist pytest tools/test_windows_launchers.py
+    pytest tools/test_windows_launchers.py
 """
 
 from __future__ import annotations
@@ -52,12 +53,14 @@ goto loop
 """
 
 
+DIST = Path(__file__).parents[1] / "dist"
+
+
 @pytest.fixture
 def dist() -> Path:
-    path = os.environ.get("PYODIDE_DIST")
-    if not path:
-        pytest.skip("PYODIDE_DIST is not set")
-    return Path(path).resolve()
+    if not (DIST / "python.exe").exists() or not (DIST / "python.bat").exists():
+        pytest.skip(f"No launchers in {DIST}")
+    return DIST
 
 
 @pytest.fixture
@@ -74,7 +77,8 @@ def node_stub(tmp_path: Path) -> dict[str, str]:
     stub_dir = tmp_path / "stub bin"
     stub_dir.mkdir()
     (stub_dir / "node.bat").write_text(NODE_STUB_BAT)
-    return os.environ | {"PATH": f"{stub_dir}{os.pathsep}{os.environ['PATH']}"}
+    path = os.environ.get("PATH", "")
+    return os.environ | {"PATH": f"{stub_dir}{os.pathsep}{path}"}
 
 
 def run(
@@ -124,7 +128,9 @@ class TestPythonExe:
             ["(parens)"],
             ["caret^"],
             ["-c", "print('hi!')"],
-            ["%PATH%"],
+            # A lone % is literal. A %VAR% pair is not: cmd expands it on the
+            # way through, as it did before this was routed through cmd.exe
+            # explicitly, so there is nothing here that asserts otherwise.
             ["50%"],
             ["-m", "http.server", "--bind", "::1", "8000"],
         ],
@@ -171,6 +177,14 @@ class TestPythonBat:
 
         assert result.returncode == 0, result.stderr
         assert reported(result) == ["[install]", "[-r]", "[a file.txt]"]
+
+    def test_pip_arguments_keep_their_exclamation_marks(self, launcher: Path) -> None:
+        (launcher.parent / "pip.bat").write_text(ECHO_ARGS_BAT)
+
+        result = run(launcher, "-m", "pip", "install", "a!b!c")
+
+        assert result.returncode == 0, result.stderr
+        assert reported(result) == ["[install]", "[a!b!c]"]
 
     def test_bare_m_pip_is_accepted(self, launcher: Path) -> None:
         (launcher.parent / "pip.bat").write_text(ECHO_ARGS_BAT)
@@ -244,14 +258,16 @@ class TestPythonBat:
         assert "No node executable found" in result.stderr
 
     def test_the_version_check_file_is_cleaned_up(
-        self, launcher: Path, node_stub: dict[str, str]
+        self, launcher: Path, node_stub: dict[str, str], tmp_path: Path
     ) -> None:
-        temp_dir = Path(os.environ.get("TEMP", "."))
-        before = set(temp_dir.glob("__pyodide_node_check_*.js"))
+        # A temp directory of our own, so nothing else on the machine can leave
+        # a matching file behind and make this flaky
+        temp_dir = tmp_path / "temp"
+        temp_dir.mkdir()
 
-        run(launcher, "-V", env=node_stub)
+        run(launcher, "-V", env=node_stub | {"TEMP": str(temp_dir)})
 
-        assert set(temp_dir.glob("__pyodide_node_check_*.js")) == before
+        assert list(temp_dir.glob("__pyodide_node_check_*.js")) == []
 
 
 class TestRealBuild:
