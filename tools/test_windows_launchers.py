@@ -1,12 +1,10 @@
 """Tests for the Windows launchers, python.exe and python.bat.
 
-python.exe re-invokes the python.bat next to it, which either redirects to
-pip.bat or hands off to node. The first two classes swap in stubs so a failure
-points at the argument handling rather than at the build, and the last runs the
-whole chain against a real dist.
+python.exe re-invokes the python.bat beside it, which either redirects to
+pip.bat or hands off to node. The first two classes swap those for reporters
+that print their arguments back, the last runs Pyodide itself.
 
-They read the launchers out of dist/, so run `make dist/python.exe` or unpack a
-build there first:
+Needs a build in dist/:
 
     pytest tools/test_windows_launchers.py
 """
@@ -25,35 +23,20 @@ pytestmark = pytest.mark.skipif(
     sys.platform != "win32", reason="the launchers are Windows-only"
 )
 
-# Reports one argument per line with the quotes stripped, so a test can compare
-# against the list it passed. Stops at the first empty argument, which is why no
-# case below uses one.
-ECHO_ARGS_BAT = """\
-@echo off
-:loop
-if "%~1"=="" goto :end
-echo [%~1]
-shift
-goto loop
-:end
-"""
-
-# Stands in for node. The version check runs first and its output becomes a node
-# flag, so that invocation stays quiet.
-NODE_STUB_BAT = """\
-@echo off
-echo %1 | findstr /c:"__pyodide_node_check" >nul
-if not errorlevel 1 exit /b 0
-:loop
-if "%~1"=="" goto :end
-echo [%~1]
-shift
-goto loop
-:end
-"""
-
-
 DIST = Path(__file__).parents[1] / "dist"
+
+REPORT_PY = """\
+import sys
+
+for arg in sys.argv[1:]:
+    print(f"[{arg}]")
+"""
+
+REPORT_MJS = """\
+for (const arg of process.argv.slice(2)) {
+  console.log(`[${arg}]`);
+}
+"""
 
 
 @pytest.fixture
@@ -71,14 +54,12 @@ def work_dir(tmp_path: Path) -> Path:
     return path
 
 
-@pytest.fixture
-def node_stub(tmp_path: Path) -> dict[str, str]:
-    """An environment whose PATH finds our stub node before any real one."""
-    stub_dir = tmp_path / "stub bin"
-    stub_dir.mkdir()
-    (stub_dir / "node.bat").write_text(NODE_STUB_BAT)
-    path = os.environ.get("PATH", "")
-    return os.environ | {"PATH": f"{stub_dir}{os.pathsep}{path}"}
+def write_reporter_bat(path: Path) -> None:
+    """Write a batch file that reports the arguments it was handed."""
+    report = path.parent / "report_args.py"
+    report.write_text(REPORT_PY)
+    # absolute path, so nothing on PATH can shadow it
+    path.write_text(f'@echo off\n"{sys.executable}" "{report}" %*\n')
 
 
 def run(
@@ -86,10 +67,9 @@ def run(
 ) -> subprocess.CompletedProcess[str]:
     """Run a launcher, either python.exe or python.bat.
 
-    CreateProcess runs a .bat by handing the line to cmd.exe, so the python.bat
-    cases below pick up one cmd parse on the way in. The cases that turn on what
-    cmd treats as syntax are in TestPythonExe, where the target is a real
-    executable and the only cmd parse is the one python.exe sets up itself.
+    CreateProcess runs a .bat through cmd.exe, and subprocess quotes by C
+    runtime rules that cmd does not follow (bpo-34489), so keep arguments free
+    of & | < > ^ in TestPythonBat. Those cases belong in TestPythonExe.
     """
     return subprocess.run(
         [str(launcher), *args],
@@ -110,7 +90,7 @@ class TestPythonExe:
     @pytest.fixture
     def launcher(self, dist: Path, work_dir: Path) -> Path:
         shutil.copy(dist / "python.exe", work_dir / "python.exe")
-        (work_dir / "python.bat").write_text(ECHO_ARGS_BAT)
+        write_reporter_bat(work_dir / "python.bat")
         return work_dir / "python.exe"
 
     @pytest.mark.parametrize(
@@ -135,9 +115,7 @@ class TestPythonExe:
             ["(parens)"],
             ["caret^"],
             ["-c", "print('hi!')"],
-            # A lone % is literal. A %VAR% pair is not: cmd expands it on the
-            # way through, as it did before this was routed through cmd.exe
-            # explicitly, so there is nothing here that asserts otherwise.
+            # a lone % is literal, a %VAR% pair is not: cmd expands it
             ["50%"],
             ["-m", "http.server", "--bind", "::1", "8000"],
         ],
@@ -166,10 +144,12 @@ class TestPythonBat:
     @pytest.fixture
     def launcher(self, dist: Path, work_dir: Path) -> Path:
         shutil.copy(dist / "python.bat", work_dir / "python.bat")
+        # stands in for the entry point, so the real node splits the arguments
+        (work_dir / "python_cli_entry.mjs").write_text(REPORT_MJS)
         return work_dir / "python.bat"
 
     def test_pip_receives_the_arguments_after_m_pip(self, launcher: Path) -> None:
-        (launcher.parent / "pip.bat").write_text(ECHO_ARGS_BAT)
+        write_reporter_bat(launcher.parent / "pip.bat")
 
         result = run(launcher, "-m", "pip", "install", "six")
 
@@ -178,7 +158,7 @@ class TestPythonBat:
         assert reported(result) == ["[install]", "[six]"]
 
     def test_pip_arguments_keep_their_spaces(self, launcher: Path) -> None:
-        (launcher.parent / "pip.bat").write_text(ECHO_ARGS_BAT)
+        write_reporter_bat(launcher.parent / "pip.bat")
 
         result = run(launcher, "-m", "pip", "install", "-r", "a file.txt")
 
@@ -186,7 +166,7 @@ class TestPythonBat:
         assert reported(result) == ["[install]", "[-r]", "[a file.txt]"]
 
     def test_pip_arguments_keep_their_exclamation_marks(self, launcher: Path) -> None:
-        (launcher.parent / "pip.bat").write_text(ECHO_ARGS_BAT)
+        write_reporter_bat(launcher.parent / "pip.bat")
 
         result = run(launcher, "-m", "pip", "install", "a!b!c")
 
@@ -194,7 +174,7 @@ class TestPythonBat:
         assert reported(result) == ["[install]", "[a!b!c]"]
 
     def test_bare_m_pip_is_accepted(self, launcher: Path) -> None:
-        (launcher.parent / "pip.bat").write_text(ECHO_ARGS_BAT)
+        write_reporter_bat(launcher.parent / "pip.bat")
 
         result = run(launcher, "-m", "pip")
 
@@ -212,15 +192,13 @@ class TestPythonBat:
         assert result.returncode == 1
         assert "Cannot find pyodide pip" in result.stderr
 
-    def test_m_without_pip_is_not_redirected(
-        self, launcher: Path, node_stub: dict[str, str]
-    ) -> None:
-        (launcher.parent / "pip.bat").write_text(ECHO_ARGS_BAT)
+    def test_m_without_pip_is_not_redirected(self, launcher: Path) -> None:
+        write_reporter_bat(launcher.parent / "pip.bat")
 
-        result = run(launcher, "-m", "pytest", env=node_stub)
+        result = run(launcher, "-m", "pytest")
 
         assert result.returncode == 0, result.stderr
-        assert "python_cli_entry.mjs" in result.stdout
+        assert reported(result)[-2:] == ["[-m]", "[pytest]"]
 
     @pytest.mark.parametrize(
         "args",
@@ -237,19 +215,15 @@ class TestPythonBat:
         ],
         ids=" ".join,
     )
-    def test_arguments_reach_node(
-        self, launcher: Path, node_stub: dict[str, str], args: list[str]
-    ) -> None:
-        result = run(launcher, *args, env=node_stub)
+    def test_arguments_reach_node(self, launcher: Path, args: list[str]) -> None:
+        result = run(launcher, *args)
 
         assert result.returncode == 0, result.stderr
         # The entry point and --this-program come first, ours follow
         assert reported(result)[-len(args) :] == [f"[{arg}]" for arg in args]
 
-    def test_this_program_points_at_the_exe(
-        self, launcher: Path, node_stub: dict[str, str]
-    ) -> None:
-        result = run(launcher, "-V", env=node_stub)
+    def test_this_program_points_at_the_exe(self, launcher: Path) -> None:
+        result = run(launcher, "-V")
 
         assert result.returncode == 0, result.stderr
         expected = str(launcher.with_suffix(".exe"))
@@ -265,14 +239,12 @@ class TestPythonBat:
         assert "No node executable found" in result.stderr
 
     def test_the_version_check_file_is_cleaned_up(
-        self, launcher: Path, node_stub: dict[str, str], tmp_path: Path
+        self, launcher: Path, tmp_path: Path
     ) -> None:
-        # A temp directory of our own, so nothing else on the machine can leave
-        # a matching file behind and make this flaky
         temp_dir = tmp_path / "temp"
         temp_dir.mkdir()
 
-        run(launcher, "-V", env=node_stub | {"TEMP": str(temp_dir)})
+        run(launcher, "-V", env=os.environ | {"TEMP": str(temp_dir)})
 
         assert list(temp_dir.glob("__pyodide_node_check_*")) == []
 
