@@ -106,8 +106,8 @@ class TestPythonExe:
             ["--this-program=C:\\Program Files\\pyodide\\python.exe"],
             ["a b", "c\td"],
             ["back\\slash", "trailing\\"],
-            # cmd reads the line on the way through, so anything it treats as
-            # syntax has to stay quoted
+            ["-c", "", "after an empty one"],
+            # cmd reads the line on the way through
             ["-c", "print(1 & 2)"],
             ["a&b"],
             ["a|b"],
