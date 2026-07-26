@@ -13,22 +13,35 @@ set "THIS_PROGRAM=%THIS_PROGRAM_BATCH_FILE:~0,-4%.exe"
 REM Set initial arguments placeholder for the Node flags
 set "NODE_ARGS="
 
-REM Redirect python -m pip to execute in host environment
-if /i "%~1"=="-m" if /i "%~2"=="pip" (
-    REM Shift arguments to remove "-m pip"
-    shift
-    shift
+REM Redirect python -m pip to execute in host environment.
+REM Not a parenthesised block: cmd parses those in one pass, so %PIP_SCRIPT%
+REM would read back empty and shift would not move the %1 references.
+if /i not "%~1"=="-m" goto :NotPip
+if /i not "%~2"=="pip" goto :NotPip
 
-    set "PIP_SCRIPT=%VENV_DIR%pip.bat"
+set "PIP_SCRIPT=%VENV_DIR%pip.bat"
 
-    if not exist "%PIP_SCRIPT%" (
-        >&2 echo Cannot find pyodide pip. Make a pyodide venv first?
-        exit /b 1
-    )
-
-    call "%PIP_SCRIPT%" %*
-    exit /b %ERRORLEVEL%
+if not exist "%PIP_SCRIPT%" (
+    >&2 echo Cannot find pyodide pip. Make a pyodide venv first?
+    exit /b 1
 )
+
+REM Drop the "-m pip" prefix. shift does not touch %*, so rebuild the rest.
+shift
+shift
+set "PIP_ARGS="
+
+:CollectPipArgs
+if "%~1"=="" goto :RunPip
+set "PIP_ARGS=%PIP_ARGS% "%~1""
+shift
+goto :CollectPipArgs
+
+:RunPip
+call "%PIP_SCRIPT%"%PIP_ARGS%
+exit /b %ERRORLEVEL%
+
+:NotPip
 
 REM Sadly, windows doesn't seem to have realpath-equivalent built-in commands that can resolve symlinks.
 REM Use 'dir /l' to get the symlink information and pipe it to findstr.
@@ -81,7 +94,9 @@ if ERRORLEVEL 1 (
     exit /b 1
 )
 
-REM Determine Node Flags based on Version
+REM Determine Node Flags based on Version.
+REM %RANDOM% in the name so concurrent invocations do not clobber each other.
+set "NODE_CHECK_JS=%TEMP%\__pyodide_node_check_%RANDOM%%RANDOM%.js"
 (
     REM JavaScript block to check version
     echo "const major_version = Number(process.version.split('.')[0].slice(1));"
@@ -93,24 +108,28 @@ REM Determine Node Flags based on Version
     echo "if (major_version  >= 20 ^&^& major_version ^<^= 24) {"
     echo "   process.stdout.write('--experimental-wasm-stack-switching');"
     echo "}"
-)> "%TEMP%\__node_check.js"
+)> "%NODE_CHECK_JS%"
 
 REM Run Node.js and capture the output (the dynamic argument) into NODE_ARGS
 REM The use of 'FOR /F' captures stdout.
-FOR /F "delims=" %%i IN ('node "%TEMP%\__node_check.js"') DO (
+FOR /F "delims=" %%i IN ('node "%NODE_CHECK_JS%"') DO (
     set "NODE_ARGS=%%i"
 )
 
-del "%TEMP%\__node_check.js" 2>nul
+del "%NODE_CHECK_JS%" 2>nul
 
 if ERRORLEVEL 1 (
     echo Node.js version check failed or exited with error. >&2
     exit /b 1
 )
 
+REM Delayed expansion eats any "!" in the arguments below, so leave it here and
+REM carry over the values the call still needs.
+endlocal & set "NODE_ARGS=%NODE_ARGS%" & set "RESOLVED_DIR=%RESOLVED_DIR%" & set "THIS_PROGRAM=%THIS_PROGRAM%"
+
 REM Compute our own path, not following symlinks and pass it in so that
 REM node_entry.mjs can set sys.executable correctly.
 REM Intentionally allow word splitting on %NODEFLAGS%.
-call node %NODEFLAGS% !NODE_ARGS! "%RESOLVED_DIR%python_cli_entry.mjs" --this-program="%THIS_PROGRAM%" %*
+call node %NODEFLAGS% %NODE_ARGS% "%RESOLVED_DIR%python_cli_entry.mjs" --this-program="%THIS_PROGRAM%" %*
 
 exit /b %ERRORLEVEL%
