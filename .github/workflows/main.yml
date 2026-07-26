@@ -9,7 +9,6 @@ on:
       - stable
       # older release branches
       - "[0-9]+.[0-9]+.X"
-      - "[0-9]+.X"
       # slightly longer-lived branches for ABI changes
       - "abi_*"
   pull_request:
