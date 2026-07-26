@@ -239,11 +239,12 @@ class TestPythonBat:
         expected = str(launcher.with_suffix(".exe"))
         assert f"[--this-program={expected}]" in reported(result)
 
-    def test_missing_node_is_reported(self, launcher: Path, tmp_path: Path) -> None:
-        empty = tmp_path / "empty"
-        empty.mkdir()
+    def test_missing_node_is_reported(self, launcher: Path) -> None:
+        # System32 stays on PATH, so where and findstr still work and node is
+        # the only thing missing
+        system32 = Path(os.environ.get("SystemRoot", "C:\\Windows")) / "System32"
 
-        result = run(launcher, "-V", env=os.environ | {"PATH": str(empty)})
+        result = run(launcher, "-V", env=os.environ | {"PATH": str(system32)})
 
         assert result.returncode == 1
         assert "No node executable found" in result.stderr
