@@ -142,6 +142,6 @@ endlocal & set "NODE_ARGS=%NODE_ARGS%" & set "RESOLVED_DIR=%RESOLVED_DIR%" & set
 REM Compute our own path, not following symlinks and pass it in so that
 REM node_entry.mjs can set sys.executable correctly.
 REM Intentionally allow word splitting on %NODEFLAGS%.
-call node %NODEFLAGS% %NODE_ARGS% "%RESOLVED_DIR%python_cli_entry.mjs" --this-program="%THIS_PROGRAM%" %*
+node %NODEFLAGS% %NODE_ARGS% "%RESOLVED_DIR%python_cli_entry.mjs" --this-program="%THIS_PROGRAM%" %*
 
 exit /b %ERRORLEVEL%
