@@ -26,6 +26,9 @@ if not exist "%PIP_SCRIPT%" (
     exit /b 1
 )
 
+REM Leave delayed expansion before touching the arguments, it eats any "!".
+endlocal & set "PIP_SCRIPT=%PIP_SCRIPT%"
+
 REM Drop the "-m pip" prefix. shift does not touch %*, so rebuild the rest.
 shift
 shift
