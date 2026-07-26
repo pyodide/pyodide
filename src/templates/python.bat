@@ -35,7 +35,7 @@ shift
 set "PIP_ARGS="
 
 :CollectPipArgs
-if "%~1"=="" goto :RunPip
+if "%1"=="" goto :RunPip
 set "PIP_ARGS=%PIP_ARGS% "%~1""
 shift
 goto :CollectPipArgs
@@ -98,8 +98,13 @@ if ERRORLEVEL 1 (
 )
 
 REM Determine Node Flags based on Version.
+REM %TEMP% is not guaranteed to be set, so fall back to %TMP% then here.
+set "NODE_CHECK_DIR=%TEMP%"
+if not defined NODE_CHECK_DIR set "NODE_CHECK_DIR=%TMP%"
+if not defined NODE_CHECK_DIR set "NODE_CHECK_DIR=%~dp0."
+
 REM %RANDOM% in the name so concurrent invocations do not clobber each other.
-set "NODE_CHECK_JS=%TEMP%\__pyodide_node_check_%RANDOM%%RANDOM%.js"
+set "NODE_CHECK_JS=%NODE_CHECK_DIR%\__pyodide_node_check_%RANDOM%%RANDOM%.js"
 set "NODE_CHECK_OUT=%NODE_CHECK_JS%.out"
 (
     REM JavaScript block to check version

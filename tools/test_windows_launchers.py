@@ -173,6 +173,14 @@ class TestPythonBat:
         assert result.returncode == 0, result.stderr
         assert reported(result) == ["[install]", "[a!b!c]"]
 
+    def test_an_empty_pip_argument_does_not_end_the_list(self, launcher: Path) -> None:
+        write_reporter_bat(launcher.parent / "pip.bat")
+
+        result = run(launcher, "-m", "pip", "install", "", "six")
+
+        assert result.returncode == 0, result.stderr
+        assert reported(result) == ["[install]", "[]", "[six]"]
+
     def test_bare_m_pip_is_accepted(self, launcher: Path) -> None:
         write_reporter_bat(launcher.parent / "pip.bat")
 
