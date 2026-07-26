@@ -26,8 +26,8 @@ func escapeArg(s string) string {
 
     quoted.WriteByte('"')
     backslashes := 0
-    for i := 0; i < len(s); i++ {
-        switch c := s[i]; c {
+    for _, r := range s {
+        switch r {
         case '\\':
             backslashes++
         case '"':
@@ -40,7 +40,7 @@ func escapeArg(s string) string {
             for ; backslashes > 0; backslashes-- {
                 quoted.WriteByte('\\')
             }
-            quoted.WriteByte(c)
+            quoted.WriteRune(r)
         }
     }
     // Trailing backslashes would escape the closing quote.
