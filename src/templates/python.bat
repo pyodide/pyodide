@@ -35,7 +35,7 @@ shift
 set "PIP_ARGS="
 
 :CollectPipArgs
-if "%1"=="" goto :RunPip
+if "%~1"=="" if [%1]==[] goto :RunPip
 set "PIP_ARGS=%PIP_ARGS% "%~1""
 shift
 goto :CollectPipArgs

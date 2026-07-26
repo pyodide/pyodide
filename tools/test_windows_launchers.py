@@ -227,7 +227,6 @@ class TestPythonBat:
         result = run(launcher, *args)
 
         assert result.returncode == 0, result.stderr
-        # The entry point and --this-program come first, ours follow
         assert reported(result)[-len(args) :] == [f"[{arg}]" for arg in args]
 
     def test_this_program_points_at_the_exe(self, launcher: Path) -> None:
