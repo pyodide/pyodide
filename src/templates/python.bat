@@ -100,6 +100,7 @@ if ERRORLEVEL 1 (
 REM Determine Node Flags based on Version.
 REM %RANDOM% in the name so concurrent invocations do not clobber each other.
 set "NODE_CHECK_JS=%TEMP%\__pyodide_node_check_%RANDOM%%RANDOM%.js"
+set "NODE_CHECK_OUT=%NODE_CHECK_JS%.out"
 (
     REM JavaScript block to check version
     echo "const major_version = Number(process.version.split('.')[0].slice(1));"
@@ -113,15 +114,18 @@ set "NODE_CHECK_JS=%TEMP%\__pyodide_node_check_%RANDOM%%RANDOM%.js"
     echo "}"
 )> "%NODE_CHECK_JS%"
 
-REM Run Node.js and capture the output (the dynamic argument) into NODE_ARGS
-REM The use of 'FOR /F' captures stdout.
-FOR /F "delims=" %%i IN ('node "%NODE_CHECK_JS%"') DO (
-    set "NODE_ARGS=%%i"
-)
+REM Run Node.js and capture the output (the dynamic argument) into NODE_ARGS.
+REM Redirect to a file rather than reading a pipe with FOR /F, so %ERRORLEVEL%
+REM below is node's own and not the loop body's, and read it before del runs.
+node "%NODE_CHECK_JS%" > "%NODE_CHECK_OUT%"
+set "NODE_CHECK_STATUS=%ERRORLEVEL%"
 
-del "%NODE_CHECK_JS%" 2>nul
+set "NODE_ARGS="
+if exist "%NODE_CHECK_OUT%" set /p NODE_ARGS=<"%NODE_CHECK_OUT%"
 
-if ERRORLEVEL 1 (
+del "%NODE_CHECK_JS%" "%NODE_CHECK_OUT%" 2>nul
+
+if not "%NODE_CHECK_STATUS%"=="0" (
     echo Node.js version check failed or exited with error. >&2
     exit /b 1
 )
