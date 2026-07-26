@@ -122,7 +122,7 @@ set "NODE_CHECK_OUT=%NODE_CHECK_JS%.out"
 REM Run Node.js and capture the output (the dynamic argument) into NODE_ARGS.
 REM Redirect to a file rather than reading a pipe with FOR /F, so %ERRORLEVEL%
 REM below is node's own and not the loop body's, and read it before del runs.
-node "%NODE_CHECK_JS%" > "%NODE_CHECK_OUT%"
+call node "%NODE_CHECK_JS%" > "%NODE_CHECK_OUT%"
 set "NODE_CHECK_STATUS=%ERRORLEVEL%"
 
 set "NODE_ARGS="
