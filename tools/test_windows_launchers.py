@@ -84,6 +84,13 @@ def node_stub(tmp_path: Path) -> dict[str, str]:
 def run(
     launcher: Path, *args: str, env: dict[str, str] | None = None
 ) -> subprocess.CompletedProcess[str]:
+    """Run a launcher, either python.exe or python.bat.
+
+    CreateProcess runs a .bat by handing the line to cmd.exe, so the python.bat
+    cases below pick up one cmd parse on the way in. The cases that turn on what
+    cmd treats as syntax are in TestPythonExe, where the target is a real
+    executable and the only cmd parse is the one python.exe sets up itself.
+    """
     return subprocess.run(
         [str(launcher), *args],
         capture_output=True,
@@ -267,7 +274,7 @@ class TestPythonBat:
 
         run(launcher, "-V", env=node_stub | {"TEMP": str(temp_dir)})
 
-        assert list(temp_dir.glob("__pyodide_node_check_*.js")) == []
+        assert list(temp_dir.glob("__pyodide_node_check_*")) == []
 
 
 class TestRealBuild:
