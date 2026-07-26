@@ -42,7 +42,7 @@ for (const arg of process.argv.slice(2)) {
 @pytest.fixture
 def dist() -> Path:
     if not (DIST / "python.exe").exists() or not (DIST / "python.bat").exists():
-        pytest.skip(f"No launchers in {DIST}")
+        pytest.fail(f"No launchers in {DIST}, run `make dist/python.exe` first")
     return DIST
 
 
