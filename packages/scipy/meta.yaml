@@ -138,7 +138,7 @@ requirements:
     - libboost
   run:
     - numpy
-  build:
+  build-extras:
     # Redirect the (transitive, via pythran) gast build dependency to a fork
     # that constructs ast nodes with their required fields, which is mandatory
     # on Python 3.15. pythran pins gast~=0.6.0, so the fork is based on 0.6.0.
