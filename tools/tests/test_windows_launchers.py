@@ -23,7 +23,8 @@ pytestmark = pytest.mark.skipif(
     sys.platform != "win32", reason="the launchers are Windows-only"
 )
 
-DIST = Path(__file__).parents[1] / "dist"
+REPO_ROOT = Path(__file__).parents[2]
+DIST = REPO_ROOT / "dist"
 
 REPORT_PY = """\
 import sys
