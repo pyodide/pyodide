@@ -41,7 +41,7 @@ elif [[ ${JS_VERSION} =~ (alpha|beta|rc|dev) ]]; then
     npm publish --tag next --loglevel verbose
 else
     echo "Publishing a stable release"
-    npm publish --tag next --tag stable --loglevel verbose
+    npm publish --tag next --loglevel verbose
 fi
 
 rm -f dist/README.md
