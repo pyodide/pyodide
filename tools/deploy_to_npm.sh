@@ -31,6 +31,7 @@ cp src/js/package.json dist/
 
 cd dist/
 
+JS_VERSION=$(node -p "require('./package.json').version")
 if [[ -n "${DRY_RUN}" ]]; then
     echo "Dry run: npm publish --tag dev"
     npm publish --dry-run --tag dev --loglevel verbose
@@ -42,4 +43,4 @@ else
     npm publish --tag next --loglevel verbose
 fi
 
-rm -f dist/README.md
+rm -f README.md
