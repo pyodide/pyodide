@@ -1,0 +1,25 @@
+From d4a9c9a5462a5d76bf454ed45580d5fe97ce2adb Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Mon, 27 Jul 2026 15:07:27 +0200
+Subject: [PATCH 5/5] Fix conditions for inserting whole-archive
+
+---
+ tools/building.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/building.py b/tools/building.py
+index a6945b939..d947a0224 100644
+--- a/tools/building.py
++++ b/tools/building.py
+@@ -306,7 +306,7 @@ def lld_flags(args, linker_inputs=None):
+ 
+   # Emscripten currently expects linkable output (SIDE_MODULE/MAIN_MODULE) to
+   # include all archive contents.
+-  if settings.LINKABLE and (settings.FAKE_DYLIBS or not settings.SIDE_MODULE):
++  if settings.LINKABLE:
+     args.insert(0, '--whole-archive')
+     args.append('--no-whole-archive')
+ 
+-- 
+2.54.0
+
