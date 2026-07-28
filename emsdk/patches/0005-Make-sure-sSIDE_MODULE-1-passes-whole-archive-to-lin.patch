@@ -1,0 +1,44 @@
+From 2e68d49bfd5f92fc4040065a4f235337025f7962 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Tue, 28 Jul 2026 12:37:26 +0200
+Subject: [PATCH 5/5] Make sure -sSIDE_MODULE=1 passes --whole-archive to
+ linker
+
+https://github.com/emscripten-core/emscripten/pull/27430
+---
+ test/test_other.py | 5 +++++
+ tools/building.py  | 2 +-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/test/test_other.py b/test/test_other.py
+index 09df84c0e..1780b6b56 100644
+--- a/test/test_other.py
++++ b/test/test_other.py
+@@ -1538,6 +1538,11 @@ f.close()
+     self.run_process([EMCC, '-Wl,-whole-archive', '-Wl,--no-whole-archive', 'libtest.a', 'main.o'])
+     self.assertContained('foo is: 0\n', self.run_js('a.out.js'))
+ 
++  def test_side_module_whole_archive(self):
++    # Make sure -sSIDE_MODULE=1 passes --whole-archive to the linker
++    err = self.run_process([EMCC, test_file('hello_world.c'), '-sSIDE_MODULE=1', '-v', '-o', 'side.wasm'], stderr=PIPE).stderr
++    self.assertContained('--whole-archive', err)
++
+   def test_whole_archive_48156(self):
+     # Regression test for http://llvm.org/PR48156
+     # TODO: distill this test further and move to lld
+diff --git a/tools/building.py b/tools/building.py
+index a6945b939..3ce680a3c 100644
+--- a/tools/building.py
++++ b/tools/building.py
+@@ -306,7 +306,7 @@ def lld_flags(args, linker_inputs=None):
+ 
+   # Emscripten currently expects linkable output (SIDE_MODULE/MAIN_MODULE) to
+   # include all archive contents.
+-  if settings.LINKABLE and (settings.FAKE_DYLIBS or not settings.SIDE_MODULE):
++  if settings.LINKABLE and (settings.FAKE_DYLIBS or settings.SIDE_MODULE != 2):
+     args.insert(0, '--whole-archive')
+     args.append('--no-whole-archive')
+ 
+-- 
+2.54.0
+
