@@ -1343,9 +1343,6 @@ def create_once_callable(
     'Function called!'
     >>> proxy()
     Traceback (most recent call last):
-      File "<doctest _pyodide._core_docs.create_once_callable[4]>", line 1, in <module>
-        proxy()
-        ~~~~~^^
     pyodide.ffi.JsException: Error: OnceProxy can only be called once
     """
     return obj  # type:ignore[return-value]
