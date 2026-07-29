@@ -262,6 +262,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 			  --disable-ipv6 \
 			  --enable-big-digits=30 \
 			  --enable-optimizations \
+			  --with-tail-call-interp \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(PYBUILD)/config.guess) \
 			  --prefix=$(PYINSTALL)  \

@@ -15,6 +15,13 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Performance }} Enabled wasm tail-call optimization (`-mtail-call`) and
+  CPython's `--with-tail-call-interp` for the interpreter dispatch loop.
+  Requires browsers with wasm tail-call support (Chrome 116+, Firefox 118+,
+  Safari 18+). {pr}`6392`
+
 ## Version 314.0.3
 
 _July 24, 2026_

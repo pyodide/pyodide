@@ -139,6 +139,7 @@ export CFLAGS_BASE=\
 	$(DBGFLAGS) \
 	-fPIC \
 	-fwasm-exceptions \
+	-mtail-call \
 	-sSUPPORT_LONGJMP=wasm \
 	$(EXTRA_CFLAGS)
 
@@ -150,6 +151,8 @@ export LDFLAGS_BASE=\
 	-L$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
 	-s WASM_BIGINT \
 	-fwasm-exceptions \
+	-mtail-call \
+	-sSUPPORT_TAIL_CALL=1 \
 	-sSUPPORT_LONGJMP=wasm \
 	$(EXTRA_LDFLAGS) \
 
