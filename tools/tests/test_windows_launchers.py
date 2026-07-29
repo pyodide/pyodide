@@ -121,6 +121,9 @@ class TestPythonExe:
             ["-c", "print('percent 50%')"],
             ["-c", 'print("percent 50%")'],
             ["-m", "http.server", "--bind", "::1", "8000"],
+            ['-c', 'print("a & b")'],
+            ['a"&b'],
+            ['%PATH%'],
         ],
         ids=" ".join,
     )
