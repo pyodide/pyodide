@@ -15,7 +15,92 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 314.0.3
+
+_July 24, 2026_
+
+- {{ Enhancement }} Reduced the standard library size by excluding the
+  `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
+  to use the `_zoneinfo` C extension. {pr}`6331`
+
+- {{ Fix }} Fixed startTls() not releasing the stream lock when upgrading a
+  socket to TLS, which could cause a crash in some JS runtimes. {pr}`6344`
+
+- {{ Enhancement }} Release archives for cross build envs are now
+  also published as `.tar.gz` alongside the existing `.tar.bz2` archives. New
+  releases will use `.tar.gz` as the primary format in the cross-build
+  environment metadata. {pr}`6346`
+
+## Version 314.0.2
+
+_June 30, 2026_
+
+- {{ Fix }} Fixed a reference-counting bug when copying FFI converters that
+  could free a converter's pre/post-convert callback while still in use.
+  {pr}`6294`
+
+- {{ Enhancement }} Package changes in the lockfile:
+  - healpy is added back to the lockfile, which was removed in 314.0.0 release.
+  - scipy is updated from 1.17.1 to 1.18.0
+  - Following packages are removed from the lockfile as these packages now have PyEmscripten wheels in PyPI.
+    - blosc2
+    - fastcan
+    - gsw
+    - RobotRaconteur
+
+## Version 314.0.1
+
+_June 26, 2026_
+
+- {{ Fix }} `setTimeout()`'s 32-bit signed integer limit was causing a
+  `TimeoutOverflowWarning` for delays past ~24.8 days in
+  `WebLoop.call_later()`. Finite delays past that limit are now clamped to
+  it, and an infinite delay (`asyncio.sleep(math.inf)`) now stays pending
+  until cancelled. {pr}`6306`, {pr}`6310`
+
+- {{ Fix }} `PyodideFuture.then()` and `finally_()` no longer hang when the
+  source future is cancelled; the cancellation now propagates to the chained
+  future. {pr}`6290`
+
+- {{ Fix }} Deserialized JavaScript errors now keep their original type
+  (`TypeError`, `RangeError`, etc.) instead of always becoming a plain `Error`.
+  {pr}`6291`
+
+- {{ Fix }} `SSLSocket.read()` no longer raises `TypeError` when called with a
+  buffer argument. {pr}`6295`
+
+- {{ Fix }} Fixed memory leaks of internal `JsFuncSignature` and `Buffer`
+  objects, whose deallocators never freed the object itself. {pr}`6293`
+
+- {{ Fix }} `update()` on a JavaScript `Map` proxy now applies keyword
+  arguments instead of silently dropping them. {pr}`6292`
+
+- {{ Fix }} Fixed Node.js socket stream lock release order. {pr}`6312`
+
+- {{ Performance }} Sped up PyProxy creation. {pr}`6280`
+
+- {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
+
+- {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
+
+- {{ Performance }} Sped up conversion of ASCII strings from Python to JavaScript using TextDecoder. {pr}`6283`
+
+- {{ Performance }} Sped up JsProxy operations by caching type flags. {pr}`6282`
+
+## Version 314.0.0
+
+_June 09, 2026_
+
+### General
+
+- {{ Update }} Upgraded to Python 3.14.2. {pr}`6161`
+
+- {{ ABI }} Upgraded Emscripten to 5.0.3 {pr}`6161`
+
+- {{ Breaking }} We do not unvendor stdlibs anymore. `sqlite3` and `lzma` are now bundled into Pyodide by default. The `pydecimal` and `test` packages have been removed from the distribution.
+  `pydoc_data` package is still in the distribution but needs to be explicitly loaded with
+  `loadPackage("pydoc_data")` to use. The `fullstdlib` option in loadPyodide is deprecated and a no-op.
+  {pr}`6151`
 
 - {{ Breaking }} The `ssl` module is now a stub implementation bundled with
   Pyodide instead of being dynamically loaded with OpenSSL. This means the `ssl`
@@ -40,6 +125,36 @@ myst:
   - Bundlers: Update configuration to reference the new filename
   {pr}`6111`
 
+- {{ Feature }} The `compression.zstd` module (new in CPython 3.14) is now bundled in
+  Pyodide, providing native zstd compression and decompression support via `_zstd`.
+  {pr}`6240`
+
+- {{ Fix }} Stack switching used to sometimes leak stack memory, this is now
+  fixed. As a side effect, `callPromising()` and `runPythonAsync()` now always
+  yields to the event loop once before Python begins executing, so the ordering
+  of such calls may change.
+  {pr}`6260`
+
+### Python API
+
+- {{ Enhancement }} `PyProxy` now has a `[Symbol.dispose]` method.
+  {pr}`6003`
+
+- {{ Enhancement }} `PyBufferView` (the return value of `PyProxy.getBuffer()`)
+  now has a `[Symbol.dispose]` method.
+  {pr}`6003`
+
+- {{ Enhancement }} If `isatty` is set to true on `stdout` or `stderr` it is now
+  possible to set the window size by providing a stdout/stderr handler which
+  implements the `getTerminalSize()` method. In particular, the default `stdout`
+  and `stderr` in Node now define this handler. These terminal sizes are
+  reported by `os.get_terminal_size()` and `shutil.get_terminal_size()`.
+  {pr}`6157`
+
+- {{ Enhancement }} Added experimental socket support in Node.js environment.
+  {pr}`6191` {pr}`6108` {pr}`6145` {pr}`6166` {pr}`6174`
+
+### JavaScript API
 
 - {{ Enhancement }} A JavaScript object is now treated as an array-like object
   if it has a `length` property and is iterable. Every JsProxy of an array-like
@@ -50,17 +165,10 @@ myst:
   array-like object.
   {pr}`6019`
 
-- {{ Enhancement }} `PyProxy` now has a `[Symbol.dispose]` method.
-  {pr}`6003`
-
 - {{ Enhancement }} A `JsProxy` of an object with a `[Symbol.dispose]` method is
   now a context manager. A `JsProxy` of an object with a `[Symbol.asyncDispose]`
   method is now an async context manager.
   {pr}`6007` {pr}`6014`
-
-- {{ Enhancement }} `PyBufferView` (the return value of `PyProxy.getBuffer()`)
-  now has a `[Symbol.dispose]` method.
-  {pr}`6003`
 
 - {{ Enhancement }} Added `pyodide.ffi.JsBigInt` which is a subtype of `int`.
   Now bigint will be translated to Python as a `JsBigInt` and `JsBigInt` will be
@@ -70,12 +178,32 @@ myst:
   limited backwards incompatibility.
   {pr}`6022`
 
+- {{ Fix }} Fixed invalid refcounting when multiple JS objects that share a reference
+  are passed to Python.
+  {pr}`6245`
+
+
+## Version 0.29.4
+
+_May 7, 2026_
+
+- {{ Enhancement }} Made Pyodide compatible with wheels tagged `pyemscripten`.
+  {pr}`6180`, {pr}`6203`
+
+- {{ Fix }} Fixed a bug where Python strings that contained codepoints above
+  0x00FF would be corrupted when read from JavaScript when they were located at
+  a WebAssembly memory address above 2GB. {pr}`6217`
+
 ## Version 0.29.3
+
+_January 28, 2026_
 
 - {{ Enhancement }} Improved support for Windows platform in the `python` CLI entrypoint.
   {pr}`6087`
 
 ## Version 0.29.2
+
+_January 21, 2026_
 
 - {{ Enhancement }} Improved support for Windows platform in the `python` CLI entrypoint.
   {pr}`6059` {pr}`6058`
@@ -99,10 +227,14 @@ myst:
 
 ## Version 0.29.1
 
+_January 7, 2026_
+
 - {{ Enhancement }} Improved support for Windows/MacOS platform in the `python` CLI entrypoint.
   {pr}`6018` {pr}`6012` {pr}`6026` {pr}`6034` {pr}`6025`
 
 ## Version 0.29.0
+
+_October 20, 2025_
 
 - {{ Feature }} Added `pyxhr`, a synchronous HTTP client using XMLHttpRequest
   that provides a requests-like API for making synchronous HTTP requests in

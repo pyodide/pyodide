@@ -194,8 +194,6 @@ def register_windows_finder() -> None:
 
 
 STDLIBS = sys.stdlib_module_names | {"test"}
-UNVENDORED_STDLIBS_AND_TEST: set[str] = set()
-
 
 REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME: dict[str, str] = {}
 
@@ -223,10 +221,7 @@ def add_note_to_module_not_found_error(e: ModuleNotFoundError) -> None:
     if not package_name and import_name not in STDLIBS:
         return
 
-    if package_name in UNVENDORED_STDLIBS_AND_TEST:
-        msg = "The module '{package_name}' is unvendored from the Python standard library in the Pyodide distribution."
-        msg += YOU_CAN_INSTALL_IT_BY
-    elif import_name in STDLIBS:
+    if import_name in STDLIBS:
         msg = (
             "The module '{import_name}' is removed from the Python standard library in the"
             " Pyodide distribution due to browser limitations."
@@ -240,7 +235,7 @@ def add_note_to_module_not_found_error(e: ModuleNotFoundError) -> None:
     setattr(e, PYODIDE_ADDED_NOTE, True)
 
 
-def register_module_not_found_hook(packages: Any, unvendored: Any) -> None:
+def register_module_not_found_hook(packages: Any) -> None:
     """
     A function that adds UnvendoredStdlibFinder to the end of sys.meta_path.
 
@@ -248,6 +243,4 @@ def register_module_not_found_hook(packages: Any, unvendored: Any) -> None:
     in order to prevent any unexpected side effects.
     """
     global REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME  # noqa: PLW0603
-    global UNVENDORED_STDLIBS_AND_TEST  # noqa: PLW0603
     REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME = packages.to_py()
-    UNVENDORED_STDLIBS_AND_TEST = set(unvendored.to_py())

@@ -43,19 +43,21 @@ Assume for concreteness that we are releasing version 0.20.0.
 #### Releasing
 
 1. Switch to the main branch
-2. Replace the `## Unreleased` heading in the changelog with `## Version 0.20.0`
-   and add the date underneath it. Commit this.
-3. From the root of the repository run:
+
+2. From the root of the repository run:
    ```
    ./tools/bump_version.py 0.20.0 --tag
    ```
    This makes a release commit and tags it.
-4. Push the release commit and tag to upstream. This triggers the release CI.
+
+3. Push the release commit and tag to upstream. This triggers the release CI.
    ```
    git push upstream main 0.20.0
    ```
-5. Wait for CI to pass and release to be created.
-6. Rename the `stable` branch to a release branch for the previous major
+
+4. Wait for CI to pass and release to be created.
+
+5. Rename the `stable` branch to a release branch for the previous major
    version. For instance if last release was, `0.20.0`, the corresponding
    release branch would be `0.20.X`:
 
@@ -65,7 +67,7 @@ Assume for concreteness that we are releasing version 0.20.0.
    git push -u upstream 0.20.X
    ```
 
-7. Create a new `stable` branch:
+6. Create a new `stable` branch:
 
    ```sh
    git switch main
@@ -73,7 +75,7 @@ Assume for concreteness that we are releasing version 0.20.0.
    git push upstream stable --force
    ```
 
-8. Set the version back to next development version with:
+7. Set the version back to next development version with:
    ```sh
    git switch main
    ./tools/bump_version.py 0.21.0 --dev
@@ -355,7 +357,12 @@ The desired version of CPython must be available at:
 
    (TODO: make this list shorter.)
 
-5. Rebase the patches:
+5. Check [python/cpython-source-deps](https://github.com/python/cpython-source-deps) for
+   updated versions of bundled C libraries. Pyodide bundles `zstd` from this repository
+   (see `ZSTDTARBALL` in `cpython/Makefile`). Update the tag and URL if a newer version
+   is available, and verify the build still works.
+
+6. Rebase the patches:
 
    - Clone CPython and cd into it. Checkout the Python version you are upgrading
      from. For instance, if the old version is 3.13.2, use `git checkout v3.13.2`
@@ -386,11 +393,11 @@ The desired version of CPython must be available at:
      git format-patch v3.14.1 -o ~/path/to/pyodide/cpython/patches/
      ```
 
-6. Try to build Python with `make -C cpython`. Fix any build errors. If you
+7. Try to build Python with `make -C cpython`. Fix any build errors. If you
    modify the Python source in-tree after a failed build, it may be useful to
    run `make rebuild`.
 
-7. Try to finish the build with a top-level `make`. Fix compile errors in
+8. Try to finish the build with a top-level `make`. Fix compile errors in
    `src/core` and any link errors. It may be useful to apply
    [`upgrade_pythoncapi.py --no-compat`](https://github.com/python/pythoncapi-compat/blob/main/upgrade_pythoncapi.py)
    to the C extension in `src/core`.
@@ -400,7 +407,7 @@ The desired version of CPython must be available at:
    [greenlet TPythonState.cpp](https://github.com/python-greenlet/greenlet/blob/master/src/greenlet/TPythonState.cpp)
    to figure out how to fix it.
 
-8. Run:
+9. Run:
 
    ```sh
    python tools/make_test_list.py
@@ -410,15 +417,15 @@ The desired version of CPython must be available at:
    either fix the failures or update `src/tests/python_tests.yaml` to skip or
    xfail them.
 
-9. Try to build packages with:
+10. Try to build packages with:
 
-   ```sh
-   pyodide build-recipes '*'
-   ```
+    ```sh
+    pyodide build-recipes '*'
+    ```
 
-10. Fix failing package tests.
+11. Fix failing package tests.
 
-11. Update standard library stubs in `src/templates`. We currently have
+12. Update standard library stubs in `src/templates`. We currently have
     `webbrowser.py` and `ssl.py` that we implement ourselves. If you are
     updating the Python version, you may need to update these stubs. Review the
     Python docs for the standard library modules and check if the APIs have

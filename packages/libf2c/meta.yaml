@@ -13,7 +13,7 @@ package:
     - static_library
 source:
   sha256: 6dc4c382164beec8aaed8fd2acc36ad24232c406eda6db462bd4c41d5e455fac
-  url: http://www.netlib.org/clapack/clapack.tgz
+  url: https://web.archive.org/web/20260509221335/https://www.netlib.org/clapack/clapack.tgz
   extract_dir: CLAPACK-3.2.1
   patches:
     - patches/0001-fix-arith.h.patch

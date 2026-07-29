@@ -92,6 +92,38 @@ def test_completion():
     )
 
 
+def test_completion_partial_keyword():
+    """complete() with a partial keyword: global_matches, start=0."""
+    shell = Console()
+    completions, start = shell.complete("impo")
+    assert start == 0
+    assert completions == ["import "]
+
+
+def test_completion_empty_string():
+    """complete() with an empty string: returns all keywords, start=0."""
+    shell = Console()
+    completions, start = shell.complete("")
+    assert start == 0
+    assert isinstance(completions, list)
+    assert len(completions) > 0
+    # A few keywords that must always appear
+    assert "and " in completions
+    assert "import " in completions
+    assert "for " in completions
+
+
+def test_completion_with_word_break():
+    """complete() on 'import os': word break at space gives start=8, global_matches."""
+    import os as os_module
+
+    shell = Console({"os": os_module})
+    completions, start = shell.complete("import os")
+    # space in "import os" is at index 6, so start = 6 + 1 = 7
+    assert start == 7
+    assert "os" in completions
+
+
 def test_interactive_console():
     shell = Console()
 
@@ -631,6 +663,20 @@ def test_console_v2_html(selenium_standalone):
     # Test function call
     result = exec_and_get_result("f()")
     assert "<coroutine object f at 0x" in result or "coroutine" in result.lower()
+
+    # Test multiline paste executes complete lines and doesn't duplicate prompts
+    selenium.run_js(
+        """
+        term.clear();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        term.paste("import math\\nmath.sqrt(16)\\n");
+        term.paste("\\r");
+        await new Promise(resolve => setTimeout(resolve, 300));
+        """
+    )
+    result = get_terminal_content()
+    assert ">>> >>>" not in result
+    assert "4" in result
 
     # Test syntax error
     result = exec_and_get_result("1+")

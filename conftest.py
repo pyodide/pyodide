@@ -70,7 +70,6 @@ def set_configs():
         "chrome",
         """
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals : self,
         });
         """,
@@ -83,7 +82,6 @@ def set_configs():
         let snap = readFileSync("snapshot.bin");
         snap = new Uint8Array(snap.buffer);
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals: self,
             _loadSnapshot: snap,
         });
@@ -207,6 +205,15 @@ def pytest_collection_modifyitems(config, items):
                 )
                 continue
 
+        if item.get_closest_marker("db"):
+            # Skip db tests if mark not explicitly included
+            markexpr = config.getoption("-m", default="")
+            if "db" not in markexpr:
+                item.add_marker(
+                    pytest.mark.skip(reason="db test skipped (use '-m db' to run)")
+                )
+                continue
+
         maybe_skip_test(item, delayed=True)
 
 
@@ -261,9 +268,10 @@ def pytest_runtest_call(item):
         result = yield
         return result
 
-    trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
+    all_markers = list(item.iter_markers())
+    trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in all_markers
     trace_hiwire_refs = (
-        trace_pyproxies and pytest.mark.skip_refcount_check.mark not in item.own_markers
+        trace_pyproxies and pytest.mark.skip_refcount_check.mark not in all_markers
     )
     yield from extra_checks_test_wrapper(
         browser, trace_hiwire_refs, trace_pyproxies, item
@@ -338,3 +346,25 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
             continue
         res.append(msg)
     return res
+
+
+@pytest.fixture(scope="function")
+def selenium_nodesock(selenium_standalone_refresh, runtime):
+    """
+    Fixture for testing NodeSockFS functionality.
+    """
+    # only_node marker doesn't work in fixture level...
+    if runtime != "node":
+        pytest.skip("Only works in node")
+
+    selenium = selenium_standalone_refresh
+
+    selenium.run_js(
+        """
+        await pyodide.useNodeSockFS();
+        """
+    )
+    try:
+        yield selenium
+    finally:
+        pass

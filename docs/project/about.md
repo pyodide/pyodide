@@ -45,7 +45,7 @@ list from there with "The Pyodide development team" like in the example below:
   month        = aug,
   year         = 2021,
   publisher    = {Zenodo},
-  version      = {0.29.0},
+  version      = {314.0.0},
   doi          = {10.5281/zenodo.5156931},
   url          = {https://doi.org/10.5281/zenodo.5156931}
 }
@@ -65,6 +65,7 @@ Pyodide is a community-driven project that has benefited from the support of var
 
 | Institution                                                                                                          | Contributor(s)      | Contribution Type                 | Period       |
 | -------------------------------------------------------------------------------------------------------------------- | ------------------- | --------------------------------- | ------------ |
+| Cloudflare, Inc.                                                                                                     | Gyeongjae Choi      | Employer-sponsored time           | 2025–Present |
 | Quansight Labs                                                                                                       | Agriya Khetarpal    | Employer-sponsored time           | 2024–Present |
 | Chan Zuckerberg Initiative (CZI) [2022-316713](https://blog.scientific-python.org/scientific-python/2022-czi-grant/) | Agriya Khetarpal    | Research software grant           | 2024–2025    |
 | Cloudflare, Inc.                                                                                                     | Robert Hood Chatham | Employer-sponsored time           | 2023–Present |

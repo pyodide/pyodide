@@ -1,0 +1,899 @@
+"""
+This test file is for testing database drivers with Node.js socket support.
+
+All the tests are disabled by default and need to be run manually with `-m db` flag.
+"""
+
+import os
+import uuid
+
+import pytest
+from pytest_pyodide import run_in_pyodide
+
+from conftest import only_node
+
+pytestmark = [
+    pytest.mark.requires_dynamic_linking,
+    only_node,
+]
+
+
+def _sql_string_literal(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("'", "\\'")
+
+
+@pytest.fixture(scope="session")
+def mysql_admin_config():
+    host = os.environ.get("MYSQL_HOST", "127.0.0.1")
+    port = int(os.environ.get("MYSQL_PORT", "3306"))
+    user = os.environ.get("MYSQL_ROOT_USER", "root")
+    password = os.environ.get("MYSQL_ROOT_PASSWORD", "")
+
+    return {
+        "host": host,
+        "port": port,
+        "user": user,
+        "password": password,
+    }
+
+
+@pytest.fixture()
+def mysql_test_db(mysql_admin_config):
+    import contextlib
+
+    import cryptography  # noqa: F401  # for mysql_native_password
+    import pymysql
+
+    suffix = uuid.uuid4().hex[:10]
+    db = f"pyodide_it_{suffix}"
+    user = f"pyodide_u_{suffix}"
+    password = f"pyodide_pw_{suffix}"
+
+    def admin_connect():
+        conn = pymysql.connect(
+            host=mysql_admin_config["host"],
+            port=mysql_admin_config["port"],
+            user=mysql_admin_config["user"],
+            password=mysql_admin_config["password"],
+            autocommit=True,
+        )
+        return contextlib.closing(conn)
+
+    with admin_connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"CREATE DATABASE `{db}`")
+            pw = _sql_string_literal(password)
+            cur.execute(
+                f"CREATE USER '{user}'@'%' IDENTIFIED WITH mysql_native_password BY '{pw}'"
+            )
+            cur.execute(f"GRANT ALL PRIVILEGES ON `{db}`.* TO '{user}'@'%'")
+            cur.execute("FLUSH PRIVILEGES")
+
+    try:
+        yield {
+            "host": mysql_admin_config["host"],
+            "port": mysql_admin_config["port"],
+            "db": db,
+            "user": user,
+            "password": password,
+        }
+    finally:
+        with admin_connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute(f"DROP DATABASE IF EXISTS `{db}`")
+                cur.execute(f"DROP USER IF EXISTS '{user}'@'%'")
+                cur.execute("FLUSH PRIVILEGES")
+
+
+# When running mysql test locally, run MySQL server in a Docker container:
+#   docker run -d --name mysql-server -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -p 3306:3306 mysql:8.0.45
+#   pip install pymysql cryptography
+#   pytest src/tests/test_database_driver.py::test_mysql_pymysql_features -m db
+# Using MySQL 8.0 is helpful to use Native Pluggable Authentication which simplifies testing.
+@pytest.mark.skip_refcount_check
+@pytest.mark.db
+@only_node
+def test_mysql_pymysql_features(selenium_nodesock, mysql_test_db):
+    cfg = mysql_test_db
+
+    host = cfg["host"]
+    port = cfg["port"]
+    user = cfg["user"]
+    password = cfg["password"]
+    db = cfg["db"]
+
+    @run_in_pyodide(packages=["micropip"])
+    async def run(selenium, host, port, user, password, db):
+        import contextlib
+
+        import micropip
+
+        await micropip.install("pymysql==1.1.0")
+
+        import pymysql
+
+        def connect(**kwargs):
+            conn = pymysql.connect(
+                host=host,
+                port=port,
+                user=user,
+                password=password,
+                database=db,
+                unix_socket=False,
+                **kwargs,
+            )
+            return contextlib.closing(conn)
+
+        # 1) Basic DDL/DML
+        with connect(autocommit=True) as conn:
+            with conn.cursor() as cur:
+                cur.execute("DROP TABLE IF EXISTS pyodide_mysql_test")
+                cur.execute(
+                    """
+                    CREATE TABLE pyodide_mysql_test (
+                        id INT PRIMARY KEY AUTO_INCREMENT,
+                        name VARCHAR(255) NOT NULL,
+                        value INT NOT NULL
+                    )
+                    """
+                )
+                cur.execute(
+                    "INSERT INTO pyodide_mysql_test (name, value) VALUES (%s, %s)",
+                    ("alpha", 1),
+                )
+                cur.execute(
+                    "INSERT INTO pyodide_mysql_test (name, value) VALUES (%s, %s)",
+                    ("beta", 2),
+                )
+                cur.execute(
+                    "UPDATE pyodide_mysql_test SET value = value + 10 WHERE name = %s",
+                    ("alpha",),
+                )
+                cur.execute("SELECT name, value FROM pyodide_mysql_test ORDER BY id")
+                result = cur.fetchall()
+
+            assert result == (("alpha", 11), ("beta", 2))
+
+        # 2) Transactions + savepoints
+        with connect(autocommit=False) as conn:
+            with conn.cursor() as cur:
+                cur.execute("DROP TABLE IF EXISTS tx_test")
+                cur.execute(
+                    "CREATE TABLE tx_test (id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(50) NOT NULL)"
+                )
+                cur.execute("INSERT INTO tx_test (name) VALUES (%s)", ("rolled_back",))
+                conn.rollback()
+                cur.execute("SELECT COUNT(*) FROM tx_test")
+                after_rollback = cur.fetchone()[0]
+
+                cur.execute("INSERT INTO tx_test (name) VALUES (%s)", ("kept",))
+                cur.execute("SAVEPOINT sp1")
+                cur.execute("INSERT INTO tx_test (name) VALUES (%s)", ("dropped",))
+                cur.execute("ROLLBACK TO SAVEPOINT sp1")
+                conn.commit()
+
+                cur.execute("SELECT name FROM tx_test ORDER BY id")
+                names = [row[0] for row in cur.fetchall()]
+
+            assert after_rollback == 0
+            assert names == ["kept"]
+
+        # 3) executemany + DictCursor
+        with connect(cursorclass=pymysql.cursors.DictCursor) as conn:
+            with conn.cursor() as cur:
+                cur.execute("DROP TABLE IF EXISTS bulk_test")
+                cur.execute(
+                    """
+                    CREATE TABLE bulk_test (
+                        id INT PRIMARY KEY AUTO_INCREMENT,
+                        k VARCHAR(50) NOT NULL UNIQUE,
+                        v INT NOT NULL
+                    )
+                    """
+                )
+                rows = [("a", 1), ("b", 2), ("c", 3)]
+                cur.executemany("INSERT INTO bulk_test (k, v) VALUES (%s, %s)", rows)
+                inserted = cur.rowcount
+                cur.execute("SELECT k, v FROM bulk_test ORDER BY k")
+                out = cur.fetchall()
+
+            assert inserted == 3
+            assert len(out) == 3
+            assert out == [{"k": "a", "v": 1}, {"k": "b", "v": 2}, {"k": "c", "v": 3}]
+
+    run(selenium_nodesock, host, port, user, password, db)
+
+
+# SQLAlchemy ORM test — reuses the same MySQL fixture as above.
+#   pytest src/tests/test_database_driver.py::test_sqlalchemy_mysql -m db
+@pytest.mark.skip_refcount_check
+@pytest.mark.db
+@only_node
+def test_sqlalchemy_mysql(selenium_nodesock, mysql_test_db):
+    cfg = mysql_test_db
+
+    host = cfg["host"]
+    port = cfg["port"]
+    user = cfg["user"]
+    password = cfg["password"]
+    db = cfg["db"]
+
+    @run_in_pyodide(packages=["micropip"])
+    async def run(selenium, host, port, user, password, db):
+        import micropip
+
+        await micropip.install(["sqlalchemy", "pymysql==1.1.0"])
+
+        from sqlalchemy import ForeignKey, String, create_engine, func, select
+        from sqlalchemy.orm import (
+            DeclarativeBase,
+            Mapped,
+            Session,
+            mapped_column,
+            relationship,
+        )
+
+        url = f"mysql+pymysql://{user}:{password}@{host}:{port}/{db}"
+        engine = create_engine(url, connect_args={"unix_socket": False})
+
+        class Base(DeclarativeBase):
+            pass
+
+        class User(Base):
+            __tablename__ = "sa_users"
+            id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+            name: Mapped[str] = mapped_column(String(100))
+            addresses: Mapped[list["Address"]] = relationship(
+                back_populates="user", cascade="all, delete-orphan"
+            )
+
+        class Address(Base):
+            __tablename__ = "sa_addresses"
+            id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+            email: Mapped[str] = mapped_column(String(200))
+            user_id: Mapped[int] = mapped_column(ForeignKey("sa_users.id"))
+            user: Mapped["User"] = relationship(back_populates="addresses")
+
+        Base.metadata.drop_all(engine)
+        Base.metadata.create_all(engine)
+
+        # 1) Insert with relationships
+        with Session(engine) as s:
+            s.add_all(
+                [
+                    User(
+                        name="alice",
+                        addresses=[
+                            Address(email="alice@example.com"),
+                            Address(email="alice@work.com"),
+                        ],
+                    ),
+                    User(
+                        name="bob",
+                        addresses=[
+                            Address(email="bob@example.com"),
+                        ],
+                    ),
+                ]
+            )
+            s.commit()
+
+            users = s.scalars(select(User).order_by(User.name)).all()
+            assert [(u.name, len(u.addresses)) for u in users] == [
+                ("alice", 2),
+                ("bob", 1),
+            ]
+
+        # 2) Update
+        with Session(engine) as s:
+            alice = s.scalars(select(User).where(User.name == "alice")).one()
+            alice.name = "alice_updated"
+            s.commit()
+
+            updated = s.scalars(select(User).where(User.name == "alice_updated")).one()
+            assert updated.name == "alice_updated"
+
+        # 3) Delete with cascade
+        with Session(engine) as s:
+            bob = s.scalars(select(User).where(User.name == "bob")).one()
+            s.delete(bob)
+            s.commit()
+
+            user_count = s.scalar(select(func.count()).select_from(User))
+            addr_count = s.scalar(select(func.count()).select_from(Address))
+            assert user_count == 1
+            assert addr_count == 2
+
+        # 4) Rollback
+        with Session(engine) as s:
+            s.add(User(name="should_not_exist"))
+            s.flush()
+            s.rollback()
+
+            count = s.scalar(select(func.count()).select_from(User))
+            assert count == 1
+
+        # 5) Join query
+        with Session(engine) as s:
+            rows = s.execute(
+                select(User.name, Address.email)
+                .join(Address)
+                .order_by(User.name, Address.email)
+            ).all()
+            assert rows == [
+                ("alice_updated", "alice@example.com"),
+                ("alice_updated", "alice@work.com"),
+            ]
+
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+    run(selenium_nodesock, host, port, user, password, db)
+
+
+# MySQL 8.0+ auto-generates TLS certificates at startup.
+# No extra server configuration needed — just pass ssl=True on the client.
+@pytest.mark.skip_refcount_check
+@pytest.mark.db
+@only_node
+def test_mysql_pymysql_tls(selenium_nodesock, mysql_test_db):
+    cfg = mysql_test_db
+
+    host = cfg["host"]
+    port = cfg["port"]
+    user = cfg["user"]
+    password = cfg["password"]
+    db = cfg["db"]
+
+    @run_in_pyodide(packages=["micropip"])
+    async def run(selenium, host, port, user, password, db):
+        import micropip
+
+        await micropip.install("pymysql==1.1.0")
+
+        import pymysql
+
+        conn = pymysql.connect(
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=db,
+            unix_socket=False,
+            ssl={"check_hostname": False},
+            autocommit=True,
+        )
+        try:
+            with conn.cursor() as cur:
+                cur.execute("DROP TABLE IF EXISTS tls_test")
+                cur.execute(
+                    "CREATE TABLE tls_test (id INT PRIMARY KEY, msg VARCHAR(100))"
+                )
+                cur.execute(
+                    "INSERT INTO tls_test (id, msg) VALUES (%s, %s)",
+                    (1, "over TLS"),
+                )
+                cur.execute("SELECT msg FROM tls_test WHERE id = 1")
+                row = cur.fetchone()
+
+                cur.execute("SHOW STATUS LIKE 'Ssl_cipher'")
+                ssl_status = cur.fetchone()
+        finally:
+            conn.close()
+
+        assert row[0] == "over TLS"
+        assert ssl_status[1], "Expected active TLS cipher, got empty string"
+
+    run(selenium_nodesock, host, port, user, password, db)
+
+
+@pytest.fixture(scope="session")
+def pg_admin_config():
+    host = os.environ.get("POSTGRES_HOST", "127.0.0.1")
+    port = int(os.environ.get("POSTGRES_PORT", 5432))  # noqa: PLW1508
+    user = os.environ.get("POSTGRES_USER", "postgres")
+    password = os.environ.get("POSTGRES_PASSWORD", "test")
+
+    return {
+        "host": host,
+        "port": port,
+        "user": user,
+        "password": password,
+    }
+
+
+@pytest.fixture()
+def pg_test_db(pg_admin_config):
+    import contextlib
+
+    import pg8000
+
+    suffix = uuid.uuid4().hex[:10]
+    db = f"pyodide_it_{suffix}"
+    user = f"pyodide_u_{suffix}"
+    password = f"pyodide_pw_{suffix}"
+
+    def admin_connect():
+        conn = pg8000.connect(
+            host=pg_admin_config["host"],
+            port=pg_admin_config["port"],
+            user=pg_admin_config["user"],
+            password=pg_admin_config["password"],
+        )
+        conn.autocommit = True
+        return contextlib.closing(conn)
+
+    with admin_connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"CREATE USER {user} WITH PASSWORD '{password}'")
+            cur.execute(f"CREATE DATABASE {db} OWNER {user}")
+
+    try:
+        yield {
+            "host": pg_admin_config["host"],
+            "port": pg_admin_config["port"],
+            "db": db,
+            "user": user,
+            "password": password,
+        }
+    finally:
+        with admin_connect() as conn:
+            with conn.cursor() as cur:
+                # Terminate active connections before dropping
+                cur.execute(f"""
+                    SELECT pg_terminate_backend(pid)
+                    FROM pg_stat_activity
+                    WHERE datname = '{db}' AND pid <> pg_backend_pid()
+                """)
+                cur.execute(f"DROP DATABASE IF EXISTS {db}")
+                cur.execute(f"DROP USER IF EXISTS {user}")
+
+
+# When running this test locally, start a PostgreSQL server and install dependencies:
+#   docker run -d --name postgres-server -e POSTGRES_PASSWORD=test -e POSTGRES_HOST_AUTH_METHOD=md5 -e POSTGRES_INITDB_ARGS="--auth-host=md5" -p 5432:5432 postgres:16
+#   pip install pg8000
+#   pytest src/tests/test_database_driver.py::test_postgresql_pg8000_features -m db
+# Note: md5 auth is required because Pyodide's hashlib lacks pbkdf2_hmac
+# which is needed for PostgreSQL's default scram-sha-256 authentication.
+@pytest.mark.skip_refcount_check
+@pytest.mark.db
+@only_node
+def test_postgresql_pg8000_features(selenium_nodesock, pg_test_db):
+    cfg = pg_test_db
+
+    host = cfg["host"]
+    port = cfg["port"]
+    user = cfg["user"]
+    password = cfg["password"]
+    db = cfg["db"]
+
+    @run_in_pyodide(packages=["micropip"])
+    async def run(selenium, host, port, user, password, db):
+        import contextlib
+
+        import micropip
+
+        await micropip.install("pg8000")
+
+        import pg8000
+
+        def connect(**kwargs):
+            conn = pg8000.connect(
+                host=host,
+                port=port,
+                user=user,
+                password=password,
+                database=db,
+                **kwargs,
+            )
+            return contextlib.closing(conn)
+
+        # 1) Basic DDL/DML
+        with connect() as conn:
+            conn.autocommit = True
+            with conn.cursor() as cur:
+                cur.execute("DROP TABLE IF EXISTS pyodide_pg_test")
+                cur.execute(
+                    """
+                    CREATE TABLE pyodide_pg_test (
+                        id SERIAL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        value INT NOT NULL
+                    )
+                    """
+                )
+                cur.execute(
+                    "INSERT INTO pyodide_pg_test (name, value) VALUES (%s, %s)",
+                    ("alpha", 1),
+                )
+                cur.execute(
+                    "INSERT INTO pyodide_pg_test (name, value) VALUES (%s, %s)",
+                    ("beta", 2),
+                )
+                cur.execute(
+                    "UPDATE pyodide_pg_test SET value = value + 10 WHERE name = %s",
+                    ("alpha",),
+                )
+                cur.execute("SELECT name, value FROM pyodide_pg_test ORDER BY id")
+                result = cur.fetchall()
+
+            assert result == (["alpha", 11], ["beta", 2])
+
+        # 2) Transactions + savepoints
+        with connect() as conn:
+            conn.autocommit = False
+            with conn.cursor() as cur:
+                cur.execute("DROP TABLE IF EXISTS tx_test")
+                cur.execute(
+                    "CREATE TABLE tx_test (id SERIAL PRIMARY KEY, name TEXT NOT NULL)"
+                )
+                conn.commit()
+
+                cur.execute("INSERT INTO tx_test (name) VALUES (%s)", ("rolled_back",))
+                conn.rollback()
+
+                cur.execute("SELECT COUNT(*) FROM tx_test")
+                after_rollback = cur.fetchone()[0]
+
+                cur.execute("INSERT INTO tx_test (name) VALUES (%s)", ("kept",))
+                cur.execute("SAVEPOINT sp1")
+                cur.execute("INSERT INTO tx_test (name) VALUES (%s)", ("dropped",))
+                cur.execute("ROLLBACK TO SAVEPOINT sp1")
+                conn.commit()
+
+                cur.execute("SELECT name FROM tx_test ORDER BY id")
+                names = [row[0] for row in cur.fetchall()]
+
+            assert after_rollback == 0
+            assert names == ["kept"]
+
+        # 3) executemany + column metadata
+        with connect() as conn:
+            conn.autocommit = True
+            with conn.cursor() as cur:
+                cur.execute("DROP TABLE IF EXISTS bulk_test")
+                cur.execute(
+                    """
+                    CREATE TABLE bulk_test (
+                        id SERIAL PRIMARY KEY,
+                        k TEXT NOT NULL UNIQUE,
+                        v INT NOT NULL
+                    )
+                    """
+                )
+                rows = [("a", 1), ("b", 2), ("c", 3)]
+                cur.executemany("INSERT INTO bulk_test (k, v) VALUES (%s, %s)", rows)
+                cur.execute("SELECT k, v FROM bulk_test ORDER BY k")
+                result = cur.fetchall()
+
+            assert result == (["a", 1], ["b", 2], ["c", 3])
+
+    run(selenium_nodesock, host, port, user, password, db)
+
+
+# SQLAlchemy ORM test — reuses the same PostgreSQL fixture as above.
+#   pytest src/tests/test_database_driver.py::test_sqlalchemy_pg8000 -m db
+@pytest.mark.skip_refcount_check
+@pytest.mark.db
+@only_node
+def test_sqlalchemy_pg8000(selenium_nodesock, pg_test_db):
+    cfg = pg_test_db
+
+    host = cfg["host"]
+    port = cfg["port"]
+    user = cfg["user"]
+    password = cfg["password"]
+    db = cfg["db"]
+
+    @run_in_pyodide(packages=["micropip"])
+    async def run(selenium, host, port, user, password, db):
+        import micropip
+
+        await micropip.install(["sqlalchemy", "pg8000"])
+
+        from sqlalchemy import ForeignKey, String, create_engine, func, select
+        from sqlalchemy.orm import (
+            DeclarativeBase,
+            Mapped,
+            Session,
+            mapped_column,
+            relationship,
+        )
+
+        url = f"postgresql+pg8000://{user}:{password}@{host}:{port}/{db}"
+        engine = create_engine(url)
+
+        class Base(DeclarativeBase):
+            pass
+
+        class User(Base):
+            __tablename__ = "sa_users"
+            id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+            name: Mapped[str] = mapped_column(String(100))
+            addresses: Mapped[list["Address"]] = relationship(
+                back_populates="user", cascade="all, delete-orphan"
+            )
+
+        class Address(Base):
+            __tablename__ = "sa_addresses"
+            id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+            email: Mapped[str] = mapped_column(String(200))
+            user_id: Mapped[int] = mapped_column(ForeignKey("sa_users.id"))
+            user: Mapped["User"] = relationship(back_populates="addresses")
+
+        Base.metadata.drop_all(engine)
+        Base.metadata.create_all(engine)
+
+        # 1) Insert with relationships
+        with Session(engine) as s:
+            s.add_all(
+                [
+                    User(
+                        name="alice",
+                        addresses=[
+                            Address(email="alice@example.com"),
+                            Address(email="alice@work.com"),
+                        ],
+                    ),
+                    User(
+                        name="bob",
+                        addresses=[
+                            Address(email="bob@example.com"),
+                        ],
+                    ),
+                ]
+            )
+            s.commit()
+
+            users = s.scalars(select(User).order_by(User.name)).all()
+            assert [(u.name, len(u.addresses)) for u in users] == [
+                ("alice", 2),
+                ("bob", 1),
+            ]
+
+        # 2) Update
+        with Session(engine) as s:
+            alice = s.scalars(select(User).where(User.name == "alice")).one()
+            alice.name = "alice_updated"
+            s.commit()
+
+            updated = s.scalars(select(User).where(User.name == "alice_updated")).one()
+            assert updated.name == "alice_updated"
+
+        # 3) Delete with cascade
+        with Session(engine) as s:
+            bob = s.scalars(select(User).where(User.name == "bob")).one()
+            s.delete(bob)
+            s.commit()
+
+            user_count = s.scalar(select(func.count()).select_from(User))
+            addr_count = s.scalar(select(func.count()).select_from(Address))
+            assert user_count == 1
+            assert addr_count == 2
+
+        # 4) Rollback
+        with Session(engine) as s:
+            s.add(User(name="should_not_exist"))
+            s.flush()
+            s.rollback()
+
+            count = s.scalar(select(func.count()).select_from(User))
+            assert count == 1
+
+        # 5) Join query
+        with Session(engine) as s:
+            rows = s.execute(
+                select(User.name, Address.email)
+                .join(Address)
+                .order_by(User.name, Address.email)
+            ).all()
+            assert [(name, email) for name, email in rows] == [
+                ("alice_updated", "alice@example.com"),
+                ("alice_updated", "alice@work.com"),
+            ]
+
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+    run(selenium_nodesock, host, port, user, password, db)
+
+
+@pytest.fixture(scope="session")
+def redis_config():
+    host = os.environ.get("REDIS_HOST", "127.0.0.1")
+    port = int(os.environ.get("REDIS_PORT", "6379"))
+    password = os.environ.get("REDIS_PASSWORD", "")
+    db = int(os.environ.get("REDIS_DB", "15"))
+
+    return {
+        "host": host,
+        "port": port,
+        "password": password or None,
+        "db": db,
+    }
+
+
+@pytest.fixture()
+def redis_test_db(redis_config):
+    import redis
+
+    def cleanup_db():
+        r = redis.Redis(**redis_config)
+        r.flushdb()
+        r.close()
+
+    cleanup_db()
+
+    try:
+        yield redis_config
+    finally:
+        cleanup_db()
+
+
+# When running this test locally, start a Redis server and install dependencies:
+#   docker run -d --name redis-server -p 6379:6379 redis:7
+#   pip install redis
+#   pytest src/tests/test_database_driver.py::test_redis_py_features -m db
+@pytest.mark.skip_refcount_check
+@pytest.mark.db
+@only_node
+def test_redis_py_features(selenium_nodesock, redis_test_db):
+    cfg = redis_test_db
+
+    host = cfg["host"]
+    port = cfg["port"]
+    password = cfg["password"] or ""
+    db = cfg["db"]
+
+    @run_in_pyodide(packages=["micropip"])
+    async def run(selenium, host, port, password, db):
+        import contextlib
+
+        import micropip
+
+        await micropip.install("redis")
+
+        import redis
+
+        def connect(**kwargs):
+            conn = redis.Redis(
+                host=host,
+                port=port,
+                password=password if password else None,
+                db=db,
+                decode_responses=True,
+                **kwargs,
+            )
+
+            return contextlib.closing(conn)
+
+        # 1) Connectivity + string operations
+        with connect() as r:
+            assert r.ping() is True
+            r.flushdb()
+            assert r.dbsize() == 0
+
+            # SET / GET / DELETE
+            assert r.set("key1", "hello") is True
+            assert r.get("key1") == "hello"
+            assert r.get("nonexistent") is None
+            assert r.delete("key1") == 1
+            assert r.get("key1") is None
+
+            # APPEND
+            r.set("appendkey", "hello")
+            new_len = r.append("appendkey", " world")
+            assert new_len == 11
+            assert r.get("appendkey") == "hello world"
+
+            # INCR / DECR
+            r.set("counter", "10")
+            assert r.incr("counter") == 11
+            assert r.incrby("counter", 5) == 16
+            assert r.decr("counter") == 15
+            assert r.decrby("counter", 10) == 5
+
+            # MSET / MGET
+            assert r.mset({"a": "1", "b": "2", "c": "3"}) is True
+            assert r.mget(["a", "b", "c"]) == ["1", "2", "3"]
+            assert r.delete("a", "b", "c") == 3
+        # 2) List operations
+        with connect() as r:
+            r.delete("mylist")
+            assert r.rpush("mylist", "a", "b", "c") == 3
+            assert r.lpush("mylist", "z") == 4
+            assert r.llen("mylist") == 4
+            assert r.lrange("mylist", 0, -1) == ["z", "a", "b", "c"]
+            assert r.lpop("mylist") == "z"
+            assert r.rpop("mylist") == "c"
+            assert r.lrange("mylist", 0, -1) == ["a", "b"]
+
+        # 3) Hash operations
+        with connect() as r:
+            r.delete("myhash")
+            assert r.hset("myhash", mapping={"f1": "v1", "f2": "v2", "f3": "v3"}) == 3
+            assert r.hget("myhash", "f1") == "v1"
+            assert r.hgetall("myhash") == {"f1": "v1", "f2": "v2", "f3": "v3"}
+            assert r.hdel("myhash", "f1") == 1
+            assert r.hget("myhash", "f1") is None
+            assert r.hgetall("myhash") == {"f2": "v2", "f3": "v3"}
+
+        # 4) Set operations
+        with connect() as r:
+            r.delete("myset")
+            assert r.sadd("myset", "a", "b", "c") == 3
+            assert r.scard("myset") == 3
+            assert r.sismember("myset", "a")
+            assert not r.sismember("myset", "z")
+            assert r.smembers("myset") == {"a", "b", "c"}
+            assert r.srem("myset", "c") == 1
+            assert r.scard("myset") == 2
+            assert r.smembers("myset") == {"a", "b"}
+
+        # 5) Sorted set operations
+        with connect() as r:
+            r.delete("myzset")
+            assert r.zadd("myzset", {"alice": 1.0, "bob": 2.0, "charlie": 3.0}) == 3
+            assert r.zcard("myzset") == 3
+            assert r.zscore("myzset", "bob") == 2.0
+            assert r.zrank("myzset", "alice") == 0
+            assert r.zrange("myzset", 0, -1) == ["alice", "bob", "charlie"]
+            scored = r.zrange("myzset", 0, -1, withscores=True)
+            assert scored == [("alice", 1.0), ("bob", 2.0), ("charlie", 3.0)]
+            assert r.zrangebyscore("myzset", 1, 2) == ["alice", "bob"]
+
+        # 6) Key operations (EXISTS, EXPIRE, TTL, TYPE)
+        with connect() as r:
+            r.set("typetest_str", "hello")
+            r.rpush("typetest_list", "a")
+            r.hset("typetest_hash", "k", "v")
+            r.sadd("typetest_set", "a")
+            r.zadd("typetest_zset", {"a": 1.0})
+
+            assert r.exists("typetest_str") == 1
+            assert r.exists("nonexistent") == 0
+            assert r.type("typetest_str") == "string"
+            assert r.type("typetest_list") == "list"
+            assert r.type("typetest_hash") == "hash"
+            assert r.type("typetest_set") == "set"
+            assert r.type("typetest_zset") == "zset"
+
+            assert r.expire("typetest_str", 10) is True
+            ttl_val = r.ttl("typetest_str")
+            assert 0 < ttl_val <= 10
+
+            # SET with EX (expiry)
+            r.set("expiring", "value", ex=60)
+            assert r.get("expiring") == "value"
+            exp_ttl = r.ttl("expiring")
+            assert 0 < exp_ttl <= 60
+
+            # SET with NX (only if not exists)
+            r.set("nxkey", "first")
+            assert r.set("nxkey", "second", nx=True) is None
+            assert r.get("nxkey") == "first"
+
+        # 7) Pipeline (non-transactional batching)
+        with connect() as r:
+            r.delete("p1", "p2")
+            pipe = r.pipeline(transaction=False)
+            pipe.set("p1", "v1")
+            pipe.set("p2", "v2")
+            pipe.get("p1")
+            pipe.get("p2")
+            pipe_results = pipe.execute()
+            assert pipe_results == [True, True, "v1", "v2"]
+
+        # 8) Transaction (MULTI/EXEC)
+        with connect() as r:
+            r.delete("tx1", "tx2")
+            pipe = r.pipeline()  # transaction=True by default
+            pipe.set("tx1", "a")
+            pipe.set("tx2", "b")
+            pipe.get("tx1")
+            tx_results = pipe.execute()
+            assert tx_results == [True, True, "a"]
+            assert r.get("tx1") == "a"
+            assert r.get("tx2") == "b"
+
+    run(selenium_nodesock, host, port, password, db)

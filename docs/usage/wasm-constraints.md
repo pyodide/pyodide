@@ -8,19 +8,7 @@ tests skipped in
 [`src/tests/python_tests.yaml`](https://github.com/pyodide/pyodide/blob/main/src/tests/python_tests.yaml)
 or via [patches](https://github.com/pyodide/pyodide/tree/main/cpython/patches).
 
-### Optional modules
-
-The following stdlib modules are unvendored by default,
-in order to reduce initial download size of Python distribution.
-You can load all unvendored stdlib modules
-when initializing Pyodide with, `loadPyodide({ fullStdLib : true })`.
-However this has a significant impact on the download size.
-Instead, it is better to load individual modules as needed using
-{js:func}`pyodide.loadPackage` or {py:func}`micropip.install`.
-
-- test: it is an exception to the above, since it is not loaded even if `fullStdLib` is set to true.
-
-#### Modules with limited functionality
+### Modules with limited functionality
 
 - decimal: The decimal module has C (\_decimal) and Python (\_pydecimal) implementations
   with the same functionality. The Python implementation is not available.

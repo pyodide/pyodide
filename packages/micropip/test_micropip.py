@@ -31,17 +31,17 @@ def wheel_base(monkeypatch):
 
 
 @pytest.fixture
-def selenium_standalone_micropip(selenium_standalone):
+def selenium_standalone_micropip(selenium_standalone_refresh):
     """Import micropip before entering test so that global initialization of
     micropip doesn't count towards hiwire refcount.
     """
-    selenium_standalone.run_js(
+    selenium_standalone_refresh.run_js(
         """
         await pyodide.loadPackage("micropip");
         pyodide.runPython("import micropip");
         """
     )
-    yield selenium_standalone
+    yield selenium_standalone_refresh
 
 
 def test_install_simple(selenium_standalone_micropip):

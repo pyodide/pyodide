@@ -85,7 +85,7 @@ class FetchResponse:
         The abort signal that was used for the fetch request.
     """
 
-    js_request: "Request"
+    js_request: "Request" | None
     js_response: JsFetchResponse
     _url: str
     abort_controller: "AbortController | None"
@@ -99,9 +99,18 @@ class FetchResponse:
         abort_signal: "AbortSignal | None" = None,
     ):
         if isinstance(request, str):
-            request = Request.new(request)
-        self.js_request = request
-        self._url = self.js_request.url
+            # When url is empty, Node.js will throw.
+            # This would normally not happen, but we handle it gracefully.
+            if request == "":
+                self.js_request = None
+                self._url = request
+            else:
+                js_request = Request.new(request)
+                self.js_request = js_request
+                self._url = self.js_request.url
+        else:
+            self.js_request = request
+            self._url = self.js_request.url
         self.js_response = js_response
         self.abort_controller = abort_controller
         self.abort_signal = abort_signal
@@ -190,7 +199,7 @@ class FetchResponse:
         if self.js_response.bodyUsed:
             raise BodyUsedError
         return FetchResponse(
-            self.js_request,
+            self.js_request or self._url,
             self.js_response.clone(),
             self.abort_controller,
             self.abort_signal,

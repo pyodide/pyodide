@@ -9,7 +9,9 @@ from pytest import raises
 
 def _mypy_check(source: str) -> tuple[str, str, int]:
     path = str(Path(__file__).parent.parent.parent / "pyproject.toml")
-    stdout, stderr, exit_status = run(["-c", source, "--config-file", path])
+    stdout, stderr, exit_status = run(
+        ["-c", source, "--config-file", path, "--no-warn-unused-ignores"]
+    )
     return stdout, stderr, exit_status
 
 

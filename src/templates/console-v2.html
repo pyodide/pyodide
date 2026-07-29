@@ -233,6 +233,112 @@ of the stable console.
           refreshLine();
         }
 
+        function insertAtCursor(text) {
+          const before = buffer.slice(0, cursorIndex);
+          const after = buffer.slice(cursorIndex);
+          setBuffer(before + text + after, cursorIndex + text.length);
+        }
+
+        function clearBuffer() {
+          buffer = "";
+          cursorIndex = 0;
+        }
+
+        function longestCommonPrefix(strings) {
+          if (strings.length === 0) return "";
+          return strings.reduce((a, b) => {
+            let i = 0;
+            while (i < a.length && i < b.length && a[i] === b[i]) i++;
+            return a.slice(0, i);
+          });
+        }
+
+        async function handleTabCompletion() {
+          const sourceToComplete = buffer.slice(0, cursorIndex);
+          if (!sourceToComplete.trim()) {
+            return;
+          }
+          if (/[([{]\s*$/.test(sourceToComplete)) {
+            return;
+          }
+
+          const completionResult = pyconsole.complete(sourceToComplete);
+          const completions = completionResult[0].toJs();
+          const start = completionResult[1];
+          completionResult.destroy();
+
+          const currentWord = sourceToComplete.slice(start);
+          if (!currentWord.trim() || /^\d+$/.test(currentWord.trim())) {
+            return;
+          }
+
+          if (completions.length === 1) {
+            const newBuf =
+              buffer.slice(0, start) +
+              completions[0] +
+              buffer.slice(cursorIndex);
+            setBuffer(newBuf, start + completions[0].length);
+          } else if (completions.length > 1) {
+            const prefix = longestCommonPrefix(completions);
+            if (prefix.length > currentWord.length) {
+              const newBuf =
+                buffer.slice(0, start) +
+                prefix +
+                buffer.slice(cursorIndex);
+              setBuffer(newBuf, start + prefix.length);
+            } else {
+              term.write("\r\n");
+              const displayCompletions = completions.slice(0, 200);
+              term.writeln(displayCompletions.join("  "));
+              if (completions.length > 200) {
+                term.writeln(`... and ${completions.length - 200} more`);
+              }
+              refreshLine();
+            }
+          }
+        }
+
+        async function handlePaste(data) {
+          const normalized = data.replace(/\r\n?/g, "\n");
+          if (normalized.includes("\n")) {
+            const hasTrailingNewline = normalized.endsWith("\n");
+            const lines = normalized.split("\n");
+            if (hasTrailingNewline) {
+              lines.pop();
+            }
+
+            const cleanedLines = lines.map((line) =>
+              line.replace(/^\s*(>>>|\.\.\.)\s?/, "")
+            );
+
+            const executableLines = hasTrailingNewline
+              ? cleanedLines
+              : cleanedLines.slice(0, -1);
+
+            for (const line of executableLines) {
+              insertAtCursor(line);
+              term.write("\r\n");
+              await execLine(buffer);
+              clearBuffer();
+            }
+
+            if (!hasTrailingNewline) {
+              const trailingFragment =
+                cleanedLines.length > 0
+                  ? cleanedLines[cleanedLines.length - 1]
+                  : "";
+              if (trailingFragment) {
+                insertAtCursor(trailingFragment);
+              }
+            } else {
+              term.write(prompt);
+            }
+          } else {
+            // Single line paste
+            insertAtCursor(data);
+          }
+        }
+
         async function execLine(line) {
           // Normalize non-breaking spaces to regular spaces
           line = line.replace(/\u00a0/g, " ");
@@ -294,14 +400,12 @@ of the stable console.
             case "\r": // Enter
               term.write("\r\n");
               await execLine(buffer);
-              buffer = "";
-              cursorIndex = 0;
+              clearBuffer();
               term.write(prompt);
               break;
             case "\u0003": // Ctrl-C
               pyconsole.buffer.clear();
-              buffer = "";
-              cursorIndex = 0;
+              clearBuffer();
               term.write("^C\r\nKeyboardInterrupt\r\n" + ps1);
               prompt = ps1;
               historyIndex = null;
@@ -309,11 +413,7 @@ of the stable console.
             case "\u0016": // Ctrl-V
               // paste from clipboard
               const clipboard = await navigator.clipboard.readText();
-              const newBuf =
-                buffer.slice(0, cursorIndex) +
-                clipboard +
-                buffer.slice(cursorIndex);
-              setBuffer(newBuf, newBuf.length);
+              await handlePaste(clipboard);
               break;
             case "\u007F": // Backspace
               if (cursorIndex > 0) {
@@ -357,16 +457,17 @@ of the stable console.
                 refreshLine();
               }
               break;
+            case "\x1B[Z": // Shift+Tab - ignore to prevent clearing input
+              break;
+            case "\t":
+              await handleTabCompletion();
+              break;
             default:
               if (data) {
                 // Normalize non-breaking spaces to regular spaces
                 data = data.replace(/\u00a0/g, " ");
-                // Insert arbitrary string at cursor position
-                const before = buffer.slice(0, cursorIndex);
-                const after = buffer.slice(cursorIndex);
-                const newBuf = before + data + after;
-                const newCursor = cursorIndex + data.length;
-                setBuffer(newBuf, newCursor);
+                // Handle multiline paste
+                await handlePaste(data);
               }
           }
         });

@@ -100,29 +100,29 @@ PYODIDE_PACKAGES="numpy,matplotlib" make benchmark
 
 ## Linting
 
-We lint with `pre-commit`.
+We lint with `prek`.
 
-Python is linted with `ruff`, `black` and `mypy`.
-JavaScript, markdown, yaml, and html are linted with `prettier`.
+Python is linted with `ruff` (for linting and formatting) and `mypy`.
+JavaScript and TypeScript are linted with `biome`.
 C is linted with `clang-format`.
 
 To lint the code, run:
 
 ```bash
-pre-commit run -a
+prek -a
 ```
 
 You can have the linter automatically run whenever you commit by running
 
 ```bash
-pip install pre-commit
-pre-commit install
+pip install prek
+prek install
 ```
 
 and this can later be disabled with
 
 ```bash
-pre-commit uninstall
+prek uninstall
 ```
 
 If you don't lint your code, certain lint errors will be fixed automatically by

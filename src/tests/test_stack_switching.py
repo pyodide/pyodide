@@ -3,8 +3,43 @@ from pytest_pyodide import run_in_pyodide
 
 from conftest import requires_jspi
 
+STACK_CHECK_JS = """
+return pyodide._module.stackSave();
+"""
+
+STACK_CHECK_AFTER_JS = """
+let lastStack = Infinity;
+let curStack = pyodide._module.stackSave();
+pyodide.runPython("def nothing(): pass");
+// Reset stack address
+await pyodide.globals.nothing.callPromising();
+return pyodide._module.stackSave();
+"""
+
+
+@pytest.fixture(autouse=True)
+def assert_no_stack_leak(request):
+    selenium = (
+        request.getfixturevalue("selenium")
+        if "selenium" in request.fixturenames
+        else None
+    )
+    if selenium is None:
+        yield
+        return
+    if selenium.browser in ("firefox", "safari"):
+        yield
+        return
+    before = selenium.run_js(STACK_CHECK_JS)
+    yield
+    after = selenium.run_js(STACK_CHECK_AFTER_JS)
+    assert before == after, (
+        f"stack pointer leak: before={before} after={after} diff={before - after} bytes"
+    )
+
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 def test_syncify_awaitable_types_accept(selenium):
     from asyncio import create_task, gather, sleep
@@ -28,6 +63,7 @@ def test_syncify_awaitable_types_accept(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 def test_syncify_awaitable_type_errors(selenium):
     import pytest
@@ -79,6 +115,7 @@ def test_syncify_not_supported(selenium_standalone_noload):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 def test_syncify1(selenium):
     from pyodide.code import run_js
@@ -96,6 +133,7 @@ def test_syncify1(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide(packages=["pytest"])
 def test_syncify2(selenium):
     import importlib.metadata
@@ -114,6 +152,7 @@ def test_syncify2(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide(packages=["pytest"])
 def test_syncify_error(selenium):
     import pytest
@@ -134,6 +173,7 @@ def test_syncify_error(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 def test_syncify_null(selenium):
     from pyodide.code import run_js
@@ -151,6 +191,7 @@ def test_syncify_null(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_syncify_no_suspender(selenium):
     selenium.run_js(
         """
@@ -279,6 +320,7 @@ def test_cpp_exceptions_and_syncify(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_two_way_transfer(selenium):
     res = selenium.run_js(
         """
@@ -315,6 +357,7 @@ def test_two_way_transfer(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_sync_async_mix(selenium):
     res = selenium.run_js(
         """
@@ -361,6 +404,7 @@ def test_sync_async_mix(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_nested_syncify(selenium):
     res = selenium.run_js(
         """
@@ -421,6 +465,7 @@ def test_nested_syncify(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 async def test_promise_methods(selenium):
     from asyncio import sleep
@@ -455,6 +500,7 @@ async def test_promise_methods(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_throw_from_switcher(selenium):
     """
     This used to fail because because a()'s error status got stolen by b(). This
@@ -502,6 +548,7 @@ def test_throw_from_switcher(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_switch_from_except_block(selenium):
     """Test for issue #4566"""
     result = selenium.run_js(
@@ -530,7 +577,7 @@ def test_switch_from_except_block(selenium):
         const g = pyodide.globals.get("g");
         const g1 = g.callPromising("a");
         const g2 = g.callPromising("b");
-        pe('tt')
+        await pe.callPromising('tt');
         await g1;
         await g2;
         pyodide.globals.delete("result");
@@ -590,6 +637,7 @@ def test(n):
 
 
 @pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.parametrize(
     "script", [LEAK_SCRIPT1, LEAK_SCRIPT2, LEAK_SCRIPT3, LEAK_SCRIPT4]
 )
@@ -624,6 +672,7 @@ def test_memory_leak(selenium, script):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 def test_run_until_complete(selenium):
     from asyncio import create_task, gather, get_event_loop, sleep
@@ -650,6 +699,7 @@ def test_run_until_complete(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_can_run_sync(selenium):
     results = selenium.run_js(
         """
@@ -720,6 +770,7 @@ def test_can_run_sync(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_async_promising_sync_error(selenium):
     import pytest
 
@@ -746,6 +797,7 @@ def test_async_promising_sync_error(selenium):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_async_promising_async_error(selenium):
     import pytest
 
@@ -769,3 +821,38 @@ def test_async_promising_async_error(selenium):
     # In bad cases, the previous exception was a fatal error but we didn't
     # notice. Check that no fatal error occurred by running Python.
     selenium.run("")
+
+
+@pytest.mark.skip_refcount_check
+@requires_jspi
+@pytest.mark.requires_dynamic_linking
+def test_return_promising_no_crash(selenium):
+    """This used to fatally fail.
+
+    The fix was to incref ptrobj before await Module.promisingApply(...), so
+    presumably the crash involved the pointer to g getting freed out from
+    underneath? I'm honestly not sure how it worked.
+    """
+    selenium.run_js(
+        """
+        globalThis.f = function f() {
+            return task.callPromising();
+        };
+        pyodide.runPython(`
+            from asyncio import sleep
+            from pyodide.ffi import run_sync
+
+            def task():
+                run_sync(sleep(1))
+
+            def g():
+                from js import f
+                return f()
+        `);
+        const task = pyodide.globals.get("task");
+        const g = pyodide.globals.get("g");
+        await Promise.all([g(), g()]);
+        g.destroy();
+        task.destroy();
+        """
+    )

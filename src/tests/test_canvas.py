@@ -2,8 +2,8 @@ import pytest
 
 
 @pytest.mark.xfail_browsers(node="No document object")
-def test_canvas2D(selenium_standalone):
-    selenium_standalone.run_js(
+def test_canvas2D(selenium_standalone_refresh):
+    selenium_standalone_refresh.run_js(
         """
         const canvas = document.createElement('canvas');
         canvas.id = "canvas";
@@ -20,8 +20,8 @@ def test_canvas2D(selenium_standalone):
 
 
 @pytest.mark.xfail_browsers(node="No document object")
-def test_canvas3D(selenium_standalone):
-    selenium_standalone.run_js(
+def test_canvas3D(selenium_standalone_refresh):
+    selenium_standalone_refresh.run_js(
         """
         const canvas = document.createElement('canvas');
         canvas.id = "canvas";

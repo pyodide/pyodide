@@ -37,7 +37,7 @@ RUN if [ $CHROME_VERSION = "latest" ]; then SE_CHROME_VERSION="stable"; \
 FROM node:24.7-bookworm-slim AS node-image
 FROM golang:1.21-alpine AS golang-image
 
-FROM python:3.13.2-slim-bookworm
+FROM python:3.14.2-slim-bookworm
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -88,8 +88,7 @@ RUN npm install -g \
 # but this docker image is only for building packages, so I hope it is ok.
 ENV RUSTUP_HOME=/usr
 ENV CARGO_HOME=/usr
-RUN wget -q -O  -  https://sh.rustup.rs | \
-  sh -s -- -y --profile minimal --no-modify-path
+RUN ["/bin/bash", "-o", "pipefail", "-c", "wget -q -O - https://sh.rustup.rs | sh -s -- -y --profile minimal --no-modify-path"]
 
 COPY --from=selenium-manager-image /opt/firefox /opt/firefox
 COPY --from=selenium-manager-image /opt/geckodriver /opt/geckodriver

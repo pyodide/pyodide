@@ -52,11 +52,10 @@ jslib_init_buffers(void);
 errcode
 jslib_init(void)
 {
+  FAIL_RETURN_VALUE(-1);
   FAIL_IF_MINUS_ONE(jslib_init_buffers());
   FAIL_IF_MINUS_ONE(jslib_init_js());
   return 0;
-finally:
-  return -1;
 }
 
 // clang-format off
@@ -109,6 +108,10 @@ EM_JS(JsVal, JsvNum_fromInt, (int x), {
 EM_JS(JsVal, JsvNum_fromDouble, (double val), {
   return val;
 });
+
+EM_JS(int, JsvNum_toInt, (JsVal v), {
+  return v;
+})
 
 EM_JS_UNCHECKED(JsVal,
 JsvBigInt_fromDigits,

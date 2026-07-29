@@ -100,16 +100,12 @@ export interface PyodideConfig {
    */
   packageBaseUrl?: string;
   /**
-   * Load the full Python standard library. Setting this to false excludes
-   * unvendored modules from the standard library.
-   * Default: ``false``
+   * Deprecated: This option has no effect.
    */
   fullStdLib?: boolean;
   /**
    * The URL from which to load the standard library ``python_stdlib.zip``
-   * file. This URL includes the most of the Python standard library. Some
-   * stdlib modules were unvendored, and can be loaded separately
-   * with ``fullStdLib: true`` option or by their package name.
+   * file. This URL includes the most of the Python standard library.
    * Default: ```${indexURL}/python_stdlib.zip```
    */
   stdLibURL?: string;
@@ -291,7 +287,6 @@ async function initializeConfiguration(
   }
 
   const defaultConfig: PyodideConfig = {
-    fullStdLib: false,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? () => globalThis.prompt() : undefined,
     args: [],
@@ -473,7 +468,6 @@ async function finalizeSetup(
  * @example
  * async function main() {
  *   const pyodide = await loadPyodide({
- *     fullStdLib: true,
  *     stdout: (msg) => console.log(`Pyodide: ${msg}`),
  *   });
  *   console.log("Loaded Pyodide");

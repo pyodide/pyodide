@@ -20,9 +20,16 @@ import {
 } from "./snapshot";
 import { unpackArchiveMetadata } from "./constants";
 import { syncLocalToRemote, syncRemoteToLocal } from "./nativefs";
+import { initializeNodeSockFS } from "./fs/nodesockfs";
+import type { ConnectFunc } from "./fs/wintercg-sockets";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
+
+// The Pyodide and ABI versions are substituted at build time by esbuild from
+// PYODIDE_VERSION and PYODIDE_ABI_VERSION (see esbuild.config.shared.mjs).
+API.version = API_VERSION;
+API.abiVersion = ABI_VERSION;
 
 /**
  * Runs code after python vm has been initialized but prior to any bootstrapping.
@@ -72,6 +79,8 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
 // Used in webloop
 /** @private */
 API.scheduleCallback = scheduleCallback;
+
+API.initializeNodeSockFS = initializeNodeSockFS;
 
 // @ts-ignore
 if (typeof AbortSignal !== "undefined" && AbortSignal.any) {
@@ -599,6 +608,22 @@ export class PyodideAPI_ {
       { root: hostPath },
       emscriptenPath,
     );
+  }
+
+  /**
+   * Use Node.js native socket filesystem instead of Emscripten's SOCKFS.
+   * @experimental
+   */
+  static async useNodeSockFS(
+    /**
+     * @hidden
+     */
+    options?: { connect?: ConnectFunc },
+  ) {
+    if (!RUNTIME_ENV.IN_NODE) {
+      throw new Error("useNodeSockFS only works in Node");
+    }
+    await API.initializeNodeSockFS(options?.connect);
   }
 
   /**

@@ -27,12 +27,10 @@ async function main() {
   let pyodide = await loadPyodide();
 
   expectType<Promise<typeof pyodide>>(loadPyodide({ indexURL: "blah" }));
-  expectType<Promise<typeof pyodide>>(loadPyodide({ fullStdLib: true }));
 
   expectType<Promise<typeof pyodide>>(
     loadPyodide({
       indexURL: "blah",
-      fullStdLib: true,
       stdin: () => "a string",
       stdout: (x: string) => {},
       stderr: (err: string) => {},

@@ -52,6 +52,8 @@ DATA = {
         "Promise": "$global/",
         "PromiseLike": "$global/Promise#thenables",
         "FileSystemDirectoryHandle": "API/",
+        "ReadableStream": "API/",
+        "WritableStream": "API/",
     },
     "js:method": {
         "Iterator.next": "$reference/Iteration_protocols#next",

@@ -1,0 +1,47 @@
+From ffc29ff09d431255e64ef6c9bce0b4ef2e7c7f5b Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Tue, 7 Jul 2026 16:00:05 -0700
+Subject: [PATCH 5/5] Don't bundle the LLVM profile runtime into libcompiler_rt
+
+Emscripten #24160 (released in 4.0.11) started globbing the
+compiler-rt profile runtime (system/lib/compiler-rt/lib/profile/*)
+into libcompiler_rt. Because Pyodide links the main module with
+-sMAIN_MODULE=1, Emscripten wraps all system libraries in
+--whole-archive, so InstrProfilingRuntime.o is force-linked even
+though nothing references __llvm_profile_runtime. Its global
+constructor registers an atexit handler that writes an (empty)
+default.profraw to the cwd on every interpreter exit, and adds
+~1MB to pyodide.asm.wasm.
+
+Revert the libcompiler_rt part of #24160 so the profile runtime is
+only linked when the user actually opts into instrumentation.
+
+Refs: https://github.com/pyodide/pyodide/issues/6339
+---
+ tools/system_libs.py | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/tools/system_libs.py b/tools/system_libs.py
+index ebb0bbd34..bc75c6d59 100644
+--- a/tools/system_libs.py
++++ b/tools/system_libs.py
+@@ -950,7 +950,6 @@ class libcompiler_rt(MTLibrary, SjLjLibrary):
+ 
+   cflags = ['-fno-builtin', '-DNDEBUG', '-DCOMPILER_RT_HAS_ATOMICS=1']
+   src_dir = 'system/lib/compiler-rt/lib/builtins'
+-  profile_src_dir = 'system/lib/compiler-rt/lib/profile'
+   includes = ['system/lib/libc', 'system/lib/compiler-rt/include']
+   excludes = [
+     # gcc_personality_v0.c depends on libunwind, which don't include by default.
+@@ -983,8 +982,6 @@ class libcompiler_rt(MTLibrary, SjLjLibrary):
+     'truncxfhf2.c',
+   ]
+   src_files = glob_in_path(src_dir, '*.c', excludes=excludes)
+-  src_files += glob_in_path(profile_src_dir, '*.c')
+-  src_files += glob_in_path(profile_src_dir, '*.cpp')
+   src_files += files_in_path(
+       path='system/lib/compiler-rt',
+       filenames=[
+-- 
+2.54.0
+

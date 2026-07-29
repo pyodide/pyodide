@@ -1,7 +1,13 @@
 from collections.abc import Iterator
 
-from sphinx_js import ir
-from sphinx_js.ir import Class, TypeXRefInternal
+from sphinx_js.ir import (
+    Attribute,
+    Class,
+    Function,
+    TopLevel,
+    TypeXRefInternal,
+    converter,
+)
 from sphinx_js.typedoc import Analyzer as TsAnalyzer
 
 __all__ = ["ts_xref_formatter", "patch_sphinx_js"]
@@ -50,7 +56,7 @@ def has_tag(doclet, tag):
 # We hide the PyXXXMethods from the documentation and add their children to the
 # documented PyXXX class. We'll stick them here in ts_post_convert and read them
 # out later
-PYPROXY_METHODS = {}
+PYPROXY_METHODS: dict[str, list[Function | Attribute]] = {}
 
 
 # locate the ffi fields. We use this to redirect the documentation items to be
@@ -60,13 +66,12 @@ FFI_FIELDS: set[str] = set()
 
 
 def _get_toplevel_objects(
-    self: TsAnalyzer, ir_objects: list[ir.TopLevel]
-) -> Iterator[tuple[ir.TopLevel, str | None, str | None]]:
+    self: TsAnalyzer, ir_objects: list[TopLevel]
+) -> Iterator[tuple[TopLevel, str | None, str | None]]:
     """Monkeypatch: yield object, module, kind for each triple we want to
     document.
     """
     FFI_FIELDS.update(self._extra_data["ffiFields"])
-    from sphinx_js.ir import Attribute, Function, converter
 
     methodPairs = converter.structure(
         self._extra_data["pyproxyMethods"], list[tuple[str, list[Function | Attribute]]]
@@ -92,7 +97,7 @@ def _get_toplevel_objects(
         yield obj, mod, obj.kind
 
 
-def doclet_is_private(doclet: ir.TopLevel) -> bool:
+def doclet_is_private(doclet: TopLevel) -> bool:
     """Should we render this object?"""
     if getattr(doclet, "is_private", False):
         return True
@@ -119,7 +124,7 @@ def doclet_is_private(doclet: ir.TopLevel) -> bool:
     return False
 
 
-def get_obj_mod(doclet: ir.TopLevel) -> str:
+def get_obj_mod(doclet: TopLevel) -> str:
     """Categorize objects by what section they should go into"""
     key = doclet.path.segments
     key = [x for x in key if "/" not in x]
@@ -141,7 +146,7 @@ def get_obj_mod(doclet: ir.TopLevel) -> str:
     return "pyodide"
 
 
-def set_kind(obj: ir.TopLevel) -> None:
+def set_kind(obj: TopLevel) -> None:
     """If there is a @dockind tag, change obj.kind to reflect this"""
     k = obj.block_tags.get("dockind", [None])[0]
     if not k:
@@ -149,7 +154,7 @@ def set_kind(obj: ir.TopLevel) -> None:
     obj.kind = k[0].text.strip()
 
 
-def fix_pyproxy_class(cls: ir.Class) -> None:
+def fix_pyproxy_class(cls: Class) -> None:
     """
     1. Filter supers to remove PyXxxMethods
     2. For each PyXxxMethods in supers, add PyXxxMethods.children to

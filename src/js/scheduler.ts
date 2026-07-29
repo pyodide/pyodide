@@ -123,3 +123,13 @@ export function scheduleCallback(callback: () => void, timeout: number = 0) {
     setTimeout(callback, timeout);
   }
 }
+
+/**
+ * Sleep for the specified number of milliseconds.
+ * @param ms The number of milliseconds to sleep
+ * @returns A promise that resolves after the specified time
+ * @hidden
+ */
+export function sleep(ms: number) {
+  return new Promise<void>((resolve) => scheduleCallback(resolve, ms));
+}

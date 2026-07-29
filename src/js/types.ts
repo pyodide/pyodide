@@ -4,6 +4,7 @@ import { type PyodideAPI } from "./api";
 import { type PyodideConfigWithDefaults } from "./pyodide";
 import { type InFuncType } from "./streams";
 import { type RuntimeEnv } from "./environments";
+import type { initializeNodeSockFS } from "./fs/nodesockfs";
 import { SnapshotConfig } from "./snapshot";
 import { ResolvablePromise } from "./common/resolveable";
 import { PackageManager } from "./load-package";
@@ -53,6 +54,7 @@ declare global {
   // _PyList_New, _PyDict_New, _PyDict_SetItem, _PySet_New, _PySet_Add
   // _PyEval_SaveThread, _PyEval_RestoreThread,
   //   _PyErr_CheckSignals, _PyErr_SetString
+  export const _malloc: (sz: number) => number;
   export const _free: (a: number) => void;
   export const __PyTraceback_Add: (a: number, b: number, c: number) => void;
   export const _PyRun_SimpleString: (ptr: number) => number;
@@ -188,17 +190,25 @@ export type FSNode = {
   rdev: number;
   contents: Uint8Array;
   mode: number;
+  sock?: any;
 };
 
 /** @hidden */
+export type TtyOps<T> = {
+  ioctl_tiocgwinsz(tty: T): readonly [number, number];
+};
+
+type FSTty = {
+  ops: TtyOps<FSTty>;
+} & Record<string, unknown>;
+
+/** @hidden */
 export type FSStream = {
-  tty?: {
-    ops: object;
-  };
+  tty: FSTty | undefined;
   seekable?: boolean;
   stream_ops: FSStreamOps;
   node: FSNode;
-};
+} & FS.FSStream;
 
 /** @hidden */
 export type FSStreamOps = FSStreamOpsGen<FSStream>;
@@ -228,18 +238,25 @@ export type FSStreamOpsGen<T> = {
  * Methods that the Emscripten filesystem provides. Most of them are already defined
  * in `@types/emscripten`, but Pyodide uses quite a lot of private APIs that are not
  * defined there as well. Hence this interface.
- *
- * @hidden
  */
-interface PyodideFSType {
-  filesystems: any;
-  registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
+declare global {
+  namespace FS {
+    let filesystems: Record<string, any>;
+    function registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
+    function createNode(
+      parent: any,
+      name: string,
+      mode: number,
+      dev: number,
+    ): any;
+    function createStream(stream: any, fd?: number): FSStream;
+  }
 }
 
 /**
  * @hidden
  */
-export type FSType = typeof FS & PyodideFSType;
+export type FSType = typeof FS;
 
 /** @hidden */
 export type PreRunFunc = (Module: PyodideModule) => void;
@@ -278,7 +295,12 @@ export interface EmscriptenModule {
   stringToNewUTF8(x: string): number;
   stringToUTF8OnStack: (str: string) => number;
   HEAP8: Uint8Array;
+  HEAPU8: Uint8Array;
+  HEAP32: Int32Array;
   HEAPU32: Uint32Array;
+  HEAP16: Int16Array;
+  SOCKFS: any;
+  getSocketAddress: (addr: number, addrlen: number) => any;
   getExceptionMessage(e: number): [string, string];
   exitCode: number | undefined;
   ExitStatus: { new (exitCode: number): Error };
@@ -548,6 +570,14 @@ export interface API {
   pyVersionTuple: [number, number, number];
   LiteralMap: any;
   sitePackages: string;
+  initializeNodeSockFS: typeof initializeNodeSockFS;
+
+  _nodeSock: {
+    connect: (fd: number, host: string, port: number) => Promise<void>;
+    recv: (fd: number, nbytes: number) => Promise<Uint8Array | number>;
+    send: (fd: number, data: any) => Promise<number>;
+    startTls: (fd: number) => Promise<number>;
+  };
 }
 
 // Subset of the API and Module that the package manager needs

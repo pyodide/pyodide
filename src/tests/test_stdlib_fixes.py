@@ -67,7 +67,7 @@ def test_multiprocessing(selenium):
         return
 
     process = Process(target=func)
-    with pytest.raises(OSError, match="Function not implemented"):
+    with pytest.raises(ModuleNotFoundError, match="No module named '_multiprocessing'"):
         process.start()
 
 
@@ -89,6 +89,16 @@ def test_ctypes_util_find_library(selenium):
         assert find_library("foo") == os.path.join(tmpdir, "libfoo.so")
         assert find_library("bar") == os.path.join(tmpdir, "libbar.so")
         assert find_library("baz") is None
+
+
+@run_in_pyodide
+def test_zoneinfo_uses_c_extension(selenium):
+    import _zoneinfo
+    import importlib.util
+    from zoneinfo import ZoneInfo
+
+    assert _zoneinfo.ZoneInfo is ZoneInfo
+    assert importlib.util.find_spec("zoneinfo._zoneinfo") is None
 
 
 @run_in_pyodide
@@ -115,7 +125,7 @@ def test_zipimport_traceback(selenium):
         tb = traceback.extract_tb(exc_traceback)
 
         assert zipfile in tb[-1].filename.split("/")
-        assert tb[-1].filename == pathlib._local.__file__  # type:ignore[attr-defined]
+        assert tb[-1].filename == pathlib.__file__
 
     try:
         json.decoder.JSONDecoder().decode(1)  # type: ignore[arg-type]

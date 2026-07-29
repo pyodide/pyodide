@@ -154,6 +154,10 @@ function installStdlib(stdlibURL: string): PreRunFunc {
     Module.FS.mkdirTree("/lib");
     Module.API.sitePackages = `/lib/python${pymajor}.${pyminor}/site-packages`;
     Module.FS.mkdirTree(Module.API.sitePackages);
+    // Create empty platform stdlib directory so that CPython's getpath
+    // computation finds it. This prevents a warning about not finding it at
+    // startup.
+    Module.FS.mkdirTree(`/lib/python${pymajor}.${pyminor}/lib-dynload`);
     Module.addRunDependency("install-stdlib");
 
     try {
@@ -195,14 +199,10 @@ function getInstantiateWasmFunc(
   indexURL: string,
 ): EmscriptenSettings["instantiateWasm"] {
   // @ts-ignore
-  if (SOURCEMAP || typeof WasmOffsetConverter !== "undefined") {
-    // According to the docs:
-    //
-    // "Sanitizers or source map is currently not supported if overriding
-    // WebAssembly instantiation with Module.instantiateWasm."
-    // https://emscripten.org/docs/api_reference/module.html?highlight=instantiatewasm#Module.instantiateWasm
-    //
-    // typeof WasmOffsetConverter !== "undefined" checks for asan.
+  if (DISABLE_INSTANTIATE_WASM) {
+    // Some build configurations don't work with instantiate-wasm.
+    // This will be broken because of the lack of initialization for JsvError stuff.
+    // TODO: Fix this...
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");

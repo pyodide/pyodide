@@ -118,7 +118,7 @@ def test_lapack_larfg(selenium):
 
 @pytest.mark.driver_timeout(40)
 @run_in_pyodide(packages=["scipy"])
-def test_logm(selenium_standalone):
+def test_logm(selenium_standalone_refresh):
     import numpy as np
     from numpy import eye, random
     from scipy.linalg import logm

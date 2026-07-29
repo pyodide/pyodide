@@ -31,7 +31,7 @@ must match between the main executable and dynamic libraries or the dynamic
 libraries will fail to load.
 
 The `-sWASM_BIGINT` linker setting is applied by default since Emscripten 4.0.0.
-As a result, it is applied by default on `pyodide_2025_0` and above.
+As a result, it is applied by default on `pyemscripten_2025_0` and above.
 
 ## `-fexceptions` vs `-fwasm-exceptions`
 
@@ -107,4 +107,4 @@ to implement the JavaScript exception handling ABI using WebAssembly exceptions.
 
 Thankfully, nowadays
 [Rust does support WebAssembly exception handling](https://github.com/rust-lang/compiler-team/issues/801)
-and the `pyodide_2025_0` ABI and later will rely on it.
+and the `pyemscripten_2025_0` ABI and later will rely on it.

@@ -2,6 +2,7 @@ from io import StringIO
 
 # Keep open_url in __init__ for now, will be moved to pyxhr.py later
 from ..ffi import IN_PYODIDE
+from . import pyxhr
 from ._exceptions import (
     AbortError,
     BodyUsedError,
@@ -22,6 +23,7 @@ __all__ = [
     "HttpStatusError",
     "BodyUsedError",
     "AbortError",
+    "pyxhr",
 ]
 
 

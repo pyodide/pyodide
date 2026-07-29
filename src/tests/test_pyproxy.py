@@ -963,6 +963,35 @@ def test_pyproxy_gc_destroy(selenium):
     }
 
 
+@run_in_pyodide
+def test_topy_shared_ref_refcount(selenium):
+    # See: https://github.com/pyodide/pyodide/issues/5598
+    # Tests if toPy properly handles shared references
+    # without messing up with the refcount
+    from pyodide.code import run_js
+
+    def check(obj):
+        import sys
+
+        # All three elements should be the same object
+        assert obj[0] is obj[1] is obj[2]
+        # refcount should be at least 4:
+        #   1 for obj[0], 1 for obj[1], 1 for obj[2], 1 for the arg
+        rc = sys.getrefcount(obj[0])
+        assert rc >= 4, f"refcount too low: {rc}"
+
+    # Test with shared object literal
+    obj = run_js(
+        """
+        const shared = { x: 1 };
+        const obj = [shared, shared, shared];
+        const pyObj = pyodide.toPy(obj);
+        pyObj;
+        """
+    )
+    check(obj)
+
+
 def test_pyproxy_implicit_copy(selenium):
     result = selenium.run_js(
         """
@@ -1093,9 +1122,9 @@ def test_nogil(selenium):
 
 
 @pytest.mark.skip_pyproxy_check
-def test_fatal_error(selenium_standalone):
+def test_fatal_error(selenium_standalone_refresh):
     """Inject fatal errors in all the reasonable entrypoints"""
-    selenium_standalone.run_js(
+    selenium_standalone_refresh.run_js(
         """
         let fatal_error = false;
         let old_fatal_error = pyodide._api.fatal_error;
@@ -2544,10 +2573,16 @@ def test_automatic_coroutine_scheduling(selenium):
         pyodide.runPythonAsync("f(4)");
         d(g(5));
         h(6);
-        await sleep(0);
-        await sleep(0);
-        await sleep(0);
         const l = pyodide.globals.get("l");
+        // Wait for the automatically-scheduled coroutines to run. In Node the
+        // webloop schedules callbacks with setImmediate (check phase) while the
+        // test harness `sleep` uses setTimeout (timers phase), so the two can
+        // race under load. Poll a bounded number of event-loop turns until the
+        // expected results have been collected instead of assuming a fixed
+        // number of turns is enough.
+        for (let i = 0; i < 100 && l.length < 3; i++) {
+            await sleep(0);
+        }
         const res = l.toJs();
         for(let p of [f, g, l]) {
             p.destroy();

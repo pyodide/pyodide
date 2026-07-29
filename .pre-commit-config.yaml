@@ -1,9 +1,9 @@
 exclude: (^.*patches|.*\.cgi$|^packages/micropip/src/micropip/externals|^benchmark/benchmarks$|^src/py/ssl.py)
 default_language_version:
-  python: "3.13"
+  python: "3.14"
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: "v6.0.0"
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
@@ -18,27 +18,27 @@ repos:
       - id: requirements-txt-fixer
 
   - repo: https://github.com/biomejs/pre-commit
-    rev: "v2.3.10"
+    rev: 3ceccd6e1c33e8ad2c2f1162f2ac524e43d47f0d  # frozen: v2.5.2
     hooks:
       - id: biome-format
         additional_dependencies: ["@biomejs/biome@2.1.1"]
         types_or: [javascript, ts]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.14.10"
+    rev: c59bba8fb259db0fec2bbb77ad8ba51ea7341b56  # frozen: v0.15.20
     hooks:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: "v21.1.8"
+    rev: dd18dad857d6133e90bbe478f4f2f22ec0030269  # frozen: v22.1.5
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]
 
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: "v1.10.0"
+    rev: 3a6eb0fadf60b3cccfd80bad9dbb6fae7e47b316  # frozen: v1.10.0
     hooks:
       - id: python-use-type-annotations
         exclude: docs/sphinx_pyodide/tests/test_directives\.py
@@ -47,13 +47,13 @@ repos:
       - id: rst-inline-touching-normal
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: "v0.11.0.1"
+    rev: 745eface02aef23e168a8afb6b5737818efbea95  # frozen: v0.11.0.1
     hooks:
       - id: shellcheck
         exclude: ^src/templates/python$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: "v2.4.1"
+    rev: 2ccb47ff45ad361a21071a7eedda4c37e6ae8c5a  # frozen: v2.4.2
     hooks:
       - id: codespell
         args:
@@ -63,8 +63,14 @@ repos:
           ]
         exclude: ^(benchmark/benchmarks/pystone_benchmarks/pystone\.py|src/js/package-lock\.json|packages/matplotlib/extras/fontlist\.json)$
 
+  - repo: https://github.com/woodruffw/zizmor-pre-commit
+    rev: "e3eebf65325ccc992422292cb7a4baee967cf815"  # frozen: v1.26.1
+    hooks:
+      - id: zizmor
+        args: ["--pedantic", "--fix=safe"]
+
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.19.1"
+    rev: d2823d321df3af8f878f7ee3414dc94d037145b9  # frozen: v2.1.0
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src)
@@ -79,12 +85,13 @@ repos:
           - numpy
           - build
           - pytest
-          - pydantic>=2.0
+          - attrs
+          - cattrs
           - unearth
           - resolvelib
           - rich
           - auditwheel_emscripten
-          - pyodide-lock==0.1.0a5
+          - pyodide-lock~=0.2.0
           - micropip
       - id: mypy
         name: mypy-tests

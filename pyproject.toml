@@ -1,10 +1,9 @@
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 mypy_path = ["src/py"]
 show_error_codes = true
 warn_unreachable = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-plugins = ["pydantic.mypy"]
 
 # Strict checks
 warn_unused_configs = true
@@ -159,6 +158,7 @@ asyncio_mode = "strict"
 markers = [
     "requires_dynamic_linking",
     "long_running: marks tests as long running (deselect with '-m \"not long_running\"')",
+    "db: marks tests that require an external database server",
 ]
 
 [tool._pyodide]
