@@ -121,7 +121,7 @@ jobs:
         include:
           - os: ubuntu-latest
             pyodide_packages: "tag:core,tag:pyodide.test,numpy${{ needs.test-scipy-trigger.outputs.test-scipy == 'true' && ',scipy' || '' }}"
-          - os: macos-14
+          - os: macos-15
             pyodide_packages: "tag:core,tag:pyodide.test,numpy"
     runs-on: ${{ matrix.os }}
     needs: [test-scipy-trigger, get_python_version]
@@ -266,10 +266,13 @@ jobs:
   test-core:
     name: Test core (${{ matrix.browser }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
     permissions:
       contents: read
     env:
       DISPLAY: :99
+      SE_SAFARIDRIVER: /usr/bin/safaridriver
+      PYTEST_PYODIDE_SAFARIDRIVER_LOG_DIR: ${{ github.workspace }}/safari-artifacts/safaridriver-logs
 
     needs: [build-core, get_python_version]
     defaults:
@@ -278,7 +281,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14]
+        os: [macos-15]
         runner: [selenium]
         browser: [safari]
 
@@ -319,32 +322,36 @@ jobs:
           runner: ${{ matrix.runner }}
           browser: ${{ matrix.browser }}
 
-      - name: Safari pre-test cleanup
+      - name: Safari setup and pre-test cleanup
         if: matrix.browser == 'safari'
         run: |
-          # Kill any stale Safari/safaridriver processes
-          pkill -9 Safari 2>/dev/null || true
-          pkill -9 safaridriver 2>/dev/null || true
-          sleep 3
+          mkdir -p test-results safari-artifacts "$PYTEST_PYODIDE_SAFARIDRIVER_LOG_DIR"
+          tools/safari_cleanup.sh
 
-          # Verify safaridriver can start and respond
-          safaridriver --port 14444 &
-          DRIVER_PID=$!
-
-          for i in $(seq 1 20); do
-            if curl -sf http://localhost:14444/status > /dev/null 2>&1; then
-              echo "✓ SafariDriver responding"
-              kill $DRIVER_PID 2>/dev/null || true
-              exit 0
+          ENVIRONMENT_FILE="safari-artifacts/environment.txt"
+          set +e
+          {
+            echo "sw_vers:"
+            sw_vers
+            echo
+            echo "safaridriver_version:"
+            /usr/bin/safaridriver --version
+            echo
+            echo "Safari metadata:"
+            if [[ -f /Applications/Safari.app/Contents/Info.plist ]]; then
+              /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' /Applications/Safari.app/Contents/Info.plist \
+                | sed 's/^/CFBundleShortVersionString: /'
+              /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' /Applications/Safari.app/Contents/Info.plist \
+                | sed 's/^/CFBundleVersion: /'
+            else
+              echo "Safari app metadata unavailable"
             fi
-            sleep 1
-          done
-
-          echo "✗ SafariDriver failed to respond"
-          kill $DRIVER_PID 2>/dev/null || true
-          exit 1
+          } > "$ENVIRONMENT_FILE"
+          true
+          set -e
 
       - name: run core tests
+        timeout-minutes: 90
         env:
           BROWSER: ${{ matrix.browser }}
           RUNNER: ${{ matrix.runner }}
@@ -359,7 +366,13 @@ jobs:
             --durations 50 \
             --junitxml=test-results/core_test.xml
 
+      - name: Safari cleanup between core and package tests
+        if: always() && matrix.browser == 'safari'
+        run: |
+          tools/safari_cleanup.sh || true
+
       - name: run package tests
+        timeout-minutes: 30
         env:
           BROWSER: ${{ matrix.browser }}
           RUNNER: ${{ matrix.runner }}
@@ -374,11 +387,65 @@ jobs:
             --durations 50 \
             --junitxml=test-results/packages_test.xml
 
+      - name: Collect Safari diagnostics
+        if: always() && matrix.browser == 'safari'
+        run: |
+          set +e
+          mkdir -p safari-artifacts safari-artifacts/diagnostic-reports test-results
+
+          DIAGNOSTICS_FILE="safari-artifacts/post-test-state.txt"
+          {
+            echo "timestamp_utc: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+            echo
+            for process_name in Safari safaridriver com.apple.WebKit.WebContent com.apple.WebKit.Networking com.apple.WebKit.GPU; do
+              echo "process_name: ${process_name}"
+              if process_ids=$(pgrep -u "$(id -u)" -x "$process_name"); then
+                echo "$process_ids"
+                ps -p "$(printf '%s\n' "$process_ids" | paste -sd, -)" -o pid,ppid,stat,start,time,comm
+              else
+                echo "not running"
+              fi
+              echo
+            done
+          } > "$DIAGNOSTICS_FILE"
+
+          if [[ -d "$HOME/Library/Logs/com.apple.WebDriver" ]]; then
+            cp -R "$HOME/Library/Logs/com.apple.WebDriver" safari-artifacts/
+          fi
+
+          shopt -s nullglob
+          for report in \
+            "$HOME"/Library/Logs/DiagnosticReports/Safari*.crash \
+            "$HOME"/Library/Logs/DiagnosticReports/Safari*.ips \
+            "$HOME"/Library/Logs/DiagnosticReports/WebKit*.crash \
+            "$HOME"/Library/Logs/DiagnosticReports/WebKit*.ips \
+            "$HOME"/Library/Logs/DiagnosticReports/com.apple.WebKit*.crash \
+            "$HOME"/Library/Logs/DiagnosticReports/com.apple.WebKit*.ips; do
+            cp "$report" safari-artifacts/diagnostic-reports/
+          done
+          true
+
       - name: Test Summary
         uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # v2.6
         with:
           paths: "test-results/*.xml"
         if: always()
+
+      - name: Upload Safari diagnostics
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: safari-test-diagnostics-${{ matrix.os }}
+          path: |
+            test-results/
+            safari-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
+        if: always() && matrix.browser == 'safari'
+
+      - name: Safari final cleanup
+        if: always() && matrix.browser == 'safari'
+        run: |
+          tools/safari_cleanup.sh || true
 
   test-cmdline-runner:
     name: Test command-line runner (${{ matrix.os }})
