@@ -1,9 +1,7 @@
 import argparse
 import logging
 import shutil
-import subprocess
 import sys
-import textwrap
 import zipfile
 from pathlib import Path
 
@@ -158,24 +156,15 @@ def create(
     _copy_emcc_patches(pyodide_root, xbuildenv_root)
 
     (xbuildenv_root / "package.json").write_text("{}")
-    res = subprocess.run(
-        ["pip", "freeze", "--path", get_build_flag("HOSTSITEPACKAGES")],
-        capture_output=True,
-        encoding="utf8",
-        check=False,
-    )
-    if res.returncode != 0:
-        logging.error("Failed to run pip freeze:")
-        if res.stdout:
-            logging.error("  stdout:")
-            logging.error(textwrap.indent(res.stdout, "    "))
-        if res.stderr:
-            logging.error("  stderr:")
-            logging.error(textwrap.indent(res.stderr, "    "))
-        sys.exit(1)
 
-    (xbuildenv_path / "requirements.txt").write_text(res.stdout)
-    (xbuildenv_root / "unisolated.txt").write_text("\n".join(get_unisolated_packages()))
+    unisolated_packages = get_unisolated_packages()
+    (xbuildenv_path / "requirements.txt").write_text(
+        "".join(
+            f"{name}=={version}\n"
+            for name, version in sorted(unisolated_packages.items())
+        )
+    )
+    (xbuildenv_root / "unisolated.txt").write_text("\n".join(unisolated_packages))
 
 
 def parse_args():
