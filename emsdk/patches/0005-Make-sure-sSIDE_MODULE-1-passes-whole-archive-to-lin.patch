@@ -1,7 +1,7 @@
 From 34482a0ccf1294ede385e7d9df1b3a6078102a34 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 28 Jul 2026 12:37:26 +0200
-Subject: [PATCH 5/5] Make sure -sSIDE_MODULE=1 passes --whole-archive to
+Subject: [PATCH 5/6] Make sure -sSIDE_MODULE=1 passes --whole-archive to
  linker
 
 https://github.com/emscripten-core/emscripten/pull/27430

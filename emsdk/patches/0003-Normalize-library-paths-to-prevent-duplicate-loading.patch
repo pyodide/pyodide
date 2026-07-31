@@ -1,7 +1,7 @@
 From bfd5e19171893f53ef2f7d7f346f3b708f1d08eb Mon Sep 17 00:00:00 2001
 From: Pepijn de Vos <pepijndevos@gmail.com>
 Date: Fri, 6 Mar 2026 08:37:22 +0100
-Subject: [PATCH 3/5] Normalize library paths to prevent duplicate loading
+Subject: [PATCH 3/6] Normalize library paths to prevent duplicate loading
 
 When a shared library in a subdirectory references a dependency via
 $ORIGIN/.. rpath, findLibraryFS resolves it to a non-canonical path
