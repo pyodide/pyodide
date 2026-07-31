@@ -1,11 +1,13 @@
 import argparse
+import json
 import logging
 import shutil
-import subprocess
 import sys
-import textwrap
 import zipfile
 from pathlib import Path
+
+from packaging.utils import canonicalize_name
+from packaging.version import InvalidVersion, Version
 
 try:
     from pyodide_build.build_env import (
@@ -16,6 +18,74 @@ try:
 except ImportError:
     print("Requires pyodide-build package to be installed")
     sys.exit(1)
+
+
+def _versions_equal(left: str, right: str) -> bool:
+    try:
+        return Version(left) == Version(right)
+    except InvalidVersion:
+        return left == right
+
+
+def _check_unisolated_packages_match_dist(
+    pyodide_root: Path,
+    unisolated_packages: dict[str, str],
+    skip_missing_files: bool = False,
+) -> None:
+    """Check the recipes agree with the distribution we are shipping.
+
+    requirements.txt is generated from the recipes in packages/, but the wheels
+    when  ENABLE_PREBUILT_PACKAGES=1 the distribution is downloaded from the
+    pyodide-recipes release. If the pyodide-recipes packages are a different
+    version, the pins describe versions we do not ship..
+
+    dist/pyodide-lock.json records what is actually in the distribution, so
+    compare against it and refuse to build a cross-build environment if there is
+    a mismatch.
+    """
+    lockfile = pyodide_root / "dist" / "pyodide-lock.json"
+    if not lockfile.exists():
+        if skip_missing_files:
+            logging.warning(f"Cross-build file '{lockfile}' not found")
+            return
+
+        raise FileNotFoundError(f"Cross-build file '{lockfile}' not found")
+
+    shipped = {
+        canonicalize_name(name): package["version"]
+        for name, package in json.loads(lockfile.read_text())["packages"].items()
+    }
+
+    mismatched = []
+    missing = []
+    for name, version in sorted(unisolated_packages.items()):
+        shipped_version = shipped.get(canonicalize_name(name))
+        if shipped_version is None:
+            missing.append(name)
+        elif not _versions_equal(shipped_version, version):
+            mismatched.append((name, version, shipped_version))
+
+    if missing:
+        # A subset build (PYODIDE_PACKAGES) legitimately omits packages, so this
+        # is not fatal, but the pin is then unbacked by anything we ship.
+        logging.warning(
+            "Cross-build packages missing from dist/pyodide-lock.json: "
+            + ", ".join(missing)
+        )
+
+    if mismatched:
+        details = "\n".join(
+            f"  {name}: recipe {version}, but dist/pyodide-lock.json has {shipped_version}"
+            for name, version, shipped_version in mismatched
+        )
+        raise ValueError(
+            "Cross-build package versions in packages/ do not match the "
+            f"distribution in dist/:\n{details}\n"
+            "The cross-build environment would tell downstream builds to compile "
+            "against versions that are not the ones shipped. If the distribution "
+            "was downloaded with ENABLE_PREBUILT_PACKAGES=1, the prebuilt packages "
+            "were built from different recipes than the ones in this checkout."
+        )
 
 
 def _find_wheel(pyodide_root: Path, package_name: str) -> Path | None:
@@ -149,6 +219,11 @@ def create(
     xbuildenv_path = Path(path) / "xbuildenv"
     xbuildenv_root = xbuildenv_path / "pyodide-root"
 
+    unisolated_packages = get_unisolated_packages()
+    _check_unisolated_packages_match_dist(
+        pyodide_root, unisolated_packages, skip_missing_files
+    )
+
     shutil.rmtree(xbuildenv_path, ignore_errors=True)
     xbuildenv_path.mkdir(parents=True, exist_ok=True)
     xbuildenv_root.mkdir()
@@ -158,24 +233,14 @@ def create(
     _copy_emcc_patches(pyodide_root, xbuildenv_root)
 
     (xbuildenv_root / "package.json").write_text("{}")
-    res = subprocess.run(
-        ["pip", "freeze", "--path", get_build_flag("HOSTSITEPACKAGES")],
-        capture_output=True,
-        encoding="utf8",
-        check=False,
-    )
-    if res.returncode != 0:
-        logging.error("Failed to run pip freeze:")
-        if res.stdout:
-            logging.error("  stdout:")
-            logging.error(textwrap.indent(res.stdout, "    "))
-        if res.stderr:
-            logging.error("  stderr:")
-            logging.error(textwrap.indent(res.stderr, "    "))
-        sys.exit(1)
 
-    (xbuildenv_path / "requirements.txt").write_text(res.stdout)
-    (xbuildenv_root / "unisolated.txt").write_text("\n".join(get_unisolated_packages()))
+    (xbuildenv_path / "requirements.txt").write_text(
+        "".join(
+            f"{name}=={version}\n"
+            for name, version in sorted(unisolated_packages.items())
+        )
+    )
+    (xbuildenv_root / "unisolated.txt").write_text("\n".join(unisolated_packages))
 
 
 def parse_args():
