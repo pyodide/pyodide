@@ -1,4 +1,4 @@
-From 2e68d49bfd5f92fc4040065a4f235337025f7962 Mon Sep 17 00:00:00 2001
+From 34482a0ccf1294ede385e7d9df1b3a6078102a34 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 28 Jul 2026 12:37:26 +0200
 Subject: [PATCH 5/5] Make sure -sSIDE_MODULE=1 passes --whole-archive to
@@ -11,7 +11,7 @@ https://github.com/emscripten-core/emscripten/pull/27430
  2 files changed, 6 insertions(+), 1 deletion(-)
 
 diff --git a/test/test_other.py b/test/test_other.py
-index 09df84c0e..1780b6b56 100644
+index b25e7bca0..27358a9ac 100644
 --- a/test/test_other.py
 +++ b/test/test_other.py
 @@ -1538,6 +1538,11 @@ f.close()
@@ -27,7 +27,7 @@ index 09df84c0e..1780b6b56 100644
      # Regression test for http://llvm.org/PR48156
      # TODO: distill this test further and move to lld
 diff --git a/tools/building.py b/tools/building.py
-index a6945b939..3ce680a3c 100644
+index bf635e961..cdc0c8139 100644
 --- a/tools/building.py
 +++ b/tools/building.py
 @@ -306,7 +306,7 @@ def lld_flags(args, linker_inputs=None):
