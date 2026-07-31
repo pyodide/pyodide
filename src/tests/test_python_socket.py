@@ -1000,8 +1000,11 @@ def test_asyncio_open_connection_hostname(selenium_nodesock):
     @run_in_pyodide
     async def run(selenium, port):
         import asyncio
+        import socket
 
-        reader, writer = await asyncio.open_connection("localhost", port)
+        reader, writer = await asyncio.open_connection(
+            "localhost", port, family=socket.AF_INET
+        )
         data = await reader.read(1024)
         writer.close()
         return data.decode()
