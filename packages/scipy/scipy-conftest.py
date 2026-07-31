@@ -22,8 +22,16 @@ todo_runtime_warning = "TODO runtime warning not shown"
 
 
 tests_to_mark = [
-    ("test_odeint_jac\\.py", skip, "test module removed: uses Fortran extension not built for WASM"),
-    ("io/tests/test_fortran\\.py", skip, "test module removed: uses Fortran extension not built for WASM"),
+    (
+        "test_odeint_jac\\.py",
+        skip,
+        "test module removed: uses Fortran extension not built for WASM",
+    ),
+    (
+        "io/tests/test_fortran\\.py",
+        skip,
+        "test module removed: uses Fortran extension not built for WASM",
+    ),
     # scipy/_lib/tests
     (
         "test__threadsafety.py::test_parallel_threads",
@@ -82,8 +90,16 @@ tests_to_mark = [
         thread_msg,
     ),
     # scipy/linalg tests
-    ("test_cython_abi.py::test_cython_blas_abi_stability", xfail, todo_signature_mismatch_msg),
-    ("test_cython_abi.py::test_cython_lapack_abi_stability", xfail, todo_signature_mismatch_msg),
+    (
+        "test_cython_abi.py::test_cython_blas_abi_stability",
+        xfail,
+        todo_signature_mismatch_msg,
+    ),
+    (
+        "test_cython_abi.py::test_cython_lapack_abi_stability",
+        xfail,
+        todo_signature_mismatch_msg,
+    ),
     # scipy/ndimage/tests
     ("test_filters.py::TestThreading", xfail, thread_msg),
     # scipy/optimize/tests
