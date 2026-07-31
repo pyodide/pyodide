@@ -990,6 +990,27 @@ def test_asyncio_open_connection(selenium_nodesock):
         assert result == RESPONSE.decode()
 
 
+def test_asyncio_open_connection_hostname(selenium_nodesock):
+    """Test that Emscripten's synthetic address maps back to its hostname."""
+    RESPONSE = b"hostname reply"
+
+    def handler(conn, _addr):
+        conn.sendall(RESPONSE)
+
+    @run_in_pyodide
+    async def run(selenium, port):
+        import asyncio
+
+        reader, writer = await asyncio.open_connection("localhost", port)
+        data = await reader.read(1024)
+        writer.close()
+        return data.decode()
+
+    with tcp_server(handler) as (_host, port):
+        result = run(selenium_nodesock, port)
+        assert result == RESPONSE.decode()
+
+
 def test_asyncio_sock_recv_into(selenium_nodesock):
     """Test sock_recv_into fills a buffer."""
     RESPONSE = b"buffer test"
