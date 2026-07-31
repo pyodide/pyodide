@@ -1,4 +1,4 @@
-From 563ed7b59f0bf7a2de875e7ab6f735b491d09db4 Mon Sep 17 00:00:00 2001
+From 4f7deceadf538ad65d5a89cc0033354df56fb80c Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 7 Jul 2026 16:00:05 -0700
 Subject: [PATCH 4/5] Don't bundle the LLVM profile runtime into libcompiler_rt
@@ -22,7 +22,7 @@ Refs: https://github.com/pyodide/pyodide/issues/6339
  1 file changed, 3 deletions(-)
 
 diff --git a/tools/system_libs.py b/tools/system_libs.py
-index 57f0b3e5e..f7577a9f8 100644
+index 90f0e965c..785cb0856 100644
 --- a/tools/system_libs.py
 +++ b/tools/system_libs.py
 @@ -963,7 +963,6 @@ class libclang_rt_builtins(MTLibrary, SjLjLibrary):
