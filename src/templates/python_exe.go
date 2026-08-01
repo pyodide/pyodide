@@ -6,7 +6,6 @@ import (
     "path/filepath"
     "strings"
     "syscall"
-	"unsafe"
 )
 
 /*
@@ -18,6 +17,40 @@ uv expects python.exe to exist to create a virtual environment, while we have
 most of the logics in python.bat. This launcher is a thin wrapper around
 python.bat to satisfy uv's requirement.
 */
+
+// escapeArg quotes an argument for the Windows command line parser. cmd.exe
+// reads the line on the way to python.bat, so quote unconditionally to keep it
+// from acting on & | < > ( ) ^.
+func escapeArg(s string) string {
+    var quoted strings.Builder
+
+    quoted.WriteByte('"')
+    backslashes := 0
+    for _, r := range s {
+        switch r {
+        case '\\':
+            backslashes++
+        case '"':
+            // Double the backslashes in front so they stay literal.
+            for ; backslashes > 0; backslashes-- {
+                quoted.WriteString(`\\`)
+            }
+            quoted.WriteString(`\"`)
+        default:
+            for ; backslashes > 0; backslashes-- {
+                quoted.WriteByte('\\')
+            }
+            quoted.WriteRune(r)
+        }
+    }
+    // Trailing backslashes would escape the closing quote.
+    for ; backslashes > 0; backslashes-- {
+        quoted.WriteString(`\\`)
+    }
+    quoted.WriteByte('"')
+
+    return quoted.String()
+}
 
 func main() {
     // Get the path to the currently running executable (python.exe)
@@ -39,51 +72,25 @@ func main() {
     exeDir := filepath.Dir(exePath)
     batPath := filepath.Join(exeDir, "python.bat")
 
-    // Build the command line string manually to preserve quoting
-    // We need to reconstruct the original command line as closely as possible
-    var cmdLine strings.Builder
-    cmdLine.WriteString(syscall.EscapeArg(batPath))
-
-    // Get the original command line and extract everything after the first argument (python.exe)
-    // This preserves the exact quoting from the original invocation
-	// [1 << 29] is used to create a sufficiently large array to hold the command line
-    cmdLinePtr := syscall.GetCommandLine()
-    cmdLineStr := syscall.UTF16ToString((*[1 << 29]uint16)(unsafe.Pointer(cmdLinePtr))[:])
-
-    // Find where the arguments start (after python.exe and its quotes/spaces)
-    // Skip the first argument (python.exe itself)
-    inQuote := false
-    argCount := 0
-    argStart := -1
-
-    for i, c := range cmdLineStr {
-        if c == '"' {
-            inQuote = !inQuote
-        } else if c == ' ' && !inQuote {
-            if argStart != -1 {
-                argCount++
-                if argCount >= 1 {
-                    // Found the start of arguments after python.exe
-                    argStart = i + 1
-                    break
-                }
-                argStart = -1
-            }
-        } else if argStart == -1 {
-            argStart = i
-        }
+    // Rebuild the command line for python.bat out of our own arguments
+    parts := make([]string, 0, len(os.Args))
+    parts = append(parts, escapeArg(batPath))
+    for _, arg := range os.Args[1:] {
+        parts = append(parts, escapeArg(arg))
     }
 
-    // Append the original arguments if any exist
-    if argStart > 0 && argStart < len(cmdLineStr) {
-        cmdLine.WriteString(" ")
-        cmdLine.WriteString(cmdLineStr[argStart:])
+    // Call cmd.exe rather than letting CreateProcess dispatch the .bat itself.
+    // cmd drops the outer pair of quotes unless the line holds exactly two, so
+    // one quoted argument was enough to unquote batPath and split it at a
+    // space. /s makes cmd strip only the pair added here.
+    comSpec := os.Getenv("ComSpec")
+    if comSpec == "" {
+        comSpec = "cmd.exe"
     }
 
-    // Execute the batch file with the reconstructed command line
-    cmd := exec.Command(batPath)
+    cmd := exec.Command(comSpec)
     cmd.SysProcAttr = &syscall.SysProcAttr{
-        CmdLine: cmdLine.String(),
+        CmdLine: escapeArg(comSpec) + ` /s /c "` + strings.Join(parts, " ") + `"`,
     }
 
     // Wire up stdin, stdout, and stderr so the batch file can interact with the terminal
