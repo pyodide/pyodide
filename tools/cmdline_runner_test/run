@@ -22,4 +22,8 @@ cd attrs || exit
 pip install ".[tests]"
 # mypy_plugins uses pty and stuff that isn't supported on Emscripten.
 ../.venv-pyodide/bin/pip uninstall pytest-mypy-plugins -y
-python -m pytest -k 'not mypy'
+# Deselect tests that fail on Python 3.15.
+# TODO: remove skips when attrs releases a version compatible with Python 3.15
+python -m pytest -k 'not mypy' \
+    --deselect 'tests/test_make.py::TestClassBuilder::test_no_references_to_original_when_using_cached_property' \
+    --deselect 'tests/test_validators.py::TestMatchesRe::test_catches_invalid_func'

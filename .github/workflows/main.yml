@@ -58,7 +58,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+          python-version: "3.14"
       - name: Install Python requirements
         shell: bash -l {0}
         run: |
@@ -196,7 +196,7 @@ jobs:
 
       - name: Install dependencies (Python)
         run: |
-          unset RUSTFLAGS && python -m pip install -r requirements.txt
+          python -m pip install -r requirements.txt
 
       - name: Check Versions
         run: |
