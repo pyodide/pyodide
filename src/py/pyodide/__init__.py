@@ -10,7 +10,7 @@
 # This package is imported by the test suite as well, and currently we don't use
 # pytest mocks for js or pyodide_js, so make sure to test "if IN_PYODIDE" before
 # importing from these.
-__version__ = "314.1.0.dev0"
+__version__ = "315.0.0a1"
 
 __all__ = ["__version__", "console", "code", "ffi", "http", "webloop"]
 
