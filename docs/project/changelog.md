@@ -18,7 +18,7 @@ myst:
 ## Unreleased
 
 - {{ Fix }} Fixed `loop.create_connection()` not handling synthetic IP addresses
-  returned by Emscripten's `getaddrinfo()`.
+  returned by Emscripten's `getaddrinfo()`. {pr}`6397`
 
 ## Version 314.0.3
 
