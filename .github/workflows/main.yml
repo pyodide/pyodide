@@ -147,7 +147,11 @@ jobs:
         with:
           path: |
             /tmp/ccache
-          key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
+          # Make the key unique per run because actions/cache does not update
+          # an existing cache on an exact hit for a fully static key
+          key: ccache-${{ hashFiles('Makefile.envs', 'emsdk/patches/*.patch') }}-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-${{ hashFiles('Makefile.envs', 'emsdk/patches/*.patch') }}-${{ runner.os }}-
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -216,6 +220,10 @@ jobs:
           make -C emsdk
           ccache -s
 
+          # Set mtime for EM_CONFIG to avoid ccache cache misses
+          source pyodide_env.sh
+          touch -m -d '1 Jan 2021 12:00' "$EM_CONFIG"
+
       - name: Build Cpython
         run: |
           # This is necessary to use the ccache from emsdk
@@ -234,6 +242,10 @@ jobs:
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
+
+          # Set mtime for EM_CONFIG to avoid ccache cache misses
+          touch -m -d '1 Jan 2021 12:00' "$EM_CONFIG"
+
           ccache -z
           make -j$PYODIDE_JOBS
           ccache -s
