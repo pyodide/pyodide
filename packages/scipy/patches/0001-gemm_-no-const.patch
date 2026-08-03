@@ -1,0 +1,90 @@
+From d41e995faadb51e130253b2b1bc2dffbfae1cf87 Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Tue, 26 May 2026 08:58:01 +0530
+Subject: [PATCH 1/6] Remove const from xgemm_ declarations in SuperLU headers
+
+cgemm_, dgemm_, sgemm_, and zgemm_ are declared with `const` qualifiers
+in slu_*defs.h, but the OpenBLAS library used by Pyodide declares them
+without const, causing compile errors due to signature mismatches.
+This patch drops the consts and fixes the problem.
+
+Co-Authored-By: Hood Chatham <roberthoodchatham@gmail.com>
+Co-Authored-By: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+---
+ scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h | 6 +++---
+ scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h | 6 +++---
+ scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h | 6 +++---
+ scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h | 6 +++---
+ 4 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
+index 2c25c81d89..351791abb5 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
+@@ -266,9 +266,9 @@ extern void    ccheck_tempv(int, singlecomplex *);
+ 
+ extern void ccopy_(slu_blasint *, singlecomplex *, slu_blasint *, singlecomplex *, slu_blasint *);
+ extern void caxpy_(slu_blasint *, singlecomplex *, singlecomplex *, slu_blasint *, singlecomplex *, slu_blasint *);
+-extern void cgemm_(const char*, const char*, const slu_blasint*, const slu_blasint*, const slu_blasint*,
+-                  const singlecomplex*, const singlecomplex*, const slu_blasint*, const singlecomplex*,
+-		  const slu_blasint*, const singlecomplex*, singlecomplex*, const slu_blasint*);
++extern void cgemm_( char*,  char*,  slu_blasint*,  slu_blasint*,  slu_blasint*,
++                   singlecomplex*,  singlecomplex*,  slu_blasint*,  singlecomplex*,
++		   slu_blasint*,  singlecomplex*, singlecomplex*,  slu_blasint*);
+ extern void ctrsv_(char*, char*, char*, slu_blasint*, singlecomplex*, slu_blasint*,
+                   singlecomplex*, slu_blasint*);
+ extern void ctrsm_(char*, char*, char*, char*, slu_blasint*, slu_blasint*,
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h
+index 27762382c9..484dda8a0d 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h
+@@ -263,9 +263,9 @@ extern void    dcheck_tempv(int, double *);
+ 
+ extern void dcopy_(slu_blasint *, double *, slu_blasint *, double *, slu_blasint *);
+ extern void daxpy_(slu_blasint *, double *, double *, slu_blasint *, double *, slu_blasint *);
+-extern void dgemm_(const char*, const char*, const slu_blasint*, const slu_blasint*, const slu_blasint*,
+-                  const double*, const double*, const slu_blasint*, const double*,
+-		  const slu_blasint*, const double*, double*, const slu_blasint*);
++extern void dgemm_( char*,  char*,  slu_blasint*,  slu_blasint*,  slu_blasint*,
++                   double*,  double*,  slu_blasint*,  double*,
++		   slu_blasint*,  double*, double*,  slu_blasint*);
+ extern void dtrsv_(char*, char*, char*, slu_blasint*, double*, slu_blasint*,
+                   double*, slu_blasint*);
+ extern void dtrsm_(char*, char*, char*, char*, slu_blasint*, slu_blasint*,
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h
+index e0d5c6c612..caef9c674c 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h
+@@ -263,9 +263,9 @@ extern void    scheck_tempv(int, float *);
+ 
+ extern void scopy_(slu_blasint *, float *, slu_blasint *, float *, slu_blasint *);
+ extern void saxpy_(slu_blasint *, float *, float *, slu_blasint *, float *, slu_blasint *);
+-extern void sgemm_(const char*, const char*, const slu_blasint*, const slu_blasint*, const slu_blasint*,
+-                  const float*, const float*, const slu_blasint*, const float*,
+-		  const slu_blasint*, const float*, float*, const slu_blasint*);
++extern void sgemm_( char*,  char*,  slu_blasint*,  slu_blasint*,  slu_blasint*,
++                   float*,  float*,  slu_blasint*,  float*,
++		   slu_blasint*,  float*, float*,  slu_blasint*);
+ extern void strsv_(char*, char*, char*, slu_blasint*, float*, slu_blasint*,
+                   float*, slu_blasint*);
+ extern void strsm_(char*, char*, char*, char*, slu_blasint*, slu_blasint*,
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h
+index cb65506594..a7139f73da 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h
+@@ -266,9 +266,9 @@ extern void    zcheck_tempv(int, doublecomplex *);
+ 
+ extern void zcopy_(slu_blasint *, doublecomplex *, slu_blasint *, doublecomplex *, slu_blasint *);
+ extern void zaxpy_(slu_blasint *, doublecomplex *, doublecomplex *, slu_blasint *, doublecomplex *, slu_blasint *);
+-extern void zgemm_(const char*, const char*, const slu_blasint*, const slu_blasint*, const slu_blasint*,
+-                  const doublecomplex*, const doublecomplex*, const slu_blasint*, const doublecomplex*,
+-		  const slu_blasint*, const doublecomplex*, doublecomplex*, const slu_blasint*);
++extern void zgemm_( char*,  char*,  slu_blasint*,  slu_blasint*,  slu_blasint*,
++                   doublecomplex*,  doublecomplex*,  slu_blasint*,  doublecomplex*,
++		   slu_blasint*,  doublecomplex*, doublecomplex*,  slu_blasint*);
+ extern void ztrsv_(char*, char*, char*, slu_blasint*, doublecomplex*, slu_blasint*,
+                   doublecomplex*, slu_blasint*);
+ extern void ztrsm_(char*, char*, char*, char*, slu_blasint*, slu_blasint*,
+-- 
+2.50.1 (Apple Git-155)
+
