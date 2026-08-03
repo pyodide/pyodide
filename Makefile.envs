@@ -179,7 +179,7 @@ export MAIN_MODULE_LDFLAGS_COMMON= $(LDFLAGS_BASE) \
 	-lnodefs.js \
 	-lproxyfs.js
 
-EXPORTED_RUNTIME_METHODS=wasmTable,ERRNO_CODES
+EXPORTED_RUNTIME_METHODS=wasmTable,ERRNO_CODES,DNS
 
 export MAIN_MODULE_LDFLAGS= $(MAIN_MODULE_LDFLAGS_COMMON) \
 	-s ENVIRONMENT=web,webview,worker,node,shell \
@@ -283,6 +283,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,stackRestore \
 		,runtimeKeepalivePush \
 		,SOCKFS \
+		,DNS \
 		,HEAP8 \
 		,HEAPU8 \
 		,HEAP16 \
