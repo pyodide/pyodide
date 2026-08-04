@@ -1,8 +1,6 @@
 import pytest
 from pytest_pyodide import run_in_pyodide
 
-from conftest import package_is_built
-
 
 @pytest.mark.driver_timeout(40)
 @run_in_pyodide(packages=["scipy"])
@@ -45,15 +43,9 @@ def test_binom_ppf(selenium):
     assert binom.ppf(0.9, 1000, 0.1) == 112
 
 
-_scipy_test_packages = ["pytest", "scipy", "micropip"] + (
-    ["scipy-tests"] if package_is_built("scipy-tests") else []
-)
-
-
-@pytest.mark.xfail_browsers(node="Can't fetch metadata for 'hypothesis'")
 @pytest.mark.skip_pyproxy_check
 @pytest.mark.driver_timeout(40)
-@run_in_pyodide(packages=_scipy_test_packages)
+@run_in_pyodide(packages=["pytest", "scipy-tests", "micropip"])
 async def test_scipy_pytest(selenium):
     import pytest
 
@@ -126,7 +118,7 @@ def test_lapack_larfg(selenium):
 
 @pytest.mark.driver_timeout(40)
 @run_in_pyodide(packages=["scipy"])
-def test_logm(selenium_standalone):
+def test_logm(selenium_standalone_refresh):
     import numpy as np
     from numpy import eye, random
     from scipy.linalg import logm

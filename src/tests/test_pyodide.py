@@ -1398,6 +1398,7 @@ def test_default_sys_path(selenium):
     platlibdir = sys.platlibdir
     paths = [
         f"{prefix}{platlibdir}/python{major}{minor}.zip",
+        f"{prefix}{platlibdir}/python{major}.{minor}",
         f"{prefix}{platlibdir}/python{major}.{minor}/lib-dynload",
         f"{prefix}{platlibdir}/python{major}.{minor}/site-packages",
     ]

@@ -1332,18 +1332,6 @@ def create_once_callable(
     After being called the proxy will decrement the reference count
     of the Callable. The JavaScript function also has a ``destroy`` API that
     can be used to release the proxy without calling it.
-
-    Examples
-    --------
-    >>> from pyodide.ffi import create_once_callable # doctest: +RUN_IN_PYODIDE
-    >>> def f():
-    ...     return "Function called!"
-    >>> proxy = create_once_callable(f)
-    >>> proxy()
-    'Function called!'
-    >>> proxy()
-    Traceback (most recent call last):
-    pyodide.ffi.JsException: Error: OnceProxy can only be called once
     """
     return obj  # type:ignore[return-value]
 

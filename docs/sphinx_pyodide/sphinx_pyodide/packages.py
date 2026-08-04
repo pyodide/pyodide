@@ -24,7 +24,7 @@ def get_packages_summary_directive(app):
             resp = urlopen(url)
             lockfile_json = resp.read().decode("utf-8")
 
-            lockfile = PyodideLockSpec.from_dict(json.loads(lockfile_json))
+            lockfile = PyodideLockSpec(**json.loads(lockfile_json))
             lockfile_packages = lockfile.packages
 
             python_packages = {}
@@ -33,7 +33,6 @@ def get_packages_summary_directive(app):
                     name, version, is_package = self.parse_package_info(package)
                 except Exception:
                     print(f"Warning: failed to parse package config for {package}")
-                    continue
 
                 if not is_package or name.endswith("-tests"):
                     continue

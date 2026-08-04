@@ -1,0 +1,25 @@
+From b5d05197de084ab3cab52241f163bae7519b6027 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 31 Jul 2024 11:48:12 +0200
+Subject: [PATCH 08/12] Set wrapper return type to int
+
+---
+ scipy/linalg/_generate_pyx.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scipy/linalg/_generate_pyx.py b/scipy/linalg/_generate_pyx.py
+index 8a00f5d279..aeb86e8926 100644
+--- a/scipy/linalg/_generate_pyx.py
++++ b/scipy/linalg/_generate_pyx.py
+@@ -520,7 +520,7 @@ def generate_decl_c(name, return_type, argnames, argtypes, accelerate):
+     if name in WRAPPED_FUNCS:
+         argnames = ['out'] + argnames
+         c_argtypes = [c_return_type] + c_argtypes
+-        c_return_type = 'void'
++        c_return_type = 'int'
+     blas_macro, blas_name = get_blas_macro_and_name(name, accelerate)
+     c_args = ', '.join(f'{t} *{n}' for t, n in zip(c_argtypes, argnames))
+     return f"{c_return_type} {blas_macro}({blas_name})({c_args});\n"
+-- 
+2.39.3 (Apple Git-146)
+

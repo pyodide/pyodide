@@ -1,0 +1,86 @@
+From e528227dd37c8b0512381992c222789a114e3169 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sat, 18 Dec 2021 11:41:15 -0800
+Subject: [PATCH 02/12] gemm_ no const
+
+cgemm, dgemm, sgemm, and zgemm are declared with `const` in slu_cdefs.h, but
+other places don't have the cosnt causing compile errors.
+This patch drops the consts and fixes the problem.
+---
+ scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h | 6 +++---
+ scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h | 6 +++---
+ scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h | 6 +++---
+ scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h | 6 +++---
+ 4 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
+index dfc0516ac..92d7d7d6b 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
+@@ -262,9 +262,9 @@ extern void    ccheck_tempv(int, singlecomplex *);
+ 
+ /*! \brief BLAS */
+ 
+-extern int cgemm_(const char*, const char*, const int*, const int*, const int*,
+-                  const singlecomplex*, const singlecomplex*, const int*, const singlecomplex*,
+-		  const int*, const singlecomplex*, singlecomplex*, const int*);
++extern int cgemm_( char*,  char*,  int*,  int*,  int*,
++                   singlecomplex*,  singlecomplex*,  int*,  singlecomplex*,
++		   int*,  singlecomplex*, singlecomplex*,  int*);
+ extern int ctrsv_(char*, char*, char*, int*, singlecomplex*, int*,
+                   singlecomplex*, int*);
+ extern int ctrsm_(char*, char*, char*, char*, int*, int*,
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h
+index 3b5aa509f..1305641bd 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h
+@@ -260,9 +260,9 @@ extern void    dcheck_tempv(int, double *);
+ 
+ /*! \brief BLAS */
+ 
+-extern int dgemm_(const char*, const char*, const int*, const int*, const int*,
+-                  const double*, const double*, const int*, const double*,
+-		  const int*, const double*, double*, const int*);
++extern int dgemm_( char*,  char*,  int*,  int*,  int*,
++                   double*,  double*,  int*,  double*,
++		   int*,  double*, double*,  int*);
+ extern int dtrsv_(char*, char*, char*, int*, double*, int*,
+                   double*, int*);
+ extern int dtrsm_(char*, char*, char*, char*, int*, int*,
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h
+index 9bb6a38e7..b013962a4 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h
+@@ -259,9 +259,9 @@ extern void    scheck_tempv(int, float *);
+ 
+ /*! \brief BLAS */
+ 
+-extern int sgemm_(const char*, const char*, const int*, const int*, const int*,
+-                  const float*, const float*, const int*, const float*,
+-		  const int*, const float*, float*, const int*);
++extern int sgemm_( char*,  char*,  int*,  int*,  int*,
++                   float*,  float*,  int*,  float*,
++		   int*,  float*, float*,  int*);
+ extern int strsv_(char*, char*, char*, int*, float*, int*,
+                   float*, int*);
+ extern int strsm_(char*, char*, char*, char*, int*, int*,
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h
+index c6418d584..c5a2692be 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h
+@@ -262,9 +262,9 @@ extern void    zcheck_tempv(int, doublecomplex *);
+ 
+ /*! \brief BLAS */
+ 
+-extern int zgemm_(const char*, const char*, const int*, const int*, const int*,
+-                  const doublecomplex*, const doublecomplex*, const int*, const doublecomplex*,
+-		  const int*, const doublecomplex*, doublecomplex*, const int*);
++extern int zgemm_( char*,  char*,  int*,  int*,  int*,
++                   doublecomplex*,  doublecomplex*,  int*,  doublecomplex*,
++		   int*,  doublecomplex*, doublecomplex*,  int*);
+ extern int ztrsv_(char*, char*, char*, int*, doublecomplex*, int*,
+                   doublecomplex*, int*);
+ extern int ztrsm_(char*, char*, char*, char*, int*, int*,
+-- 
+2.34.1
+
