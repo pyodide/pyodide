@@ -4,7 +4,6 @@ mypy_path = ["src/py"]
 show_error_codes = true
 warn_unreachable = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-plugins = ["pydantic.mypy"]
 
 # Strict checks
 warn_unused_configs = true

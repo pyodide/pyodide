@@ -15,6 +15,13 @@ myst:
 
 # Change Log
 
+## Version 314.0.4
+
+_Aug 4, 2026_
+
+- {{ Fix }} Fixed `loop.create_connection()` not handling synthetic IP addresses
+  returned by Emscripten's `getaddrinfo()`. {pr}`6397`
+
 ## Version 314.0.3
 
 _July 24, 2026_

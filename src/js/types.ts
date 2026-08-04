@@ -300,6 +300,9 @@ export interface EmscriptenModule {
   HEAPU32: Uint32Array;
   HEAP16: Int16Array;
   SOCKFS: any;
+  DNS: {
+    lookup_addr: (addr: string) => string | null;
+  };
   getSocketAddress: (addr: number, addrlen: number) => any;
   getExceptionMessage(e: number): [string, string];
   exitCode: number | undefined;
