@@ -342,15 +342,11 @@ export async function initializeNodeSockFS(
       }
 
       sock.connecting = true;
-      // Emscripten's getaddrinfo() returns a fake address for hostnames,
-      // which is converted back to the original hostname by lookup_addr.
-      // If a user passes the fake address to connectAsync(), we need to convert it back.
-      const hostname = Module.DNS.lookup_addr(addr) ?? addr;
-      sock.daddr = hostname;
+      sock.daddr = addr;
       sock.dport = port;
 
       const wcgSocket = connectFunc(
-        { hostname, port },
+        { hostname: addr, port },
         {
           secureTransport: options?.secureTransport ?? "starttls",
           allowHalfOpen: false,

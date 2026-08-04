@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.18.0
+  version: 1.17.0
   tag:
     - min-scipy-stack
     - cross-build
@@ -18,15 +18,23 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/source/s/scipy/scipy-1.18.0.tar.gz
-  sha256: 67b2ad2ad54c72ca6d04975a9b2df8c3638c34ddd5b28738e94fc2b57929d378
+  url: https://files.pythonhosted.org/packages/source/s/scipy/scipy-1.17.0.tar.gz
+  sha256: 2591060c8e648d8b96439e111ac41fd8342fdeff1876be2e19dea3fe8930454e
 
   patches:
-    - patches/0001-gemm_-no-const.patch
-    - patches/0002-make-int-return-values.patch
-    - patches/0003-Fix-gees-calls.patch
-    - patches/0004-Remove-chla_transtype.patch
-    - patches/0005-Set-wrapper-return-type-to-int.patch
+    - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
+    - patches/0002-gemm_-no-const.patch
+    - patches/0003-make-int-return-values.patch
+    - patches/0004-Fix-fitpack.patch
+    - patches/0005-Fix-gees-calls.patch
+    - patches/0006-Link-openblas-with-modules-that-require-f2c.patch
+    - patches/0007-Remove-chla_transtype.patch
+    - patches/0008-Set-wrapper-return-type-to-int.patch
+    - patches/0009-Remove-f2py-generators.patch
+    - patches/0010-Explicitly-convert-return-value-of-SUPERLU_MALLOC.patch
+    - patches/0011-Change-nc-type-from-int64_t-to-Py_ssize_t.patch  # drop after scipy 1.18
+    - patches/0012-MAINT-linalg-Remove-dummy-argument-from-larf-wrapper.patch  # drop after scipy 1.18
+
 build:
   vendor-sharedlib: true
   # NumPy 2.1 disabled visibility for symbols outside of extension modules
@@ -49,9 +57,8 @@ build:
     -L$(NUMPY_LIB)/random/lib/
     -fwasm-exceptions
 
+
   # Exclude tests via Meson's install tags functionality.
-  # unvendor-tests is automatically set to false by the CI SciPy trigger, so
-  # that when we want to test SciPy, we retain the tests inside the wheel
   unvendor-tests: true
   # install-args=--tags=runtime,python-runtime,devel
   # Disable when running tests, enable when a PR is ready, i.e., building for distribution.
@@ -82,18 +89,23 @@ build:
     sed -i 's/^void/int/g' scipy/odr/odrpack.h
     sed -i 's/^void/int/g' scipy/odr/__odrpack.c
 
+    sed -i 's/void BLAS_FUNC/int BLAS_FUNC/g' scipy/special/lapack_defs.h
     # sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
+    sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
     sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
     sed -i 's/void/int/g' scipy/linalg/cython_lapack_signatures.txt
-    sed -i 's/void BLAS_FUNC/int BLAS_FUNC/g' scipy/linalg/src/_common_array_utils.h
     sed -i 's/^void BLAS_FUNC/int BLAS_FUNC/g' scipy/linalg/src/_common_array_utils.hh
 
     # Change fortran functions called in C code to return int instead of void
     # This adhoc regex checks function names ending with _ such as `void zgetrs_(`
-    sed -i 's/void BLAS_FUNC/int BLAS_FUNC/g' scipy/sparse/linalg/_propack/PROPACK/src/include/blaslapack_declarations.h
-    sed -i 's/void ARNAUD_BLAS/int ARNAUD_BLAS/g' scipy/sparse/linalg/_eigen/arpack/arnaud/src/blaslapack_declarations.h
-    sed -i 's/void BLAS_FUNC/int BLAS_FUNC/g' scipy/integrate/src/blaslapack_declarations.h
-    sed -i 's/void[[:space:]]*BLAS_FUNC/int BLAS_FUNC/g' scipy/optimize/src/blaslapack_declarations.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/linalg/_common_array_utils.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/linalg/_matfuncs_expm.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/sparse/linalg/_propack/PROPACK/src/include/blaslapack_declarations.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/sparse/linalg/_eigen/arpack/arnaud/src/blaslapack_declarations.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/integrate/src/blaslapack_declarations.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/optimize/__lbfgsb.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/optimize/__nnls.h
+    sed -i 's/^void \([a-z0-9]*_\)(/int \1(/g' scipy/optimize/__slsqp.h
 
     sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
     sed -i 's/void BLAS_FUNC/int BLAS_FUNC/g' scipy/interpolate/src/__fitpack.h
@@ -106,6 +118,7 @@ build:
     sed -i 's/TYPE_GENERIC_FUNC(\(.*\), void)/TYPE_GENERIC_FUNC(\1, int)/g' scipy/sparse/linalg/_dsolve/_superluobject.h
 
     sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib_private.h
+    sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib/trlib_private.h
     sed -i 's/^void/int/g' scipy/_build_utils/src/wrap_dummy_g77_abi.c
     sed -i 's/, int)/)/g' scipy/optimize/_trlib/trlib_private.h
     sed -i 's/, 1)/)/g' scipy/optimize/_trlib/trlib_private.h
