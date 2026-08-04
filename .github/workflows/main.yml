@@ -38,7 +38,10 @@ jobs:
       - name: Read the Python version from Makefile.envs
         id: get_python_version
         run: |
-          PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)
+          PYVERSION=$(git grep 'export PYVERSION_GHA ?=' Makefile.envs | cut -d' ' -f4)
+          if [ -z "$PYVERSION" ]; then
+            PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)
+          fi
           # Raw CPython version format (e.g. 3.15.0b3), understood by uv.
           echo "PYVERSION=$PYVERSION"  >> "$GITHUB_OUTPUT"
           # Convert CPython version format (e.g. 3.15.0b3) to setup-python format (e.g. 3.15.0-beta.3)
