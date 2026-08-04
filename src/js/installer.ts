@@ -1,6 +1,7 @@
 import { DynlibLoader } from "./dynload";
+import type { PyProxy } from "generated/pyproxy";
 import { PackageManagerAPI, PackageManagerModule } from "./types";
-import { unpackArchive } from "./package-loading/archive";
+import { unpackZip } from "./package-loading/archive";
 import { extractArchiveToFS } from "./package-loading/fs-extract";
 import {
   computePythonPaths,
@@ -8,7 +9,9 @@ import {
 } from "./package-loading/python-paths";
 import { dirname, resolvePosix } from "./package-loading/posix-path";
 
-const textEncoder = new TextEncoder();
+// Created lazily on first use: TextEncoder is not available at module-init time
+// in some engines (e.g. d8), which never install packages.
+let textEncoder: TextEncoder | undefined;
 
 /**
  * The Installer class is responsible for installing packages into the Pyodide filesystem.
@@ -41,10 +44,10 @@ export class Installer {
     buffer: Uint8Array,
     filename: string,
     installDir: string,
-    metadata?: ReadonlyMap<string, string>,
+    metadata?: ReadonlyMap<string, string> | PyProxy,
   ) {
     const { prefix, extensionTags } = this.#getPythonPaths();
-    const entries = unpackArchive(buffer, filename);
+    const entries = unpackZip(buffer);
     const { dynlibs, distInfoDir, dataDir } = extractArchiveToFS(
       this.#module.FS,
       entries,
@@ -52,8 +55,9 @@ export class Installer {
       extensionTags,
     );
 
-    if (metadata && distInfoDir) {
-      this.#writeWheelMetadata(installDir, distInfoDir, metadata);
+    const metadataMap = toMetadataMap(metadata);
+    if (metadataMap && distInfoDir) {
+      this.#writeWheelMetadata(installDir, distInfoDir, metadataMap);
     }
 
     if (dataDir) {
@@ -79,7 +83,7 @@ export class Installer {
     for (const [key, value] of metadata) {
       this.#module.FS.writeFile(
         `${installDir}/${distInfoDir}/${key}`,
-        textEncoder.encode(value),
+        (textEncoder ??= new TextEncoder()).encode(value),
       );
     }
   }
@@ -101,6 +105,25 @@ export class Installer {
       this.#module.FS.writeFile(target, data, { canOwn: true });
     }
   }
+}
+
+// loadPackage passes a JS Map, but micropip passes a Python dict that arrives
+// here as a PyProxy. A dict PyProxy iterates as keys (not [key, value] pairs)
+// and toJs() may yield either a Map or a plain object depending on the
+// configured dict_converter, so normalize every case to a Map. Skipping this
+// leaves metadata files such as PYODIDE_URL unwritten and micropip.freeze()
+// then drops the package from the regenerated lockfile.
+function toMetadataMap(
+  metadata?: ReadonlyMap<string, string> | PyProxy,
+): ReadonlyMap<string, string> | undefined {
+  if (!metadata || metadata instanceof Map) {
+    return metadata as ReadonlyMap<string, string> | undefined;
+  }
+  const converted = (metadata as { toJs(): unknown }).toJs();
+  if (converted instanceof Map) {
+    return converted as Map<string, string>;
+  }
+  return new Map(Object.entries(converted as Record<string, string>));
 }
 
 /** @hidden */

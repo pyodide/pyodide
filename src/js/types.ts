@@ -549,7 +549,7 @@ export interface API {
     buffer: Uint8Array,
     filename: string,
     installDir: string,
-    metadata?: ReadonlyMap<string, string>,
+    metadata?: ReadonlyMap<string, string> | PyProxy,
   ) => Promise<void>;
   _Comlink: any;
 
