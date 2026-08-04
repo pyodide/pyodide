@@ -15,11 +15,23 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 314.0.4
+
+_Aug 4, 2026_
+
+- {{ Fix }} Fixed `loop.create_connection()` not handling synthetic IP addresses
+  returned by Emscripten's `getaddrinfo()`. {pr}`6397`
+
+## Version 314.0.3
+
+_July 24, 2026_
 
 - {{ Enhancement }} Reduced the standard library size by excluding the
   `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
   to use the `_zoneinfo` C extension. {pr}`6331`
+
+- {{ Fix }} Fixed startTls() not releasing the stream lock when upgrading a
+  socket to TLS, which could cause a crash in some JS runtimes. {pr}`6344`
 
 - {{ Enhancement }} Release archives for cross build envs are now
   also published as `.tar.gz` alongside the existing `.tar.bz2` archives. New

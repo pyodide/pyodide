@@ -26,6 +26,11 @@ import type { ConnectFunc } from "./fs/wintercg-sockets";
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
 
+// The Pyodide and ABI versions are substituted at build time by esbuild from
+// PYODIDE_VERSION and PYODIDE_ABI_VERSION (see esbuild.config.shared.mjs).
+API.version = API_VERSION;
+API.abiVersion = ABI_VERSION;
+
 /**
  * Runs code after python vm has been initialized but prior to any bootstrapping.
  */

@@ -580,9 +580,11 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
   DECLARE_PY_OBJECT(attr_sig);
   if (JsProxy_SIG(self) != NULL) {
     _Py_IDENTIFIER(get_attr_sig);
+    PyObject* get_attr_sig_name = _PyUnicode_FromId(&PyId_get_attr_sig);
+    FAIL_IF_NULL(get_attr_sig_name);
     DECLARE_PY_OBJECT(get_attr_sig_res);
-    get_attr_sig_res = _PyObject_CallMethodIdObjArgs(
-      jsbind, &PyId_get_attr_sig, JsProxy_SIG(self), attr, NULL);
+    get_attr_sig_res = PyObject_CallMethodObjArgs(
+      jsbind, get_attr_sig_name, JsProxy_SIG(self), attr, NULL);
     FAIL_IF_NULL(get_attr_sig_res);
 
     bool got_converter;
@@ -2576,27 +2578,26 @@ static PyMethodDef JsMap_clear_MethodDef = {
 PyObject*
 JsMap_update(JsProxy* self, PyObject* args, PyObject* kwds)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* arg = NULL;
   if (!PyArg_ParseTuple(args, "|O:update", &arg)) {
-    return NULL;
+    FAIL();
   }
+  PyObject* update_name = _PyUnicode_FromId(&PyId_update);
+  FAIL_IF_NULL(update_name);
   if (arg != NULL) {
     DECLARE_PY_OBJECT(status);
-    status = _PyObject_CallMethodIdObjArgs(
-      MutableMapping, &PyId_update, self, arg, NULL);
-    if (status == NULL) {
-      return NULL;
-    }
+    status =
+      PyObject_CallMethodObjArgs(MutableMapping, update_name, self, arg, NULL);
+    FAIL_IF_NULL(status);
   }
   if (kwds != NULL) {
     DECLARE_PY_OBJECT(status);
     // kwds is a dict; passing it positionally applies its entries the same way
     // dict.update(**kwds) would.
-    status = _PyObject_CallMethodIdObjArgs(
-      MutableMapping, &PyId_update, self, kwds, NULL);
-    if (status == NULL) {
-      return NULL;
-    }
+    status =
+      PyObject_CallMethodObjArgs(MutableMapping, update_name, self, kwds, NULL);
+    FAIL_IF_NULL(status);
   }
   Py_RETURN_NONE;
 }

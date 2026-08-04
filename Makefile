@@ -66,11 +66,11 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 
 # Don't use ccache here because it does not support #embed properly.
 # https://github.com/ccache/ccache/discussions/1366
-src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat emsdk/emsdk/.complete
+src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat $(PYODIDE_EMSDK_DIR)/.complete
 	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
-src/core/jsverror.wasm: src/core/jsverror.wat emsdk/emsdk/.complete
-	./emsdk/emsdk/upstream/bin/wasm-as $< -o $@ -all
+src/core/jsverror.wasm: src/core/jsverror.wat $(PYODIDE_EMSDK_DIR)/.complete
+	$(PYODIDE_EMSDK_DIR)/upstream/bin/wasm-as $< -o $@ -all
 
 src/core/libpyodide.a: \
 	src/core/docstring.o \
@@ -316,7 +316,7 @@ clean-all: clean
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
-$(CPYTHONLIB): emsdk/emsdk/.complete
+$(CPYTHONLIB): $(PYODIDE_EMSDK_DIR)/.complete
 	@date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	@date +"[%F %T] done building cpython..."
@@ -327,7 +327,7 @@ dist/pyodide-lock.json: $(CPYTHONLIB) .pyodide_build_installed
 	@date +"[%F %T] done building packages..."
 
 
-emsdk/emsdk/.complete:
+$(PYODIDE_EMSDK_DIR)/.complete:
 	@date +"[%F %T] Building emsdk..."
 	make -C emsdk
 	@date +"[%F %T] done building emsdk."
@@ -342,7 +342,7 @@ rust:
 check:
 	@./tools/dependency-check.sh
 
-check-emcc: emsdk/emsdk/.complete
+check-emcc: $(PYODIDE_EMSDK_DIR)/.complete
 	@python3 tools/check_ccache.py
 
 debug:
