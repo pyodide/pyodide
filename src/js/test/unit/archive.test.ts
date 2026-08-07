@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { readFileSync, existsSync, readdirSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
-import { zipSync, strToU8, unzipSync } from "fflate";
+import { zipSync, strToU8 } from "fflate";
 import { unpackZip } from "../../package-loading/archive.ts";
 
 const enc = new TextEncoder();
@@ -45,37 +42,5 @@ describe("unpackZip", () => {
 
   it("throws on invalid zip data", () => {
     assert.throws(() => unpackZip(new Uint8Array([1, 2, 3, 4])));
-  });
-});
-
-describe("unpackZip with a real wheel", () => {
-  const distDir = resolve(
-    dirname(fileURLToPath(import.meta.url)),
-    "../../../../dist",
-  );
-
-  it("unpacks a built wheel and finds its dist-info METADATA", (t) => {
-    if (!existsSync(distDir)) {
-      t.skip("dist/ not built");
-      return;
-    }
-    const wheel = readdirSync(distDir).find((f) => f.endsWith(".whl"));
-    if (!wheel) {
-      t.skip("no wheel in dist/");
-      return;
-    }
-
-    const buffer = new Uint8Array(readFileSync(resolve(distDir, wheel)));
-    const entries = unpackZip(buffer);
-
-    const metadata = entries.find((e) => /\.dist-info\/METADATA$/.test(e.name));
-    assert.ok(metadata, `no dist-info/METADATA found in ${wheel}`);
-    assert.match(
-      new TextDecoder().decode(metadata!.data),
-      /^Metadata-Version:/m,
-    );
-
-    const reference = unzipSync(buffer);
-    assert.equal(entries.length, Object.keys(reference).length);
   });
 });

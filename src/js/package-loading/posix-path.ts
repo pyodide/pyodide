@@ -1,6 +1,9 @@
 /**
- * Minimal pure POSIX path helpers, so package extraction does not depend on
- * Emscripten's `Module.PATH` (which keeps it unit-testable).
+ * Minimal pure POSIX path helpers.
+ *
+ * Note: These helper functions already exist in Emscripten's FS / PATH utilities,
+ * but we define them here to avoid dependencies on Emscripten.
+ * This helps keep the package extraction logic self-contained and testable.
  *
  * @private
  */
@@ -26,7 +29,7 @@ export function dirname(path: string): string {
  *
  * @private
  */
-export function resolvePosix(base: string, relative: string): string {
+export function resolve(base: string, relative: string): string {
   const combined = relative.startsWith("/") ? relative : `${base}/${relative}`;
   const out: string[] = [];
   for (const segment of combined.split("/")) {

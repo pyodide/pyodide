@@ -7,7 +7,7 @@ import {
   computePythonPaths,
   type PythonPaths,
 } from "./package-loading/python-paths";
-import { dirname, resolvePosix } from "./package-loading/posix-path";
+import { dirname, resolve } from "./package-loading/posix-path";
 
 // Created lazily on first use: TextEncoder is not available at module-init time
 // in some engines (e.g. d8), which never install packages.
@@ -100,7 +100,7 @@ export class Installer {
       if (name.endsWith("/") || !name.startsWith(dataScheme)) {
         continue;
       }
-      const target = resolvePosix(prefix, name.slice(dataScheme.length));
+      const target = resolve(prefix, name.slice(dataScheme.length));
       this.#module.FS.mkdirTree(dirname(target));
       this.#module.FS.writeFile(target, data, { canOwn: true });
     }

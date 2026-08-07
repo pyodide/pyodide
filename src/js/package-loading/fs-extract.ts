@@ -7,7 +7,7 @@
 import type { FSType } from "../types";
 import type { ArchiveEntry } from "./archive";
 import { shouldLoadDynlib } from "./dynlib-detect";
-import { dirname, resolvePosix } from "./posix-path";
+import { dirname, resolve } from "./posix-path";
 
 /** @private */
 export interface ExtractResult {
@@ -46,7 +46,7 @@ export function extractArchiveToFS(
       dataDir = firstComponent;
     }
 
-    const fullPath = resolvePosix(installDir, name);
+    const fullPath = resolve(installDir, name);
     // Guard against zip-slip: a malicious archive must not escape installDir.
     if (fullPath !== installDir && !fullPath.startsWith(installDir)) {
       throw new Error(

@@ -3,13 +3,12 @@
  * (shared library) tags.
  *
  * The functions in this file is meanted to be used before the Python interpreter
- * is bootstrapped, so that packages can be installed without running any
- * Python code.
+ * is bootstrapped. So we cannot use Python's built-in path utilities.
  *
- * In this file, we assume that the library is installed to /usr/lib,
- * which is not true when Pyodide runs as a CLI with `pyodide venv`.
+ * In this file, we assume that the library is installed to /usr/lib.
+ * This is not true when Pyodide runs as a CLI with `pyodide venv`.
  * However, we do not expect these functions are used in `pyodide venv` case,
- * as the packages should be pre-installed through pip not by `pyodide.loadPackage.
+ * as the packages should be pre-installed through pip not by `pyodide.loadPackage`.
  *
  * @private
  */

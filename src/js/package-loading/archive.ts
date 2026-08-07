@@ -17,9 +17,6 @@ export interface ArchiveEntry {
 /**
  * Unpack a zip archive into a flat list of entries.
  *
- * Entry names use `/` separators and are relative to the archive root. Explicit
- * directory entries (names ending with `/`) are included with empty data.
- *
  * @param buffer The archive contents.
  * @private
  */

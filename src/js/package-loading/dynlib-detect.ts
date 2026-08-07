@@ -2,7 +2,7 @@
  * @private
  */
 
-import { basename, resolvePosix } from "./posix-path";
+import { basename, resolve } from "./posix-path";
 
 // Matches a `.so` extension possibly followed by version components, e.g.
 // `.so`, `.so.1`, `.so.1.2`.
@@ -73,5 +73,5 @@ export function getDynlibs(
 ): string[] {
   return paths
     .filter((path) => shouldLoadDynlib(path, extensionTags))
-    .map((path) => resolvePosix(targetDir, path));
+    .map((path) => resolve(targetDir, path));
 }
