@@ -20,11 +20,16 @@ export const genMockAPI = (): PackageManagerAPI => {
     bootstrapFinalizedPromise: Promise.resolve(),
     sitepackages: "",
     defaultLdLibraryPath: [],
+    pyVersionTuple: [3, 14, 2],
   };
 };
 
 export const genMockModule = (): PackageManagerModule => {
   return {
+    FS: {
+      mkdirTree: (_path: string) => {},
+      writeFile: (_path: string, _data: Uint8Array, _opts?: object) => {},
+    } as unknown as PackageManagerModule["FS"],
     LDSO: {
       loadedLibsByName: {},
     },
