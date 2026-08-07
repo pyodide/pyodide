@@ -72,10 +72,10 @@ describe("Installer", () => {
       makeWheel(),
       "dummy_pkg-0.1.0-py3-none-any.whl",
       "/site",
-      new Map([
-        ["INSTALLER", "pytest"],
-        ["PYODIDE_SOURCE", "pyodide"],
-      ]),
+      {
+        INSTALLER: "pytest",
+        PYODIDE_SOURCE: "pyodide",
+      },
     );
 
     assert.equal(
