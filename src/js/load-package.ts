@@ -523,20 +523,11 @@ export class PackageManager {
         `Installing package ${metadata.name} from ${metadata.channel} to ${installDir}`,
       );
 
-    await this.#installer.install(
-      buffer,
-      filename,
-      installDir,
-      new Map([
-        ["INSTALLER", INSTALLER],
-        [
-          "PYODIDE_SOURCE",
-          metadata.channel === this.defaultChannel
-            ? "pyodide"
-            : metadata.channel,
-        ],
-      ]),
-    );
+    await this.#installer.install(buffer, filename, installDir, {
+      INSTALLER,
+      PYODIDE_SOURCE:
+        metadata.channel === this.defaultChannel ? "pyodide" : metadata.channel,
+    });
   }
 
   /**

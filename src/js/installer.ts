@@ -44,7 +44,7 @@ export class Installer {
     buffer: Uint8Array,
     filename: string,
     installDir: string,
-    metadata?: ReadonlyMap<string, string> | PyProxy,
+    metadata?: Record<string, string> | PyProxy,
   ) {
     const { prefix, extensionTags } = this.#getPythonPaths();
     const entries = unpackZip(buffer);
@@ -55,7 +55,7 @@ export class Installer {
       extensionTags,
     );
 
-    const metadataMap = toMetadataMap(metadata);
+    const metadataMap = toMetadata(metadata);
     if (metadataMap && distInfoDir) {
       this.#writeWheelMetadata(installDir, distInfoDir, metadataMap);
     }
@@ -78,9 +78,9 @@ export class Installer {
   #writeWheelMetadata(
     installDir: string,
     distInfoDir: string,
-    metadata: ReadonlyMap<string, string>,
+    metadata: Record<string, string>,
   ) {
-    for (const [key, value] of metadata) {
+    for (const [key, value] of Object.entries(metadata)) {
       this.#module.FS.writeFile(
         `${installDir}/${distInfoDir}/${key}`,
         (textEncoder ??= new TextEncoder()).encode(value),
@@ -107,23 +107,16 @@ export class Installer {
   }
 }
 
-// loadPackage passes a JS Map, but micropip passes a Python dict that arrives
-// here as a PyProxy. A dict PyProxy iterates as keys (not [key, value] pairs)
-// and toJs() may yield either a Map or a plain object depending on the
-// configured dict_converter, so normalize every case to a Map. Skipping this
-// leaves metadata files such as PYODIDE_URL unwritten and micropip.freeze()
-// then drops the package from the regenerated lockfile.
-function toMetadataMap(
-  metadata?: ReadonlyMap<string, string> | PyProxy,
-): ReadonlyMap<string, string> | undefined {
-  if (!metadata || metadata instanceof Map) {
-    return metadata as ReadonlyMap<string, string> | undefined;
+// downstream Python packages such as micropip would pass the metadata
+// as Python dict (PyProxy). So we type-cast it to Record<string, string>
+// to make it compatible with the installer
+function toMetadata(
+  metadata?: Record<string, string> | PyProxy,
+): Record<string, string> | undefined {
+  if (!metadata) {
+    return undefined;
   }
-  const converted = (metadata as { toJs(): unknown }).toJs();
-  if (converted instanceof Map) {
-    return converted as Map<string, string>;
-  }
-  return new Map(Object.entries(converted as Record<string, string>));
+  return metadata as Record<string, string>;
 }
 
 /** @hidden */
