@@ -273,11 +273,20 @@ class WebLoop(asyncio.AbstractEventLoop):
             self.call_soon(asyncio.ensure_future, agen.aclose())
 
     def _install_asyncgen_hooks(self) -> None:
-        """Install async generator hooks if not already installed."""
-        if self._old_agen_hooks is not None:
+        """Install async generator hooks on the current thread state.
+
+        sys.set_asyncgen_hooks() records the hooks on the thread state rather
+        than globally, and with stack switching enabled each task runs on a
+        thread state of its own, so we have to check every time instead of only
+        once per loop. Note that bound methods compare equal but are not
+        identical, so this has to be `==`.
+        """
+        current = sys.get_asyncgen_hooks()
+        if current.firstiter == self._asyncgen_firstiter_hook:
             return
 
-        self._old_agen_hooks = sys.get_asyncgen_hooks()
+        if self._old_agen_hooks is None:
+            self._old_agen_hooks = current
         sys.set_asyncgen_hooks(
             firstiter=self._asyncgen_firstiter_hook,
             finalizer=self._asyncgen_finalizer_hook,
