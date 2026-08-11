@@ -1,4 +1,4 @@
-import { expectType, expectAssignable } from "tsd";
+import { expectType, expectAssignable, expectError } from "tsd";
 import { version, loadPyodide, PackageData } from "pyodide";
 
 import {
@@ -36,6 +36,11 @@ async function main() {
       stderr: (err: string) => {},
     }),
   );
+
+  expectType<Promise<typeof pyodide>>(
+    loadPyodide({ preloadSharedLibraries: true }),
+  );
+  expectError(loadPyodide({ preloadSharedLibraries: "yes" }));
 
   expectType<PyProxy>(pyodide.globals);
 

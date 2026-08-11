@@ -3,6 +3,10 @@
 import { PackageManagerAPI, PackageManagerModule } from "./types";
 
 import { createLock } from "./common/lock";
+import {
+  DynlibEntry,
+  shouldPreloadDynlib,
+} from "./package-loading/dynlib-preload";
 
 /** @hidden */
 export class DynlibLoader {
@@ -20,10 +24,12 @@ export class DynlibLoader {
   }
 
   /**
-   * Load a dynamic library. This is an async operation and Python imports are
-   * synchronous so we have to do it ahead of time. When we add more support for
-   * synchronous I/O, we could consider doing this later as a part of a Python
-   * import hook.
+   * Compile and load a dynamic library asynchronously.
+   *
+   * Most libraries are instead compiled by CPython's import machinery, which
+   * `dlopen()`s them synchronously. This is for the ones that are too large for
+   * a runtime to compile synchronously, and for callers that need the library
+   * resident before any Python code runs.
    *
    * @param lib The file system path to the library.
    * @private
@@ -85,26 +91,22 @@ export class DynlibLoader {
   }
 
   /**
-   * Load dynamic libraries inside a package.
+   * Compile the shared libraries of a package that cannot be left to CPython's
+   * import machinery.
    *
-   * This function handles some painful details of loading dynamic libraries:
-   * - We need to load libraries in the correct order considering dependencies.
-   * - We need to load libraries globally if they are required by other libraries.
-   * - We need to tell Emscripten where to search for libraries.
-   * - The dynlib metadata inside a wasm module only contains the library name, not the path.
-   *   So we need to handle them carefully to avoid loading the same library twice.
-   *
-   * @param pkg The package metadata
-   * @param dynlibPaths The list of dynamic libraries inside a package
+   * @param dynlibs The shared libraries found in the package.
+   * @param preloadAll Whether to compile every library rather than only the
+   * ones that cannot be compiled synchronously later.
    * @private
    */
-  public async loadDynlibsFromPackage(
-    // TODO: Simplify the type of pkg after removing usage of this function in micropip.
-    pkg: { file_name: string },
-    dynlibPaths: string[],
+  public async preloadDynlibs(
+    dynlibs: readonly DynlibEntry[],
+    preloadAll: boolean,
   ) {
-    for (const path of dynlibPaths) {
-      await this.loadDynlib(path);
+    for (const entry of dynlibs) {
+      if (shouldPreloadDynlib(entry, preloadAll)) {
+        await this.loadDynlib(entry.path);
+      }
     }
   }
 }

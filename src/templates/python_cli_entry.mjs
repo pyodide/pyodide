@@ -211,28 +211,6 @@ async function main() {
   }
   sideGlobals.set("handleExit", handleExit);
 
-  py.runPython(
-    `
-    from pyodide._package_loader import SITE_PACKAGES, should_load_dynlib
-    from pyodide.ffi import to_js
-    import re
-    dynlibs_to_load = to_js([
-        str(path) for path in SITE_PACKAGES.glob("**/*.so*")
-        if should_load_dynlib(path)
-    ])
-    `,
-    { globals: sideGlobals },
-  );
-  const dynlibs = sideGlobals.get("dynlibs_to_load");
-  for (const dynlib of dynlibs) {
-    try {
-      await py._module.API.loadDynlib(dynlib);
-    } catch (e) {
-      console.error("Failed to load lib ", dynlib);
-      console.error(e);
-    }
-  }
-
   patchPlatformForUv(py);
   calculateSysPath(py);
 

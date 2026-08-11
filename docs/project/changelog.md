@@ -15,6 +15,15 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Performance }} Shared libraries inside a package are no longer all
+  compiled while the package is installing. By default only libraries too large
+  to be compiled synchronously are compiled during installation. This makes
+  {js:func}`pyodide.loadPackage` faster and avoids compiling libraries that are
+  never imported. The previous behavior is available by passing
+  `preloadSharedLibraries: true` to {js:func}`loadPyodide`. {pr}`6390`
+
 ## Version 314.0.4
 
 _Aug 4, 2026_

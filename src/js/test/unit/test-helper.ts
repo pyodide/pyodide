@@ -1,6 +1,8 @@
 import { PackageManagerAPI, PackageManagerModule } from "../../types.ts";
 
-export const genMockAPI = (): PackageManagerAPI => {
+export const genMockAPI = (
+  config: Partial<PackageManagerAPI["config"]> = {},
+): PackageManagerAPI => {
   return {
     importlib: {
       invalidate_caches: () => {},
@@ -15,16 +17,23 @@ export const genMockAPI = (): PackageManagerAPI => {
     config: {
       lockFileURL: "",
       packageCacheDir: "",
+      preloadSharedLibraries: false,
+      ...config,
     },
     lockfile_packages: {},
     bootstrapFinalizedPromise: Promise.resolve(),
     sitepackages: "",
     defaultLdLibraryPath: [],
+    pyVersionTuple: [3, 14, 2],
   };
 };
 
 export const genMockModule = (): PackageManagerModule => {
   return {
+    FS: {
+      mkdirTree: (_path: string) => {},
+      writeFile: (_path: string, _data: Uint8Array, _opts?: object) => {},
+    } as unknown as PackageManagerModule["FS"],
     LDSO: {
       loadedLibsByName: {},
     },
