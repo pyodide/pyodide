@@ -1348,46 +1348,58 @@ def test_contextvars_task_spawned_from_running_task(selenium):
 
 @requires_jspi
 @pytest.mark.requires_dynamic_linking
-def test_thread_state_not_reused_between_tasks(selenium):
-    """A task must not inherit anything from an unrelated task that ran before.
+def test_threading_local_shared_with_tasks(selenium):
+    """threading.local() is shared with calls that stack switch.
 
-    threading.local() storage hangs off tstate->threading_local_key rather than
-    off the thread dict, so it follows thread state identity.
+    There is only one thread. threading.get_ident() and
+    threading.current_thread() report the same thing inside a call that stack
+    switches as they do outside one, so threading.local() has to agree with
+    them. That needs doing explicitly: each call runs on a thread state of its
+    own and threading.local() storage is keyed on the thread state (via
+    tstate->threading_local_key) rather than living in the thread dict.
     """
-    seen, top_level = selenium.run_js(
+    ident_match, seen, top_level = selenium.run_js(
         """
         pyodide.runPython(`
             import threading
             from pyodide.ffi import run_sync
             loc = threading.local()
+            loc.v = "TOP"
+            top_ident = threading.get_ident()
 
             def task(name, p):
                 before = getattr(loc, "v", "<unset>")
                 loc.v = name
                 run_sync(p)
-                return before
+                return [before, threading.get_ident() == top_ident]
         `);
         const task = pyodide.globals.get("task");
         const seen = [];
-        // Run the tasks one after another so each one is free to pick up the
-        // thread state the previous one finished with.
-        for (const name of ["A", "B", "C"]) {
+        let identMatch = true;
+        // Run the calls one after another, so each one starts after the
+        // previous one has finished and released its thread state.
+        for (const name of ["A", "B"]) {
             let release;
             const promise = new Promise((res) => { release = res; });
             const done = task.callPromising(name, promise);
             await new Promise((res) => setTimeout(res, 20));
             release();
-            seen.push(await done);
+            const res = await done;
+            seen.push(res.get(0));
+            identMatch = identMatch && res.get(1);
+            res.destroy();
         }
         task.destroy();
-        return [seen, pyodide.runPython(`getattr(loc, "v", "<unset>")`)];
+        return [identMatch, seen, pyodide.runPython(`loc.v`)];
         """
     )
-    # Every task starts with an empty threading.local(), including after two
-    # other tasks have set a value and exited.
-    assert seen == ["<unset>", "<unset>", "<unset>"]
-    # ...and top level never sees the tasks' values either.
-    assert top_level == "<unset>"
+    # The calls really are on the thread they claim to be on.
+    assert ident_match
+    # Each call sees what the previous writer left, whether that was top level
+    # or another call...
+    assert seen == ["TOP", "A"]
+    # ...and top level sees what the calls wrote.
+    assert top_level == "B"
 
 
 @requires_jspi
@@ -1446,3 +1458,45 @@ def test_task_inherits_asyncgen_hooks(selenium):
         """
     )
     assert seen == ["agen"]
+
+
+@requires_jspi
+@pytest.mark.requires_dynamic_linking
+def test_new_event_loop_inside_task(selenium):
+    """A call that stack switches can create and drive its own event loop.
+
+    WebLoop.__init__ registers itself as the running loop, which records it on
+    the current thread state. A call runs on a thread state of its own, so a
+    loop built there used to be registered only on a thread state that goes
+    away when the call finishes. Its handles run on the event loop's thread
+    state, where asyncio's enter_task() then refused to step the task with
+    "loop ... is not the running loop", and the call hung forever. This is what
+    pytest-asyncio does for every async test.
+    """
+    result = selenium.run_js(
+        """
+        pyodide.runPython(`
+            import asyncio
+
+            async def coro():
+                await asyncio.sleep(0)
+                return "ok"
+
+            def task():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    return loop.run_until_complete(coro())
+                finally:
+                    loop.close()
+        `);
+        const task = pyodide.globals.get("task");
+        const result = await Promise.race([
+            task.callPromising(),
+            new Promise((res) => setTimeout(() => res("<hung>"), 10000)),
+        ]);
+        task.destroy();
+        return result;
+        """
+    )
+    assert result == "ok"

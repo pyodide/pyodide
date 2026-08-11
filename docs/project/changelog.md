@@ -27,7 +27,8 @@ myst:
   - `contextvars` set inside a call that suspends are no longer visible to a
     later unrelated stack switch, and no longer keep the objects they reference
     alive forever.
-  - Calls no longer see `threading.local()` values left behind by unrelated calls.
+  - `threading.local()` is now consistently shared with calls that stack
+    switch.
   - `sys.set_asyncgen_hooks()` now applies inside a call that stack switches, so
     async generators created there are handed to the event loop that has to shut
     them down.
