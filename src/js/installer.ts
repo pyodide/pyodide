@@ -9,10 +9,6 @@ import {
 } from "./package-loading/python-paths";
 import { dirname, resolve } from "./package-loading/posix-path";
 
-// Created lazily on first use: TextEncoder is not available at module-init time
-// in some engines (e.g. d8), which never install packages.
-let textEncoder: TextEncoder | undefined;
-
 /**
  * The Installer class is responsible for installing packages into the Pyodide filesystem.
  * This includes
@@ -81,10 +77,7 @@ export class Installer {
     metadata: Record<string, string>,
   ) {
     for (const [key, value] of Object.entries(metadata)) {
-      this.#module.FS.writeFile(
-        `${installDir}/${distInfoDir}/${key}`,
-        (textEncoder ??= new TextEncoder()).encode(value),
-      );
+      this.#module.FS.writeFile(`${installDir}/${distInfoDir}/${key}`, value);
     }
   }
 

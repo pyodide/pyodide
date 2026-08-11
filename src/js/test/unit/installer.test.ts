@@ -9,6 +9,7 @@ import type { PackageManagerModule } from "../../types.ts";
 globalThis.DEBUG = false;
 
 const dec = new TextDecoder();
+const enc = new TextEncoder();
 
 function moduleWithRecordingFS() {
   const files = new Map<string, Uint8Array>();
@@ -18,8 +19,9 @@ function moduleWithRecordingFS() {
     mkdirTree: (path: string) => {
       dirs.push(path);
     },
-    writeFile: (path: string, data: Uint8Array) => {
-      files.set(path, data);
+    // Mirror Emscripten's FS.writeFile, which UTF-8 encodes string input.
+    writeFile: (path: string, data: Uint8Array | string) => {
+      files.set(path, typeof data === "string" ? enc.encode(data) : data);
     },
   } as unknown as PackageManagerModule["FS"];
   return { mod, files, dirs };
