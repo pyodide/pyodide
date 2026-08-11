@@ -95,10 +95,8 @@ enter_promising_task(void)
   // the caller and the task share one.
   DECLARE_PY_OBJECT(thread_dict);
   thread_dict = Py_XNewRef(PyThreadState_GetDict());
-  // sys.set_asyncgen_hooks() records the hooks on the thread state, so a task
-  // would otherwise run with no hooks installed and async generators it creates
-  // would never be registered with the event loop that is going to have to shut
-  // them down.
+  // sys.set_asyncgen_hooks() records the hooks on the thread state so we need
+  // to copy them over with the event loop.
   PyThreadState* caller_tstate = PyThreadState_Get();
   DECLARE_PY_OBJECT(agen_firstiter);
   agen_firstiter = Py_XNewRef(caller_tstate->async_gen_firstiter);
@@ -106,7 +104,7 @@ enter_promising_task(void)
   agen_finalizer = Py_XNewRef(caller_tstate->async_gen_finalizer);
   // All tasks should see the same thread locals since there is only one thread.
   // Thread locals are created lazily on first use, so force them to exist on
-  // the caller and then share them by reference
+  // the caller.
   if (caller_tstate->threading_local_key == NULL) {
     DECLARE_PY_OBJECT(threading_module);
     threading_module = PyImport_ImportModule("threading");
