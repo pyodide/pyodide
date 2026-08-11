@@ -1006,8 +1006,7 @@ def test_contextvars_task_writes_are_isolated(selenium):
         task.resolve();
         out.insideTask = await task.done;
         out.callerAfterTask = observe();
-        // A second, unrelated task must not see the first task's write. It reuses
-        // the first task's thread state via the freelist.
+        // A second, unrelated task must not see the first task's write.
         task = await startSuspendedTask(undefined, observe);
         task.resolve();
         out.insideLaterTask = await task.done;
@@ -1053,7 +1052,7 @@ def test_contextvars_released_after_task(selenium):
         let task = await startSuspendedTask(poison);
         task.resolve();
         await task.done;
-        // Churn enough tasks to push the thread state out of the freelist too.
+        // Churn some tasks
         for (let i = 0; i < 15; i++) {
             task = await startSuspendedTask();
             task.resolve();
