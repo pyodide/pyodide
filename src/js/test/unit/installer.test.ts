@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import { zipSync, strToU8 } from "fflate";
 import { Installer } from "../../installer.ts";
 import { genMockAPI, genMockModule } from "./test-helper.ts";
+import { SYNC_WASM_COMPILE_LIMIT } from "../../package-loading/dynlib-preload.ts";
 import type { PackageManagerModule } from "../../types.ts";
 
 // @ts-ignore
@@ -27,13 +28,13 @@ function moduleWithRecordingFS() {
   return { mod, files, dirs };
 }
 
-function makeWheel() {
+// \0asm
+const WASM_MAGIC = new Uint8Array([0, 97, 115, 109]);
+
+function makeWheel(soData: Uint8Array = WASM_MAGIC) {
   return zipSync({
     "dummy_pkg/__init__.py": strToU8("__version__ = '0.1.0'\n"),
-    "dummy_pkg/_core.cpython-314-wasm32-emscripten.so": new Uint8Array([
-      // \0asm
-      0, 97, 115, 109,
-    ]),
+    "dummy_pkg/_core.cpython-314-wasm32-emscripten.so": soData,
     "dummy_pkg-0.1.0.dist-info/METADATA": strToU8(
       "Metadata-Version: 2.1\nName: dummy_pkg\n",
     ),
@@ -103,13 +104,53 @@ describe("Installer", () => {
     assert.equal(dec.decode(files.get("/share/dummy/data.txt")), "hello");
   });
 
-  it("loads the shared libraries found in the wheel", async (t) => {
+  it("preloads every shared library when preloadSharedLibraries is set", async (t) => {
     const { mod } = moduleWithRecordingFS();
     const dlopenSpy = t.mock.method(mod, "_emscripten_dlopen_promise", () => 0);
-    const installer = new Installer(genMockAPI(), mod);
+    const installer = new Installer(
+      genMockAPI({ preloadSharedLibraries: true }),
+      mod,
+    );
 
     await installer.install(
       makeWheel(),
+      "dummy_pkg-0.1.0-py3-none-any.whl",
+      "/site",
+    );
+
+    assert.equal(dlopenSpy.mock.callCount(), 1);
+  });
+
+  it("leaves a small shared library for the import machinery by default", async (t) => {
+    const { mod } = moduleWithRecordingFS();
+    const dlopenSpy = t.mock.method(mod, "_emscripten_dlopen_promise", () => 0);
+    const installer = new Installer(
+      genMockAPI({ preloadSharedLibraries: false }),
+      mod,
+    );
+
+    await installer.install(
+      makeWheel(),
+      "dummy_pkg-0.1.0-py3-none-any.whl",
+      "/site",
+    );
+
+    assert.equal(dlopenSpy.mock.callCount(), 0);
+  });
+
+  it("preloads a shared library too large to compile synchronously", async (t) => {
+    const { mod } = moduleWithRecordingFS();
+    const dlopenSpy = t.mock.method(mod, "_emscripten_dlopen_promise", () => 0);
+    const installer = new Installer(
+      genMockAPI({ preloadSharedLibraries: false }),
+      mod,
+    );
+
+    const oversized = new Uint8Array(SYNC_WASM_COMPILE_LIMIT);
+    oversized.set(WASM_MAGIC);
+
+    await installer.install(
+      makeWheel(oversized),
       "dummy_pkg-0.1.0-py3-none-any.whl",
       "/site",
     );

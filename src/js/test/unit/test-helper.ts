@@ -1,6 +1,8 @@
 import { PackageManagerAPI, PackageManagerModule } from "../../types.ts";
 
-export const genMockAPI = (): PackageManagerAPI => {
+export const genMockAPI = (
+  config: Partial<PackageManagerAPI["config"]> = {},
+): PackageManagerAPI => {
   return {
     importlib: {
       invalidate_caches: () => {},
@@ -15,6 +17,8 @@ export const genMockAPI = (): PackageManagerAPI => {
     config: {
       lockFileURL: "",
       packageCacheDir: "",
+      preloadSharedLibraries: false,
+      ...config,
     },
     lockfile_packages: {},
     bootstrapFinalizedPromise: Promise.resolve(),

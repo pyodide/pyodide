@@ -13,6 +13,10 @@ def get_micropip_wheel() -> Path:
     return list(DIST_PATH.glob("micropip*.whl"))[0]
 
 
+def get_dummy_nonpure_wheel() -> Path:
+    return list(DIST_PATH.glob("test_dummy_nonpure-*.whl"))[0]
+
+
 @pytest.mark.skip_refcount_check
 @pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
 def test_load_from_url(selenium_standalone_refresh, httpserver):
@@ -387,6 +391,88 @@ def test_load_bad_so_file(selenium_standalone_refresh):
             await pyodide._api.loadDynlib("/a.so");
             """
         )
+
+
+@pytest.mark.requires_dynamic_linking
+def test_import_bad_so_file(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
+    # A shared library compiled on demand is only rejected once the import
+    # machinery dlopen()s it, so the linker error surfaces as an ImportError
+    # rather than through loadPackage. A plain `.so` is one of the extension
+    # suffixes CPython recognizes, which avoids hardcoding the platform tag.
+    selenium.run_js(
+        """
+        pyodide.FS.writeFile(
+            pyodide._api.sitepackages + "/bad_ext.so", new Uint8Array(4),
+        );
+        """
+    )
+
+    @run_in_pyodide
+    def _run(selenium):
+        import pytest
+
+        with pytest.raises(ImportError, match="bad_ext"):
+            import bad_ext  # noqa: F401
+
+    _run(selenium)
+
+
+def _install_dummy_nonpure_js(request_url: str, wheel_name: str) -> str:
+    return f"""
+        const resp = await fetch("{request_url}");
+        const data = new Uint8Array(await resp.arrayBuffer());
+        await pyodide._api.install(
+            data, "{wheel_name}", pyodide._api.sitepackages,
+        );
+        const isCompiled = () => Object.keys(
+            pyodide._module.LDSO.loadedLibsByName,
+        ).some((name) => name.includes("dummy_nonpure"));
+        const beforeImport = isCompiled();
+        pyodide.runPython("import dummy_nonpure");
+        return [beforeImport, isCompiled()];
+    """
+
+
+@pytest.fixture
+def dummy_nonpure_url(httpserver):
+    wheel = get_dummy_nonpure_wheel()
+    httpserver.expect_oneshot_request("/" + wheel.name).respond_with_data(
+        wheel.read_bytes(),
+        content_type="application/zip",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+    return httpserver.url_for("/" + wheel.name), wheel.name
+
+
+@pytest.mark.requires_dynamic_linking
+def test_shared_library_loading_on_demand(
+    selenium_standalone_refresh, dummy_nonpure_url
+):
+    selenium = selenium_standalone_refresh
+    request_url, wheel_name = dummy_nonpure_url
+
+    before_import, after_import = selenium.run_js(
+        _install_dummy_nonpure_js(request_url, wheel_name)
+    )
+
+    assert not before_import, "small shared library should not be compiled at install"
+    assert after_import, "importing should compile the shared library"
+
+
+@pytest.mark.requires_dynamic_linking
+def test_shared_library_loading_eager(selenium_standalone_noload, dummy_nonpure_url):
+    selenium = selenium_standalone_noload
+    request_url, wheel_name = dummy_nonpure_url
+
+    selenium.run_js("""pyodide = await loadPyodide({preloadSharedLibraries: true});""")
+    before_import, after_import = selenium.run_js(
+        _install_dummy_nonpure_js(request_url, wheel_name)
+    )
+
+    assert before_import, "eager loading should compile the shared library at install"
+    assert after_import
 
 
 @pytest.mark.requires_dynamic_linking

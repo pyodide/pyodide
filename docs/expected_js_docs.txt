@@ -30,6 +30,7 @@ js:attribute
   exports.PyodideConfig.packageBaseUrl?
   exports.PyodideConfig.packageCacheDir?
   exports.PyodideConfig.packages?
+  exports.PyodideConfig.preloadSharedLibraries?
   exports.PyodideConfig.pyproxyToStringRepr?
   exports.PyodideConfig.stdLibURL?
   exports.PyodideConfig.toJsLiteralMap?

@@ -49,7 +49,10 @@ describe("extractArchiveToFS", () => {
     assert.ok(dirs.includes(`${SITE}/pkg`));
 
     assert.deepEqual(result.dynlibs, [
-      `${SITE}/pkg/_core.cpython-314-wasm32-emscripten.so`,
+      {
+        path: `${SITE}/pkg/_core.cpython-314-wasm32-emscripten.so`,
+        size: soData.byteLength,
+      },
     ]);
     assert.equal(result.distInfoDir, "pkg-1.0.dist-info");
     assert.equal(result.dataDir, "pkg-1.0.data");

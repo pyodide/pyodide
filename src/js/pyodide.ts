@@ -176,6 +176,18 @@ export interface PyodideConfig {
   checkAPIVersion?: boolean;
 
   /**
+   * Compile every shared library (``.so`` file) that ships inside a package
+   * while the package is being installed.
+   *
+   * By default only libraries too large to be compiled synchronously are
+   * compiled up front. That makes
+   * :js:func:`pyodide.loadPackage` substantially faster.
+   *
+   * Default: ``false``
+   */
+  preloadSharedLibraries?: boolean;
+
+  /**
    * This is a hook that allows modification of the file system before the
    * main() function is called and the intereter is started. When this is
    * called, it is guaranteed that there is an empty site-packages directory.
@@ -295,12 +307,14 @@ async function initializeConfiguration(
     packageCacheDir: options.packageBaseUrl,
     enableRunUntilComplete: true,
     checkAPIVersion: true,
+    preloadSharedLibraries: false,
     BUILD_ID,
   };
   const config = Object.assign(
     defaultConfig,
     options,
   ) as PyodideConfigWithDefaults;
+  config.preloadSharedLibraries ??= false;
   config.env.HOME ??= "/home/pyodide";
 
   /**

@@ -7,11 +7,12 @@
 import type { FSType } from "../types";
 import type { ArchiveEntry } from "./archive";
 import { shouldLoadDynlib } from "./dynlib-detect";
+import type { DynlibEntry } from "./dynlib-preload";
 import { dirname, resolve } from "./posix-path";
 
 /** @private */
 export interface ExtractResult {
-  dynlibs: string[];
+  dynlibs: DynlibEntry[];
   distInfoDir?: string;
   dataDir?: string;
 }
@@ -33,7 +34,7 @@ export function extractArchiveToFS(
   installDir: string,
   extensionTags: readonly string[],
 ): ExtractResult {
-  const dynlibs: string[] = [];
+  const dynlibs: DynlibEntry[] = [];
   let distInfoDir: string | undefined;
   let dataDir: string | undefined;
 
@@ -63,7 +64,7 @@ export function extractArchiveToFS(
     fs.writeFile(fullPath, data, { canOwn: true });
 
     if (shouldLoadDynlib(name, extensionTags)) {
-      dynlibs.push(fullPath);
+      dynlibs.push({ path: fullPath, size: data.byteLength });
     }
   }
 

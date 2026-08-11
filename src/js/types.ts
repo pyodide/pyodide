@@ -600,7 +600,7 @@ export type PackageManagerAPI = Pick<
 > & {
   config: Pick<
     PyodideConfigWithDefaults,
-    "packageCacheDir" | "packageBaseUrl" | "cdnUrl"
+    "packageCacheDir" | "packageBaseUrl" | "cdnUrl" | "preloadSharedLibraries"
   >;
 };
 /**
