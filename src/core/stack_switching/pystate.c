@@ -113,8 +113,9 @@ enter_promising_task(void)
     threading_local = PyObject_CallMethod(threading_module, "local", NULL);
     FAIL_IF_NULL(threading_local);
     // Reading an attribute is what triggers the lazy creation.
-    Py_XSETREF(tmp, PyObject_GetAttrString(threading_local, "__dict__"));
-    FAIL_IF_NULL(threading_local);
+    DECLARE_PY_OBJECT(res);
+    res = PyObject_GetAttrString(threading_local, "__dict__");
+    FAIL_IF_NULL(res);
   }
   DECLARE_PY_OBJECT(tlocal_key);
   tlocal_key = Py_XNewRef(caller_tstate->threading_local_key);
@@ -153,7 +154,7 @@ enter_promising_task(void)
     DECLARE_PY_OBJECT(res);
     res = _PyObject_CallMethodIdOneArg(
       asyncio_module, &PyId__set_running_loop, loop);
-    FAIL_IF_NILL(res);
+    FAIL_IF_NULL(res);
   }
   return 0;
 }
