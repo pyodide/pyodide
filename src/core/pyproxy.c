@@ -753,11 +753,20 @@ _pyproxy_apply(PyObject* callable,
 void
 set_suspender(JsVal suspender);
 
+int
+enter_promising_task(void);
+
+void
+exit_promising_task(void);
+
 /**
  * call _pyproxy_apply but save the error flag into the argument so it can't be
  * observed by unrelated Python callframes. callPyObjectKwargsSuspending will
  * restore the error flag before calling pythonexc2js(). See
  * test_stack_switching.test_throw_from_switcher for a detailed explanation.
+ *
+ * We also give the task a thread state of its own for its whole lifetime. See
+ * the comment at the top of pystate.c.
  */
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_apply_promising(JsVal suspender,
@@ -769,9 +778,16 @@ _pyproxy_apply_promising(JsVal suspender,
                          PyObject** exc)
 {
   set_suspender(suspender);
-  JsVal res =
-    _pyproxy_apply(callable, jsargs, numposargs, jskwnames, numkwargs);
-  *exc = PyErr_GetRaisedException();
+  JsVal res = JS_ERROR;
+  if (enter_promising_task() == 0) {
+    res = _pyproxy_apply(callable, jsargs, numposargs, jskwnames, numkwargs);
+    // Take the error flag off of the task thread state before handing control
+    // back, otherwise we'd read the error flag of the main thread state.
+    *exc = PyErr_GetRaisedException();
+    exit_promising_task();
+  } else {
+    *exc = PyErr_GetRaisedException();
+  }
   // In case the result is a thenable, in callPromisingKwargs we only want to
   // await the stack switch not the thenable that Python returned. So we wrap
   // the result in a one-entry list. We'll unwrap it in callPromisingKwargs

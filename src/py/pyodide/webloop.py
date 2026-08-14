@@ -272,12 +272,35 @@ class WebLoop(asyncio.AbstractEventLoop):
         if not self.is_closed():
             self.call_soon(asyncio.ensure_future, agen.aclose())
 
+    def _install_running_loop(self) -> None:
+        """Make ourselves the running loop on the current thread state.
+
+        asyncio._set_running_loop() records the loop on the thread state, and
+        with stack switching enabled each call runs on a thread state of its
+        own. A loop constructed inside such a call would otherwise only ever be
+        registered as running there, and that thread state goes away when the
+        call finishes. asyncio's enter_task() requires the thread state running
+        a task's callbacks to have that task's loop registered, so we have to
+        claim the spot every time we dispatch a handle.
+        """
+        if asyncio._get_running_loop() is not self:
+            asyncio._set_running_loop(self)
+
     def _install_asyncgen_hooks(self) -> None:
-        """Install async generator hooks if not already installed."""
-        if self._old_agen_hooks is not None:
+        """Install async generator hooks on the current thread state.
+
+        sys.set_asyncgen_hooks() records the hooks on the thread state rather
+        than globally, and with stack switching enabled each task runs on a
+        thread state of its own, so we have to check every time instead of only
+        once per loop. Note that bound methods compare equal but are not
+        identical, so this has to be `==`.
+        """
+        current = sys.get_asyncgen_hooks()
+        if current.firstiter == self._asyncgen_firstiter_hook:
             return
 
-        self._old_agen_hooks = sys.get_asyncgen_hooks()
+        if self._old_agen_hooks is None:
+            self._old_agen_hooks = current
         sys.set_asyncgen_hooks(
             firstiter=self._asyncgen_firstiter_hook,
             finalizer=self._asyncgen_finalizer_hook,
@@ -459,6 +482,7 @@ class WebLoop(asyncio.AbstractEventLoop):
             return h
 
         def run_handle():
+            self._install_running_loop()
             self._install_asyncgen_hooks()
 
             if h.cancelled():
