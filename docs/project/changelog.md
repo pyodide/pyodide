@@ -15,7 +15,9 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 314.0.5
+
+_August 15, 2026_
 
 - {{ Fix }} Fixed several bugs in how the Python thread state is managed when
   stack switching, which made `contextvars` and `threading.local()` behave
