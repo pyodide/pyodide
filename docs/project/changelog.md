@@ -15,7 +15,9 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 314.0.5
+
+_August 15, 2026_
 
 - {{ Fix }} Fixed several bugs in how the Python thread state is managed when
   stack switching, which made `contextvars` and `threading.local()` behave
@@ -41,7 +43,7 @@ myst:
 
 ## Version 314.0.4
 
-_Aug 4, 2026_
+_August 4, 2026_
 
 - {{ Fix }} Fixed `loop.create_connection()` not handling synthetic IP addresses
   returned by Emscripten's `getaddrinfo()`. {pr}`6397`
