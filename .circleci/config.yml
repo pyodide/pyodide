@@ -533,6 +533,7 @@ jobs:
               -u "${CIRCLE_PROJECT_USERNAME}" \
               -r "${CIRCLE_PROJECT_REPONAME}" \
               -c "${CIRCLE_SHA1}" \
+              -b "See changes at https://pyodide.org/en/stable/project/changelog.html#change-log" \
               -delete \
               ${MAYBE_PRE_RELEASE} \
               "${CIRCLE_TAG}" \
