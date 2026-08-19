@@ -112,12 +112,12 @@ def test_uri_mismatch(selenium_standalone_refresh):
 def test_invalid_package_name(selenium):
     with pytest.raises(
         selenium.JavascriptException,
-        match=r"No known package with name 'wrong name\+\$'",
+        match=r"'wrong name\+\$' is not a valid package name or URL",
     ):
         selenium.load_package("wrong name+$")
     with pytest.raises(
         selenium.JavascriptException,
-        match="No known package with name 'tcp://some_url'",
+        match="'tcp://some_url' is not a valid package name or URL",
     ):
         selenium.load_package("tcp://some_url")
 
