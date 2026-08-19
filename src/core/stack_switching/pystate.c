@@ -24,6 +24,13 @@
 
 int pystate_keepalive;
 
+PyThreadState*
+pystate_get_main_tstate(void);
+void
+pystate_set_main_tstate(PyThreadState* tstate);
+void
+pystate_carry_signal_bit(PyThreadState* from, PyThreadState* to);
+
 _Py_IDENTIFIER(get_event_loop);
 _Py_IDENTIFIER(_set_running_loop);
 
@@ -38,6 +45,12 @@ _Py_IDENTIFIER(_set_running_loop);
  * It is a bug to enter or resume a task when this is not NULL.
  */
 static PyThreadState* handback_tstate = NULL;
+
+// CPython targets signals and main-thread pending calls at
+// _PyRuntime.main_tstate. Keep it pointed at the state currently executing on
+// the main OS thread. This is always either this original state or a live task
+// state.
+static PyThreadState* original_main_tstate = NULL;
 
 /**
  * Dispose of a task's thread state.
@@ -75,6 +88,9 @@ enter_promising_task(void)
                     "Cannot enter a promising task from inside another running "
                     "promising task. This is a bug in Pyodide.");
     FAIL();
+  }
+  if (original_main_tstate == NULL) {
+    original_main_tstate = pystate_get_main_tstate();
   }
 
   // 1. Collect everything the task inherits, while we are still running on the
@@ -126,9 +142,12 @@ enter_promising_task(void)
 
   // 2. Swap in task thread state
   handback_tstate = PyThreadState_Swap(tstate);
+  assert(handback_tstate == original_main_tstate);
+  pystate_set_main_tstate(tstate);
   ON_FAIL({
     // Restore thread state on failure
     PyErr_Clear();
+    pystate_set_main_tstate(original_main_tstate);
     delete_tstate(PyThreadState_Swap(handback_tstate));
     handback_tstate = NULL;
     PyErr_SetString(PyExc_SystemError,
@@ -169,6 +188,8 @@ void
 exit_promising_task(void)
 {
   PyThreadState* mine = PyThreadState_Swap(handback_tstate);
+  pystate_carry_signal_bit(mine, handback_tstate);
+  pystate_set_main_tstate(original_main_tstate);
   handback_tstate = NULL;
   delete_tstate(mine);
 }
@@ -188,6 +209,8 @@ captureThreadState(void)
     return NULL;
   }
   PyThreadState* mine = PyThreadState_Swap(handback_tstate);
+  pystate_carry_signal_bit(mine, handback_tstate);
+  pystate_set_main_tstate(original_main_tstate);
   handback_tstate = NULL;
   return mine;
 }
@@ -196,4 +219,6 @@ EMSCRIPTEN_KEEPALIVE void
 restoreThreadState(PyThreadState* state)
 {
   handback_tstate = PyThreadState_Swap(state);
+  assert(handback_tstate == original_main_tstate);
+  pystate_set_main_tstate(state);
 }

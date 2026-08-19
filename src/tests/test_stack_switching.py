@@ -1500,3 +1500,79 @@ def test_new_event_loop_inside_task(selenium):
         """
     )
     assert result == "ok"
+
+
+@requires_jspi
+@pytest.mark.requires_dynamic_linking
+def test_signal_handler_runs_inside_promising_task(selenium):
+    """A signal detected by task bytecode runs its handler on that task."""
+    result = selenium.run_js(
+        """
+        const M = pyodide._module;
+        const SIGXCPU = 24;
+        const signalAddress = M.__Py_emscripten_signal_in_memory >> 2;
+        const clockAddress = M.__Py_emscripten_signal_clock >> 2;
+        const oldClock = M.HEAP32[clockAddress];
+
+        function deliverSignalNow() {
+            M.HEAP32[signalAddress] = SIGXCPU;
+            M.HEAP32[clockAddress] = 0;
+        }
+
+        pyodide.runPython(`
+            import signal
+
+            signal_hits = []
+            old_sigxcpu_handler = signal.signal(
+                signal.SIGXCPU, lambda signum, frame: signal_hits.append(signum)
+            )
+
+            def spin_until_signal(iterations):
+                for iteration in range(iterations):
+                    if signal_hits:
+                        break
+                return len(signal_hits), iteration
+        `);
+        const spin = pyodide.globals.get("spin_until_signal");
+        try {
+            pyodide.runPython("signal_hits.clear()")
+            deliverSignalNow();
+            const mainResult = spin(200000);
+            const [mainHits, mainIteration] = mainResult.toJs();
+            mainResult.destroy();
+
+            pyodide.runPython("signal_hits.clear()")
+            deliverSignalNow();
+            const taskResult = await spin.callPromising(200000);
+            const [taskHits, taskIteration] = taskResult.toJs();
+            taskResult.destroy();
+
+            // If the task missed the signal, this call on main_tstate dispatches
+            // the stale pending signal before evaluating len(signal_hits).
+            const hitsAfterTask = pyodide.runPython("len(signal_hits)");
+            return {
+                mainHits,
+                mainIteration,
+                taskHits,
+                taskIteration,
+                hitsAfterTask,
+            };
+        } finally {
+            M.HEAP32[signalAddress] = 0;
+            M.HEAP32[clockAddress] = oldClock;
+            spin.destroy();
+            pyodide.runPython(
+                "_ = signal.signal(signal.SIGXCPU, old_sigxcpu_handler)"
+            );
+        }
+        """
+    )
+    assert result["mainHits"] == 1
+    assert result["mainIteration"] < 100
+    assert result["taskHits"] == 1, (
+        "signal handler did not run inside the promising task: "
+        f"loop stopped at {result['taskIteration']}; "
+        f"hits after restoring main_tstate: {result['hitsAfterTask']}"
+    )
+    assert result["taskIteration"] < 100
+    assert result["hitsAfterTask"] == 1
