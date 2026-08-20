@@ -1,4 +1,4 @@
-#define Py_BUILD_CORE_MODULE 1
+#define Py_BUILD_CORE_MODULE 1 // pycore_gil.h requires this to be defined
 #include "Python.h"
 #include "internal/pycore_ceval.h"
 #include "internal/pycore_runtime.h"
@@ -12,8 +12,6 @@ pystate_get_main_tstate(void)
 void
 pystate_set_main_tstate(PyThreadState* tstate)
 {
-  // Promising tasks all execute on the main OS thread. Revisit this if Pyodide
-  // gains pthread support.
   _PyRuntime.main_tstate = tstate;
 }
 
