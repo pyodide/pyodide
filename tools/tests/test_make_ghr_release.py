@@ -7,7 +7,6 @@ sys.path.append(str(Path(__file__).parents[1]))
 from make_ghr_release import (
     changelog_anchor,
     ghr_args,
-    is_prerelease,
     redact,
     release_body,
 )
@@ -114,7 +113,10 @@ def test_ghr_args_prerelease(changelog_path):
 
 
 def test_redact():
-    assert redact(["ghr", "-t", "secret", "0.29.4"], "secret") == "ghr -t $GITHUB_TOKEN 0.29.4"
+    assert (
+        redact(["ghr", "-t", "secret", "0.29.4"], "secret")
+        == "ghr -t $GITHUB_TOKEN 0.29.4"
+    )
 
 
 def test_changelog_anchor_current_changelog():
