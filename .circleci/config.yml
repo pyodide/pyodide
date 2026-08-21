@@ -522,21 +522,12 @@ jobs:
             tar czf dist/xbuildenv-${CIRCLE_TAG}.tar.gz  xbuildenv/
             tar czf dist/xbuildenv-debug-${CIRCLE_TAG}.tar.gz  -C debug xbuildenv
 
-            # If it has an 'a' in the tag it's an alpha so mark it as a prelease
-            [[ "${CIRCLE_TAG}" =~ a ]] && export MAYBE_PRE_RELEASE=-prerelease
-
-            # Options have to come first, last two lines have to be
-            # ${CIRCLE_TAG} and dist.
-            # TODO: Should we get rid of -delete?
-            /tmp/ghr-bin \
-              -t "${GITHUB_TOKEN}" \
-              -u "${CIRCLE_PROJECT_USERNAME}" \
-              -r "${CIRCLE_PROJECT_REPONAME}" \
-              -c "${CIRCLE_SHA1}" \
-              -b "See changes at https://pyodide.org/en/stable/project/changelog.html#change-log" \
-              -delete \
-              ${MAYBE_PRE_RELEASE} \
-              "${CIRCLE_TAG}" \
+            python3 ~/repo/tools/make_ghr_release.py \
+              --ghr-bin /tmp/ghr-bin \
+              --tag "${CIRCLE_TAG}" \
+              --commit "${CIRCLE_SHA1}" \
+              --owner "${CIRCLE_PROJECT_USERNAME}" \
+              --repo "${CIRCLE_PROJECT_REPONAME}" \
               dist
 
       - run:
