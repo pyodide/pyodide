@@ -24,12 +24,10 @@
 
 int pystate_keepalive;
 
+// Defined in pystate_pycore.c since it requires an internal header.
 PyThreadState*
-pystate_get_main_tstate(void);
-void
-pystate_set_main_tstate(PyThreadState* tstate);
-void
-pystate_carry_signal_bit(PyThreadState* from, PyThreadState* to);
+pystate_threadstate_swap(PyThreadState* new_tstate);
+
 
 _Py_IDENTIFIER(get_event_loop);
 _Py_IDENTIFIER(_set_running_loop);
@@ -132,13 +130,11 @@ enter_promising_task(void)
   FAIL_IF_NULL(tstate);
 
   // 2. Swap in task thread state
-  handback_tstate = PyThreadState_Swap(tstate);
-  pystate_set_main_tstate(tstate);
+  handback_tstate = pystate_threadstate_swap(tstate);
   ON_FAIL({
     // Restore thread state on failure
     PyErr_Clear();
-    pystate_set_main_tstate(handback_tstate);
-    delete_tstate(PyThreadState_Swap(handback_tstate));
+    delete_tstate(pystate_threadstate_swap(handback_tstate));
     handback_tstate = NULL;
     PyErr_SetString(PyExc_SystemError,
                     "Unexpected error when entering a promising task");
@@ -177,9 +173,7 @@ enter_promising_task(void)
 void
 exit_promising_task(void)
 {
-  PyThreadState* mine = PyThreadState_Swap(handback_tstate);
-  pystate_carry_signal_bit(mine, handback_tstate);
-  pystate_set_main_tstate(handback_tstate);
+  PyThreadState* mine = pystate_threadstate_swap(handback_tstate);
   handback_tstate = NULL;
   delete_tstate(mine);
 }
@@ -198,9 +192,7 @@ captureThreadState(void)
                     "to. This is a bug in Pyodide.");
     return NULL;
   }
-  PyThreadState* mine = PyThreadState_Swap(handback_tstate);
-  pystate_carry_signal_bit(mine, handback_tstate);
-  pystate_set_main_tstate(handback_tstate);
+  PyThreadState* mine = pystate_threadstate_swap(handback_tstate);
   handback_tstate = NULL;
   return mine;
 }
@@ -208,6 +200,5 @@ captureThreadState(void)
 EMSCRIPTEN_KEEPALIVE void
 restoreThreadState(PyThreadState* state)
 {
-  handback_tstate = PyThreadState_Swap(state);
-  pystate_set_main_tstate(state);
+  handback_tstate = pystate_threadstate_swap(state);
 }

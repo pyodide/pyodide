@@ -87,7 +87,7 @@ src/core/libpyodide.a: \
 	src/core/jsbind.o \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o \
-	src/core/stack_switching/main_tstate.o \
+	src/core/stack_switching/pystate_pycore.o \
 	src/core/stack_switching/pystate.o \
 	src/core/stack_switching/suspenders.o \
 	src/core/print.o \
