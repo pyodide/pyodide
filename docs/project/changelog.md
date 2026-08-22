@@ -15,9 +15,41 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} Fixed `loadPackage()` reporting `No known package with name` when it
+  is given a requirement specifier such as `numpy>=1.0`. It now points at
+  `micropip.install()`, which does accept them. See {issue}`5135`. {pr}`6432`
+
+## Version 314.0.5
+
+_August 15, 2026_
+
+- {{ Fix }} Fixed several bugs in how the Python thread state is managed when
+  stack switching, which made `contextvars` and `threading.local()` behave
+  incorrectly around `pyodide.ffi.run_sync()`:
+
+  - Top level code no longer loses its `contextvars` context,
+    `threading.local()` values and thread dict when suspended stacks resume in a
+    different order than they suspended in.
+  - `contextvars` set inside a call that suspends are no longer visible to a
+    later unrelated stack switch, and no longer keep the objects they reference
+    alive forever.
+  - `threading.local()` is now consistently shared with calls that stack
+    switch.
+  - `sys.set_asyncgen_hooks()` now applies inside a call that stack switches, so
+    async generators created there are handed to the event loop that has to shut
+    them down.
+  - `PyThreadState_Clear()` is now called before `PyThreadState_Delete()`, as
+    the C API requires.
+  - A Python entry point invoked with stack switching enabled now runs
+    with a copy of the `contextvars` context so `ContextVar.set()` calls it makes
+    are never visible to the caller afterwards.
+  {pr}`6421`
+
 ## Version 314.0.4
 
-_Aug 4, 2026_
+_August 4, 2026_
 
 - {{ Fix }} Fixed `loop.create_connection()` not handling synthetic IP addresses
   returned by Emscripten's `getaddrinfo()`. {pr}`6397`
