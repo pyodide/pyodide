@@ -64,7 +64,8 @@ pystate_threadstate_new(PyThreadState* from)
 static void
 transfer_eval_breaker(PyThreadState* from, PyThreadState* to)
 {
-  uintptr_t bits = from->eval_breaker & (_PY_SIGNALS_PENDING_BIT | _PY_GC_SCHEDULED_BIT);
+  uintptr_t bits =
+    from->eval_breaker & (_PY_SIGNALS_PENDING_BIT | _PY_GC_SCHEDULED_BIT);
   if (bits == 0) {
     return;
   }
