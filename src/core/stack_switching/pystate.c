@@ -140,8 +140,8 @@ enter_promising_task(void)
   Py_tracefunc profilefunc = caller_tstate->c_profilefunc;
   DECLARE_PY_OBJECT(profileobj);
   profileobj = Py_XNewRef(caller_tstate->c_profileobj);
-  // pystate_threadstate_new copies the event loop over because doing so requires
-  // internal headers.
+  // pystate_threadstate_new copies the event loop over because doing so
+  // requires internal headers.
   PyThreadState* tstate = pystate_threadstate_new(caller_tstate);
   FAIL_IF_NULL(tstate);
 

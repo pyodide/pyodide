@@ -4,8 +4,8 @@
 // Separated into its own file because it touches internal headers.
 //
 // This file exposes two functions: pystate_threadstate_new(), which builds the
-// thread state for a new task, and pystate_threadstate_swap(), which fixes up the
-// runtime when one thread state takes over from another.
+// thread state for a new task, and pystate_threadstate_swap(), which fixes up
+// the runtime when one thread state takes over from another.
 //
 // Some things to check on Python version update:
 // - The eval_breaker bit list in pycore_ceval.h. Each new bit needs to be
