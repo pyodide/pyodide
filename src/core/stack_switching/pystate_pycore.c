@@ -1,4 +1,6 @@
-#define Py_BUILD_CORE_MODULE 1 // pycore_gil.h requires this to be defined
+// All internal headers require Py_BUILD_CORE_MODULE to be defined.
+#define Py_BUILD_CORE_MODULE 1
+
 #include "Python.h"
 #include "internal/pycore_ceval.h"
 #include "internal/pycore_runtime.h"
@@ -14,7 +16,6 @@ transfer_eval_breaker(PyThreadState* from, PyThreadState* to)
   _Py_set_eval_breaker_bit(to, bits);
 }
 
-
 PyThreadState*
 pystate_threadstate_swap(PyThreadState* new_tstate)
 {
@@ -27,6 +28,6 @@ pystate_threadstate_swap(PyThreadState* new_tstate)
   // always set the current tstate as the main tstate and copy the eval_breaker
   // flags.
   _PyRuntime.main_tstate = new_tstate;
-  transfer_eval_breaker(orig_tstate, new_tstate)
+  transfer_eval_breaker(orig_tstate, new_tstate);
   return orig_tstate;
 }

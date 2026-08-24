@@ -28,7 +28,6 @@ int pystate_keepalive;
 PyThreadState*
 pystate_threadstate_swap(PyThreadState* new_tstate);
 
-
 _Py_IDENTIFIER(get_event_loop);
 _Py_IDENTIFIER(_set_running_loop);
 

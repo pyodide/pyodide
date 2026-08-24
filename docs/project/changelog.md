@@ -17,7 +17,9 @@ myst:
 
 ## Unreleased
 
-- {{ Fix }} Fixed a bug that signal is not properly handled while stack switching. {pr}`6435`
+- {{ Fix }} Fixed a regression in the interaction between signal handling and
+  stack switching caused by {pr}`6421`.
+  {pr}`6435`
 
 - {{ Fix }} Fixed `loadPackage()` reporting `No known package with name` when it
   is given a requirement specifier such as `numpy>=1.0`. It now points at
