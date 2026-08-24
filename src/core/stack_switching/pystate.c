@@ -36,10 +36,10 @@ int pystate_keepalive;
 
 // Defined in pystate_pycore.c since they require internal headers.
 PyThreadState*
-pystate_tstate_new(PyThreadState* from);
+pystate_threadstate_new(PyThreadState* from);
 
 PyThreadState*
-pystate_tstate_swap(PyThreadState* new_tstate);
+pystate_threadstate_swap(PyThreadState* new_tstate);
 
 /**
  * The main thread state that the promising task took over from. We'll reinstall
@@ -140,17 +140,17 @@ enter_promising_task(void)
   Py_tracefunc profilefunc = caller_tstate->c_profilefunc;
   DECLARE_PY_OBJECT(profileobj);
   profileobj = Py_XNewRef(caller_tstate->c_profileobj);
-  // pystate_tstate_new copies the event loop over because doing so requires
+  // pystate_threadstate_new copies the event loop over because doing so requires
   // internal headers.
-  PyThreadState* tstate = pystate_tstate_new(caller_tstate);
+  PyThreadState* tstate = pystate_threadstate_new(caller_tstate);
   FAIL_IF_NULL(tstate);
 
   // 2. Swap in task thread state
-  handback_tstate = pystate_tstate_swap(tstate);
+  handback_tstate = pystate_threadstate_swap(tstate);
   ON_FAIL({
     // Restore thread state on failure
     PyErr_Clear();
-    delete_tstate(pystate_tstate_swap(handback_tstate));
+    delete_tstate(pystate_threadstate_swap(handback_tstate));
     handback_tstate = NULL;
     PyErr_SetString(PyExc_SystemError,
                     "Unexpected error when entering a promising task");
@@ -192,7 +192,7 @@ enter_promising_task(void)
 void
 exit_promising_task(void)
 {
-  PyThreadState* mine = pystate_tstate_swap(handback_tstate);
+  PyThreadState* mine = pystate_threadstate_swap(handback_tstate);
   handback_tstate = NULL;
   delete_tstate(mine);
 }
@@ -211,7 +211,7 @@ captureThreadState(void)
                     "to. This is a bug in Pyodide.");
     return NULL;
   }
-  PyThreadState* mine = pystate_tstate_swap(handback_tstate);
+  PyThreadState* mine = pystate_threadstate_swap(handback_tstate);
   handback_tstate = NULL;
   return mine;
 }
@@ -220,5 +220,5 @@ EMSCRIPTEN_KEEPALIVE void
 restoreThreadState(PyThreadState* state)
 {
   assert(handback_tstate == NULL);
-  handback_tstate = pystate_tstate_swap(state);
+  handback_tstate = pystate_threadstate_swap(state);
 }

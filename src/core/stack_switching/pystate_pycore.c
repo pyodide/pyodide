@@ -3,8 +3,8 @@
 //
 // Separated into its own file because it touches internal headers.
 //
-// This file exposes two functions: pystate_tstate_new(), which builds the
-// thread state for a new task, and pystate_tstate_swap(), which fixes up the
+// This file exposes two functions: pystate_threadstate_new(), which builds the
+// thread state for a new task, and pystate_threadstate_swap(), which fixes up the
 // runtime when one thread state takes over from another.
 //
 // Some things to check on Python version update:
@@ -47,7 +47,7 @@ inherit_asyncio_state(PyThreadState* from, PyThreadState* to)
  * task inherits is handled by enter_promising_task().
  */
 PyThreadState*
-pystate_tstate_new(PyThreadState* from)
+pystate_threadstate_new(PyThreadState* from)
 {
   PyThreadState* tstate = PyThreadState_New(from->interp);
   if (tstate == NULL) {
@@ -76,7 +76,7 @@ transfer_eval_breaker(PyThreadState* from, PyThreadState* to)
 }
 
 PyThreadState*
-pystate_tstate_swap(PyThreadState* new_tstate)
+pystate_threadstate_swap(PyThreadState* new_tstate)
 {
   PyThreadState* orig_tstate = PyThreadState_Swap(new_tstate);
 
