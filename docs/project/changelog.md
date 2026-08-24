@@ -17,6 +17,10 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Fixed a regression in the interaction between signal handling and
+  stack switching caused by {pr}`6421`.
+  {pr}`6435`
+
 - {{ Fix }} Fixed `loadPackage()` reporting `No known package with name` when it
   is given a requirement specifier such as `numpy>=1.0`. It now points at
   `micropip.install()`, which does accept them. See {issue}`5135`. {pr}`6432`
