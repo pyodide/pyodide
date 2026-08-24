@@ -57,9 +57,6 @@ pystate_threadstate_new(PyThreadState* from)
   return tstate;
 }
 
-#define TRANSFERABLE_EVAL_BREAKER_BITS                                         \
-  ((uintptr_t)(_PY_SIGNALS_PENDING_BIT | _PY_GC_SCHEDULED_BIT))
-
 /**
  * Move the eval_breaker bits that mean "the interpreter has work to do" as
  * opposed to "this particular thread state has work to do".
@@ -67,7 +64,7 @@ pystate_threadstate_new(PyThreadState* from)
 static void
 transfer_eval_breaker(PyThreadState* from, PyThreadState* to)
 {
-  uintptr_t bits = from->eval_breaker & TRANSFERABLE_EVAL_BREAKER_BITS;
+  uintptr_t bits = from->eval_breaker & (_PY_SIGNALS_PENDING_BIT | _PY_GC_SCHEDULED_BIT);
   if (bits == 0) {
     return;
   }
@@ -87,9 +84,6 @@ pystate_threadstate_swap(PyThreadState* new_tstate)
   // always set the current tstate as the main tstate and copy the eval_breaker
   // flags.
   _PyRuntime.main_tstate = new_tstate;
-
-  if (orig_tstate != NULL) {
-    transfer_eval_breaker(orig_tstate, new_tstate);
-  }
+  transfer_eval_breaker(orig_tstate, new_tstate);
   return orig_tstate;
 }
