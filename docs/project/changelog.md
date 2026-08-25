@@ -15,7 +15,9 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 314.0.6
+
+_August 25, 2026_
 
 - {{ Fix }} Fixed a regression in the interaction between signal handling and
   stack switching caused by {pr}`6421`.
