@@ -2,7 +2,7 @@ const API = Module.API;
 const Hiwire = {};
 const Tests = {};
 API.tests = Tests;
-API.version = "314.0.5";
+API.version = "314.0.6";
 // This version should be equal to the one in the Makefile.envs
 // TODO: Pass this value dynamically from outside.
 API.abiVersion = "2026_0";
