@@ -1,9 +1,5 @@
-#include "Python.h"
-#include "emscripten.h"
-#include "error_handling.h"
-#include "python_unexposed.h"
-
-// This file manages the Python stack / thread state when stack switching.
+// Note: This file manages the Python stack / thread state when stack switching.
+// It needs to be audited on every Python update.
 //
 // captureThreadState / restoreThreadState are called from JS, in saveState and
 // restoreState in suspenders.c. enter_promising_task / exit_promising_task are
@@ -13,23 +9,37 @@
 // We store the main thread state when we swap it out to enter a promising task
 // and we restore it when the promising task suspends or exits.
 //
-// The logic here is inspired by:
-// https://github.com/python-greenlet/greenlet/blob/master/src/greenlet/greenlet_greenlet.hpp
+// Because each task has a thread state of its own, parts of the threadstate
+// that should be shared between tasks have to be copied by hand.
 //
-// When updating the major Python version it will be necessary to look at that
-// file.
+// The logic is inspired by greenlet, but greenlet makes the opposite choice: it
+// keeps one thread state per thread and saves and restores the fields that
+// should be private to the task. See
+// https://github.com/python-greenlet/greenlet/blob/master/src/greenlet/TPythonState.cpp
+//
+// TODO: Perhaps aligning with greenlet could reduce the amount of effort to
+// maintain this?
+//
+// Whenever updating the Python version, look at the new fields added to
+// PyThreadState and classify them as to whether they should be per-task or
+// per-thread (i.e., global since we have only one thread). Whenever possible,
+// we can see what Greenlet does and copy that.
 //
 // See also https://github.com/python/cpython/pull/32303 which would move more
 // of this logic into upstream CPython
 
+#include "Python.h"
+#include "emscripten.h"
+#include "error_handling.h"
+
 int pystate_keepalive;
 
-// Defined in pystate_pycore.c since it requires an internal header.
+// Defined in pystate_pycore.c since they require internal headers.
+PyThreadState*
+pystate_threadstate_new(PyThreadState* from);
+
 PyThreadState*
 pystate_threadstate_swap(PyThreadState* new_tstate);
-
-_Py_IDENTIFIER(get_event_loop);
-_Py_IDENTIFIER(_set_running_loop);
 
 /**
  * The main thread state that the promising task took over from. We'll reinstall
@@ -67,6 +77,11 @@ delete_tstate(PyThreadState* tstate)
  * - the thread local dict
  * - the running event loop
  * - the async generator hooks
+ * - the trace and profile functions
+ *
+ * All of these live on the thread state but are shared between all tasks. This
+ * list has to be rechecked against the PyThreadState struct every time we
+ * update Python.
  */
 int
 enter_promising_task(void)
@@ -83,15 +98,6 @@ enter_promising_task(void)
 
   // 1. Collect everything the task inherits, while we are still running on the
   //    caller's thread state.
-  DECLARE_PY_OBJECT(asyncio_module);
-  asyncio_module = PyImport_ImportModule("asyncio");
-  FAIL_IF_NULL(asyncio_module);
-  DECLARE_PY_OBJECT(loop);
-  loop = _PyObject_CallMethodIdNoArgs(asyncio_module, &PyId_get_event_loop);
-  if (loop == NULL) {
-    // There is no event loop to propagate.
-    PyErr_Clear();
-  }
   DECLARE_PY_OBJECT(context);
   context = PyContext_CopyCurrent();
   FAIL_IF_NULL(context);
@@ -125,7 +131,18 @@ enter_promising_task(void)
   tlocal_key = Py_XNewRef(caller_tstate->threading_local_key);
   DECLARE_PY_OBJECT(tlocal_sentinel);
   tlocal_sentinel = Py_XNewRef(caller_tstate->threading_local_sentinel);
-  PyThreadState* tstate = PyThreadState_New(PyInterpreterState_Get());
+  // sys.settrace() and sys.setprofile() also record their state on the thread
+  // state. We read these last since everything above can run Python, which
+  // could in theory call sys.settrace().
+  Py_tracefunc tracefunc = caller_tstate->c_tracefunc;
+  DECLARE_PY_OBJECT(traceobj);
+  traceobj = Py_XNewRef(caller_tstate->c_traceobj);
+  Py_tracefunc profilefunc = caller_tstate->c_profilefunc;
+  DECLARE_PY_OBJECT(profileobj);
+  profileobj = Py_XNewRef(caller_tstate->c_profileobj);
+  // pystate_threadstate_new copies the event loop over because doing so
+  // requires internal headers.
+  PyThreadState* tstate = pystate_threadstate_new(caller_tstate);
   FAIL_IF_NULL(tstate);
 
   // 2. Swap in task thread state
@@ -154,11 +171,14 @@ enter_promising_task(void)
   tlocal_key = NULL;
   Py_XSETREF(tstate->threading_local_sentinel, tlocal_sentinel);
   tlocal_sentinel = NULL;
-  if (loop != NULL) {
-    DECLARE_PY_OBJECT(res);
-    res = _PyObject_CallMethodIdOneArg(
-      asyncio_module, &PyId__set_running_loop, loop);
-    FAIL_IF_NULL(res);
+  // These have to be installed with the task's thread state current, so they
+  // come last. They return void and report failures through
+  // PyErr_FormatUnraisable().
+  if (profilefunc != NULL) {
+    PyEval_SetProfile(profilefunc, profileobj);
+  }
+  if (tracefunc != NULL) {
+    PyEval_SetTrace(tracefunc, traceobj);
   }
   return 0;
 }
@@ -199,5 +219,6 @@ captureThreadState(void)
 EMSCRIPTEN_KEEPALIVE void
 restoreThreadState(PyThreadState* state)
 {
+  assert(handback_tstate == NULL);
   handback_tstate = pystate_threadstate_swap(state);
 }
