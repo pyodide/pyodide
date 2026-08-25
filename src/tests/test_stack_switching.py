@@ -1127,6 +1127,63 @@ def test_asyncio_running_loop_in_task(selenium):
 
 @requires_jspi
 @pytest.mark.requires_dynamic_linking
+def test_task_does_not_invent_a_running_loop(selenium):
+    """A task inherits the loop that is really running, not get_event_loop().
+
+    The running loop is recorded on the thread state, so a task has to inherit
+    it from its caller. We used to fetch it with asyncio.get_event_loop(), which
+    falls back to the thread's *current* loop when nothing is running, and then
+    registered whatever came back as the running loop on the task. That made
+    asyncio.get_running_loop() incorrectly report a loop that was not running.
+    """
+    result = selenium.run_js(
+        """
+        pyodide.runPython(`
+            import asyncio
+
+            def report():
+                try:
+                    return type(asyncio.get_running_loop()).__name__
+                except RuntimeError as e:
+                    return f"RuntimeError: {e}"
+        `);
+        const report = pyodide.globals.get("report");
+        try {
+            // WebLoop registers itself as the running loop when it is
+            // constructed. Take it back off, so that there is a current event
+            // loop for get_event_loop() to fall back to but nothing running.
+            const hadRunningLoop = pyodide.runPython(`
+                _saved_loop = asyncio._get_running_loop()
+                asyncio._set_running_loop(None)
+                _saved_loop is not None
+            `);
+            const clearedOnMain = pyodide.runPython("report()");
+            const inTask = await report.callPromising();
+            const fallbackLoop = pyodide.runPython(
+                "type(asyncio.get_event_loop()).__name__"
+            );
+            return { hadRunningLoop, clearedOnMain, inTask, fallbackLoop };
+        } finally {
+            pyodide.runPython(`
+                if "_saved_loop" in globals():
+                    asyncio._set_running_loop(_saved_loop)
+                    del _saved_loop
+            `);
+            report.destroy();
+        }
+        """
+    )
+    # Preconditions: there was a running loop to remove, removing it worked, and
+    # get_event_loop() still has something to fall back to.
+    assert result["hadRunningLoop"]
+    assert result["clearedOnMain"] == "RuntimeError: no running event loop"
+    assert result["fallbackLoop"] == "WebLoop"
+    # The task must report the same thing its caller would, not the fallback.
+    assert result["inTask"] == "RuntimeError: no running event loop"
+
+
+@requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_contextvars_three_interleaved_tasks(selenium):
     """Three tasks, each suspending twice, resumed in an order unrelated to the
     order they suspended in.
@@ -1462,6 +1519,72 @@ def test_task_inherits_asyncgen_hooks(selenium):
 
 @requires_jspi
 @pytest.mark.requires_dynamic_linking
+@pytest.mark.parametrize("hook", ["trace", "profile"])
+def test_task_inherits_trace_and_profile_hooks(selenium, hook):
+    """settrace() and setprofile() callbacks should fire in promising tasks"""
+    result = selenium.run_js(
+        f'const hookName = "{hook}";\n'
+        """
+        pyodide.runPython(`
+            import sys
+            from pyodide.ffi import run_sync
+
+            calls = []
+
+            def hook(frame, event, arg):
+                # Only trace call events
+                if event == "call":
+                    calls.append(frame.f_code.co_name)
+                return None
+
+            def inside_task():
+                return 1
+
+            def after_removal():
+                return 1
+
+            def task(p):
+                # Suspend and resume before doing any work to ensure that the
+                # hook survives a round trip through the event loop
+                run_sync(p)
+                inside_task()
+
+            def install(name):
+                getattr(sys, "set" + name)(hook)
+
+            def remove(name):
+                getattr(sys, "set" + name)(None)
+        `);
+        const task = pyodide.globals.get("task");
+        const install = pyodide.globals.get("install");
+        const remove = pyodide.globals.get("remove");
+        try {
+            install(hookName);
+            const {promise, resolve} = Promise.withResolvers();
+            const done = task.callPromising(promise);
+            await sleep(20);
+            resolve();
+            await done;
+            const sawInsideTask = pyodide.runPython("'inside_task' in calls");
+            remove(hookName);
+            pyodide.runPython("calls.clear()");
+            pyodide.runPython("after_removal()");
+            const sawAfterRemoval = pyodide.runPython("'after_removal' in calls");
+            return { sawInsideTask, sawAfterRemoval };
+        } finally {
+            remove(hookName);
+            task.destroy();
+            install.destroy();
+            remove.destroy();
+        }
+        """
+    )
+    assert result["sawInsideTask"]
+    assert not result["sawAfterRemoval"]
+
+
+@requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_new_event_loop_inside_task(selenium):
     """A call that stack switches can create and drive its own event loop.
 
@@ -1500,3 +1623,79 @@ def test_new_event_loop_inside_task(selenium):
         """
     )
     assert result == "ok"
+
+
+@requires_jspi
+@pytest.mark.requires_dynamic_linking
+def test_signal_handler_runs_inside_promising_task(selenium):
+    """A signal detected by task bytecode runs its handler on that task."""
+    result = selenium.run_js(
+        """
+        const M = pyodide._module;
+        const SIGXCPU = 24;
+        const signalAddress = M.__Py_emscripten_signal_in_memory >> 2;
+        const clockAddress = M.__Py_emscripten_signal_clock >> 2;
+        const oldClock = M.HEAP32[clockAddress];
+
+        function deliverSignalNow() {
+            M.HEAP32[signalAddress] = SIGXCPU;
+            M.HEAP32[clockAddress] = 0;
+        }
+
+        pyodide.runPython(`
+            import signal
+
+            signal_hits = []
+            old_sigxcpu_handler = signal.signal(
+                signal.SIGXCPU, lambda signum, frame: signal_hits.append(signum)
+            )
+
+            def spin_until_signal(iterations):
+                for iteration in range(iterations):
+                    if signal_hits:
+                        break
+                return len(signal_hits), iteration
+        `);
+        const spin = pyodide.globals.get("spin_until_signal");
+        try {
+            pyodide.runPython("signal_hits.clear()")
+            deliverSignalNow();
+            const mainResult = spin(200000);
+            const [mainHits, mainIteration] = mainResult.toJs();
+            mainResult.destroy();
+
+            pyodide.runPython("signal_hits.clear()")
+            deliverSignalNow();
+            const taskResult = await spin.callPromising(200000);
+            const [taskHits, taskIteration] = taskResult.toJs();
+            taskResult.destroy();
+
+            // If the task missed the signal, this call on main_tstate dispatches
+            // the stale pending signal before evaluating len(signal_hits).
+            const hitsAfterTask = pyodide.runPython("len(signal_hits)");
+            return {
+                mainHits,
+                mainIteration,
+                taskHits,
+                taskIteration,
+                hitsAfterTask,
+            };
+        } finally {
+            M.HEAP32[signalAddress] = 0;
+            M.HEAP32[clockAddress] = oldClock;
+            spin.destroy();
+            pyodide.runPython(
+                "_ = signal.signal(signal.SIGXCPU, old_sigxcpu_handler)"
+            );
+        }
+        """
+    )
+    assert result["mainHits"] == 1
+    assert result["mainIteration"] < 100
+    assert result["taskHits"] == 1, (
+        "signal handler did not run inside the promising task: "
+        f"loop stopped at {result['taskIteration']}; "
+        f"hits after restoring main_tstate: {result['hitsAfterTask']}"
+    )
+    assert result["taskIteration"] < 100
+    assert result["hitsAfterTask"] == 1

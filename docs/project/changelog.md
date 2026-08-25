@@ -15,6 +15,26 @@ myst:
 
 # Change Log
 
+## Version 314.0.6
+
+_August 25, 2026_
+
+- {{ Fix }} Fixed a regression in the interaction between signal handling and
+  stack switching caused by {pr}`6421`.
+  {pr}`6435`
+
+- {{ Fix }} `sys.settrace()` and `sys.setprofile()` callbacks are now correctly
+  handled when stack switching.
+  {pr}`6435`
+
+- {{ Fix }} {py:func}`asyncio.get_running_loop` no longer reports a loop that is
+  not actually running from inside a function called with stack switching
+  enabled. {pr}`6435`
+
+- {{ Fix }} Fixed `loadPackage()` reporting `No known package with name` when it
+  is given a requirement specifier such as `numpy>=1.0`. It now points at
+  `micropip.install()`, which does accept them. See {issue}`5135`. {pr}`6432`
+
 ## Version 314.0.5
 
 _August 15, 2026_
