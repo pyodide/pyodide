@@ -110,6 +110,15 @@ export DBG_LDFLAGS_SOURCEMAPDEBUG=-gseparate-dwarf
 
 export DBGFLAGS=$(DBGFLAGS_NODEBUG)
 
+ifdef PYODIDE_ASAN
+	export PYODIDE_SYMBOLS=1
+	# -fsanitize-recover=address makes it possible to continue on errors
+	# by setting ASAN_OPTIONS=halt_on_error=0.
+	# With the default halt_on_error=1 the runtime still aborts on the first error.
+	EXTRA_CFLAGS+= -fsanitize=address -fsanitize-recover=address
+	EXTRA_LDFLAGS+= -fsanitize=address
+endif
+
 ifdef PYODIDE_DEBUG
 	export PYODIDE_SYMBOLS=1
 	export PYODIDE_DEBUG_JS=1
