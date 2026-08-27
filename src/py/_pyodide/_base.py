@@ -538,59 +538,70 @@ async def eval_code_async(
 ) -> Any:
     """Runs a code string asynchronously.
 
-    Uses :py:data:`ast.PyCF_ALLOW_TOP_LEVEL_AWAIT` to compile the code.
+        Uses :py:data:`ast.PyCF_ALLOW_TOP_LEVEL_AWAIT` to compile the code.
 
-    Parameters
-    ----------
-    source :
+        Parameters
+        ----------
+        source :
 
-        The Python source code to run.
+            The Python source code to run.
 
-    globals :
+        globals :
 
-        The global scope in which to execute code. This is used as the
-        ``globals`` parameter for :py:func:`exec`. If ``globals`` is absent, a new
-        empty dictionary is used.
+            The global scope in which to execute code. This is used as the
+            ``globals`` parameter for :py:func:`exec`. If ``globals`` is absent, a new
+            empty dictionary is used.
 
-    locals :
+        locals :
 
-        The local scope in which to execute code. This is used as the ``locals``
-        parameter for :py:func:`exec`. If ``locals`` is absent, the value of
-        ``globals`` is used.
+            The local scope in which to execute code. This is used as the ``locals``
+            parameter for :py:func:`exec`. If ``locals`` is absent, the value of
+            ``globals`` is used.
 
-    return_mode :
+        return_mode :
 
-        Specifies what should be returned. The options are:
+            Specifies what should be returned. The options are:
 
-        :'last_expr': return the last expression
-        :'last_expr_or_assign': return the last expression or the last
-                                assignment.
+            :'last_expr': return the last expression
+            :'last_expr_or_assign': return the last expression or the last
+                                    assignment.
 
-        :'none': always return ``None``.
+            :'none': always return ``None``.
 
-    quiet_trailing_semicolon :
+        quiet_trailing_semicolon :
 
-        Specifies whether a trailing semicolon should suppress the result or
-        not. When this is ``True`` executing ``"1+1 ;"`` returns ``None``, when
-        it is ``False``, executing ``"1+1 ;"`` return ``2``. ``True`` by
-        default.
+            Specifies whether a trailing semicolon should suppress the result or
+            not. When this is ``True`` executing ``"1+1 ;"`` returns ``None``, when
+            it is ``False``, executing ``"1+1 ;"`` return ``2``. ``True`` by
+            default.
 
-    filename :
+        filename :
 
-        The file name to use in error messages and stack traces. ``'<exec>'`` by
-        default.
+            The file name to use in error messages and stack traces. ``'<exec>'`` by
+            default.
 
-    flags :
+        flags :
 
-        The flags to compile with. See the documentation for the built-in
-        :external:py:func:`compile` function.
+            The flags to compile with. See the documentation for the built-in
+            :external:py:func:`compile` function.
 
-    Returns
-    -------
-        If the last nonwhitespace character of ``source`` is a semicolon, return
-        ``None``. If the last statement is an expression, return the result of
-        the expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
-        parameters to modify this default behavior.
+        Returns
+        -------
+            If the last nonwhitespace character of ``source`` is a semicolon, return
+            ``None``. If the last statement is an expression, return the result of
+            the expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
+            parameters to modify this default behavior.
+
+    Examples
+    --------
+    >>> import asyncio
+    >>> source = "1 + 1"
+    >>> asyncio.run(eval_code_async(source))
+    2
+
+    >>> source = "1 + 1;"
+    >>> asyncio.run(eval_code_async(source))  # semicolon suppresses result
+    None
     """
     flags = flags or ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
     return (
