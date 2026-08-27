@@ -105,6 +105,48 @@ directory. Like on native platforms, the RPATH of the dependent extension module
 should also be set as appropriate to ensure that the dependency is resolved
 correctly.
 
+### Extension Modules as `dlopen()` Targets
+
+Some packages have a plugin architecture: compiled code inside the package calls
+`dlopen()` at runtime on a separately built shared library, and that library
+needs symbols defined by the package's own extension module. DuckDB's loadable
+extensions work this way.
+
+This does not work by default. Pyodide loads package shared libraries with local
+symbol visibility, the equivalent of `RTLD_LOCAL`, so a module's exports do not
+reach the shared symbol table that a later, unrelated `dlopen()` call searches.
+The `dlopen()` then fails with `Dynamic linking error: cannot resolve symbol
+<name>` even though the symbol really is exported by the already-loaded module.
+
+Resolve this the same way native platforms do, by declaring the dependency
+rather than relying on global symbol visibility. Link the `dlopen()`-ed library
+against the extension module that provides the symbols, so that it records a
+`NEEDED` entry in its dynamic linking section, and set an RPATH so that the
+dependency can be located at runtime:
+
+```
+emcc -sSIDE_MODULE=2 ... \
+    -Wl,-rpath,'$ORIGIN/../..' \
+    path/to/site-packages/mypkg/_core.cpython-314-wasm32-emscripten.so
+```
+
+When the plugin is `dlopen()`-ed, each `NEEDED` entry is resolved against the
+RPATH, the providing module is found to be already loaded, and its exports are
+merged into the plugin's local scope. The symbols do not become globally
+visible, so this does not affect any other module. `$ORIGIN` expands to the
+directory of the library that declares the RPATH.
+
+Two consequences are worth planning for:
+
+- A `NEEDED` entry records the exact filename of the providing module. For a
+  Python extension module that filename contains the ABI tag, as in
+  `_core.cpython-314-wasm32-emscripten.so`, so the plugin is loadable only by
+  the Python version it was built against and must be rebuilt when that changes.
+- The RPATH must resolve to the same path the providing module was originally
+  loaded from, so that the already-loaded module is reused. If it resolves to a
+  different path, a second independent copy of the module is instantiated rather
+  than an error being raised.
+
 ### No pthreads support
 
 `-pthread` must not be used at compile or link time. If `-pthread` is used, the
