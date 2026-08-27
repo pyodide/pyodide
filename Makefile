@@ -317,6 +317,15 @@ clean-all: clean
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
+# suspenders.c defines `syncifyHandler` which JSPI wraps in a
+# `WebAssembly.Suspending` object at runtime. Global-variable instrumentation
+# turns syncifyHandler into a GOT function pointer. At dylib load time the
+# dynamic linker then tries to resolve it as a plain function and aborts with
+# "bad export type". So disable asan's global instrumentation for suspenders.o.
+ifdef PYODIDE_ASAN
+src/core/stack_switching/suspenders.o: EXTRA_CFLAGS += -mllvm -asan-globals=0
+endif
+
 $(CPYTHONLIB): $(PYODIDE_EMSDK_DIR)/.complete
 	@date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
