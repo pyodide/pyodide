@@ -17,6 +17,9 @@ from ._exceptions import (
     HttpStatusError,
 )
 
+if TYPE_CHECKING:
+    import http.client
+
 if IN_PYODIDE or TYPE_CHECKING:
     try:
         from js import AbortController, AbortSignal, Object, Request
@@ -126,9 +129,18 @@ class FetchResponse:
         return self.js_response.bodyUsed
 
     @property
-    def headers(self) -> dict[str, str]:
-        """Response headers as dictionary."""
-        return Object.fromEntries(self.js_response.headers.entries()).to_py()
+    def headers(self) -> "http.client.HTTPMessage":
+        """Response headers as an :py:class:`http.client.HTTPMessage`."""
+        # http is expensive to import, so only import it when it is needed
+        import http.client
+
+        msg = http.client.HTTPMessage()
+        js_headers = self.js_response.headers
+
+        for key, val in js_headers:
+            msg[key] = val
+
+        return msg
 
     @property
     def ok(self) -> bool:
