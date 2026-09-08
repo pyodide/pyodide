@@ -424,7 +424,7 @@ class CodeRunner:
             return e.value
 
 
-def eval_code(  # noqa: PLR0913
+def eval_code(
     source: str,
     globals: dict[str, Any] | None = None,
     locals: dict[str, Any] | None = None,
@@ -540,7 +540,7 @@ def eval_code(  # noqa: PLR0913
     )
 
 
-async def eval_code_async(  # noqa: PLR0913
+async def eval_code_async(
     source: str,
     globals: dict[str, Any] | None = None,
     locals: dict[str, Any] | None = None,
