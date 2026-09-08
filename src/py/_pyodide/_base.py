@@ -231,13 +231,8 @@ class CodeRunner:
 
     dedent :
 
-        If ``True`` (the default), ``source`` is passed through
-        :external:py:func:`textwrap.dedent` before being parsed, so that
-        code extracted from an indented multi-line string (e.g. inside a
-        Python or JS function) does not need to start at column 0. If
-        ``False``, ``source`` is compiled as-is, so mis-indented top-level
-        code raises :py:exc:`IndentationError` just like it would with a
-        regular Python interpreter.
+        If ``True``, ``source`` is passed through :py:func:`textwrap.dedent` before being parsed.
+        ``True`` by default.
 
     Examples
     --------
@@ -491,10 +486,8 @@ def eval_code(  # noqa: PLR0913
 
     dedent :
 
-        If ``True`` (the default), ``source`` is dedented with
-        :external:py:func:`textwrap.dedent` before being run. If ``False``,
-        ``source`` is compiled as-is, so mis-indented top-level code raises
-        :py:exc:`IndentationError`.
+        If ``True``, ``source`` is passed through :py:func:`textwrap.dedent` before being parsed.
+        ``True`` by default.
 
     Returns
     -------
@@ -611,10 +604,8 @@ async def eval_code_async(  # noqa: PLR0913
 
     dedent :
 
-        If ``True`` (the default), ``source`` is dedented with
-        :external:py:func:`textwrap.dedent` before being run. If ``False``,
-        ``source`` is compiled as-is, so mis-indented top-level code raises
-        :py:exc:`IndentationError`.
+        If ``True``, ``source`` is passed through :py:func:`textwrap.dedent` before being parsed.
+        ``True`` by default.
 
     Returns
     -------
