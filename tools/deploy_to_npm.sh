@@ -2,7 +2,7 @@
 
 set -e
 
-if [[ -z "${NPM_ID_TOKEN}" ]]; then
+if [[ -z "${NPM_ID_TOKEN}" && -z "${DRY_RUN}" ]]; then
     echo "Error: NPM_ID_TOKEN is not set. OIDC token is required for npm trusted publishing." >&2
     exit 1
 fi

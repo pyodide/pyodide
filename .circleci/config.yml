@@ -431,8 +431,14 @@ jobs:
       - run:
           name: test npm deploy (dry run)
           command: |
-            # Fetch OIDC token to verify it's still valid, even for dry run
-            export NPM_ID_TOKEN=$(circleci run oidc get --claims '{"aud": "npm:registry.npmjs.org"}')
+            # Fetch OIDC token to verify it's still valid, even for dry run.
+            # CircleCI does not issue OIDC tokens to pull requests from forks, and a
+            # dry run publishes nothing, so those runs go without one.
+            if [ -z "${CIRCLE_PR_NUMBER:-}" ]; then
+              export NPM_ID_TOKEN=$(circleci run oidc get --claims '{"aud": "npm:registry.npmjs.org"}')
+            else
+              echo "Pull request from a fork: skipping the OIDC token, the dry run does not need it."
+            fi
             DRY_RUN=1 ./tools/deploy_to_npm.sh
 
   test-d8:
