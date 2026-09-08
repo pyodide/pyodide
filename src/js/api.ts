@@ -268,6 +268,12 @@ export class PyodideAPI_ {
    *        Defaults to ``"<exec>"``. If a custom file name is given, the
    *        traceback for any exception that is thrown will show source lines
    *        (unless the given file name starts with ``<`` and ends with ``>``).
+   * @param options.dedent An optional boolean indicating whether ``code``
+   *        should be dedented (via Python's :external:py:func:`textwrap.dedent`)
+   *        before being run, so that indented code copied from inside a
+   *        JavaScript or Python function works without change. Defaults to
+   *        ``true``. If ``false``, ``code`` is run as-is, so top-level code
+   *        that is not flush with column 0 raises an ``IndentationError``.
    * @returns The result of the Python code translated to JavaScript. See the
    *          documentation for :py:func:`~pyodide.code.eval_code` for more info.
    * @example
@@ -288,7 +294,12 @@ export class PyodideAPI_ {
    */
   static runPython(
     code: string,
-    options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
+    options: {
+      globals?: PyProxy;
+      locals?: PyProxy;
+      filename?: string;
+      dedent?: boolean;
+    } = {},
   ): any {
     if (!options.globals) {
       options.globals = API.globals;
@@ -333,11 +344,22 @@ export class PyodideAPI_ {
    *        Defaults to ``"<exec>"``. If a custom file name is given, the
    *        traceback for any exception that is thrown will show source lines
    *        (unless the given file name starts with ``<`` and ends with ``>``).
+   * @param options.dedent An optional boolean indicating whether ``code``
+   *        should be dedented (via Python's :external:py:func:`textwrap.dedent`)
+   *        before being run, so that indented code copied from inside a
+   *        JavaScript or Python function works without change. Defaults to
+   *        ``true``. If ``false``, ``code`` is run as-is, so top-level code
+   *        that is not flush with column 0 raises an ``IndentationError``.
    * @returns The result of the Python code translated to JavaScript.
    */
   static async runPythonAsync(
     code: string,
-    options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
+    options: {
+      globals?: PyProxy;
+      locals?: PyProxy;
+      filename?: string;
+      dedent?: boolean;
+    } = {},
   ): Promise<any> {
     if (!options.globals) {
       options.globals = API.globals;

@@ -13,7 +13,7 @@ from collections.abc import Generator
 from copy import deepcopy
 from importlib import import_module
 from io import StringIO
-from textwrap import dedent
+from textwrap import dedent as _dedent
 from types import CodeType
 from typing import Any, Literal
 
@@ -135,6 +135,7 @@ def _parse_and_compile_gen(
     flags: int = 0x0,
     dont_inherit: bool = False,
     optimize: int = -1,
+    dedent: bool = True,
 ) -> Generator[ast.Module, ast.Module, CodeType]:
     """Parse ``source``, then yield the AST, then compile the AST and return the
     code object.
@@ -144,7 +145,8 @@ def _parse_and_compile_gen(
     the Executor class.
     """
     # handle mis-indented input from multi-line strings
-    source = dedent(source)
+    if dedent:
+        source = _dedent(source)
 
     mod = compile(source, filename, mode, flags | ast.PyCF_ONLY_AST)
 
@@ -227,6 +229,16 @@ class CodeRunner:
         Specifies the optimization level of the compiler. See the documentation
         for the built-in :external:py:func:`compile` function.
 
+    dedent :
+
+        If ``True`` (the default), ``source`` is passed through
+        :external:py:func:`textwrap.dedent` before being parsed, so that
+        code extracted from an indented multi-line string (e.g. inside a
+        Python or JS function) does not need to start at column 0. If
+        ``False``, ``source`` is compiled as-is, so mis-indented top-level
+        code raises :py:exc:`IndentationError` just like it would with a
+        regular Python interpreter.
+
     Examples
     --------
     >>> source = "1 + 1"
@@ -269,6 +281,7 @@ class CodeRunner:
         flags: int = 0x0,
         dont_inherit: bool = False,
         optimize: int = -1,
+        dedent: bool = True,
     ):
         self._compiled = False
         self._source = source
@@ -281,6 +294,7 @@ class CodeRunner:
             flags=flags,
             dont_inherit=dont_inherit,
             optimize=optimize,
+            dedent=dedent,
         )
         self.ast = next(self._gen)
 
@@ -415,7 +429,7 @@ class CodeRunner:
             return e.value
 
 
-def eval_code(
+def eval_code(  # noqa: PLR0913
     source: str,
     globals: dict[str, Any] | None = None,
     locals: dict[str, Any] | None = None,
@@ -426,6 +440,7 @@ def eval_code(
     flags: int = 0x0,
     dont_inherit: bool = False,
     optimize: int = -1,
+    dedent: bool = True,
 ) -> Any:
     """Runs a string as Python source code.
 
@@ -474,6 +489,13 @@ def eval_code(
         The flags to compile with. See the documentation for the built-in
         :external:py:func:`compile` function.
 
+    dedent :
+
+        If ``True`` (the default), ``source`` is dedented with
+        :external:py:func:`textwrap.dedent` before being run. If ``False``,
+        ``source`` is compiled as-is, so mis-indented top-level code raises
+        :py:exc:`IndentationError`.
+
     Returns
     -------
         If the last nonwhitespace character of ``source`` is a semicolon, return
@@ -518,13 +540,14 @@ def eval_code(
             flags=flags,
             dont_inherit=dont_inherit,
             optimize=optimize,
+            dedent=dedent,
         )
         .compile()
         .run(globals, locals)
     )
 
 
-async def eval_code_async(
+async def eval_code_async(  # noqa: PLR0913
     source: str,
     globals: dict[str, Any] | None = None,
     locals: dict[str, Any] | None = None,
@@ -535,6 +558,7 @@ async def eval_code_async(
     flags: int = 0x0,
     dont_inherit: bool = False,
     optimize: int = -1,
+    dedent: bool = True,
 ) -> Any:
     """Runs a code string asynchronously.
 
@@ -585,6 +609,13 @@ async def eval_code_async(
         The flags to compile with. See the documentation for the built-in
         :external:py:func:`compile` function.
 
+    dedent :
+
+        If ``True`` (the default), ``source`` is dedented with
+        :external:py:func:`textwrap.dedent` before being run. If ``False``,
+        ``source`` is compiled as-is, so mis-indented top-level code raises
+        :py:exc:`IndentationError`.
+
     Returns
     -------
         If the last nonwhitespace character of ``source`` is a semicolon, return
@@ -602,6 +633,7 @@ async def eval_code_async(
             flags=flags,
             dont_inherit=dont_inherit,
             optimize=optimize,
+            dedent=dedent,
         )
         .compile()
         .run_async(globals, locals)
@@ -641,7 +673,7 @@ def find_imports(source: str) -> list[str]:
     ['numpy', 'scipy', 'scipy.stats']
     """
     # handle mis-indented input from multi-line strings
-    source = dedent(source)
+    source = _dedent(source)
 
     try:
         mod = ast.parse(source)
