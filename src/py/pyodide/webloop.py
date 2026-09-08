@@ -878,7 +878,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         return sock
 
-    async def create_connection(  # noqa: PLR0913
+    async def create_connection(
         self,
         protocol_factory,
         host=None,
