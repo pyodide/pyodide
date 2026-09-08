@@ -22,7 +22,7 @@ myst:
   {py:func}`pyodide.code.eval_code`, {py:func}`pyodide.code.eval_code_async`
   and {py:class}`pyodide.code.CodeRunner`) to control whether the source is
   dedented before being run. Defaults to `True`, which preserves the existing
-  behavior. See {issue}`6445`.
+  behavior. {pr}`6448`
 
 ## Version 314.0.6
 

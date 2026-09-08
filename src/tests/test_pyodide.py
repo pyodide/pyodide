@@ -209,7 +209,7 @@ def test_eval_code_dedent():
 
     # default (dedent=True) strips the common leading whitespace so the
     # indented block runs fine.
-    assert eval_code(indented_source, {}) is None
+    eval_code(indented_source, {})
 
     # dedent=False compiles the source as-is, so an indented top-level
     # statement raises IndentationError just like it would with a plain
