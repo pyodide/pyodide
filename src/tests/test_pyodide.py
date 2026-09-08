@@ -202,6 +202,26 @@ def test_eval_code():
     assert eval_code("2**1;\n\n", ns, quiet_trailing_semicolon=False) == 2
 
 
+def test_eval_code_dedent():
+    indented_source = """
+        print("hello world")
+    """
+
+    # default (dedent=True) strips the common leading whitespace so the
+    # indented block runs fine.
+    eval_code(indented_source, {})
+
+    # dedent=False compiles the source as-is, so an indented top-level
+    # statement raises IndentationError just like it would with a plain
+    # `python -c` invocation.
+    with pytest.raises(IndentationError):
+        eval_code(indented_source, {}, dedent=False)
+
+    # dedent=False still works for source that is already flush with
+    # column 0.
+    assert eval_code("1 + 1", {}, dedent=False) == 2
+
+
 def test_eval_code_locals():
     globals: dict[str, Any] = {}
     eval_code("x=2", globals, {})
@@ -795,6 +815,48 @@ def test_run_python_locals(selenium):
         assert(() => result2 === 5 + 29);
         locals.destroy();
         globals.destroy();
+        """
+    )
+
+
+def test_run_python_dedent(selenium):
+    selenium.run_js(
+        """
+        // default: indented top-level code is dedented before running.
+        let result = pyodide.runPython("    1 + 1\\n");
+        assert(() => result === 2);
+
+        // dedent: false leaves mis-indented top-level code as-is, so it
+        // raises IndentationError like a normal Python interpreter would.
+        let raised = false;
+        try {
+            pyodide.runPython("    1 + 1\\n", { dedent: false });
+        } catch (e) {
+            raised = true;
+            assert(() => e.message.includes("IndentationError"));
+        }
+        assert(() => raised);
+        """
+    )
+
+
+def test_run_python_async_dedent(selenium):
+    selenium.run_js(
+        """
+        // default: indented top-level code is dedented before running.
+        let result = await pyodide.runPythonAsync("    1 + 1\\n");
+        assert(() => result === 2);
+
+        // dedent: false leaves mis-indented top-level code as-is, so it
+        // raises IndentationError like a normal Python interpreter would.
+        let raised = false;
+        try {
+            await pyodide.runPythonAsync("    1 + 1\\n", { dedent: false });
+        } catch (e) {
+            raised = true;
+            assert(() => e.message.includes("IndentationError"));
+        }
+        assert(() => raised);
         """
     )
 
