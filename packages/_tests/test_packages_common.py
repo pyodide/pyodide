@@ -26,6 +26,7 @@ XFAIL_PACKAGES: dict[str, str] = {
     "numpy-tests": "test only package",
     "coolprop": "slow",
     "psycopg-c": "the psycopg package should be imported before psycopg_c",
+    "psycopg-binary": "the psycopg package should be imported before psycopg_binary",
 }
 
 LOCKFILE_PATH = PYODIDE_ROOT / "dist" / "pyodide-lock.json"
