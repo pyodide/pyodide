@@ -15,7 +15,9 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 314.0.7
+
+_September 14, 2026_
 
 - {{ Feature }} Added a `dedent` option to {js:func}`pyodide.runPython` and
   {js:func}`pyodide.runPythonAsync` (and to the underlying
