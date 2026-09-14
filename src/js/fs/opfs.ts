@@ -1,4 +1,4 @@
-import { PyodideModule } from "./types";
+import { PyodideModule } from "../types";
 
 // https://developer.mozilla.org/en-US/docs/Web/API/FileSystemSyncAccessHandle
 interface FileSystemSyncAccessHandle {
@@ -14,6 +14,9 @@ interface OPFSFileHandle extends FileSystemFileHandle {
   createSyncAccessHandle(): Promise<FileSystemSyncAccessHandle>;
 }
 
+/**
+ * @private
+ */
 export function initializeOPFS(module: PyodideModule) {
   const FS = module.FS;
   const MEMFS = module.FS.filesystems.MEMFS;
