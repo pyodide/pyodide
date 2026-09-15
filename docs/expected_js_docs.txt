@@ -162,6 +162,7 @@ js:function
   pyodide.loadPackagesFromImports
   pyodide.mountNativeFS
   pyodide.mountNodeFS
+  pyodide.mountOPFS
   pyodide.pyimport
   pyodide.registerComlink
   pyodide.registerJsModule
