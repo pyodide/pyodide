@@ -14,7 +14,7 @@ UNSUPPORTED_PACKAGES: dict[str, list[str]] = {
     "chrome": [],
     "firefox": [],
     "safari": [],
-    "node": ["cmyt", "yt", "galpy"],
+    "node": ["cmyt", "yt", "galpy", "coolprop"],
 }
 if "CI" in os.environ:
     UNSUPPORTED_PACKAGES["chrome"].extend(["statsmodels"])
