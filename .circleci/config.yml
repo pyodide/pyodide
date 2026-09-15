@@ -125,13 +125,16 @@ jobs:
       - store_artifacts:
           path: /root/repo/packages/build-logs
 
-  build-packages:
+  fetch-prebuilt-packages:
+    # This release does not change the Emscripten version, the CPython build or
+    # any recipe compared to the release below, so instead of rebuilding all
+    # packages we reuse its package set (and the host cross-build files needed
+    # by create-xbuild-env). See tools/fetch_prebuilt_packages.py.
     parameters:
-      packages:
-        description: The packages to be built.
+      prebuilt_version:
+        description: The Pyodide release to take the packages from.
         type: string
     <<: *defaults
-    resource_class: large
     steps:
       - checkout
       - run: git submodule sync
@@ -140,24 +143,22 @@ jobs:
       - attach_workspace:
           at: .
 
-      - restore_cache:
-          keys:
-            - -pkg3-v20220915-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
+      - run:
+          name: fetch packages from Pyodide << parameters.prebuilt_version >>
+          no_output_timeout: 20m
+          command: |
+            make pyodide_build
+            python tools/fetch_prebuilt_packages.py << parameters.prebuilt_version >>
 
       - run:
-          name: build packages
-          no_output_timeout: 60m
+          name: rebuild snapshot with the full lockfile
           command: |
+            # Not `make dist/snapshot.bin`: that depends on dist/pyodide-lock.json,
+            # which is a FORCE target that would regenerate the lockfile from the
+            # (unbuilt) recipes and drop the packages we just fetched.
             source pyodide_env.sh
-
-            # Set mtime for EM_CONFIG to avoid ccache cache misses
-            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
-
-            ccache -z
-            PYODIDE_PACKAGES='<< parameters.packages >>' make dist/pyodide-lock.json
-            ccache -s
-          environment:
-            PYODIDE_JOBS: 5
+            rm -f dist/snapshot.bin
+            cd dist && node --experimental-wasm-stack-switching makesnap.mjs
 
       - run:
           name: check-size
@@ -168,12 +169,6 @@ jobs:
           command: |
             tar cjf pyodide.tar.gz dist
             tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip
-            tar cjf build-logs.tar.gz  packages/build-logs
-
-      - run:
-          name: Clean up package source files
-          command: |
-            cd packages && find **/build ! -name '.packaged' -type f -exec rm -f {} +
 
       - store_artifacts:
           path: /root/repo/pyodide.tar.gz
@@ -181,13 +176,11 @@ jobs:
       - store_artifacts:
           path: /root/repo/pyodide-core.tar.gz
 
-      - store_artifacts:
-          path: /root/repo/build-logs.tar.gz
-
-      - save_cache:
+      - persist_to_workspace:
+          root: .
           paths:
-            - /root/.ccache
-          key: -pkg3-v20220915-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
+            - ./packages/.artifacts
+            - ./dist
 
   build-pyodide-debug:
     <<: *defaults
@@ -597,100 +590,15 @@ workflows:
             tags:
               only: /.*/
 
-      - build-packages:
-          name: build-static-libraries
-          packages: "tag:static_library"
-          requires:
-            - build-core
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages
-                  - ./dist
-
-      - build-packages:
-          name: build-libraries
-          packages: "tag:library"
-          requires:
-            - build-core
-            - build-static-libraries
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages
-                  - ./dist
-
-      - build-packages:
-          name: build-packages-no-numpy-dependents
-          packages: "*,no-numpy-dependents"
-          requires:
-            - build-core
-            - build-libraries
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages
-                  - ./dist
-
-      - build-packages:
-          name: build-packages-opencv-python
-          packages: opencv-python
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages/opencv-python/build
-                  - ./packages/opencv-python/dist
-                  - ./packages/build-logs/opencv*
-                  - ./dist/opencv*
-
-      - build-packages:
-          name: build-packages-numpy-dependents
-          packages: "*,!opencv-python"
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages
-                  - ./dist
-
-      - build-packages:
+      # Package set reused from the previous patch release, see the job definition.
+      - fetch-prebuilt-packages:
           name: build-packages
-          packages: "*"
+          prebuilt_version: "0.27.7"
           requires:
-            - build-packages-numpy-dependents
-            - build-packages-opencv-python
+            - build-core
           filters:
             tags:
               only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages/.artifacts
-                  - ./dist
 
       - test-main:
           name: test-core-chrome-nodylink
@@ -765,78 +673,27 @@ workflows:
               only: /.*/
 
       - test-main:
-          name: test-packages-chrome-no-numpy-dependents
-          test-params: --runtime=chrome-no-host packages/*/test*.py
-          cache-dir: .pytest_cache_chrome
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./.test_cache
-
-      - test-main:
           name: test-packages-chrome
-          test-params: --runtime=chrome-no-host packages/*/test*.py --skip-passed
-          cache-dir: .pytest_cache_chrome
+          test-params: --runtime=chrome-no-host packages/*/test*.py
           requires:
-            - test-packages-chrome-no-numpy-dependents
             - build-packages
           filters:
             tags:
               only: /.*/
-
-      - test-main:
-          name: test-packages-firefox-no-numpy-dependents
-          test-params: --runtime=firefox-no-host packages/*/test*.py
-          cache-dir: .pytest_cache_firefox
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./.test_cache
 
       - test-main:
           name: test-packages-firefox
-          test-params: --runtime=firefox-no-host packages/*/test*.py --skip-passed
-          cache-dir: .pytest_cache_firefox
+          test-params: --runtime=firefox-no-host packages/*/test*.py
           requires:
-            - test-packages-firefox-no-numpy-dependents
             - build-packages
           filters:
             tags:
               only: /.*/
 
       - test-main:
-          name: test-packages-node-no-numpy-dependents
-          test-params: --runtime=node-no-host packages/*/test*.py
-          cache-dir: .pytest_cache_node
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./.test_cache
-
-      - test-main:
           name: test-packages-node
-          test-params: --runtime=node-no-host packages/*/test*.py --skip-passed
-          cache-dir: .pytest_cache_node
+          test-params: --runtime=node-no-host packages/*/test*.py
           requires:
-            - test-packages-node-no-numpy-dependents
             - build-packages
           filters:
             tags:
@@ -902,7 +759,7 @@ workflows:
           requires:
             - check-release-version
             - test-core-firefox
-            - test-packages-firefox
+            - test-packages-chrome
             - build-pyodide-debug
             - create-xbuild-env
             - build-test-pyc-packages
