@@ -29,6 +29,7 @@ dist*/
 !packages/distro/
 docs/_build/
 emsdk/emsdk
+emsdk/emsdk-*
 emsdk/emscripten
 geckodriver.log
 node_modules

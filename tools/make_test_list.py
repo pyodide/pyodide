@@ -55,15 +55,36 @@ def get_test_name(test: str | dict[str, Any]) -> str:
 
 
 def update_tests(doc_group, tests):
-    for idx, test in reversed(list(enumerate(doc_group))):
-        if get_test_name(test) not in tests:
-            print("removing", test)
-            del doc_group[idx]
+    """Rewrite ``doc_group`` in place so it contains exactly ``tests``, sorted.
 
-    for idx, test in enumerate(sorted(tests)):
-        if idx == len(doc_group) or get_test_name(doc_group[idx]) != test:
-            print("adding", test)
-            doc_group.insert(idx, test)
+    Existing entries are matched by name so that any annotations attached to
+    them are preserved. Tests that no longer exist are dropped and newly
+    discovered tests are added as bare entries.
+    """
+    # Map each existing entry name to its item, preferring an annotated entry
+    # over a bare one if the same name appears more than once. This also
+    # de-duplicates entries.
+    existing: dict[str, Any] = {}
+    for item in doc_group:
+        name = get_test_name(item)
+        if name not in existing or isinstance(item, dict):
+            existing[name] = item
+
+    for name in existing:
+        if name not in tests:
+            print("removing", name)
+
+    new_items = []
+    for name in sorted(tests):
+        if name in existing:
+            new_items.append(existing[name])
+        else:
+            print("adding", name)
+            new_items.append(name)
+
+    # Mutate in place so any file-level comments attached to the sequence are
+    # preserved by the round-trip dumper.
+    doc_group[:] = new_items
 
 
 if __name__ == "__main__":

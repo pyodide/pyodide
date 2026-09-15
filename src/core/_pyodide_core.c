@@ -79,10 +79,10 @@ PyObject*
 PyInit__pyodide_core(void)
 {
   FAIL_RETURN_VALUE(NULL);
-  DECLARE_PY_OBJECT(_pyodide);
   PyObject* core_module = NULL;
   ON_FAIL({ Py_CLEAR(core_module); });
 
+  DECLARE_PY_OBJECT(_pyodide);
   _pyodide = PyImport_ImportModule("_pyodide");
   if (_pyodide == NULL) {
     FATAL_ERROR("Failed to import _pyodide module.");

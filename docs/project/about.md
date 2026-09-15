@@ -65,6 +65,7 @@ Pyodide is a community-driven project that has benefited from the support of var
 
 | Institution                                                                                                          | Contributor(s)      | Contribution Type                 | Period       |
 | -------------------------------------------------------------------------------------------------------------------- | ------------------- | --------------------------------- | ------------ |
+| Cloudflare, Inc.                                                                                                     | Gyeongjae Choi      | Employer-sponsored time           | 2025–Present |
 | Quansight Labs                                                                                                       | Agriya Khetarpal    | Employer-sponsored time           | 2024–Present |
 | Chan Zuckerberg Initiative (CZI) [2022-316713](https://blog.scientific-python.org/scientific-python/2022-czi-grant/) | Agriya Khetarpal    | Research software grant           | 2024–2025    |
 | Cloudflare, Inc.                                                                                                     | Robert Hood Chatham | Employer-sponsored time           | 2023–Present |

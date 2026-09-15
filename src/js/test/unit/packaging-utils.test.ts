@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   canonicalizePackageName,
+  isValidPackageName,
   uriToPackageData,
 } from "../../packaging-utils";
 
@@ -17,6 +18,23 @@ describe("canonicalizePackageName", () => {
       "pytest-benchmark",
     );
     assert.equal(canonicalizePackageName("a_b-c.d"), "a-b-c-d");
+  });
+});
+
+describe("isValidPackageName", () => {
+  it("should accept bare package names", () => {
+    assert.equal(isValidPackageName("jsonpointer"), true);
+    assert.equal(isValidPackageName("ruamel.yaml"), true);
+    assert.equal(isValidPackageName("pytest-pyodide"), true);
+    assert.equal(isValidPackageName("a_b-c.d"), true);
+  });
+  it("should reject requirement specifiers and malformed names", () => {
+    assert.equal(isValidPackageName("jsonpointer==3.0.0"), false);
+    assert.equal(isValidPackageName("numpy>=1.0"), false);
+    assert.equal(isValidPackageName("requests[security]"), false);
+    assert.equal(isValidPackageName("foo bar"), false);
+    assert.equal(isValidPackageName("_foo"), false);
+    assert.equal(isValidPackageName("foo."), false);
   });
 });
 

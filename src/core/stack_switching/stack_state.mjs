@@ -95,25 +95,37 @@ export function enterTask() {
   }
 }
 
-function evictStackUpTo(stop) {
+/**
+ * Save and remove every continuation that has data below `stop`, so that the
+ * caller is free to use the arg stack from `stop` downwards.
+ *
+ * self is the continuation we are about to restore, if any. It is on the
+ * stackStates list because save_state put it there when it suspended but there
+ * is no point in saving its data because we are about to restore it.
+ * Technically it would make sense to leave it on the list, but we will add it
+ * back if we suspend again and if we exit normally it gets removed from the
+ * stack.
+ *
+ * @private
+ */
+function evictStackUpTo(stop, self) {
   let total = 0;
+  // Start by removing self from stackStates
+  if (self) {
+    const idx = stackStates.lastIndexOf(self);
+    if (idx !== -1) {
+      stackStates.splice(idx, 1);
+    }
+  }
   // Search up the stack for things that need to be ejected in their entirety
   // and save them
-  while (stackStates.length > 0 && stackStates.at(-1).stop < stop) {
+  while (stackStates.length > 0 && stackStates.at(-1).stop <= stop) {
     total += stackStates.pop()._save();
   }
   // Part of one more object may need to be ejected.
   const last = stackStates.at(-1);
-  if (last && last.stop !== stop) {
+  if (last) {
     total += last._save_up_to(stop);
-  }
-  // If we just saved all of the last stackState it needs to be removed.
-  // Alternatively, the current StackState may be on the stackStates list.
-  // Technically it would make sense to leave it there, but we will add it
-  // back if we suspend again and if we exit normally it gets removed from the
-  // stack.
-  if (last && last.stop === stop) {
-    stackStates.pop();
   }
   return total;
 }
@@ -159,7 +171,7 @@ export class StackState {
    * @returns How much data we copied. (Only for debugging purposes.)
    */
   restore() {
-    let total = evictStackUpTo(this.stop);
+    let total = evictStackUpTo(this.stop, this);
     if (this._copy.length !== 0) {
       // Now that we've saved everything that might be in our way we can restore
       // the current stack data if need be.

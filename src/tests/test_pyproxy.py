@@ -2573,10 +2573,16 @@ def test_automatic_coroutine_scheduling(selenium):
         pyodide.runPythonAsync("f(4)");
         d(g(5));
         h(6);
-        await sleep(0);
-        await sleep(0);
-        await sleep(0);
         const l = pyodide.globals.get("l");
+        // Wait for the automatically-scheduled coroutines to run. In Node the
+        // webloop schedules callbacks with setImmediate (check phase) while the
+        // test harness `sleep` uses setTimeout (timers phase), so the two can
+        // race under load. Poll a bounded number of event-loop turns until the
+        // expected results have been collected instead of assuming a fixed
+        // number of turns is enough.
+        for (let i = 0; i < 100 && l.length < 3; i++) {
+            await sleep(0);
+        }
         const res = l.toJs();
         for(let p of [f, g, l]) {
             p.destroy();

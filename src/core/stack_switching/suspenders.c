@@ -52,22 +52,24 @@ EM_JS(void, JsvPromise_Syncify_handleError, (void), {
 })
 
 /**
- * Record the current Python thread state and the wasm call stack and argument
- * stack state. This is called by the hiwire_syncify wasm module just prior to
- * suspending the thread. `hiwire_syncify` uses `externref` for the return value
- * so we don't need to wrap this in a hiwire ID.
+ * Record the task thread state and the wasm call stack and argument stack
+ * state. This is called by the JsvPromise_syncify just prior to suspending the
+ * thread.
+ *
+ * _captureThreadState() also restores control to the main thread state, see
+ * pystate.c.
  */
 EM_JS(JsVal, saveState, (void), {
   if (!validSuspender.value) {
     return Module.error;
   }
-  const stackState = new StackState();
   const threadState = _captureThreadState();
   // clang-format off
   if (threadState === 0) {
     return Module.error;
   }
   // clang-format on
+  const stackState = new StackState();
   return {
     threadState,
     stackState,
@@ -77,8 +79,8 @@ EM_JS(JsVal, saveState, (void), {
 
 /**
  * Restore the Python thread state and the wasm argument stack state. This is
- * called by the hiwire_syncify wasm module upon resuming the thread. The
- * argument is the return value from save_state.
+ * called by JsvPromise_syncify upon resuming the thread. The argument is the
+ * return value from save_state.
  */
 EM_JS(void, restoreState, (JsVal state), {
   state.stackState.restore();

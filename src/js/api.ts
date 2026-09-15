@@ -26,6 +26,11 @@ import type { ConnectFunc } from "./fs/wintercg-sockets";
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
 
+// The Pyodide and ABI versions are substituted at build time by esbuild from
+// PYODIDE_VERSION and PYODIDE_ABI_VERSION (see esbuild.config.shared.mjs).
+API.version = API_VERSION;
+API.abiVersion = ABI_VERSION;
+
 /**
  * Runs code after python vm has been initialized but prior to any bootstrapping.
  */
@@ -263,6 +268,8 @@ export class PyodideAPI_ {
    *        Defaults to ``"<exec>"``. If a custom file name is given, the
    *        traceback for any exception that is thrown will show source lines
    *        (unless the given file name starts with ``<`` and ends with ``>``).
+   * @param options.dedent An optional boolean indicating whether ``code``
+   *        should be dedented before being run. Defaults to ``true``.
    * @returns The result of the Python code translated to JavaScript. See the
    *          documentation for :py:func:`~pyodide.code.eval_code` for more info.
    * @example
@@ -283,7 +290,12 @@ export class PyodideAPI_ {
    */
   static runPython(
     code: string,
-    options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
+    options: {
+      globals?: PyProxy;
+      locals?: PyProxy;
+      filename?: string;
+      dedent?: boolean;
+    } = {},
   ): any {
     if (!options.globals) {
       options.globals = API.globals;
@@ -328,11 +340,18 @@ export class PyodideAPI_ {
    *        Defaults to ``"<exec>"``. If a custom file name is given, the
    *        traceback for any exception that is thrown will show source lines
    *        (unless the given file name starts with ``<`` and ends with ``>``).
+   * @param options.dedent An optional boolean indicating whether ``code``
+   *        should be dedented before being run. Defaults to ``true``.
    * @returns The result of the Python code translated to JavaScript.
    */
   static async runPythonAsync(
     code: string,
-    options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
+    options: {
+      globals?: PyProxy;
+      locals?: PyProxy;
+      filename?: string;
+      dedent?: boolean;
+    } = {},
   ): Promise<any> {
     if (!options.globals) {
       options.globals = API.globals;

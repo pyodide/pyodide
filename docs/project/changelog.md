@@ -15,9 +15,112 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 314.0.7
 
-- {{ Performance }} Sped up PyProxy creation. {pr}`6280`
+_September 14, 2026_
+
+- {{ Feature }} Added a `dedent` option to {js:func}`pyodide.runPython` and
+  {js:func}`pyodide.runPythonAsync` (and to the underlying
+  {py:func}`pyodide.code.eval_code`, {py:func}`pyodide.code.eval_code_async`
+  and {py:class}`pyodide.code.CodeRunner`) to control whether the source is
+  dedented before being run. Defaults to `True`, which preserves the existing
+  behavior. {pr}`6448`
+
+## Version 314.0.6
+
+_August 25, 2026_
+
+- {{ Fix }} Fixed a regression in the interaction between signal handling and
+  stack switching caused by {pr}`6421`.
+  {pr}`6435`
+
+- {{ Fix }} `sys.settrace()` and `sys.setprofile()` callbacks are now correctly
+  handled when stack switching.
+  {pr}`6435`
+
+- {{ Fix }} {py:func}`asyncio.get_running_loop` no longer reports a loop that is
+  not actually running from inside a function called with stack switching
+  enabled. {pr}`6435`
+
+- {{ Fix }} Fixed `loadPackage()` reporting `No known package with name` when it
+  is given a requirement specifier such as `numpy>=1.0`. It now points at
+  `micropip.install()`, which does accept them. See {issue}`5135`. {pr}`6432`
+
+## Version 314.0.5
+
+_August 15, 2026_
+
+- {{ Fix }} Fixed several bugs in how the Python thread state is managed when
+  stack switching, which made `contextvars` and `threading.local()` behave
+  incorrectly around `pyodide.ffi.run_sync()`:
+
+  - Top level code no longer loses its `contextvars` context,
+    `threading.local()` values and thread dict when suspended stacks resume in a
+    different order than they suspended in.
+  - `contextvars` set inside a call that suspends are no longer visible to a
+    later unrelated stack switch, and no longer keep the objects they reference
+    alive forever.
+  - `threading.local()` is now consistently shared with calls that stack
+    switch.
+  - `sys.set_asyncgen_hooks()` now applies inside a call that stack switches, so
+    async generators created there are handed to the event loop that has to shut
+    them down.
+  - `PyThreadState_Clear()` is now called before `PyThreadState_Delete()`, as
+    the C API requires.
+  - A Python entry point invoked with stack switching enabled now runs
+    with a copy of the `contextvars` context so `ContextVar.set()` calls it makes
+    are never visible to the caller afterwards.
+  {pr}`6421`
+
+## Version 314.0.4
+
+_August 4, 2026_
+
+- {{ Fix }} Fixed `loop.create_connection()` not handling synthetic IP addresses
+  returned by Emscripten's `getaddrinfo()`. {pr}`6397`
+
+## Version 314.0.3
+
+_July 24, 2026_
+
+- {{ Enhancement }} Reduced the standard library size by excluding the
+  `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
+  to use the `_zoneinfo` C extension. {pr}`6331`
+
+- {{ Fix }} Fixed startTls() not releasing the stream lock when upgrading a
+  socket to TLS, which could cause a crash in some JS runtimes. {pr}`6344`
+
+- {{ Enhancement }} Release archives for cross build envs are now
+  also published as `.tar.gz` alongside the existing `.tar.bz2` archives. New
+  releases will use `.tar.gz` as the primary format in the cross-build
+  environment metadata. {pr}`6346`
+
+## Version 314.0.2
+
+_June 30, 2026_
+
+- {{ Fix }} Fixed a reference-counting bug when copying FFI converters that
+  could free a converter's pre/post-convert callback while still in use.
+  {pr}`6294`
+
+- {{ Enhancement }} Package changes in the lockfile:
+  - healpy is added back to the lockfile, which was removed in 314.0.0 release.
+  - scipy is updated from 1.17.1 to 1.18.0
+  - Following packages are removed from the lockfile as these packages now have PyEmscripten wheels in PyPI.
+    - blosc2
+    - fastcan
+    - gsw
+    - RobotRaconteur
+
+## Version 314.0.1
+
+_June 26, 2026_
+
+- {{ Fix }} `setTimeout()`'s 32-bit signed integer limit was causing a
+  `TimeoutOverflowWarning` for delays past ~24.8 days in
+  `WebLoop.call_later()`. Finite delays past that limit are now clamped to
+  it, and an infinite delay (`asyncio.sleep(math.inf)`) now stays pending
+  until cancelled. {pr}`6306`, {pr}`6310`
 
 - {{ Fix }} `PyodideFuture.then()` and `finally_()` no longer hang when the
   source future is cancelled; the cancellation now propagates to the chained
@@ -35,6 +138,10 @@ myst:
 
 - {{ Fix }} `update()` on a JavaScript `Map` proxy now applies keyword
   arguments instead of silently dropping them. {pr}`6292`
+
+- {{ Fix }} Fixed Node.js socket stream lock release order. {pr}`6312`
+
+- {{ Performance }} Sped up PyProxy creation. {pr}`6280`
 
 - {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
 
