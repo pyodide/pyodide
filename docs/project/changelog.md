@@ -14,6 +14,12 @@ myst:
 
 # Change Log
 
+## Version 0.27.8
+
+_September 15, 2026_
+
+{{Fix}} Fix compatibility of python cli with Node 26.
+
 ## Version 0.27.7
 
 _June 04, 2025_
