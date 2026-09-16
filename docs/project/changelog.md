@@ -15,6 +15,10 @@ myst:
 
 # Change Log
 
+## Version 314.0.8
+
+_November 13, 2026_
+
 ## Version 314.0.7
 
 _September 14, 2026_
