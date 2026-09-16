@@ -246,6 +246,11 @@ _June 09, 2026_
   are passed to Python.
   {pr}`6245`
 
+## Version 0.29.5
+
+_September 15, 2026_
+
+{{Fix}} Fix compatibility of python cli with Node 26.
 
 ## Version 0.29.4
 
@@ -534,6 +539,12 @@ _July 4, 2025_
   - pygame-ce
   - pyproj
   - zarr
+
+## Version 0.27.8
+
+_September 15, 2026_
+
+{{Fix}} Fix compatibility of python cli with Node 26.
 
 ## Version 0.27.7
 
