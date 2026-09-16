@@ -58,6 +58,9 @@ EM_JS(void, JsvPromise_Syncify_handleError, (void), {
  *
  * _captureThreadState() also restores control to the main thread state, see
  * pystate.c.
+ *
+ * tstate->current_frame points into the stack, so detachCurrentFrame() nulls it
+ * out to prevent crashes from code that walks the stack.
  */
 EM_JS(JsVal, saveState, (void), {
   if (!validSuspender.value) {
@@ -69,9 +72,11 @@ EM_JS(JsVal, saveState, (void), {
     return Module.error;
   }
   // clang-format on
+  const currentFrame = _detachCurrentFrame(threadState);
   const stackState = new StackState();
   return {
     threadState,
+    currentFrame,
     stackState,
     suspender : suspenderGlobal.value,
   };
@@ -84,7 +89,7 @@ EM_JS(JsVal, saveState, (void), {
  */
 EM_JS(void, restoreState, (JsVal state), {
   state.stackState.restore();
-  _restoreThreadState(state.threadState);
+  _restoreThreadState(state.threadState, state.currentFrame);
   suspenderGlobal.value = state.suspender;
   validSuspender.value = true;
 });

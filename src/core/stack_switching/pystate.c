@@ -1,9 +1,10 @@
 // Note: This file manages the Python stack / thread state when stack switching.
 // It needs to be audited on every Python update.
 //
-// captureThreadState / restoreThreadState are called from JS, in saveState and
-// restoreState in suspenders.c. enter_promising_task / exit_promising_task are
-// called from C, in _pyproxy_apply_promising and run_main_promising.
+// captureThreadState / detachCurrentFrame / restoreThreadState are called from
+// JS, in saveState and restoreState in suspenders.c. enter_promising_task /
+// exit_promising_task are called from C, in _pyproxy_apply_promising and
+// run_main_promising.
 //
 // Every in-flight "promising task" owns a PyThreadState for its whole lifetime.
 // We store the main thread state when we swap it out to enter a promising task
@@ -216,9 +217,36 @@ captureThreadState(void)
   return mine;
 }
 
+/**
+ * Unlink the frame chain from a suspended task's thread state and return it.
+ * restoreThreadState puts it back when the task resumes.
+ *
+ * Python frames live on the thread state's data stack, which is heap memory,
+ * but _PyEval_EvalFrameDefault links a _PyEntryFrame into the chain and that is
+ * a C local which can be evicted when the frame is suspended.
+ *
+ * The GC and a few other things walk the current_frame of every tstate. With
+ * current_frame set to NULL, a suspended task looks like a thread that isn't
+ * running any Python code, which they all handle.
+ *
+ * The GC walks the stack as a quick way to find objects that are definitely
+ * alive but the reference counts also keep the objects of a suspended task
+ * alive during an incremental collection, so it is not a problem to hide the
+ * current_frame from the GC.
+ */
+EMSCRIPTEN_KEEPALIVE struct _PyInterpreterFrame*
+detachCurrentFrame(PyThreadState* tstate)
+{
+  struct _PyInterpreterFrame* frame = tstate->current_frame;
+  tstate->current_frame = NULL;
+  return frame;
+}
+
 EMSCRIPTEN_KEEPALIVE void
-restoreThreadState(PyThreadState* state)
+restoreThreadState(PyThreadState* state, struct _PyInterpreterFrame* frame)
 {
   assert(handback_tstate == NULL);
+  assert(state->current_frame == NULL);
+  state->current_frame = frame;
   handback_tstate = pystate_threadstate_swap(state);
 }
