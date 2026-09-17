@@ -750,9 +750,6 @@ _pyproxy_apply(PyObject* callable,
   return python2js(pyresult);
 }
 
-void
-set_suspender(JsVal suspender);
-
 int
 enter_promising_task(void);
 
@@ -769,15 +766,13 @@ exit_promising_task(void);
  * the comment at the top of pystate.c.
  */
 EMSCRIPTEN_KEEPALIVE JsVal
-_pyproxy_apply_promising(JsVal suspender,
-                         PyObject* callable,
+_pyproxy_apply_promising(PyObject* callable,
                          JsVal jsargs,
                          size_t numposargs,
                          JsVal jskwnames,
                          size_t numkwargs,
                          PyObject** exc)
 {
-  set_suspender(suspender);
   JsVal res = JS_ERROR;
   if (enter_promising_task() == 0) {
     res = _pyproxy_apply(callable, jsargs, numposargs, jskwnames, numkwargs);

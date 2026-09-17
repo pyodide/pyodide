@@ -567,11 +567,8 @@ function callPyObjectKwargs(ptrobj: number, jsargs: any[], kwargs: any) {
  * It returns a promise. Inside Python, JS promises can be syncified, which
  * switches the stack to synchronously wait for them to be resolved.
  *
- * Pretty much everything is the same as callPyObjectKwargs except we use the
- * special JSPI-friendly promisingApply wrapper of `__pyproxy_apply`. This
- * causes the VM to invent a suspender and call a wrapper module which stores it
- * into suspenderGlobal (for later use by JsvPromise_syncify). Then it calls
- * _pyproxy_apply with the same arguments we gave to `promisingApply`.
+ * Pretty much everything is the same as callPyObjectKwargs except we use
+ * `_pyproxy_apply_promising`.
  */
 async function callPyObjectKwargsPromising(
   ptrobj: number,

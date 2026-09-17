@@ -98,9 +98,6 @@ run_main()
   return exitcode;
 }
 
-void
-set_suspender(JsVal suspender);
-
 int
 enter_promising_task(void);
 
@@ -114,9 +111,8 @@ exit_promising_task(void);
  * whole lifetime. See the ownership model at the top of pystate.c.
  */
 EMSCRIPTEN_KEEPALIVE int
-run_main_promising(JsVal suspender)
+run_main_promising(void)
 {
-  set_suspender(suspender);
   if (enter_promising_task() != 0) {
     PyErr_Print();
     return 1;
