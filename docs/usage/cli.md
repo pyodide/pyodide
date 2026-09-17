@@ -15,8 +15,8 @@ file system.
 
 ## Platform support
 
-It should work on Linux and macOS. There is currently no Windows support. It
-requires an installation of NodeJS >= 20.
+It should work on Linux, macOS, and Windows. It requires
+an installation of NodeJS >= 20.
 
 ## Installation
 

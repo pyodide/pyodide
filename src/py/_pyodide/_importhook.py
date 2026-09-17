@@ -117,7 +117,16 @@ class JsLoader(Loader):
         return True
 
 
-WINDOWS_DRIVE_REGEX = re.compile(r"^[a-zA-Z]:")
+WINDOWS_ABSOLUTE_DRIVE_REGEX = re.compile(r"^([a-zA-Z]):[\\/]")
+
+
+def windows_path_to_linux(path: str) -> str | None:
+    """Convert an ordinary Windows absolute drive path to a Pyodide path."""
+    match = WINDOWS_ABSOLUTE_DRIVE_REGEX.match(path)
+    if not match:
+        return None
+    remainder = re.sub(r"[\\/]+", "/", path[2:])
+    return f"/{match.group(1).lower()}{remainder}"
 
 
 class WindowsToLinuxPathFinder:
@@ -141,12 +150,10 @@ class WindowsToLinuxPathFinder:
         converted_paths: list[str] = []
         for p in sys_path:
             # Convert only if it's a string and looks like a Windows absolute path
-            if not WINDOWS_DRIVE_REGEX.match(p):
+            linux_path = windows_path_to_linux(p)
+            if linux_path is None:
                 continue
 
-            # Convert 'C:\path\to\dir' to '/path/to/dir'
-            # Sometimes the path may contain forward slashes, sometimes backslashes...
-            linux_path = p[2:].replace("//", "/").replace("\\", "/")
             converted_paths.append(linux_path)
 
         if not converted_paths:

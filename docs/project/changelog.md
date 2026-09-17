@@ -15,6 +15,12 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} The Windows `python` CLI now handles paths across multiple drive
+  letters by mounting referenced drives at distinct virtual roots such as `/c`
+  and `/d`.
+
 ## Version 314.0.7
 
 _September 14, 2026_
