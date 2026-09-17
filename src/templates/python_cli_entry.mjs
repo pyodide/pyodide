@@ -173,7 +173,7 @@ async function main() {
     await py.useNodeSockFS();
   } catch (e) {
     console.warn("Failed to initialize socket support");
-  };
+  }
 
   let sideGlobals = py.runPython("{}");
   function handleExit(code) {
