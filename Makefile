@@ -236,7 +236,7 @@ dist/makesnap.mjs: src/templates/makesnap.mjs dist
 	cp $< $@
 
 dist/snapshot.bin: all-but-packages dist/pyodide-lock.json dist/makesnap.mjs
-	cd dist && node --experimental-wasm-stack-switching makesnap.mjs
+	cd dist && node --experimental-wasm-jspi makesnap.mjs
 
 dist/module_test.html: src/templates/module_test.html dist
 	cp $< $@

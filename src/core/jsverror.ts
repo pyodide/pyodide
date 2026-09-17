@@ -1,7 +1,7 @@
 // @ts-ignore Can't find jsverror.wasm or it's corresponding type declarations
 import jsverrorWasm from "./jsverror.wasm";
 
-declare const jsverrorWasm: Uint8Array;
+declare const jsverrorWasm: BufferSource;
 
 const jsvErrorInstancePromise: Promise<WebAssembly.Instance | undefined> =
   (async function () {

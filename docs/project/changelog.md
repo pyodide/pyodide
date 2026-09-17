@@ -25,6 +25,10 @@ myst:
   restore it when we resume.
   {pr}`6466`
 
+- {{ Breaking }} Removed support for JSPI with Node 20. This support used an
+  early version of the JSPI proposal. Node 20 is end of life since March 2026.
+  {pr}`6465`
+
 ## Version 314.0.7
 
 _September 14, 2026_
