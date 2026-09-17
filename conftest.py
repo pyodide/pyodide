@@ -41,8 +41,7 @@ def set_configs():
 
     pytest_pyodide_config.set_flags(
         "node",
-        pytest_pyodide_config.get_flags("node")
-        + ["--experimental-wasm-jspi"],
+        pytest_pyodide_config.get_flags("node") + ["--experimental-wasm-jspi"],
     )
 
     # There are a bunch of global objects that occasionally enter the hiwire cache
