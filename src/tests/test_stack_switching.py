@@ -1699,3 +1699,91 @@ def test_signal_handler_runs_inside_promising_task(selenium):
     )
     assert result["taskIteration"] < 100
     assert result["hitsAfterTask"] == 1
+
+
+@requires_jspi
+@pytest.mark.requires_dynamic_linking
+def test_gc_with_evicted_suspended_task(selenium):
+    """Walking every thread state's frames must not touch a suspended task's
+    evicted argument stack.
+
+    Regression test for https://github.com/pyodide/pyodide/issues/6464.
+
+    Each time C calls into Python, _PyEval_EvalFrameDefault links an entry frame
+    that lives on the wasm argument stack into the thread state's frame chain.
+    When a task suspends, another task can take over its part of the argument
+    stack, in which case StackState evicts the data to a copy. The incremental
+    gc walks the frames of every thread state and used to follow the suspended
+    task's chain into the overwritten memory.
+
+    `first` suspends, `second` is placed directly below it and suspends deep in
+    a chain of entry frames, then `first` resumes which evicts `second`. What
+    ends up in second's old memory depends on the stack layout, so rather than
+    hoping for a crash we fill the region with 0xff bytes. With the bug, the
+    collector follows second's chain to its entry frame, which now consists
+    entirely of 0xffffffff, and traps with a memory access out of bounds.
+    """
+    result = selenium.run_js(
+        """
+        const M = pyodide._module;
+        pyodide.runPython(`
+            import gc
+            from pyodide.ffi import run_sync
+
+            # __getattr__ is called from C, so each level puts an entry frame
+            # on the argument stack.
+            def nested(depth, then):
+                if depth == 0:
+                    return then()
+                cls = type("G", (), {"__getattr__": lambda self, name: nested(depth - 1, then)})
+                return getattr(cls(), "x")
+
+            def first(p, corrupt):
+                run_sync(p)
+                corrupt()
+                gc.collect(1)
+                return "first done"
+
+            def second(p, probe):
+                def suspend():
+                    probe()
+                    return run_sync(p)
+                return nested(4, suspend)
+        `);
+        const first = pyodide.globals.get("first");
+        const second = pyodide.globals.get("second");
+        const tick = () => new Promise((res) => setTimeout(res, 20));
+        // Stack pointer just before second suspends. All of second's entry
+        // frames are above this.
+        let secondSp;
+        const probe = () => { secondSp = M.stackSave(); };
+        const corrupt = () => {
+            // second has been evicted so nothing below first's current stack
+            // pointer is live. Everything between here and secondSp used to be
+            // second's data.
+            const sp = M.stackSave();
+            if (!(secondSp < sp)) {
+                throw new Error(`unexpected stack layout: ${secondSp} >= ${sp}`);
+            }
+            M.HEAPU8.fill(0xff, secondSp, sp);
+        };
+        try {
+            let releaseFirst, releaseSecond;
+            const p1 = new Promise((res) => { releaseFirst = res; });
+            const p2 = new Promise((res) => { releaseSecond = res; });
+            const firstDone = first.callPromising(p1, corrupt);
+            await tick();
+            const secondDone = second.callPromising(p2, probe);
+            await tick();
+            releaseFirst();
+            const firstResult = await firstDone;
+            releaseSecond("second done");
+            const secondResult = await secondDone;
+            return { firstResult, secondResult };
+        } finally {
+            first.destroy();
+            second.destroy();
+        }
+        """
+    )
+    assert result == {"firstResult": "first done", "secondResult": "second done"}

@@ -19,6 +19,16 @@ myst:
 
 _November 13, 2026_
 
+### General
+
+- {{ Fix }} Fixed a fatal error when using pybind11 extensions that acquire the
+  GIL. PyBind11 caches a thread state in a TLS variable, which since we only
+  have one thread is a global. It then assumes it can restore this tstate.
+  However, {pr}`6421` gave each stack switching task a thread state of its own,
+  violating this assumption. There is now a single thread state again, just like
+  the way greenlet handles stack switching.
+  {pr}`6466` {pr}`6487`
+
 ## Version 314.0.7
 
 _September 14, 2026_
