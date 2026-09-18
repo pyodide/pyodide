@@ -21,6 +21,18 @@ myst:
   letters by mounting referenced drives at distinct virtual roots such as `/c`
   and `/d`.
 
+- {{ Fix }} Fixed a segfault error in the garbage collector due to stack
+  switching. The garbage collector would walk `tstate.current_frame` to find
+  objects it could mark as definitely alive. However, `tstate.current_frame`
+  includes some stack memory which can be evicted when the task is suspended. To
+  fix, we null out `tstate.current_frame` while the task is suspended and
+  restore it when we resume.
+  {pr}`6466`
+
+- {{ Breaking }} Removed support for JSPI with Node 20. This support used an
+  early version of the JSPI proposal. Node 20 is end of life since March 2026.
+  {pr}`6465`
+
 ## Version 314.0.7
 
 _September 14, 2026_
