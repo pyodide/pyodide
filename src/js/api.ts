@@ -879,8 +879,10 @@ API.finalizeBootstrap = function (
     importhook.register_js_finder();
     importhook.register_js_module("js", jsglobals);
     importhook.register_js_module("pyodide_js", pyodide);
-    importhook.register_windows_finder();
   }
+  importhook.register_windows_finder(
+    RUNTIME_ENV.IN_NODE && process.platform === "win32",
+  );
 
   // import pyodide_py. We want to ensure that as much stuff as possible is
   // already set up before importing pyodide_py to simplify development of

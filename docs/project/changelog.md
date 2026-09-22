@@ -17,6 +17,10 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} The Windows `python` CLI now handles paths across multiple drive
+  letters by mounting referenced drives at distinct virtual roots such as `/c`
+  and `/d`.
+
 - {{ Fix }} Fixed a segfault error in the garbage collector due to stack
   switching. The garbage collector would walk `tstate.current_frame` to find
   objects it could mark as definitely alive. However, `tstate.current_frame`
