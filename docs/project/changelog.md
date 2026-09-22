@@ -29,6 +29,13 @@ _November 13, 2026_
   the way greenlet handles stack switching.
   {pr}`6466` {pr}`6487`
 
+### `python` CLI entrypoint
+
+- {{ Fix }} The Windows `python` CLI now handles paths across multiple drive
+  letters by mounting referenced drives at distinct virtual roots such as `/c`
+  and `/d`.
+  {pr}`6467`
+
 ## Version 314.0.7
 
 _September 14, 2026_

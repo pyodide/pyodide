@@ -2,6 +2,64 @@ import { loadPyodide } from "./pyodide.mjs";
 import { readdirSync, statSync } from "fs";
 
 /**
+ * Convert an ordinary Windows absolute drive path to its mounted Emscripten
+ * path.
+ *
+ * For example, "C:\path\to\file" becomes "/c/path/to/file".
+ */
+function windowsPathToUnix(path) {
+  if (process.platform !== "win32") {
+    return path;
+  }
+
+  const match = /^([A-Za-z]):[\\/]/.exec(path);
+  if (!match) {
+    return path;
+  }
+
+  return `/${match[1].toLowerCase()}${path.slice(2).replace(/[\\/]+/g, "/")}`;
+}
+
+/**
+ * Return native Windows drive roots referenced by paths and their Emscripten
+ * mount points.
+ *
+ * On Windows, readdirSync("/") only returns the directory under the working drive (e.g. C:\)
+ * Since the working directory may differ from the directory that this script is executed from (== python is executed from),
+ * we need to mount the other drives as well.
+ */
+function windowsDriveMounts() {
+  const candidatePaths = getWindowsPathCandidates();
+  const drives = new Set();
+  for (const path of candidatePaths) {
+    const match = /^([A-Za-z]):[\\/]/.exec(path);
+    if (match) {
+      drives.add(match[1].toUpperCase());
+    }
+  }
+
+  return [...drives]
+    .sort()
+    .filter((drive) => {
+      const root = `${drive}:\\`;
+      return isAccessibleDriveRoot(root);
+    })
+    .map((drive) => {
+      const root = `${drive}:\\`;
+      return { root, mountpoint: `/${drive.toLowerCase()}` };
+    });
+}
+
+function isAccessibleDriveRoot(root) {
+  try {
+    return statSync(root).isDirectory();
+  } catch {
+    // Unavailable or inaccessible drive roots cannot be mounted.
+    return false;
+  }
+}
+
+/**
  * Determine which native top level directories to mount into the Emscripten
  * file system.
  *
@@ -10,6 +68,10 @@ import { readdirSync, statSync } from "fs";
  * am not sure why but if we link tmp then the process silently fails.
  */
 function dirsToMount() {
+  if (process.platform === "win32") {
+    return windowsDriveMounts();
+  }
+
   const filteredDirs = new Set([
     // Unix
     "dev",
@@ -29,28 +91,7 @@ function dirsToMount() {
         return false;
       }
     })
-    .map((dir) => "/" + dir);
-}
-
-/**
- * Convert a Windows absolute path to a Unix-style path.
- * Strips the drive letter (e.g., "C:") and converts backslashes to forward slashes.
- *
- * @example
- * windowsPathToUnix("C:\\Users\\siha\\file.txt") // returns "/Users/siha/file.txt"
- * windowsPathToUnix("D:\\projects\\myapp") // returns "/projects/myapp"
- */
-function windowsPathToUnix(path) {
-  if (process.platform === "win32") {
-    // Remove drive letter (e.g., "C:" or "D:")
-    let unixPath = path.replace(/^[A-Za-z]:/, "");
-
-    // Replace all backslashes with forward slashes
-    unixPath = unixPath.replace(/\\/g, "/");
-
-    return unixPath;
-  }
-  return path;
+    .map((dir) => ({ root: "/" + dir, mountpoint: "/" + dir }));
 }
 
 /**
@@ -72,11 +113,30 @@ const _sysExecutable = process.argv[thisProgramIndex].slice(
   thisProgramFlag.length,
 );
 
+/**
+ * Return the paths to mount into the Emscripten file system.
+ * This is used only on Windows to determine which drives to mount.
+ *
+ * Alternatively, we can loop through all drives A-Z and check if they exist,
+ * but that introduces additional overhead. For now, we'll just use the paths
+ * that are passed to the script.
+ */
+function getWindowsPathCandidates() {
+  const pythonPath = process.env.PYTHONPATH?.split(";") ?? [];
+  return [
+    process.cwd(),
+    _sysExecutable,
+    ...process.argv.slice(thisProgramIndex + 1),
+    process.env.VIRTUAL_ENV,
+    ...pythonPath,
+  ];
+}
+
 function fsInit(FS) {
   const mounts = dirsToMount();
   for (const mount of mounts) {
-    FS.mkdirTree(mount);
-    FS.mount(FS.filesystems.NODEFS, { root: mount }, mount);
+    FS.mkdirTree(mount.mountpoint);
+    FS.mount(FS.filesystems.NODEFS, { root: mount.root }, mount.mountpoint);
   }
 }
 
