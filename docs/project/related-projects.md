@@ -20,6 +20,7 @@
 - [PyScript](https://pyscript.net/) is an open source platform for Python in the
   browser. It defines `<script type="py">` html elements to allow creation of
   JavaScript-free HTML/CSS/Python web applications.
+- [PyRun](https://pyrun.in) is a browser-based Python learning platform with interactive lessons, exercises, a terminal, SQL playground, and notebook. Python execution uses Pyodide.
 - [futurecoder](https://futurecoder.io/) is an interactive Python
   course running on Pyodide. It includes an
   [IDE](https://futurecoder.io/course/#ide) with a REPL,
