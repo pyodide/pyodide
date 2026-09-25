@@ -71,7 +71,9 @@ async function main() {
     let pytest = pyodide.pyimport("pytest");
     let args = process.argv.slice(2);
     console.log("pytest args:", args);
-    exit_code = pytest.main(pyodide.toPy(args));
+    // Stack switching lets time.sleep() and urllib3 requests block inside
+    // tests. It needs JSPI, so this job runs on Node 24.
+    exit_code = await pytest.main.callPromising(pyodide.toPy(args));
   } catch (e) {
     console.error(e);
     // Arbitrary exit code here. I have seen this code reached instead of a
