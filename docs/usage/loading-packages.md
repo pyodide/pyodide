@@ -91,9 +91,8 @@ Pure Python wheels can also be installed from any URL with {mod}`micropip`,
 
 ```py
 import micropip
-micropip.install(
-    'https://example.com/files/snowballstemmer-2.0.0-py2.py3-none-any.whl'
-)
+
+micropip.install("https://example.com/files/snowballstemmer-2.0.0-py2.py3-none-any.whl")
 ```
 
 Micropip decides whether a file is a URL based on whether it ends in ".whl" or

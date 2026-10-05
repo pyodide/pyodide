@@ -46,12 +46,12 @@ import socket
 # Create a socket
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Connect to a server
-s.connect(('localhost', 8080))
+s.connect(("localhost", 8080))
 # Send some data
-s.sendall(b'Hello, world')
+s.sendall(b"Hello, world")
 # Receive some data
 data = s.recv(1024)
-print('Received', repr(data))
+print("Received", repr(data))
 # Close the socket
 s.close()
 ```
@@ -67,11 +67,13 @@ For example, you can use the `pymysql` driver to connect to a MySQL database:
 import pymysql
 
 # Connect to the database
-connection = pymysql.connect(host='localhost', user='user', password='password', database='test')
+connection = pymysql.connect(
+    host="localhost", user="user", password="password", database="test"
+)
 # Create a cursor
 cursor = connection.cursor()
 # Execute a query
-cursor.execute('SELECT * FROM my_table')
+cursor.execute("SELECT * FROM my_table")
 # Fetch the results
 results = cursor.fetchall()
 print(results)
