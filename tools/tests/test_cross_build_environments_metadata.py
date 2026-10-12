@@ -11,7 +11,7 @@ METADATA_FILE_V2 = REPO_ROOT / "metadata" / "pyodide-cross-build-environments-v2
 
 @pytest.mark.parametrize("metadata_file", [METADATA_FILE_V1, METADATA_FILE_V2])
 def test_load(metadata_file):
-    model = CrossBuildEnvMetaSpec.model_validate_json(metadata_file.read_text())
+    model = CrossBuildEnvMetaSpec.from_json(metadata_file.read_text())
     assert model.releases
 
 
@@ -21,5 +21,5 @@ def test_v1_has_no_published_at():
 
 
 def test_v2_has_published_at():
-    model = CrossBuildEnvMetaSpec.model_validate_json(METADATA_FILE_V2.read_text())
+    model = CrossBuildEnvMetaSpec.from_json(METADATA_FILE_V2.read_text())
     assert all(r.published_at is not None for r in model.releases.values())

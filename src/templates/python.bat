@@ -90,8 +90,8 @@ REM Determine Node Flags based on Version
     echo "   process.exit(1);"
     echo "}"
     echo.
-    echo "if (major_version  >= 20 ^&^& major_version ^<^= 24) {"
-    echo "   process.stdout.write('--experimental-wasm-stack-switching');"
+    echo "if (major_version  >= 22 ^&^& major_version ^<^= 24) {"
+    echo "   process.stdout.write('--experimental-wasm-jspi');"
     echo "}"
 )> "%TEMP%\__node_check.js"
 

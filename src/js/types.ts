@@ -300,6 +300,9 @@ export interface EmscriptenModule {
   HEAPU32: Uint32Array;
   HEAP16: Int16Array;
   SOCKFS: any;
+  DNS: {
+    lookup_addr: (addr: string) => string | null;
+  };
   getSocketAddress: (addr: number, addrlen: number) => any;
   getExceptionMessage(e: number): [string, string];
   exitCode: number | undefined;
@@ -571,12 +574,16 @@ export interface API {
   LiteralMap: any;
   sitePackages: string;
   initializeNodeSockFS: typeof initializeNodeSockFS;
+  loadOPFS: (
+    mountpoint: string,
+    opfsHandle: FileSystemDirectoryHandle,
+  ) => Promise<void>;
 
   _nodeSock: {
     connect: (fd: number, host: string, port: number) => Promise<void>;
     recv: (fd: number, nbytes: number) => Promise<Uint8Array | number>;
     send: (fd: number, data: any) => Promise<number>;
-    startTls: (fd: number) => number;
+    startTls: (fd: number) => Promise<number>;
   };
 }
 

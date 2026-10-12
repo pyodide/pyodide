@@ -387,6 +387,69 @@ def test_mysql_pymysql_tls(selenium_nodesock, mysql_test_db):
     run(selenium_nodesock, host, port, user, password, db)
 
 
+#   pytest src/tests/test_database_driver.py::test_mysql_aiomysql_features -m db
+@pytest.mark.skip_refcount_check
+@pytest.mark.db
+@only_node
+def test_mysql_aiomysql_features(selenium_nodesock, mysql_test_db):
+    cfg = mysql_test_db
+
+    host = "localhost" if cfg["host"] == "127.0.0.1" else cfg["host"]
+    port = cfg["port"]
+    user = cfg["user"]
+    password = cfg["password"]
+    db = cfg["db"]
+
+    @run_in_pyodide(packages=["micropip"])
+    async def run(selenium, host, port, user, password, db):
+        import micropip
+
+        await micropip.install(["aiomysql==0.3.2", "pymysql==1.1.0"])
+
+        import aiomysql
+
+        conn = await aiomysql.connect(
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            db=db,
+            autocommit=True,
+        )
+        try:
+            async with conn.cursor() as cur:
+                await cur.execute("DROP TABLE IF EXISTS pyodide_aiomysql_test")
+                await cur.execute(
+                    """
+                    CREATE TABLE pyodide_aiomysql_test (
+                        id INT PRIMARY KEY AUTO_INCREMENT,
+                        name VARCHAR(255) NOT NULL,
+                        value INT NOT NULL
+                    )
+                    """
+                )
+                await cur.executemany(
+                    "INSERT INTO pyodide_aiomysql_test (name, value) VALUES (%s, %s)",
+                    [("alpha", 1), ("beta", 2), ("gamma", 3)],
+                )
+                await cur.execute(
+                    "UPDATE pyodide_aiomysql_test SET value = value + 10 WHERE name = %s",
+                    ("alpha",),
+                )
+                await cur.execute(
+                    "SELECT name, value FROM pyodide_aiomysql_test ORDER BY id"
+                )
+                result = await cur.fetchall()
+
+            assert result == (("alpha", 11), ("beta", 2), ("gamma", 3))
+        finally:
+            await conn.ensure_closed()
+
+        assert conn.closed
+
+    run(selenium_nodesock, host, port, user, password, db)
+
+
 @pytest.fixture(scope="session")
 def pg_admin_config():
     host = os.environ.get("POSTGRES_HOST", "127.0.0.1")

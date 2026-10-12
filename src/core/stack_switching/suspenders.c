@@ -2,24 +2,14 @@
 #include "emscripten.h"
 #include "jslib.h"
 
-EM_JS(void, set_suspender, (JsVal suspender), {
-  suspenderGlobal.value = suspender;
-})
-
 // clang-format off
-EM_JS(JsVal, get_suspender, (), {
-  return suspenderGlobal.value;
-})
-
-EM_JS(JsVal, syncifyHandler, (JsVal x, JsVal y), {
+EM_JS(JsVal, syncifyHandler, (JsVal x), {
   return Module.error;
 }
 
-async function inner(x, y) {
-  // In the old JSPI API, we get the promise as first argument.
-  // In the new JSPI API we get it as the second argument.
+async function inner(x) {
   try {
-    return await (x ?? y);
+    return await x;
   } catch (e) {
     if (e && e.pyodide_fatal_error) {
       throw e;
@@ -28,14 +18,8 @@ async function inner(x, y) {
     return Module.error;
   }
 }
-if (newJspiSupported) {
+if (jspiSupported) {
   syncifyHandler = new WebAssembly.Suspending(inner);
-} else if (oldJspiSupported) {
-  syncifyHandler = new WebAssembly.Function(
-    { parameters: ["externref", "externref"], results: ["externref"] },
-    inner,
-    { suspending: "first" }
-  );
 }
 )
 // clang-format on
@@ -52,38 +36,43 @@ EM_JS(void, JsvPromise_Syncify_handleError, (void), {
 })
 
 /**
- * Record the current Python thread state and the wasm call stack and argument
- * stack state. This is called by the hiwire_syncify wasm module just prior to
- * suspending the thread. `hiwire_syncify` uses `externref` for the return value
- * so we don't need to wrap this in a hiwire ID.
+ * Record the task thread state and the wasm call stack and argument stack
+ * state. This is called by the JsvPromise_syncify just prior to suspending the
+ * thread.
+ *
+ * _captureThreadState() also restores control to the main thread state, see
+ * pystate.c.
+ *
+ * tstate->current_frame points into the stack, so detachCurrentFrame() nulls it
+ * out to prevent crashes from code that walks the stack.
  */
 EM_JS(JsVal, saveState, (void), {
   if (!validSuspender.value) {
     return Module.error;
   }
-  const stackState = new StackState();
   const threadState = _captureThreadState();
   // clang-format off
   if (threadState === 0) {
     return Module.error;
   }
   // clang-format on
+  const currentFrame = _detachCurrentFrame(threadState);
+  const stackState = new StackState();
   return {
     threadState,
+    currentFrame,
     stackState,
-    suspender : suspenderGlobal.value,
   };
 });
 
 /**
  * Restore the Python thread state and the wasm argument stack state. This is
- * called by the hiwire_syncify wasm module upon resuming the thread. The
- * argument is the return value from save_state.
+ * called by JsvPromise_syncify upon resuming the thread. The argument is the
+ * return value from save_state.
  */
 EM_JS(void, restoreState, (JsVal state), {
   state.stackState.restore();
-  _restoreThreadState(state.threadState);
-  suspenderGlobal.value = state.suspender;
+  _restoreThreadState(state.threadState, state.currentFrame);
   validSuspender.value = true;
 });
 
@@ -94,8 +83,7 @@ JsvPromise_Syncify(JsVal promise)
   if (JsvError_Check(state)) {
     return JS_ERROR;
   }
-  JsVal suspender = get_suspender();
-  JsVal result = syncifyHandler(suspender, promise);
+  JsVal result = syncifyHandler(promise);
   restoreState(state);
   if (JsvError_Check(result)) {
     JsvPromise_Syncify_handleError();

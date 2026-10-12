@@ -2,10 +2,6 @@ const API = Module.API;
 const Hiwire = {};
 const Tests = {};
 API.tests = Tests;
-API.version = "314.1.0.dev0";
-// This version should be equal to the one in the Makefile.envs
-// TODO: Pass this value dynamically from outside.
-API.abiVersion = "2026_0";
 Module.hiwire = Hiwire;
 
 function getTypeTag(x) {
@@ -100,16 +96,6 @@ Module.iterObject = function* (object) {
     }
   }
 };
-
-function wasmFunctionType(wasm_func) {
-  if (!WebAssembly.Function) {
-    throw new Error("No type reflection");
-  }
-  if (WebAssembly.Function.type) {
-    return WebAssembly.Function.type(wasm_func);
-  }
-  return wasm_func.type();
-}
 
 // biome-ignore format: Keep list compact
 const pythonReservedWords = new Set(

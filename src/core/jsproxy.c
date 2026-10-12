@@ -151,23 +151,24 @@ struct ObjectMapFields
 
 // clang-format off
 
-// dict and js fields always needs to be in the same place.
-// dict field is part of PyBaseExceptionObject, so it should go up top.
-// The js field has to come after ExceptionFields so we get the memory layout
-// right so we put it at the end
+// dict field needs to be in same position as it is in PyBaseExceptionObject.
 // In between we have a union with the extra fields that are used by just by one
-// of JsBuffer, JsCallable, and JsException
+// of JsBuffer, JsCallable, or JsObjectMap
 
 typedef struct
 {
-  PyObject_HEAD
-  PyObject* dict;
   union {
-    struct BufferFields bf;
-    struct MethodFields mf;
-    struct ExceptionFields ef;
-    struct ObjectMapFields omf;
-  } tf;
+    PyBaseExceptionObject exc;
+    struct {
+      PyObject_HEAD
+      PyObject* dict;
+      union {
+        struct BufferFields bf;
+        struct MethodFields mf;
+        struct ObjectMapFields omf;
+      } tf;
+    };
+  };
   JsRef js;
   PyObject* signature;
   // Cache for the type's _js_type_flags, computed lazily by JsProxy_getflags.
@@ -181,34 +182,9 @@ typedef struct
 
 #define JS_TYPE_FLAGS_UNCACHED (-2)
 
-// Layout of dict and ExceptionFields needs to exactly match the layout of the
-// same-name fields of BaseException. Otherwise bad things will happen. Check it
-// with static asserts!
+// Position of dict needs to match between exception objects and other cases.
 _Static_assert(offsetof(PyBaseExceptionObject, dict) == offsetof(JsProxy, dict),
                "dict layout conflict between JsProxy and PyExc_BaseException");
-
-#define CHECK_EXC_FIELD(field)                                                 \
-  _Static_assert(                                                              \
-    offsetof(PyBaseExceptionObject, field) ==                                  \
-      offsetof(JsProxy, tf) + offsetof(struct ExceptionFields, field),         \
-    "'" #field "' layout conflict between JsProxy and PyExc_BaseException");
-
-CHECK_EXC_FIELD(args);
-CHECK_EXC_FIELD(notes);
-CHECK_EXC_FIELD(traceback);
-CHECK_EXC_FIELD(context);
-CHECK_EXC_FIELD(cause);
-CHECK_EXC_FIELD(suppress_context);
-
-#undef CHEC_EXC_FIELD
-
-#define FIELD_SIZE(type, field) sizeof(((type*)0)->field)
-
-_Static_assert(sizeof(PyBaseExceptionObject) ==
-                 sizeof(PyObject) + FIELD_SIZE(JsProxy, dict) +
-                   sizeof(struct ExceptionFields),
-               "size conflict between JsProxy and PyExc_BaseException");
-#undef FIELD_SIZE
 
 #define JsProxy_REF(x) ((JsProxy*)x)->js
 #define JsProxy_VAL(x) hiwire_get(JsProxy_REF(x))
@@ -219,7 +195,7 @@ _Static_assert(sizeof(PyBaseExceptionObject) ==
 #define JsMethod_THIS(x) JsRef_toVal(JsMethod_THIS_REF(x))
 #define JsMethod_VECTORCALL(x) (((JsProxy*)x)->tf.mf.vectorcall)
 
-#define JsException_ARGS(x) (((JsProxy*)x)->tf.ef.args)
+#define JsException_ARGS(x) (((JsProxy*)x)->exc.args)
 
 #define JsBuffer_FORMAT(x) (((JsProxy*)x)->tf.bf.format)
 #define JsBuffer_BYTE_LENGTH(x) (((JsProxy*)x)->tf.bf.byteLength)
@@ -580,9 +556,11 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
   DECLARE_PY_OBJECT(attr_sig);
   if (JsProxy_SIG(self) != NULL) {
     _Py_IDENTIFIER(get_attr_sig);
+    PyObject* get_attr_sig_name = _PyUnicode_FromId(&PyId_get_attr_sig);
+    FAIL_IF_NULL(get_attr_sig_name);
     DECLARE_PY_OBJECT(get_attr_sig_res);
-    get_attr_sig_res = _PyObject_CallMethodIdObjArgs(
-      jsbind, &PyId_get_attr_sig, JsProxy_SIG(self), attr, NULL);
+    get_attr_sig_res = PyObject_CallMethodObjArgs(
+      jsbind, get_attr_sig_name, JsProxy_SIG(self), attr, NULL);
     FAIL_IF_NULL(get_attr_sig_res);
 
     bool got_converter;
@@ -2576,27 +2554,26 @@ static PyMethodDef JsMap_clear_MethodDef = {
 PyObject*
 JsMap_update(JsProxy* self, PyObject* args, PyObject* kwds)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* arg = NULL;
   if (!PyArg_ParseTuple(args, "|O:update", &arg)) {
-    return NULL;
+    FAIL();
   }
+  PyObject* update_name = _PyUnicode_FromId(&PyId_update);
+  FAIL_IF_NULL(update_name);
   if (arg != NULL) {
     DECLARE_PY_OBJECT(status);
-    status = _PyObject_CallMethodIdObjArgs(
-      MutableMapping, &PyId_update, self, arg, NULL);
-    if (status == NULL) {
-      return NULL;
-    }
+    status =
+      PyObject_CallMethodObjArgs(MutableMapping, update_name, self, arg, NULL);
+    FAIL_IF_NULL(status);
   }
   if (kwds != NULL) {
     DECLARE_PY_OBJECT(status);
     // kwds is a dict; passing it positionally applies its entries the same way
     // dict.update(**kwds) would.
-    status = _PyObject_CallMethodIdObjArgs(
-      MutableMapping, &PyId_update, self, kwds, NULL);
-    if (status == NULL) {
-      return NULL;
-    }
+    status =
+      PyObject_CallMethodObjArgs(MutableMapping, update_name, self, kwds, NULL);
+    FAIL_IF_NULL(status);
   }
   Py_RETURN_NONE;
 }

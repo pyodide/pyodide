@@ -202,6 +202,26 @@ def test_eval_code():
     assert eval_code("2**1;\n\n", ns, quiet_trailing_semicolon=False) == 2
 
 
+def test_eval_code_dedent():
+    indented_source = """
+        print("hello world")
+    """
+
+    # default (dedent=True) strips the common leading whitespace so the
+    # indented block runs fine.
+    eval_code(indented_source, {})
+
+    # dedent=False compiles the source as-is, so an indented top-level
+    # statement raises IndentationError just like it would with a plain
+    # `python -c` invocation.
+    with pytest.raises(IndentationError):
+        eval_code(indented_source, {}, dedent=False)
+
+    # dedent=False still works for source that is already flush with
+    # column 0.
+    assert eval_code("1 + 1", {}, dedent=False) == 2
+
+
 def test_eval_code_locals():
     globals: dict[str, Any] = {}
     eval_code("x=2", globals, {})
@@ -795,6 +815,48 @@ def test_run_python_locals(selenium):
         assert(() => result2 === 5 + 29);
         locals.destroy();
         globals.destroy();
+        """
+    )
+
+
+def test_run_python_dedent(selenium):
+    selenium.run_js(
+        """
+        // default: indented top-level code is dedented before running.
+        let result = pyodide.runPython("    1 + 1\\n");
+        assert(() => result === 2);
+
+        // dedent: false leaves mis-indented top-level code as-is, so it
+        // raises IndentationError like a normal Python interpreter would.
+        let raised = false;
+        try {
+            pyodide.runPython("    1 + 1\\n", { dedent: false });
+        } catch (e) {
+            raised = true;
+            assert(() => e.message.includes("IndentationError"));
+        }
+        assert(() => raised);
+        """
+    )
+
+
+def test_run_python_async_dedent(selenium):
+    selenium.run_js(
+        """
+        // default: indented top-level code is dedented before running.
+        let result = await pyodide.runPythonAsync("    1 + 1\\n");
+        assert(() => result === 2);
+
+        // dedent: false leaves mis-indented top-level code as-is, so it
+        // raises IndentationError like a normal Python interpreter would.
+        let raised = false;
+        try {
+            await pyodide.runPythonAsync("    1 + 1\\n", { dedent: false });
+        } catch (e) {
+            raised = true;
+            assert(() => e.message.includes("IndentationError"));
+        }
+        assert(() => raised);
         """
     )
 
@@ -1398,7 +1460,6 @@ def test_default_sys_path(selenium):
     platlibdir = sys.platlibdir
     paths = [
         f"{prefix}{platlibdir}/python{major}{minor}.zip",
-        f"{prefix}{platlibdir}/python{major}.{minor}",
         f"{prefix}{platlibdir}/python{major}.{minor}/lib-dynload",
         f"{prefix}{platlibdir}/python{major}.{minor}/site-packages",
     ]
@@ -1535,9 +1596,12 @@ def test_windows_to_linux_path_finder(selenium):
     from _pyodide._importhook import WindowsToLinuxPathFinder
 
     # not using tempfile for readability
-    tmp_dir = Path("/tmp/my/temporary/directory/for/testing")
-    tmp_dir.mkdir(parents=True, exist_ok=True)
-    module_file = tmp_dir / "test_module.py"
+    c_tmp_dir = Path("/c/tmp/my/temporary/directory/for/testing")
+    d_tmp_dir = Path("/d/tmp/my/temporary/directory/for/testing")
+    c_tmp_dir.mkdir(parents=True, exist_ok=True)
+    d_tmp_dir.mkdir(parents=True, exist_ok=True)
+    c_module_file = c_tmp_dir / "test_module.py"
+    d_module_file = d_tmp_dir / "test_module.py"
 
     # should not exist yet
     spec = WindowsToLinuxPathFinder.find_spec(
@@ -1546,7 +1610,7 @@ def test_windows_to_linux_path_finder(selenium):
     assert spec is None
 
     spec = WindowsToLinuxPathFinder.find_spec(
-        "test_module", ["C://my//temporary//directory//for//testing"]
+        "test_module", ["C:/my/temporary/directory/for/testing"]
     )
     assert spec is None
 
@@ -1555,18 +1619,27 @@ def test_windows_to_linux_path_finder(selenium):
     )
     assert spec is None
 
-    module_file.write_text("TEST_VALUE = 123")
+    c_module_file.write_text("TEST_VALUE = 'c'")
+    d_module_file.write_text("TEST_VALUE = 'd'")
 
     # now it should be found
     spec = WindowsToLinuxPathFinder.find_spec(
         "test_module", ["C:\\tmp\\my\\temporary\\directory\\for\\testing"]
     )
     assert spec is not None
+    assert spec.origin == str(c_module_file)
 
     spec = WindowsToLinuxPathFinder.find_spec(
-        "test_module", ["C://tmp//my//temporary//directory//for//testing"]
+        "test_module", ["C://tmp\\my//temporary\\directory/for//testing"]
     )
     assert spec is not None
+    assert spec.origin == str(c_module_file)
+
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["D:/tmp/my/temporary/directory/for/testing"]
+    )
+    assert spec is not None
+    assert spec.origin == str(d_module_file)
 
     # This finder should not care about non-Windows paths
     spec = WindowsToLinuxPathFinder.find_spec(
@@ -1580,8 +1653,10 @@ def test_windows_to_linux_path_finder(selenium):
     assert spec is None
 
     # cleanup
-    module_file.unlink()
-    tmp_dir.rmdir()
+    c_module_file.unlink()
+    d_module_file.unlink()
+    c_tmp_dir.rmdir()
+    d_tmp_dir.rmdir()
 
 
 @run_in_pyodide
@@ -1601,6 +1676,32 @@ def test_windows_to_linux_path_finder_edge_cases(selenium):
     spec = WindowsToLinuxPathFinder.find_spec("test_module", ["my_whl.whl"])
     assert spec is None
 
+    # Drive-relative, UNC, and extended paths are not Windows absolute drive paths.
+    for path in ["C:relative", "\\\\server\\share", "\\\\?\\C:\\path"]:
+        spec = WindowsToLinuxPathFinder.find_spec("test_module", [path])
+        assert spec is None
+
+
+@run_in_pyodide
+def test_windows_to_linux_path_finder_registration(selenium_standalone):
+    import sys
+
+    from _pyodide._importhook import (
+        WindowsToLinuxPathFinder,
+        register_windows_finder,
+    )
+
+    def finder_count():
+        return sum(importer is WindowsToLinuxPathFinder for importer in sys.meta_path)
+
+    # Reconciliation is idempotent and removes finders inherited from a snapshot.
+    sys.meta_path.extend([WindowsToLinuxPathFinder, WindowsToLinuxPathFinder])
+    register_windows_finder(False)
+    assert finder_count() == 0
+    register_windows_finder(True)
+    register_windows_finder(True)
+    assert finder_count() == 1
+
 
 @run_in_pyodide
 def test_windows_to_linux_path_import(selenium_standalone):
@@ -1608,7 +1709,11 @@ def test_windows_to_linux_path_import(selenium_standalone):
     from importlib import invalidate_caches
     from pathlib import Path
 
-    tmp_dir = Path("/tmp/my/temporary/directory/for/testing/import")
+    from _pyodide._importhook import register_windows_finder
+
+    register_windows_finder(True)
+
+    tmp_dir = Path("/c/tmp/my/temporary/directory/for/testing/import")
     tmp_dir.mkdir(parents=True, exist_ok=True)
     module_file = tmp_dir / "test_module.py"
 

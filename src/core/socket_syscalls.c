@@ -128,71 +128,66 @@ EM_JS(bool, _try_shutdown, (int fd, int how, int* result), {
 
 // clang-format off
 
-int _orig_syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_connect"), __warn_unused_result__));
+int __real___syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3);
 
-int _orig_syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_recvfrom"), __warn_unused_result__));
+int __real___syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen);
 
-int _orig_syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addrlen)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_sendto"), __warn_unused_result__));
+int __real___syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addrlen);
 
-int _orig_syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_shutdown"), __warn_unused_result__));
+int __real___syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4);
 
-int _orig_syscall_fcntl64(int fd, int cmd, intptr_t varargs)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_fcntl64"), __warn_unused_result__));
+int __real___syscall_fcntl64(int fd, int cmd, intptr_t varargs);
 
-int _orig_syscall_poll(intptr_t fds, int nfds, int timeout)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_poll"), __warn_unused_result__));
+int __real___syscall_poll(intptr_t fds, int nfds, int timeout);
 
-int __syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
+
+int __wrap___syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
 {
   JsVal p = _maybe_connect_async(fd, addr, addrlen);
   if (__builtin_wasm_ref_is_null_extern(p)) {
-    return _orig_syscall_connect(fd, addr, addrlen, d1, d2, d3);
+    return __real___syscall_connect(fd, addr, addrlen, d1, d2, d3);
   }
   return syscall_syncify(p);
 }
 
-int __syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen)
+int __wrap___syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen)
 {
   JsVal p = _maybe_recvfrom_async(fd, buf, len);
   if (__builtin_wasm_ref_is_null_extern(p)) {
-    return _orig_syscall_recvfrom(fd, buf, len, flags, addr, addrlen);
+    return __real___syscall_recvfrom(fd, buf, len, flags, addr, addrlen);
   }
   return syscall_syncify(p);
 }
 
-int __syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addr_len)
+int __wrap___syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addr_len)
 {
   JsVal p = _maybe_sendto_async(fd, message, length);
   if (__builtin_wasm_ref_is_null_extern(p)) {
-    return _orig_syscall_sendto(fd, message, length, flags, addr, addr_len);
+    return __real___syscall_sendto(fd, message, length, flags, addr, addr_len);
   }
   return syscall_syncify(p);
 }
 
-int __syscall_fcntl64(int fd, int cmd, intptr_t varargs)
+int __wrap___syscall_fcntl64(int fd, int cmd, intptr_t varargs)
 {
   int result = 0;
   bool handled = _try_fcntl64(fd, cmd, varargs, &result);
   if (!handled) {
-    return _orig_syscall_fcntl64(fd, cmd, varargs);
+    return __real___syscall_fcntl64(fd, cmd, varargs);
   }
   return result;
 }
 
-int __syscall_poll(intptr_t fds, int nfds, int timeout)
+int __wrap___syscall_poll(intptr_t fds, int nfds, int timeout)
 {
   JsVal p = _maybe_poll_async(fds, nfds, timeout);
   if (__builtin_wasm_ref_is_null_extern(p)) {
-    return _orig_syscall_poll(fds, nfds, timeout);
+    return __real___syscall_poll(fds, nfds, timeout);
   }
   return syscall_syncify(p);
 }
 
-int __syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
+int __wrap___syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
 {
   int result = 0;
   bool handled = _try_shutdown(fd, how, &result);
@@ -200,7 +195,7 @@ int __syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
     // Emscripten does not support shutdown so this would fail anyways, but
     // we still want to return a meaningful error code
     // https://github.com/emscripten-core/emscripten/issues/13393
-    return _orig_syscall_shutdown(fd, how, d1, d2, d3, d4);
+    return __real___syscall_shutdown(fd, how, d1, d2, d3, d4);
   }
   return result;
 }

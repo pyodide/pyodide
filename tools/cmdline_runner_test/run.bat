@@ -11,6 +11,10 @@ mkdir test-cmdline-runner
 cd test-cmdline-runner
 if errorlevel 1 exit /b 1
 
+REM Confirm that the Windows path finder is registered for the cmdline runtime.
+"%PYODIDE_ROOT%\dist\python.exe" -c "import sys; from _pyodide._importhook import WindowsToLinuxPathFinder; assert WindowsToLinuxPathFinder in sys.meta_path"
+if errorlevel 1 exit /b 1
+
 REM Create host virtual environment
 python -m venv .venv-host
 if errorlevel 1 exit /b 1

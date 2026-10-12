@@ -14,6 +14,7 @@ import { createResolvable } from "./common/resolveable";
 import { createLock } from "./common/lock";
 import {
   canonicalizePackageName,
+  isValidPackageName,
   uriToPackageData,
   base16ToBase64,
 } from "./packaging-utils";
@@ -340,6 +341,13 @@ export class PackageManager {
     name: string,
     toLoad: Map<string, PackageLoadMetadata>,
   ) {
+    if (!isValidPackageName(name)) {
+      throw new Error(
+        `'${name}' is not a valid package name or URL. loadPackage() takes an ` +
+          `exact package name or a wheel URL, and micropip.install() handles ` +
+          `requirement specifiers such as version constraints or extras.`,
+      );
+    }
     const normalizedName = canonicalizePackageName(name);
     if (toLoad.has(normalizedName)) {
       return;

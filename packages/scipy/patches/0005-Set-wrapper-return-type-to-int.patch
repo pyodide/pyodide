@@ -1,0 +1,29 @@
+From 111e290fde8c6faa16d28696b23005f10e58edc6 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Tue, 26 May 2026 09:22:00 +0530
+Subject: [PATCH 5/6] Set wrapper return type to int in _generate_pyx.py
+
+Set the C declaration return type for WRAPPED_FUNCS (complex-return BLAS
+wrappers) to int instead of void to match ABI used by our OpenBLAS.
+
+Co-Authored-By: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+---
+ scipy/linalg/_generate_pyx.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scipy/linalg/_generate_pyx.py b/scipy/linalg/_generate_pyx.py
+index 0fac032040..4a4de92bd4 100644
+--- a/scipy/linalg/_generate_pyx.py
++++ b/scipy/linalg/_generate_pyx.py
+@@ -689,7 +689,7 @@ def generate_decl_c(name, return_type, argnames, argtypes, accelerate,
+     if name in WRAPPED_FUNCS:
+         argnames = ['out'] + argnames
+         c_argtypes = [c_return_type] + c_argtypes
+-        c_return_type = 'void'
++        c_return_type = 'int'
+     blas_macro, blas_name = get_blas_macro_and_name(name, accelerate, ilp64)
+     c_args = ', '.join(f'{t} *{n}' for t, n in zip(c_argtypes, argnames))
+     return f"{c_return_type} {blas_macro}({blas_name})({c_args});\n"
+-- 
+2.50.1 (Apple Git-155)
+

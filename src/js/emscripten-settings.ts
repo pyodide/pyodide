@@ -2,6 +2,7 @@
 
 import { PyodideConfigWithDefaults } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
+import { initializeOPFS } from "./fs/opfs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type PyodideModule, type FSType } from "./types";
 import { getJsvErrorImport } from "generated/jsverror";
@@ -154,6 +155,10 @@ function installStdlib(stdlibURL: string): PreRunFunc {
     Module.FS.mkdirTree("/lib");
     Module.API.sitePackages = `/lib/python${pymajor}.${pyminor}/site-packages`;
     Module.FS.mkdirTree(Module.API.sitePackages);
+    // Create empty platform stdlib directory so that CPython's getpath
+    // computation finds it. This prevents a warning about not finding it at
+    // startup.
+    Module.FS.mkdirTree(`/lib/python${pymajor}.${pyminor}/lib-dynload`);
     Module.addRunDependency("install-stdlib");
 
     try {
@@ -187,6 +192,7 @@ function getFileSystemInitializationFuncs(
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
     initializeNativeFS,
+    initializeOPFS,
     ...callFsInitHook(config.fsInit),
   ];
 }

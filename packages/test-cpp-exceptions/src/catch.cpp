@@ -49,13 +49,9 @@ catch_call_pyobj(PyObject* x)
   return msg;
 }
 
-extern "C" void
-set_suspender(__externref_t suspender);
-
 extern "C" char*
-promising_catch_call_pyobj(__externref_t suspender, PyObject* x)
+promising_catch_call_pyobj(PyObject* x)
 {
-  set_suspender(suspender);
   return catch_call_pyobj(x);
 }
 

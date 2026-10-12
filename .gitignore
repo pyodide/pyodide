@@ -29,6 +29,7 @@ dist*/
 !packages/distro/
 docs/_build/
 emsdk/emsdk
+emsdk/emsdk-*
 emsdk/emscripten
 geckodriver.log
 node_modules
@@ -44,5 +45,6 @@ tools/symlinks
 xbuildenv/
 .pyodide-xbuildenv*
 DS_Store
+.DS_Store
 .pyodide_build_installed
 test-cmdline-runner/

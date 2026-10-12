@@ -26,6 +26,11 @@ import type { ConnectFunc } from "./fs/wintercg-sockets";
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
 
+// The Pyodide and ABI versions are substituted at build time by esbuild from
+// PYODIDE_VERSION and PYODIDE_ABI_VERSION (see esbuild.config.shared.mjs).
+API.version = API_VERSION;
+API.abiVersion = ABI_VERSION;
+
 /**
  * Runs code after python vm has been initialized but prior to any bootstrapping.
  */
@@ -263,6 +268,8 @@ export class PyodideAPI_ {
    *        Defaults to ``"<exec>"``. If a custom file name is given, the
    *        traceback for any exception that is thrown will show source lines
    *        (unless the given file name starts with ``<`` and ends with ``>``).
+   * @param options.dedent An optional boolean indicating whether ``code``
+   *        should be dedented before being run. Defaults to ``true``.
    * @returns The result of the Python code translated to JavaScript. See the
    *          documentation for :py:func:`~pyodide.code.eval_code` for more info.
    * @example
@@ -283,7 +290,12 @@ export class PyodideAPI_ {
    */
   static runPython(
     code: string,
-    options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
+    options: {
+      globals?: PyProxy;
+      locals?: PyProxy;
+      filename?: string;
+      dedent?: boolean;
+    } = {},
   ): any {
     if (!options.globals) {
       options.globals = API.globals;
@@ -328,11 +340,18 @@ export class PyodideAPI_ {
    *        Defaults to ``"<exec>"``. If a custom file name is given, the
    *        traceback for any exception that is thrown will show source lines
    *        (unless the given file name starts with ``<`` and ends with ``>``).
+   * @param options.dedent An optional boolean indicating whether ``code``
+   *        should be dedented before being run. Defaults to ``true``.
    * @returns The result of the Python code translated to JavaScript.
    */
   static async runPythonAsync(
     code: string,
-    options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
+    options: {
+      globals?: PyProxy;
+      locals?: PyProxy;
+      filename?: string;
+      dedent?: boolean;
+    } = {},
   ): Promise<any> {
     if (!options.globals) {
       options.globals = API.globals;
@@ -573,6 +592,30 @@ export class PyodideAPI_ {
       // sync browser ==> native
       syncfs: async () => await syncLocalToRemote(Module),
     };
+  }
+
+  /**
+   * Mounts the Origin Private File System (OPFS) into the target directory.
+   * Must be called from a Web Worker context, as FileSystemSyncAccessHandle
+   * is only available in dedicated workers.
+   *
+   * @param path The absolute path in the Emscripten file system to mount OPFS.
+   * If the directory does not exist, it will be created. If it does exist, it must be empty.
+   */
+  static async mountOPFS(path: string): Promise<void> {
+    if (!navigator?.storage?.getDirectory) {
+      throw new Error("OPFS is not supported in this environment");
+    }
+
+    ensureMountPathExists(path);
+
+    const opfsHandle = await navigator.storage.getDirectory();
+
+    Module.FS.mount(Module.FS.filesystems.OPFS_WORKER_FS, { opfsHandle }, path);
+
+    // Note: FS.mount() returns the mount's root node, not the mount object, so
+    // we pass the mountpoint path explicitly rather than reading it back.
+    await Module.API.loadOPFS(path, opfsHandle);
   }
 
   /**
@@ -836,8 +879,10 @@ API.finalizeBootstrap = function (
     importhook.register_js_finder();
     importhook.register_js_module("js", jsglobals);
     importhook.register_js_module("pyodide_js", pyodide);
-    importhook.register_windows_finder();
   }
+  importhook.register_windows_finder(
+    RUNTIME_ENV.IN_NODE && process.platform === "win32",
+  );
 
   // import pyodide_py. We want to ensure that as much stuff as possible is
   // already set up before importing pyodide_py to simplify development of
