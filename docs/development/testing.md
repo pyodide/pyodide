@@ -98,6 +98,35 @@ installing the same prerequisites as for testing. Then run:
 PYODIDE_PACKAGES="numpy,matplotlib" make benchmark
 ```
 
+### Node.js benchmarks
+
+Microbenchmarks of the Pyodide runtime itself (e.g. type conversions) live in
+`benchmark/node/` and run in Node.js against a built `dist` directory. They
+don't need any packages to be built. To print the timings for a build, run:
+
+```bash
+node benchmark/node/run.mjs dist
+```
+
+To compare two builds, pass the baseline first. The `x` columns show the
+speedup of the second build (baseline time / new time). A build can also be
+given as the URL of a Pyodide distribution, e.g. to compare against the latest
+build of the `main` branch:
+
+```bash
+node benchmark/node/run.mjs https://cdn.jsdelivr.net/pyodide/dev/full/ dist
+```
+
+Use `--list` to see the available suites, `--suite NAME` to run a single
+suite, `--filter REGEX` to select cases by their `suite/case` name and
+`--json FILE` to save the results. The benchmarks run on CI for every PR,
+including a comparison with `main`.
+
+To add a benchmark, add a module to `benchmark/node/suites/`. It is picked up
+automatically and runs in a fresh Node.js process for each build. See the
+comment at the top of `benchmark/node/run.mjs` for the interface a suite needs
+to implement, and `benchmark/node/suites/string_conversion.mjs` for an example.
+
 ## Linting
 
 We lint with `prek`.

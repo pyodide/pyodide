@@ -196,7 +196,8 @@ EM_JS_VAL(JsVal, _python2js_ascii, (const char* ptr, int len), {
     if (!decoder) {
       decoder = Module._asciiTextDecoder = new TextDecoder("latin1");
     }
-    return decoder.decode(Module.HEAPU8.subarray(ptr, ptr + len));
+    const start = HEAP_INDEX_8(ptr);
+    return decoder.decode(Module.HEAPU8.subarray(start, start + len));
   }
   let jsstr = "";
   for (let i = 0; i < len; ++i) {
@@ -206,25 +207,53 @@ EM_JS_VAL(JsVal, _python2js_ascii, (const char* ptr, int len), {
 });
 
 EM_JS_VAL(JsVal, _python2js_ucs1, (const char* ptr, int len), {
+  const start = HEAP_INDEX_8(ptr);
   let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCharCode(DEREF_U8(ptr, i));
+  // Length 12 is the crossover point where the `+=` loop is faster than apply
+  // measured on Node 25 / V8
+  if (len < 12) {
+    for (let i = 0; i < len; ++i) {
+      jsstr += String.fromCharCode(HEAPU8[start + i]);
+    }
+    return jsstr;
+  }
+
+  // The chunk size 8192 is measured to be the fastest in Node 25
+  for (let i = 0; i < len; i += 8192) {
+    jsstr += String.fromCharCode.apply(
+      null, HEAPU8.subarray(start + i, start + Math.min(i + 8192, len)));
   }
   return jsstr;
 });
 
 EM_JS_VAL(JsVal, _python2js_ucs2, (const char* ptr, int len), {
+  const start = HEAP_INDEX_16(ptr);
   let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCharCode(DEREF_U16(ptr, i));
+  if (len < 12) {
+    for (let i = 0; i < len; ++i) {
+      jsstr += String.fromCharCode(HEAPU16[start + i]);
+    }
+    return jsstr;
+  }
+  for (let i = 0; i < len; i += 8192) {
+    jsstr += String.fromCharCode.apply(
+      null, HEAPU16.subarray(start + i, start + Math.min(i + 8192, len)));
   }
   return jsstr;
 });
 
 EM_JS_VAL(JsVal, _python2js_ucs4, (const char* ptr, int len), {
+  const start = HEAP_INDEX_32(ptr);
   let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCodePoint(DEREF_U32(ptr, i));
+  if (len < 256) {
+    for (let i = 0; i < len; ++i) {
+      jsstr += String.fromCodePoint(HEAPU32[start + i]);
+    }
+    return jsstr;
+  }
+  for (let i = 0; i < len; i += 8192) {
+    jsstr += String.fromCodePoint.apply(
+      null, HEAPU32.subarray(start + i, start + Math.min(i + 8192, len)));
   }
   return jsstr;
 });

@@ -1,63 +1,110 @@
 import { _PropagatePythonError as PropagateError } from "generated/error_handling";
 
-function js2python_string(value) {
-  // The general idea here is to allocate a Python string and then
-  // have JavaScript write directly into its buffer.  We first need
-  // to determine if is needs to be a 1-, 2- or 4-byte string, since
-  // Python handles all 3.
-  let max_code_point = 0;
-  // `value.length` counts UTF-16 code units, which is an upper bound on the
-  // number of code points (a surrogate pair is two units but one code point),
-  // so a typed array of that length is large enough to hold every code point.
+function js2python_string_ucs4(value) {
+  // codePointAt combines a surrogate pair into a single code point and
+  // returns lone surrogates as their bare code-unit value.
   const length = value.length;
-  const code_points = new Uint32Array(length);
   let num_code_points = 0;
   for (let i = 0; i < length; i++) {
+    // If the code point is above 0xffff, we need to increment i to skip the next code unit
+    // because codePointAt consumes two code units (a surrogate pair)
+    if (value.codePointAt(i) > 0xffff) {
+      i++;
+    }
+    num_code_points++;
+  }
+
+  const result = _PyUnicode_New(num_code_points, 0x10ffff);
+  if (result === 0) {
+    throw new PropagateError();
+  }
+  js2python_string_copy_ucs4(value, _PyUnicode_Data(result), length);
+  return result;
+}
+
+// Returns the maximum code unit of `value`, or -1 if `value` contains a
+// surrogate pair. A high surrogate (0xD800-0xDBFF) followed by a low surrogate
+// (0xDC00-0xDFFF) is a surrogate pair encoding a single code point above
+// 0xFFFF. Lone surrogates are kept as their bare code-unit value.
+// See:
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/charCodeAt
+function js2python_string_max_code_unit(value, length) {
+  let max_code_unit = 0;
+  for (let i = 0; i < length; i++) {
     const unit = value.charCodeAt(i);
-    let code_point;
-    // A high surrogate (0xD800-0xDBFF) followed by a low surrogate
-    // (0xDC00-0xDFFF) is a surrogate pair encoding a single code point. We
-    // combine them with the standard UTF-16 decoding formula and then skip
-    // the trailing low surrogate. Lone surrogates (high without a following
-    // low, or a low surrogate) are left as-is as their bare code-unit value,
-    // matching the behavior of the previous string-iterator implementation.
-    // See:
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/charCodeAt
+    if (unit > max_code_unit) {
+      max_code_unit = unit;
+    }
     if (unit >= 0xd800 && unit <= 0xdbff) {
       const next = value.charCodeAt(i + 1);
       if (next >= 0xdc00 && next <= 0xdfff) {
-        code_point = (unit - 0xd800) * 0x400 + (next - 0xdc00) + 0x10000;
-        i++;
-      } else {
-        code_point = unit;
+        return -1;
       }
-    } else {
-      code_point = unit;
     }
-    code_points[num_code_points++] = code_point;
-    max_code_point = code_point > max_code_point ? code_point : max_code_point;
+  }
+  return max_code_unit;
+}
+
+// The copy loops are kept in separate small functions (one per heap view, so
+// each stays monomorphic): when they were all in js2python_string, V8
+// sometimes produced much slower code for them after a deoptimization (e.g.
+// caused by the heap views being replaced on memory growth).
+function js2python_string_copy_ucs1(value, ptr, length) {
+  const heap = HEAPU8;
+  const base = HEAP_INDEX_8(ptr);
+  for (let i = 0; i < length; i++) {
+    heap[base + i] = value.charCodeAt(i);
+  }
+}
+
+function js2python_string_copy_ucs2(value, ptr, length) {
+  const heap = HEAPU16;
+  const base = HEAP_INDEX_16(ptr);
+  for (let i = 0; i < length; i++) {
+    heap[base + i] = value.charCodeAt(i);
+  }
+}
+
+function js2python_string_copy_ucs4(value, ptr, length) {
+  const heap = HEAPU32;
+  const base = HEAP_INDEX_32(ptr);
+  for (let i = 0, j = 0; i < length; i++, j++) {
+    const code_point = value.codePointAt(i);
+    if (code_point > 0xffff) {
+      i++;
+    }
+    heap[base + j] = code_point;
+  }
+}
+
+function js2python_string(value) {
+  // The general idea here is to allocate a Python string and then
+  // have JavaScript write directly into its buffer. We first need
+  // to determine if it needs to be a 1-, 2- or 4-byte string, since
+  // Python handles all 3.
+  //
+  // Strings without surrogate pairs are the common case. For these, code
+  // points are exactly the UTF-16 code units, so we compute the maximum code
+  // unit in a first pass and copy the code units in a second pass without
+  // allocating a temporary array. Strings with surrogate pairs need the
+  // 4-byte representation and are handled by js2python_string_ucs4.
+  const length = value.length;
+  const max_code_point = js2python_string_max_code_unit(value, length);
+  if (max_code_point < 0) {
+    return js2python_string_ucs4(value);
   }
 
-  let result = _PyUnicode_New(num_code_points, max_code_point);
+  const result = _PyUnicode_New(length, max_code_point);
   if (result === 0) {
     throw new PropagateError();
   }
 
-  let ptr = _PyUnicode_Data(result);
-  if (max_code_point > 0xffff) {
-    for (let i = 0; i < num_code_points; i++) {
-      ASSIGN_U32(ptr, i, code_points[i]);
-    }
-  } else if (max_code_point > 0xff) {
-    for (let i = 0; i < num_code_points; i++) {
-      ASSIGN_U16(ptr, i, code_points[i]);
-    }
+  const ptr = _PyUnicode_Data(result);
+  if (max_code_point > 0xff) {
+    js2python_string_copy_ucs2(value, ptr, length);
   } else {
-    for (let i = 0; i < num_code_points; i++) {
-      ASSIGN_U8(ptr, i, code_points[i]);
-    }
+    js2python_string_copy_ucs1(value, ptr, length);
   }
-
   return result;
 }
 
