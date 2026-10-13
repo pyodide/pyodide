@@ -31,6 +31,7 @@ js:attribute
   exports.PyodideConfig.packageCacheDir?
   exports.PyodideConfig.packages?
   exports.PyodideConfig.pyproxyToStringRepr?
+  exports.PyodideConfig.sharedLibraryPreloadThreshold?
   exports.PyodideConfig.stdLibURL?
   exports.PyodideConfig.toJsLiteralMap?
   exports.version
