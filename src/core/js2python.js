@@ -14,6 +14,7 @@ function js2python_string_ucs4(value) {
     num_code_points++;
   }
 
+  // 0x10ffff == MAX_UNICODE
   const result = _PyUnicode_New(num_code_points, 0x10ffff);
   if (result === 0) {
     throw new PropagateError();

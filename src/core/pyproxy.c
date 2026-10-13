@@ -1157,7 +1157,7 @@ size_t py_buffer_shape_offset = offsetof(Py_buffer, shape);
 /**
  * Convert a C array of Py_ssize_t to JavaScript.
  */
-EM_JS(JsVal, array_to_js, (Py_ssize_t * array, int len), {
+EM_JS_MACROS(JsVal, array_to_js, (Py_ssize_t * array, int len), {
   const start = HEAP_INDEX_32(array);
   return Array.from(HEAP32.subarray(start, start + len));
 })
