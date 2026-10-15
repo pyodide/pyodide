@@ -11,7 +11,11 @@ API.getExpectedKeys = function () {
     API,
     scheduleCallback,
     API,
-    {},
+    // `pyodide._package_loader` holds this at import time. Comparing by
+    // identity rather than to `{}` lets a snapshot follow `loadPackage`, and
+    // restore rebinds Python's reference to this instance's (empty) object,
+    // which is accurate because a snapshot does not carry the filesystem.
+    API.public_api.loadedPackages,
   ];
 };
 
