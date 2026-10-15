@@ -93,6 +93,23 @@ def test_snapshot_after_load_package(selenium_standalone_noload):
     )
 
 
+@pytest.mark.requires_dynamic_linking
+def test_snapshot_after_loading_shared_library(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    match = (
+        "Can't make a memory snapshot after loading shared libraries: .*dummy_nonpure"
+    )
+    with pytest.raises(selenium.JavascriptException, match=match):
+        selenium.run_js(
+            """
+            const py = await loadPyodide({_makeSnapshot: true});
+            await py.loadPackage("test-dummy-nonpure");
+            py.runPython("import dummy_nonpure");
+            py.makeMemorySnapshot();
+            """
+        )
+
+
 def test_snapshot_cannot_serialize(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     match = "Can't serialize object at index"

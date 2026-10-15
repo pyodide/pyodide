@@ -237,6 +237,16 @@ API.makeSnapshot = function (serializer?: (obj: any) => any): Uint8Array {
       "makeSnapshot only works if you passed the makeSnapshot option to loadPyodide",
     );
   }
+  // A loaded shared library keeps its code and table entries outside the heap,
+  // so a snapshot would restore pointers into a module that no longer exists.
+  const loadedLibs = Object.keys(Module.LDSO.loadedLibsByName).filter(
+    (name) => name !== "__main__",
+  );
+  if (loadedLibs.length > 0) {
+    throw new Error(
+      `Can't make a memory snapshot after loading shared libraries: ${loadedLibs.join(", ")}`,
+    );
+  }
   const snapshotConfig = API.serializeHiwireState(serializer);
   const snapshotConfigString = JSON.stringify(snapshotConfig);
   let snapshotOffset = HEADER_SIZE_IN_BYTES + 2 * snapshotConfigString.length;
