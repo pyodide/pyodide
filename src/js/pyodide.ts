@@ -11,7 +11,7 @@ import {
 } from "./compat";
 
 import { createSettings } from "./emscripten-settings";
-import { createLimitedMemory, DEFAULT_INITIAL_MEMORY } from "./memory-limit";
+import { createLimitedMemory } from "./memory-limit";
 import { version as version_ } from "./version";
 
 import type { PyodideAPI } from "./api.js";
@@ -206,10 +206,9 @@ export interface PyodideConfig {
   toJsLiteralMap?: boolean;
 
   /**
-   * The most memory, in bytes, that the WebAssembly heap of this Pyodide
-   * instance may grow to. Allocations beyond it fail with a
-   * :py:exc:`MemoryError`. It is rounded down to a whole number of 64 KiB pages
-   * and defaults to the build-time maximum of 4 GiB.
+   * The maximum size, in bytes, that the WebAssembly heap may grow to.
+   * Allocations beyond it fail with a :py:exc:`MemoryError`. It defaults to
+   * 4 GiB, which is also the most memory a 32-bit address can reach.
    */
   maxMemoryBytes?: number;
 
@@ -368,11 +367,7 @@ async function prepareSnapshot(
     ? (snp as Uint8Array)
     : new Uint8Array(snp);
   emscriptenSettings.noInitialRun = true;
-  // The heap can't start out smaller than the build's INITIAL_MEMORY.
-  emscriptenSettings.INITIAL_MEMORY = Math.max(
-    snapshot.length,
-    DEFAULT_INITIAL_MEMORY,
-  );
+  emscriptenSettings.INITIAL_MEMORY = snapshot.length;
 
   return snapshot;
 }
@@ -502,7 +497,7 @@ export async function loadPyodide(
   const snapshot = await prepareSnapshot(config, emscriptenSettings);
   if (config.maxMemoryBytes !== undefined) {
     emscriptenSettings.wasmMemory = createLimitedMemory(
-      emscriptenSettings.INITIAL_MEMORY ?? DEFAULT_INITIAL_MEMORY,
+      emscriptenSettings.INITIAL_MEMORY,
       config.maxMemoryBytes,
     );
   }
