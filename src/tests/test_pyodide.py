@@ -1395,6 +1395,44 @@ def test_env(selenium_standalone_noload):
     assert hashval == -2022708474
 
 
+def test_max_memory_bytes(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    result = selenium.run_js(
+        """
+        const MiB = 1024 * 1024;
+        let pyodide = await loadPyodide({ maxMemoryBytes: 256 * MiB });
+        let errorType;
+        try {
+            pyodide.runPython("bytearray(512 * 1024 * 1024)");
+        } catch (e) {
+            errorType = e.type;
+        }
+        return {
+            errorType,
+            // The interpreter is still usable, and allocations under the limit still work.
+            sum: pyodide.runPython("1 + 1"),
+            small: pyodide.runPython("len(bytearray(32 * 1024 * 1024))"),
+        };
+        """
+    )
+    assert result == {"errorType": "MemoryError", "sum": 2, "small": 32 * 1024 * 1024}
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "'1'", "NaN"])
+def test_max_memory_bytes_invalid(selenium_standalone_noload, value):
+    selenium = selenium_standalone_noload
+    error = selenium.run_js(
+        f"""
+        try {{
+            await loadPyodide({{ maxMemoryBytes: {value} }});
+        }} catch (e) {{
+            return e.name;
+        }}
+        """
+    )
+    assert error in ("RangeError", "TypeError")
+
+
 def test_version_variable(selenium):
     js_version = selenium.run_js(
         """

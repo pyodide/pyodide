@@ -17,6 +17,12 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
+  that caps how far the WebAssembly heap of that instance may grow. Once the
+  total heap reaches the limit, further allocations fail with a `MemoryError`.
+  By default there is no limit beyond the build-time maximum.
+  {issue}`6482`
+
 - {{ Fix }} The Windows `python` CLI now handles paths across multiple drive
   letters by mounting referenced drives at distinct virtual roots such as `/c`
   and `/d`.

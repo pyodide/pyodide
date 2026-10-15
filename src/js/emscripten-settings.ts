@@ -34,6 +34,7 @@ export interface EmscriptenSettings {
 
   noInitialRun?: boolean;
   INITIAL_MEMORY?: number;
+  wasmMemory?: WebAssembly.Memory;
   exitCode?: number;
 }
 
