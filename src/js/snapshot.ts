@@ -11,7 +11,11 @@ API.getExpectedKeys = function () {
     API,
     scheduleCallback,
     API,
-    {},
+    // `pyodide._package_loader` holds this at import time. Comparing by
+    // identity rather than to `{}` lets a snapshot follow `loadPackage`, and
+    // restore rebinds Python's reference to this instance's (empty) object,
+    // which is accurate because a snapshot does not carry the filesystem.
+    API.public_api.loadedPackages,
   ];
 };
 
@@ -231,6 +235,16 @@ API.makeSnapshot = function (serializer?: (obj: any) => any): Uint8Array {
   if (!API.config._makeSnapshot) {
     throw new Error(
       "makeSnapshot only works if you passed the makeSnapshot option to loadPyodide",
+    );
+  }
+  // A loaded shared library keeps its code and table entries outside the heap,
+  // so a snapshot would restore pointers into a module that no longer exists.
+  const loadedLibs = Object.keys(Module.LDSO.loadedLibsByName).filter(
+    (name) => name !== "__main__",
+  );
+  if (loadedLibs.length > 0) {
+    throw new Error(
+      `Can't make a memory snapshot after loading shared libraries: ${loadedLibs.join(", ")}`,
     );
   }
   const snapshotConfig = API.serializeHiwireState(serializer);

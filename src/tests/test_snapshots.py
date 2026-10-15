@@ -72,6 +72,44 @@ def test_snapshot_simple(selenium_standalone_noload):
     )
 
 
+def test_snapshot_after_load_package(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    selenium.run_js(
+        """
+        const py1 = await loadPyodide({_makeSnapshot: true});
+        await py1.loadPackage("test-dummy");
+        py1.runPython("import dummy");
+        const snapshot = py1.makeMemorySnapshot();
+        const py2 = await loadPyodide({_loadSnapshot: snapshot});
+        assert(() => py2.runPython("import sys; 'dummy' in sys.modules"));
+        // The snapshot does not carry the filesystem, so nothing is loaded yet.
+        assert(() => Object.keys(py2.loadedPackages).length === 0);
+        await py2.loadPackage("test-dummy");
+        assert(() => py2.loadedPackages["test-dummy"] !== undefined);
+        // Python's reference has to follow this instance's object, or
+        // init_loaded_packages and loadPackage would disagree.
+        assert(() => py2.runPython("from pyodide._package_loader import loadedPackages; loadedPackages") === py2.loadedPackages);
+        """
+    )
+
+
+@pytest.mark.requires_dynamic_linking
+def test_snapshot_after_loading_shared_library(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    match = (
+        "Can't make a memory snapshot after loading shared libraries: .*dummy_nonpure"
+    )
+    with pytest.raises(selenium.JavascriptException, match=match):
+        selenium.run_js(
+            """
+            const py = await loadPyodide({_makeSnapshot: true});
+            await py.loadPackage("test-dummy-nonpure");
+            py.runPython("import dummy_nonpure");
+            py.makeMemorySnapshot();
+            """
+        )
+
+
 def test_snapshot_cannot_serialize(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     match = "Can't serialize object at index"

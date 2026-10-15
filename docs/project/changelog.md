@@ -17,6 +17,11 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} {js:func}`pyodide.makeMemorySnapshot` no longer fails with
+  "Unexpected hiwire entry at index 6" after a package has been loaded with
+  {js:func}`pyodide.loadPackage`. It now raises a clear error instead if a
+  shared library has been loaded, since a snapshot cannot capture one.
+
 - {{ Fix }} The Windows `python` CLI now handles paths across multiple drive
   letters by mounting referenced drives at distinct virtual roots such as `/c`
   and `/d`.
