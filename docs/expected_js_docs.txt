@@ -27,6 +27,7 @@ js:attribute
   exports.PyodideConfig.jsglobals?
   exports.PyodideConfig.lockFileContents?
   exports.PyodideConfig.lockFileURL?
+  exports.PyodideConfig.maxMemoryBytes?
   exports.PyodideConfig.packageBaseUrl?
   exports.PyodideConfig.packageCacheDir?
   exports.PyodideConfig.packages?
