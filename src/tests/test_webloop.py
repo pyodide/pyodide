@@ -95,6 +95,28 @@ def test_cancel_handle(selenium_standalone_refresh):
     )
 
 
+@run_in_pyodide
+async def test_new_event_loop_does_not_replace_running_loop(selenium_standalone):
+    import asyncio
+
+    startup_loop = asyncio.get_event_loop()
+    running_at_start = asyncio.events._get_running_loop()
+
+    assert running_at_start is startup_loop
+
+    new_loop = asyncio.new_event_loop()
+    running_after_new = asyncio.events._get_running_loop()
+
+    assert new_loop is not startup_loop
+    assert running_after_new is startup_loop
+    assert asyncio.get_event_loop() is startup_loop
+
+    new_loop.close()
+
+    assert asyncio.events._get_running_loop() is startup_loop
+    assert asyncio.get_event_loop() is startup_loop
+
+
 def test_cancel_unhandled(selenium):
     @run_in_pyodide
     async def test(selenium):

@@ -105,6 +105,9 @@ _July 24, 2026_
   `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
   to use the `_zoneinfo` C extension. {pr}`6331`
 
+- {{ Fix }} Fixed a new event loop silently replacing the current running loop when
+  `asyncio.new_event_loop()` is called. {pr}`6342`
+
 - {{ Fix }} Fixed startTls() not releasing the stream lock when upgrading a
   socket to TLS, which could cause a crash in some JS runtimes. {pr}`6344`
 
