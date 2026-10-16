@@ -387,6 +387,31 @@ jobs:
             # TODO(cclauss): Re-add 'firefox' below.
             pytest -s benchmark/stack_usage.py --rt node,chrome | sed -n 's/## //pg'
 
+  benchmark-node:
+    <<: *defaults
+    resource_class: medium+
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: benchmark
+          command: |
+            mkdir -p benchmark-results
+            node benchmark/node/run.mjs --json benchmark-results/node.json dist
+      - run:
+          name: compare with main
+          # Compare against the latest dev deployment of main. This is only
+          # informative: timings are noisy and the dev deployment might be
+          # unavailable, so this step never fails the job. Correctness is
+          # already checked by the previous step.
+          command: |
+            node benchmark/node/run.mjs \
+              --json benchmark-results/node-compare.json \
+              https://cdn.jsdelivr.net/pyodide/dev/full/ dist \
+              || echo "Comparison with main failed, skipping"
+      - store_artifacts:
+          path: benchmark-results
+
   test-js:
     <<: *defaults
     resource_class: large
@@ -799,6 +824,13 @@ workflows:
               only: /.*/
 
       - benchmark-stack-size:
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+
+      - benchmark-node:
           requires:
             - build-core
           filters:
