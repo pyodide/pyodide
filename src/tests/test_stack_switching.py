@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from pytest_pyodide import run_in_pyodide
 
@@ -1787,3 +1789,62 @@ def test_gc_with_evicted_suspended_task(selenium):
         """
     )
     assert result == {"firstResult": "first done", "secondResult": "second done"}
+
+
+@requires_jspi
+@pytest.mark.requires_dynamic_linking
+def test_single_thread_state(selenium):
+    """There is only one PyThreadState and it stays current across tasks.
+
+    Regression test for https://github.com/pyodide/pyodide/issues/6479.
+
+    pybind11 caches the PyThreadState pointer when it initializes and later
+    passes it to PyEval_AcquireThread(), which aborts with "non-NULL old thread
+    state" if a different thread state is current at that point. So the thread
+    state seen by a promising task, before and after it suspends, has to be the
+    same one that sync code sees, and PyGILState_GetThisThreadState() has to
+    agree with it.
+    """
+    result = selenium.run_js(
+        """
+        pyodide.runPython(`
+            import ctypes
+            from pyodide.ffi import run_sync
+
+            api = ctypes.pythonapi
+            api.PyThreadState_Get.restype = ctypes.c_void_p
+            api.PyGILState_GetThisThreadState.restype = ctypes.c_void_p
+
+            seen = {}
+
+            def record(tag):
+                seen[tag] = [api.PyThreadState_Get(), api.PyGILState_GetThisThreadState()]
+
+            def task(p):
+                record("before")
+                run_sync(p)
+                record("after")
+
+            record("main")
+        `);
+        const task = pyodide.globals.get("task");
+        let release;
+        const promise = new Promise((res) => { release = res; });
+        const done = task.callPromising(promise);
+        await new Promise((res) => setTimeout(res, 20));
+        pyodide.runPython('record("whileSuspended")');
+        release();
+        await done;
+        task.destroy();
+        return pyodide.runPython("import json; json.dumps(seen)");
+        """
+    )
+    seen = json.loads(result)
+    main = seen["main"]
+    assert main[0] == main[1]
+    assert seen == {
+        "main": main,
+        "before": main,
+        "after": main,
+        "whileSuspended": main,
+    }

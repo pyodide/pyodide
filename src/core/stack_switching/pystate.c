@@ -1,33 +1,39 @@
-// Note: This file manages the Python stack / thread state when stack switching.
-// It needs to be audited on every Python update.
+// Note: This file manages the Python thread state when stack switching. It
+// needs to be audited on every Python update.
 //
-// captureThreadState / detachCurrentFrame / restoreThreadState are called from
-// JS, in saveState and restoreState in suspenders.c. enter_promising_task /
-// exit_promising_task are called from C, in _pyproxy_apply_promising and
-// run_main_promising.
+// captureTaskState / restoreTaskState are called from JS, in saveState and
+// restoreState in suspenders.c. enter_promising_task / exit_promising_task are
+// called from C, in _pyproxy_apply_promising and run_main_promising.
 //
-// Every in-flight "promising task" owns a PyThreadState for its whole lifetime.
-// We store the main thread state when we swap it out to enter a promising task
-// and we restore it when the promising task suspends or exits.
+// There is exactly one PyThreadState and it is always the current thread state.
+// Every in-flight "promising task" owns per-task state:
+//  * the frame chain
+//  * error flag
+//  * contextvars context
 //
-// Because each task has a thread state of its own, parts of the threadstate
-// that should be shared between tasks have to be copied by hand.
+// We swap these per-task fields whenever we change tasks. Everything else on
+// the thread state is shared between tasks and is left alone.
 //
-// The logic is inspired by greenlet, but greenlet makes the opposite choice: it
-// keeps one thread state per thread and saves and restores the fields that
-// should be private to the task. See
+// This is the approach greenlet takes, see
 // https://github.com/python-greenlet/greenlet/blob/master/src/greenlet/TPythonState.cpp
 //
-// TODO: Perhaps aligning with greenlet could reduce the amount of effort to
-// maintain this?
+// Keeping one thread state is important because some extensions store the
+// thread state pointer in a TLS variable and assume it will remain valid since
+// they reason there is only one thread state per thread. In our single threaded
+// build, TLS is turned into normal global variables so to make these extensions
+// work there can only be one thread state. See
+// https://github.com/pyodide/pyodide/issues/6479.
 //
 // Whenever updating the Python version, look at the new fields added to
-// PyThreadState and classify them as to whether they should be per-task or
-// per-thread (i.e., global since we have only one thread). Whenever possible,
-// we can see what Greenlet does and copy that.
+// PyThreadState and classify them as to whether they should be per-task or not.
+// Generally we should be able to copy greenlet.
 //
 // See also https://github.com/python/cpython/pull/32303 which would move more
 // of this logic into upstream CPython
+
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "Python.h"
 #include "emscripten.h"
@@ -36,217 +42,256 @@
 int pystate_keepalive;
 
 // Defined in pystate_pycore.c since they require internal headers.
-PyThreadState*
-pystate_threadstate_new(PyThreadState* from);
+PyObject*
+pystate_swap_asyncio_running_task(PyThreadState* tstate, PyObject* task);
 
-PyThreadState*
-pystate_threadstate_swap(PyThreadState* new_tstate);
+void
+pystate_free_datastack(_PyStackChunk* chunk);
 
 /**
- * The main thread state that the promising task took over from. We'll reinstall
- * this thread state when the promising task gives up control by suspending or
- * by returning. It is NULL when the JS event loop is turning or when Python is
- * executing with no suspender.
+ * The per-task part of the thread state.
+ *
+ * Audit this against PyThreadState and _PyThreadStateImpl on every Python
+ * update.
+ */
+typedef struct
+{
+  // The contextvars context. Strong reference.
+  PyObject* context;
+  // Top of the frame chain. The frames live on the data stack below, except
+  // for the _PyEntryFrame that _PyEval_EvalFrameDefault keeps as a C local,
+  // which the suspender handles.
+  struct _PyInterpreterFrame* current_frame;
+  // The exception stack. exc_info is NULL if it pointed at tstate->exc_state,
+  // since that address belongs to the thread state and not to the task.
+  _PyErr_StackItem* exc_info;
+  _PyErr_StackItem exc_state;
+  // The exception being raised. Strong reference. Should be NULL when we
+  // switch but we save it anyway so a stray exception can't leak between
+  // tasks.
+  PyObject* current_exception;
+  int py_recursion_remaining;
+  // Depth of the trace / profile callbacks currently running.
+  int tracing;
+  int what_event;
+  // Trashcan state, a chain of objects awaiting deallocation. Borrowed, the
+  // objects have a refcount of 0 and are owned by the chain.
+  PyObject* delete_later;
+  // Memory for the frames. Each task starts with datastack_chunk == NULL so
+  // the frame allocator gives it a root chunk of its own.
+  _PyStackChunk* datastack_chunk;
+  PyObject** datastack_top;
+  PyObject** datastack_limit;
+  // JIT executor. Borrowed, always NULL for us since we build without the JIT.
+  PyObject* current_executor;
+  // _PyThreadStateImpl.asyncio_running_task. Strong reference.
+  PyObject* asyncio_running_task;
+} TaskState;
+
+/**
+ * Whether a promising task is currently executing. When this is true, `outer`
+ * holds the state of the code that the task took over from, which is restored
+ * when the task suspends or exits.
  *
  * A task can only ever take control from the event loop and always returns
- * control to the event loop. So this is always the event loop tstate or NULL.
- * It is a bug to enter or resume a task when this is not NULL.
+ * control to the event loop. It is a bug to start or resume a task when in_task
+ * is true.
  */
-static PyThreadState* handback_tstate = NULL;
+static bool in_task = false;
+static TaskState outer;
 
 /**
- * Dispose of a task's thread state.
- *
- * We used to keep a freelist of thread states but it seems like there is no way
- * to reuse thread states correctly. It doesn't take very much time to make a
- * thread state anyways.
+ * Move the per-task fields out of the thread state into `dst`. The thread
+ * state is left in an inconsistent state, the caller must follow this up with
+ * load_task_state() or init_fresh_task().
  */
 static void
-delete_tstate(PyThreadState* tstate)
+save_task_state(TaskState* dst, PyThreadState* tstate)
 {
-  PyThreadState_Clear(tstate);
-  PyThreadState_Delete(tstate);
+  dst->context = tstate->context;
+  dst->current_frame = tstate->current_frame;
+  dst->exc_info =
+    tstate->exc_info == &tstate->exc_state ? NULL : tstate->exc_info;
+  dst->exc_state = tstate->exc_state;
+  dst->current_exception = tstate->current_exception;
+  dst->py_recursion_remaining = tstate->py_recursion_remaining;
+  dst->tracing = tstate->tracing;
+  dst->what_event = tstate->what_event;
+  dst->delete_later = tstate->delete_later;
+  dst->datastack_chunk = tstate->datastack_chunk;
+  dst->datastack_top = tstate->datastack_top;
+  dst->datastack_limit = tstate->datastack_limit;
+  dst->current_executor = tstate->current_executor;
+  dst->asyncio_running_task = pystate_swap_asyncio_running_task(tstate, NULL);
 }
 
 /**
- * Install a thread state for the new task and record the main thread state so
- * we can swap it back in when we suspend or exit.
+ * Move the per-task fields from `src` into the thread state. `src` is zeroed.
+ */
+static void
+load_task_state(PyThreadState* tstate, TaskState* src)
+{
+  tstate->context = src->context;
+  // Incrementing this to invalidate the contextvars cache which would otherwise
+  // remain valid across the switch.
+  tstate->context_ver++;
+  tstate->current_frame = src->current_frame;
+  tstate->exc_state = src->exc_state;
+  tstate->exc_info = src->exc_info ? src->exc_info : &tstate->exc_state;
+  tstate->current_exception = src->current_exception;
+  tstate->py_recursion_remaining = src->py_recursion_remaining;
+  tstate->tracing = src->tracing;
+  tstate->what_event = src->what_event;
+  tstate->delete_later = src->delete_later;
+  tstate->datastack_chunk = src->datastack_chunk;
+  tstate->datastack_top = src->datastack_top;
+  tstate->datastack_limit = src->datastack_limit;
+  tstate->current_executor = src->current_executor;
+  PyObject* old =
+    pystate_swap_asyncio_running_task(tstate, src->asyncio_running_task);
+  assert(old == NULL);
+  (void)old;
+  memset(src, 0, sizeof(*src));
+}
+
+/**
+ * Set up the thread state for a brand new task. Must be called right after
+ * save_task_state() so that the fields we inherit from the caller (recursion
+ * depth, tracing depth) are still there. Steals a reference to `context`.
+ */
+static void
+init_fresh_task(PyThreadState* tstate, PyObject* context)
+{
+  tstate->context = context;
+  tstate->context_ver++;
+  tstate->current_frame = NULL;
+  memset(&tstate->exc_state, 0, sizeof(tstate->exc_state));
+  tstate->exc_info = &tstate->exc_state;
+  tstate->current_exception = NULL;
+  // py_recursion_remaining, tracing, what_event: inherited from the caller.
+  tstate->delete_later = NULL;
+  tstate->datastack_chunk = NULL;
+  tstate->datastack_top = NULL;
+  tstate->datastack_limit = NULL;
+  tstate->current_executor = NULL;
+  // asyncio_running_task was set to NULL by save_task_state().
+}
+
+/**
+ * Release everything owned by the task that is currently installed on the
+ * thread state. Must be followed by load_task_state().
+ */
+static void
+cleanup_task(PyThreadState* tstate)
+{
+  // The task's Python code has returned so the frame chain is back to where it
+  // started.
+  assert(tstate->current_frame == NULL);
+  assert(tstate->exc_info == &tstate->exc_state);
+  Py_CLEAR(tstate->context);
+  Py_CLEAR(tstate->exc_state.exc_value);
+  // _pyproxy_apply_promising moves the exception out before calling us, so
+  // this should be NULL already.
+  Py_CLEAR(tstate->current_exception);
+  pystate_free_datastack(tstate->datastack_chunk);
+  tstate->datastack_chunk = NULL;
+  tstate->datastack_top = NULL;
+  tstate->datastack_limit = NULL;
+  Py_XDECREF(pystate_swap_asyncio_running_task(tstate, NULL));
+}
+
+/**
+ * Start a new task. The task runs on the same thread state as its caller but
+ * with a frame chain, exception stack, and contextvars context of its own. The
+ * caller's state is stashed in `outer` and restored when the task suspends or
+ * exits.
  *
- * The task inherits from its caller:
- *
- * - a copy of the contextvars context
- * - the thread local dict
- * - the running event loop
- * - the async generator hooks
- * - the trace and profile functions
- *
- * All of these live on the thread state but are shared between all tasks. This
- * list has to be rechecked against the PyThreadState struct every time we
- * update Python.
+ * The task's context is a copy of the caller's context, so contextvar changes
+ * made by the task stay local to it.
  */
 int
 enter_promising_task(void)
 {
-  FAIL_RETURN_VALUE(-1);
-  if (handback_tstate != NULL) {
+  if (in_task) {
     // Entering a promising call yields to the event loop first so this should
     // not be reachable.
     PyErr_SetString(PyExc_SystemError,
                     "Cannot enter a promising task from inside another running "
                     "promising task. This is a bug in Pyodide.");
-    FAIL();
+    return -1;
   }
-
-  // 1. Collect everything the task inherits, while we are still running on the
-  //    caller's thread state.
-  DECLARE_PY_OBJECT(context);
-  context = PyContext_CopyCurrent();
-  FAIL_IF_NULL(context);
-  // PyThreadState_GetDict() creates the thread dict if it doesn't exist yet, so
-  // the caller and the task share one.
-  DECLARE_PY_OBJECT(thread_dict);
-  thread_dict = Py_XNewRef(PyThreadState_GetDict());
-  // sys.set_asyncgen_hooks() records the hooks on the thread state so we need
-  // to copy them over with the event loop.
-  PyThreadState* caller_tstate = PyThreadState_Get();
-  DECLARE_PY_OBJECT(agen_firstiter);
-  agen_firstiter = Py_XNewRef(caller_tstate->async_gen_firstiter);
-  DECLARE_PY_OBJECT(agen_finalizer);
-  agen_finalizer = Py_XNewRef(caller_tstate->async_gen_finalizer);
-  // All tasks should see the same thread locals since there is only one thread.
-  // Thread locals are created lazily on first use, so force them to exist on
-  // the caller.
-  if (caller_tstate->threading_local_key == NULL) {
-    DECLARE_PY_OBJECT(threading_module);
-    threading_module = PyImport_ImportModule("threading");
-    FAIL_IF_NULL(threading_module);
-    DECLARE_PY_OBJECT(threading_local);
-    threading_local = PyObject_CallMethod(threading_module, "local", NULL);
-    FAIL_IF_NULL(threading_local);
-    // Reading an attribute is what triggers the lazy creation.
-    DECLARE_PY_OBJECT(res);
-    res = PyObject_GetAttrString(threading_local, "__dict__");
-    FAIL_IF_NULL(res);
+  PyObject* context = PyContext_CopyCurrent();
+  if (context == NULL) {
+    return -1;
   }
-  DECLARE_PY_OBJECT(tlocal_key);
-  tlocal_key = Py_XNewRef(caller_tstate->threading_local_key);
-  DECLARE_PY_OBJECT(tlocal_sentinel);
-  tlocal_sentinel = Py_XNewRef(caller_tstate->threading_local_sentinel);
-  // sys.settrace() and sys.setprofile() also record their state on the thread
-  // state. We read these last since everything above can run Python, which
-  // could in theory call sys.settrace().
-  Py_tracefunc tracefunc = caller_tstate->c_tracefunc;
-  DECLARE_PY_OBJECT(traceobj);
-  traceobj = Py_XNewRef(caller_tstate->c_traceobj);
-  Py_tracefunc profilefunc = caller_tstate->c_profilefunc;
-  DECLARE_PY_OBJECT(profileobj);
-  profileobj = Py_XNewRef(caller_tstate->c_profileobj);
-  // pystate_threadstate_new copies the event loop over because doing so
-  // requires internal headers.
-  PyThreadState* tstate = pystate_threadstate_new(caller_tstate);
-  FAIL_IF_NULL(tstate);
-
-  // 2. Swap in task thread state
-  handback_tstate = pystate_threadstate_swap(tstate);
-  ON_FAIL({
-    // Restore thread state on failure
-    PyErr_Clear();
-    delete_tstate(pystate_threadstate_swap(handback_tstate));
-    handback_tstate = NULL;
-    PyErr_SetString(PyExc_SystemError,
-                    "Unexpected error when entering a promising task");
-  });
-
-  // 3. Populate the new thread state
-  assert(tstate->context == NULL);
-  assert(tstate->dict == NULL);
-  Py_XSETREF(tstate->context, context);
-  context = NULL;
-  Py_XSETREF(tstate->dict, thread_dict);
-  thread_dict = NULL;
-  Py_XSETREF(tstate->async_gen_firstiter, agen_firstiter);
-  agen_firstiter = NULL;
-  Py_XSETREF(tstate->async_gen_finalizer, agen_finalizer);
-  agen_finalizer = NULL;
-  Py_XSETREF(tstate->threading_local_key, tlocal_key);
-  tlocal_key = NULL;
-  Py_XSETREF(tstate->threading_local_sentinel, tlocal_sentinel);
-  tlocal_sentinel = NULL;
-  // These have to be installed with the task's thread state current, so they
-  // come last. They return void and report failures through
-  // PyErr_FormatUnraisable().
-  if (profilefunc != NULL) {
-    PyEval_SetProfile(profilefunc, profileobj);
-  }
-  if (tracefunc != NULL) {
-    PyEval_SetTrace(tracefunc, traceobj);
-  }
+  PyThreadState* tstate = PyThreadState_Get();
+  save_task_state(&outer, tstate);
+  init_fresh_task(tstate, context);
+  in_task = true;
   return 0;
 }
 
 /**
- * Put back the main thread state and dispose of the current thread state.
+ * Finish the current task and put back the caller's state.
  *
- * Any pending exception must have been moved out of our thread state before
+ * Any pending exception must have been moved out of the thread state before
  * calling this, see _pyproxy_apply_promising.
  */
 void
 exit_promising_task(void)
 {
-  PyThreadState* mine = pystate_threadstate_swap(handback_tstate);
-  handback_tstate = NULL;
-  delete_tstate(mine);
+  assert(in_task);
+  PyThreadState* tstate = PyThreadState_Get();
+  cleanup_task(tstate);
+  load_task_state(tstate, &outer);
+  in_task = false;
 }
 
 /**
- * Return task tstate so that saveState can store it in the JS state object.
+ * Suspend the current task: move its state off the thread state into a heap
+ * allocated TaskState and restore the caller's state. saveState stores the
+ * returned pointer in the JS state object and passes it back to
+ * restoreTaskState when the task resumes.
+ *
+ * With the task's frames off the thread state, a suspended task looks like
+ * Python code that isn't running, which is what the GC and other things that
+ * walk current_frame expect. The task's objects are kept alive by their
+ * reference counts.
  */
-EMSCRIPTEN_KEEPALIVE PyThreadState*
-captureThreadState(void)
+EMSCRIPTEN_KEEPALIVE TaskState*
+captureTaskState(void)
 {
-  if (handback_tstate == NULL) {
+  if (!in_task) {
     // validSuspender is supposed to prevent this. If it happens anyway, refuse
-    // rather than detaching the thread state entirely.
+    // rather than corrupting the thread state.
     PyErr_SetString(PyExc_SystemError,
-                    "Cannot stack switch: no thread state to hand control back "
-                    "to. This is a bug in Pyodide.");
+                    "Cannot stack switch: not inside a promising task. This is "
+                    "a bug in Pyodide.");
     return NULL;
   }
-  PyThreadState* mine = pystate_threadstate_swap(handback_tstate);
-  handback_tstate = NULL;
-  return mine;
+  TaskState* saved = malloc(sizeof(TaskState));
+  if (saved == NULL) {
+    PyErr_NoMemory();
+    return NULL;
+  }
+  PyThreadState* tstate = PyThreadState_Get();
+  save_task_state(saved, tstate);
+  load_task_state(tstate, &outer);
+  in_task = false;
+  return saved;
 }
 
 /**
- * Unlink the frame chain from a suspended task's thread state and return it.
- * restoreThreadState puts it back when the task resumes.
- *
- * Python frames live on the thread state's data stack, which is heap memory,
- * but _PyEval_EvalFrameDefault links a _PyEntryFrame into the chain and that is
- * a C local which can be evicted when the frame is suspended.
- *
- * The GC and a few other things walk the current_frame of every tstate. With
- * current_frame set to NULL, a suspended task looks like a thread that isn't
- * running any Python code, which they all handle.
- *
- * The GC walks the stack as a quick way to find objects that are definitely
- * alive but the reference counts also keep the objects of a suspended task
- * alive during an incremental collection, so it is not a problem to hide the
- * current_frame from the GC.
+ * Resume a suspended task: stash the current state in `outer` and install the
+ * task's state. Frees `saved`.
  */
-EMSCRIPTEN_KEEPALIVE struct _PyInterpreterFrame*
-detachCurrentFrame(PyThreadState* tstate)
-{
-  struct _PyInterpreterFrame* frame = tstate->current_frame;
-  tstate->current_frame = NULL;
-  return frame;
-}
-
 EMSCRIPTEN_KEEPALIVE void
-restoreThreadState(PyThreadState* state, struct _PyInterpreterFrame* frame)
+restoreTaskState(TaskState* saved)
 {
-  assert(handback_tstate == NULL);
-  assert(state->current_frame == NULL);
-  state->current_frame = frame;
-  handback_tstate = pystate_threadstate_swap(state);
+  assert(!in_task);
+  PyThreadState* tstate = PyThreadState_Get();
+  save_task_state(&outer, tstate);
+  load_task_state(tstate, saved);
+  free(saved);
+  in_task = true;
 }
