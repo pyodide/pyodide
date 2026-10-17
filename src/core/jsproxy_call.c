@@ -329,22 +329,24 @@ JsMethod_ConvertArgs(JsFuncSignature* sig,
 
   FAIL_IF_ERR_OCCURRED();
   return jsargs;
-set_args_error: {
-  // Calling the template function with the same args should raise an
-  // appropriate error
-  PyObject* res = PyObject_Vectorcall(sig->func, pyargs, nargsf, kwnames);
-  if (res) {
-    Py_CLEAR(res);
-    PyErr_SetString(PyExc_SystemError, "Expected an error but none was raised");
+set_args_error:
+  {
+    // Calling the template function with the same args should raise an
+    // appropriate error
+    PyObject* res = PyObject_Vectorcall(sig->func, pyargs, nargsf, kwnames);
+    if (res) {
+      Py_CLEAR(res);
+      PyErr_SetString(PyExc_SystemError,
+                      "Expected an error but none was raised");
+      FAIL();
+    }
+    if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+      FAIL();
+    }
+    PyErr_SetString(PyExc_SystemError,
+                    "Expected a TypeError but other type of error was raised");
     FAIL();
   }
-  if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-    FAIL();
-  }
-  PyErr_SetString(PyExc_SystemError,
-                  "Expected a TypeError but other type of error was raised");
-  FAIL();
-}
 }
 
 /**
