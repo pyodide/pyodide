@@ -64,3 +64,8 @@
   Gamma. It's an in-browser answer engine with a Pyodide backend.
 - [react-py](https://github.com/elilambnz/react-py) is a library that allows for easy integration of Pyodide in React applications. It provides convenient hooks for running Python code.
 - [inseri core](https://wordpress.org/plugins/inseri-core/) is a WordPress plugin that introduces scientific and interactive Gutenberg blocks to facilitate open science. The [Python Code block](https://docs.inseri.swiss/blocks/python/) allows to run Python code in the browser using Pyodide.
+- [NilPDF](https://nilpdf.com) is a browser-based PDF toolkit that runs
+  [pypdf](https://github.com/py-pdf/pypdf) on Pyodide in a Web Worker to merge, split,
+  compress and redact PDFs, and to check for text hiding under redaction boxes. Files are
+  never uploaded, and it works offline after the first load
+  ([source](https://github.com/kdigitalsystems/nilpdf), MIT).
