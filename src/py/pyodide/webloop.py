@@ -475,8 +475,8 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         This uses `setTimeout(callback, delay)`
         """
-        if delay < 0:
-            raise ValueError("Can't schedule in the past")
+        # Like CPython's asyncio, a delay in the past runs the callback as soon as possible
+        delay = max(delay, 0)
         h = asyncio.Handle(callback, args, self, context=context)
         if delay == math.inf:
             return h
