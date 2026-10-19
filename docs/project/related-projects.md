@@ -64,3 +64,9 @@
   Gamma. It's an in-browser answer engine with a Pyodide backend.
 - [react-py](https://github.com/elilambnz/react-py) is a library that allows for easy integration of Pyodide in React applications. It provides convenient hooks for running Python code.
 - [inseri core](https://wordpress.org/plugins/inseri-core/) is a WordPress plugin that introduces scientific and interactive Gutenberg blocks to facilitate open science. The [Python Code block](https://docs.inseri.swiss/blocks/python/) allows to run Python code in the browser using Pyodide.
+- [OpenMATB](https://github.com/juliencegarra/OpenMATB) is an open-source implementation
+  of the Multi-Attribute Task Battery, used in human factors and cognitive psychology
+  research. Its [browser version](https://juliencegarra.github.io/OpenMATB/#web) runs the
+  pyglet 3 application on Pyodide with WebGL and Web Audio, so that participants can take
+  part in experiments without installing anything
+  ([demo](https://juliencegarra.github.io/OpenMATB/app/index.html?demo=1)).
