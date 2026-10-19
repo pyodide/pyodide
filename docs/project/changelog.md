@@ -29,6 +29,13 @@ _November 13, 2026_
   the way greenlet handles stack switching.
   {pr}`6466` {pr}`6487`
 
+### Python API
+
+- {{ Fix }} `WebLoop.call_later()` and `WebLoop.call_at()` no longer raise
+  `ValueError("Can't schedule in the past")` for a delay in the past: as in
+  CPython, the callback runs as soon as possible.
+  {pr}`6489`
+
 ### `python` CLI entrypoint
 
 - {{ Fix }} The Windows `python` CLI now handles paths across multiple drive
