@@ -8,25 +8,30 @@
 // arithmetic shift sign-extends and produces a wildly wrong index.
 // In U8/I8 case, use an explicit >>>0 to force correct sign.
 
-#define DEREF_U8(addr, offset) HEAPU8[(addr >>> 0) + offset]
-#define DEREF_I8(addr, offset) HEAP8[(addr >>> 0) + offset]
+#define HEAP_INDEX_8(addr) ((addr) >>> 0)
+#define HEAP_INDEX_16(addr) ((addr) >>> 1)
+#define HEAP_INDEX_32(addr) ((addr) >>> 2)
+#define HEAP_INDEX_64(addr) ((addr) >>> 3)
 
-#define DEREF_U16(addr, offset) HEAPU16[(addr >>> 1) + offset]
-#define DEREF_I16(addr, offset) HEAP16[(addr >>> 1) + offset]
+#define DEREF_U8(addr, offset) HEAPU8[HEAP_INDEX_8(addr) + offset]
+#define DEREF_I8(addr, offset) HEAP8[HEAP_INDEX_8(addr) + offset]
 
-#define DEREF_U32(addr, offset) HEAPU32[(addr >>> 2) + offset]
-#define DEREF_I32(addr, offset) HEAP32[(addr >>> 2) + offset]
+#define DEREF_U16(addr, offset) HEAPU16[HEAP_INDEX_16(addr) + offset]
+#define DEREF_I16(addr, offset) HEAP16[HEAP_INDEX_16(addr) + offset]
 
-#define DEREF_F32(addr, offset) HEAPF32[(addr >>> 2) + offset]
-#define DEREF_F64(addr, offset) HEAPF64[(addr >>> 3) + offset]
+#define DEREF_U32(addr, offset) HEAPU32[HEAP_INDEX_32(addr) + offset]
+#define DEREF_I32(addr, offset) HEAP32[HEAP_INDEX_32(addr) + offset]
+
+#define DEREF_F32(addr, offset) HEAPF32[HEAP_INDEX_32(addr) + offset]
+#define DEREF_F64(addr, offset) HEAPF64[HEAP_INDEX_64(addr) + offset]
 
 #define ASSIGN_U8(addr, offset, value) DEREF_U8(addr, offset) = value
 #define ASSIGN_U16(addr, offset, value) DEREF_U16(addr, offset) = value
 #define ASSIGN_U32(addr, offset, value) DEREF_U32(addr, offset) = value
 #if WASM_BIGINT
 // We have HEAPU64 / HEAPI64 in this case.
-#define DEREF_U64(addr, offset) HEAPU64[(addr >>> 3) + offset]
-#define DEREF_I64(addr, offset) HEAP64[(addr >>> 3) + offset]
+#define DEREF_U64(addr, offset) HEAPU64[HEAP_INDEX_64(addr) + offset]
+#define DEREF_I64(addr, offset) HEAP64[HEAP_INDEX_64(addr) + offset]
 
 #define LOAD_U64(addr, offset) DEREF_U64(addr, offset)
 #define LOAD_I64(addr, offset) DEREF_I64(addr, offset)
