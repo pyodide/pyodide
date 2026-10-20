@@ -450,12 +450,13 @@ jslib_init_buffers(void)
 }
 
 EM_JS_NUM(errcode, JsvBuffer_assignToPtr, (JsVal buf, void* ptr), {
-  Module.HEAPU8.set(bufferAsUint8Array(buf), ptr);
+  Module.HEAPU8.set(bufferAsUint8Array(buf), HEAP_INDEX_8(ptr));
 });
 
 EM_JS_NUM(errcode, JsvBuffer_assignFromPtr, (JsVal buf, void* ptr), {
+  const start = HEAP_INDEX_8(ptr);
   bufferAsUint8Array(buf).set(
-    Module.HEAPU8.subarray(ptr, ptr + buf.byteLength));
+    Module.HEAPU8.subarray(start, start + buf.byteLength));
 });
 
 EM_JS_NUM(errcode, JsvBuffer_readFromFile, (JsVal buf, int fd), {
