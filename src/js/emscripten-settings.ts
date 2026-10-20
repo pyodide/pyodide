@@ -33,7 +33,8 @@ export interface EmscriptenSettings {
   readonly locateFile: (file: string) => string;
 
   noInitialRun?: boolean;
-  INITIAL_MEMORY?: number;
+  INITIAL_MEMORY: number;
+  wasmMemory?: WebAssembly.Memory;
   exitCode?: number;
 }
 
@@ -50,6 +51,7 @@ export function createSettings(
     noImageDecoding: true,
     noAudioDecoding: true,
     noWasmDecoding: false,
+    INITIAL_MEMORY: DEFAULT_INITIAL_MEMORY,
     preRun: getFileSystemInitializationFuncs(config),
     print: config.stdout,
     printErr: config.stderr,

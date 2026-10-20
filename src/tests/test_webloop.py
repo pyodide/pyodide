@@ -75,6 +75,20 @@ async def test_call_later_skips_scheduling_for_infinite_delay(selenium):
         webloop.scheduleCallback = orig_scheduleCallback  # type: ignore[attr-defined]
 
 
+@run_in_pyodide
+async def test_call_later_negative_delay(selenium):
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    fut = loop.create_future()
+    loop.call_later(-1, fut.set_result, "later")
+    assert await fut == "later"
+
+    fut = loop.create_future()
+    loop.call_at(loop.time() - 1, fut.set_result, "at")
+    assert await fut == "at"
+
+
 def test_cancel_handle(selenium_standalone_refresh):
     selenium_standalone_refresh.run_js(
         """
