@@ -210,7 +210,7 @@ EM_JS_VAL(JsVal, _python2js_ucs1, (const char* ptr, int len), {
   const start = HEAP_INDEX_8(ptr);
   let jsstr = "";
   // Length 12 is the crossover point where the `+=` loop is faster than apply
-  // measured on Node 25 / V8
+  // measured on Node 25.
   if (len < 12) {
     for (let i = 0; i < len; ++i) {
       jsstr += String.fromCharCode(HEAPU8[start + i]);

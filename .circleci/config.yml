@@ -400,10 +400,7 @@ jobs:
             node benchmark/node/run.mjs --json benchmark-results/node.json dist
       - run:
           name: compare with main
-          # Compare against the latest dev deployment of main. This is only
-          # informative: timings are noisy and the dev deployment might be
-          # unavailable, so this step never fails the job. Correctness is
-          # already checked by the previous step.
+          # Compare against the latest dev deployment of main.
           command: |
             node benchmark/node/run.mjs \
               --json benchmark-results/node-compare.json \

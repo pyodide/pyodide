@@ -7,10 +7,6 @@
 // shift `>>>` to convert byte address → element index, otherwise the
 // arithmetic shift sign-extends and produces a wildly wrong index.
 // In U8/I8 case, use an explicit >>>0 to force correct sign.
-//
-// HEAP_INDEX_<bits>(addr) converts a byte address to an index into a heap view
-// with elements of the given size. Use it when you need the index itself, e.g.
-// for HEAPU16.subarray(begin, end).
 
 #define HEAP_INDEX_8(addr) ((addr) >>> 0)
 #define HEAP_INDEX_16(addr) ((addr) >>> 1)

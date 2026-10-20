@@ -4,8 +4,8 @@
 //   node benchmark/node/run.mjs [options] [DIST]
 //     Print absolute timings for one build (default: dist).
 //   node benchmark/node/run.mjs [options] BASE NEW
-//     Compare two builds. The speedup column is BASE time / NEW time, so
-//     values above 1 mean NEW is faster.
+//     Compare two builds. The ratio column is NEW time / BASE time, so
+//     values below 1 mean NEW is faster.
 //
 // DIST / BASE / NEW are dist directories or URLs of a Pyodide distribution
 // (e.g. https://cdn.jsdelivr.net/pyodide/dev/full/). For URLs, the core files
@@ -169,7 +169,7 @@ function printSuite(suiteName, labels, perDist) {
   }
   if (perDist.length === 2) {
     for (const m of metrics) {
-      header.push(`${m} x`.padStart(14));
+      header.push(`${m} ratio`.padStart(14));
     }
   }
   console.log(header.join(""));
@@ -185,7 +185,7 @@ function printSuite(suiteName, labels, perDist) {
         const base = perDist[0][c]?.[m];
         const cur = perDist[1][c]?.[m];
         row.push(
-          fmt(base !== undefined && cur !== undefined ? base / cur : undefined),
+          fmt(base !== undefined && cur !== undefined ? cur / base : undefined),
         );
       }
     }

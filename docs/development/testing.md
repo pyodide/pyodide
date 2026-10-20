@@ -100,7 +100,7 @@ PYODIDE_PACKAGES="numpy,matplotlib" make benchmark
 
 ### Node.js benchmarks
 
-Microbenchmarks of the Pyodide runtime itself (e.g. type conversions) live in
+Microbenchmarks of the Pyodide runtime itself live in
 `benchmark/node/` and run in Node.js against a built `dist` directory. They
 don't need any packages to be built. To print the timings for a build, run:
 
@@ -108,8 +108,9 @@ don't need any packages to be built. To print the timings for a build, run:
 node benchmark/node/run.mjs dist
 ```
 
-To compare two builds, pass the baseline first. The `x` columns show the
-speedup of the second build (baseline time / new time). A build can also be
+To compare two builds, pass the baseline first. The `ratio` columns show the
+time of the second build relative to the baseline (new time / baseline time),
+so values below 1 mean the second build is faster. A build can also be
 given as the URL of a Pyodide distribution, e.g. to compare against the latest
 build of the `main` branch:
 

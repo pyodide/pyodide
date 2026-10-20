@@ -6,8 +6,8 @@ function js2python_string_ucs4(value) {
   const length = value.length;
   let num_code_points = 0;
   for (let i = 0; i < length; i++) {
-    // If the code point is above 0xffff, we need to increment i to skip the next code unit
-    // because codePointAt consumes two code units (a surrogate pair)
+    // If the code point is above 0xffff,
+    // it is part of a surrogate pair and we need to increment i to skip the next code unit
     if (value.codePointAt(i) > 0xffff) {
       i++;
     }
@@ -46,10 +46,10 @@ function js2python_string_max_code_unit(value, length) {
   return max_code_unit;
 }
 
-// The copy loops are kept in separate small functions (one per heap view, so
-// each stays monomorphic): when they were all in js2python_string, V8
-// sometimes produced much slower code for them after a deoptimization (e.g.
-// caused by the heap views being replaced on memory growth).
+// The copy loops are kept in separate small functions.
+// When they were all in js2python_string,
+// V8 sometimes produced much slower code for them after a deoptimization
+// triggered by memory growth.
 function js2python_string_copy_ucs1(value, ptr, length) {
   const heap = HEAPU8;
   const base = HEAP_INDEX_8(ptr);
@@ -91,7 +91,7 @@ function js2python_string(value) {
   // 4-byte representation and are handled by js2python_string_ucs4.
   const length = value.length;
   const max_code_point = js2python_string_max_code_unit(value, length);
-  if (max_code_point < 0) {
+  if (max_code_point === -1) {
     return js2python_string_ucs4(value);
   }
 
