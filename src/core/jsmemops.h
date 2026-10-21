@@ -28,6 +28,7 @@
 #define ASSIGN_U8(addr, offset, value) DEREF_U8(addr, offset) = value
 #define ASSIGN_U16(addr, offset, value) DEREF_U16(addr, offset) = value
 #define ASSIGN_U32(addr, offset, value) DEREF_U32(addr, offset) = value
+#define ASSIGN_I32(addr, offset, value) DEREF_I32(addr, offset) = value
 #if WASM_BIGINT
 // We have HEAPU64 / HEAPI64 in this case.
 #define DEREF_U64(addr, offset) HEAPU64[HEAP_INDEX_64(addr) + offset]

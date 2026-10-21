@@ -116,7 +116,8 @@ Module.processBufferFormatString = function (formatStr, errorMessage = "") {
 Module.python2js_buffer_1d_contiguous = function (ptr, stride, n) {
   let byteLength = stride * n;
   // Note: slice here is a copy (as opposed to subarray which is not)
-  return HEAP8.slice(ptr, ptr + byteLength).buffer;
+  const start = HEAP_INDEX_8(ptr);
+  return HEAP8.slice(start, start + byteLength).buffer;
 };
 
 /**
@@ -149,7 +150,8 @@ Module.python2js_buffer_1d_noncontiguous = function (
     if (suboffset >= 0) {
       curptr = DEREF_U32(curptr, 0) + suboffset;
     }
-    buffer.set(HEAP8.subarray(curptr, curptr + itemsize), i * itemsize);
+    const start = HEAP_INDEX_8(curptr);
+    buffer.set(HEAP8.subarray(start, start + itemsize), i * itemsize);
   }
   return buffer.buffer;
 };

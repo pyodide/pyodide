@@ -628,7 +628,7 @@ async function callPyObjectKwargsPromising(
     // Unwrap result
     result = result[0];
     if (result === Module.error) {
-      _PyErr_SetRaisedException(HEAPU32[exc / 4]);
+      _PyErr_SetRaisedException(DEREF_U32(exc, 0));
       _pythonexc2js();
     }
     // Automatically schedule coroutines
