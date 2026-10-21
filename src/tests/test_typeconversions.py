@@ -1540,6 +1540,32 @@ def test_to_py4(selenium, obj, msg):
         a = run_js(f"pyodide.toPy(new {obj})")
 
 
+@pytest.mark.xfail_browsers(node="No document object")
+@run_in_pyodide
+def test_to_py_dom_collections(selenium):
+    from pyodide.code import run_js
+
+    run_js(
+        """
+        const div = document.createElement("div");
+        div.id = "to-py-dom-collections";
+        div.innerHTML = "<span></span><span></span><span></span>";
+        document.body.appendChild(div);
+        """
+    )
+    try:
+        node_list = run_js('document.querySelectorAll("#to-py-dom-collections > span")')
+        html_collection = run_js(
+            'document.getElementById("to-py-dom-collections").children'
+        )
+        for collection in [node_list, html_collection]:
+            result = collection.to_py()
+            assert isinstance(result, list)
+            assert [el.tagName for el in result] == ["SPAN", "SPAN", "SPAN"]
+    finally:
+        run_js('document.getElementById("to-py-dom-collections").remove()')
+
+
 @run_in_pyodide
 def test_to_py_default_converter(selenium):
     from pyodide.code import run_js

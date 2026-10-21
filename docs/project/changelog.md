@@ -17,6 +17,8 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Fixed a bug that `NodeList` and `HTMLCollection` was not converted to Python list when passed to `to_py()`, contrary to what was specified in the documentation.
+
 - {{ Fix }} `WebLoop.call_later()` and `WebLoop.call_at()` no longer raise
   `ValueError("Can't schedule in the past")` for a delay in the past: as in
   CPython, the callback runs as soon as possible. A short `asyncio.wait_for()`
