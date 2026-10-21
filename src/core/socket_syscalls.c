@@ -84,8 +84,8 @@ EM_JS_MACROS(bool, _try_fcntl64, (int fd, int cmd, int arg, int* result), {
   if (!sock?.sock_ops?.fcntl64)
     return false;
 
-  Module.HEAP32[HEAP_INDEX_32(result)] = sock.sock_ops.fcntl64(sock, cmd, arg);
-  if (Module.HEAP32[HEAP_INDEX_32(result)] < 0)
+  ASSIGN_I32(result, 0, sock.sock_ops.fcntl64(sock, cmd, arg));
+  if (DEREF_I32(result, 0) < 0)
     return false;
 
   // other commands are fallback to emscripten's implementation
@@ -104,7 +104,7 @@ EM_JS_MACROS(JsVal, _maybe_poll_async, (intptr_t fds, int nfds, int timeout), {
   // If not, return null to use emscripten's poll
   for (var i = 0; i < nfds; i++) {
     var pollfd = fds + 8 * i; // 8 == POLLFD_SIZE
-    var fd = Module.HEAP32[HEAP_INDEX_32(pollfd)];
+    var fd = DEREF_I32(pollfd, 0);
     var stream = Module.FS.getStream(fd);
     if (!stream) {
       continue;
@@ -126,7 +126,7 @@ EM_JS_MACROS(bool, _try_shutdown, (int fd, int how, int* result), {
   if (!sock?.sock_ops?.shutdown)
     return false;
 
-  Module.HEAP32[HEAP_INDEX_32(result)] = sock.sock_ops.shutdown(sock, how);
+  ASSIGN_I32(result, 0, sock.sock_ops.shutdown(sock, how));
   return true;
 })
 
