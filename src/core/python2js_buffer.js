@@ -209,7 +209,7 @@ Module._python2js_buffer_recursive = function (ptr, curdim, bufferData) {
     // https://docs.python.org/3/c-api/buffer.html#pil-style-shape-strides-and-suboffsets
     let curPtr = ptr + i * stride;
     if (suboffset >= 0) {
-      curptr = DEREF_U32(curptr, 0) + suboffset;
+      curPtr = DEREF_U32(curPtr, 0) + suboffset;
     }
     result.push(
       Module._python2js_buffer_recursive(curPtr, curdim + 1, bufferData),
