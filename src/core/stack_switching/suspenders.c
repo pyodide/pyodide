@@ -36,43 +36,38 @@ EM_JS(void, JsvPromise_Syncify_handleError, (void), {
 })
 
 /**
- * Record the task thread state and the wasm call stack and argument stack
- * state. This is called by the JsvPromise_syncify just prior to suspending the
- * thread.
+ * Record the per-task part of the Python thread state and the wasm argument
+ * stack state. This is called by the JsvPromise_syncify just prior to
+ * suspending the thread.
  *
- * _captureThreadState() also restores control to the main thread state, see
- * pystate.c.
- *
- * tstate->current_frame points into the stack, so detachCurrentFrame() nulls it
- * out to prevent crashes from code that walks the stack.
+ * _captureTaskState() moves the task's state off the thread state and puts the
+ * caller's state back, see pystate.c.
  */
 EM_JS(JsVal, saveState, (void), {
   if (!validSuspender.value) {
     return Module.error;
   }
-  const threadState = _captureThreadState();
+  const taskState = _captureTaskState();
   // clang-format off
-  if (threadState === 0) {
+  if (taskState === 0) {
     return Module.error;
   }
   // clang-format on
-  const currentFrame = _detachCurrentFrame(threadState);
   const stackState = new StackState();
   return {
-    threadState,
-    currentFrame,
+    taskState,
     stackState,
   };
 });
 
 /**
- * Restore the Python thread state and the wasm argument stack state. This is
+ * Restore the per-task Python state and the wasm argument stack state. This is
  * called by JsvPromise_syncify upon resuming the thread. The argument is the
  * return value from save_state.
  */
 EM_JS(void, restoreState, (JsVal state), {
   state.stackState.restore();
-  _restoreThreadState(state.threadState, state.currentFrame);
+  _restoreTaskState(state.taskState);
   validSuspender.value = true;
 });
 

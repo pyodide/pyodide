@@ -1,0 +1,8 @@
+[build-system]
+requires = ["setuptools", "pybind11>=2.13"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "test-pybind11"
+version = "0.1.0"
+description = "Test interaction between pybind11 and Pyodide's stack switching."

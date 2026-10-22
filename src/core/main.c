@@ -107,8 +107,8 @@ exit_promising_task(void);
 /**
  * Run main with stack switching enabled.
  *
- * Like _pyproxy_apply_promising, main gets a thread state of its own for its
- * whole lifetime. See the ownership model at the top of pystate.c.
+ * Like _pyproxy_apply_promising, main runs as a promising task of its own. See
+ * the ownership model at the top of pystate.c.
  */
 EMSCRIPTEN_KEEPALIVE int
 run_main_promising(void)
