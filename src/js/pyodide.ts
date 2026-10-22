@@ -177,6 +177,22 @@ export interface PyodideConfig {
   checkAPIVersion?: boolean;
 
   /**
+   * The size in bytes at or above which a shared library (``.so`` file) inside
+   * a package is compiled while the package is being installed.
+   *
+   * This exists because in the main thread, there is a limit in size where
+   * WASM modules can be complied synchronously. Historically this was 4KiB
+   * in Chrome, but not it is a limit of 8MiB.
+   *
+   * Set to ``0`` to compile every shared library at install time, or to
+   * ``Infinity`` to never compile them at install time (for instance, in
+   * runtimes without a synchronous compilation limit).
+   *
+   * Default: ``8 * 1024 * 1024`` (8MiB)
+   */
+  sharedLibraryPreloadThreshold?: number;
+
+  /**
    * This is a hook that allows modification of the file system before the
    * main() function is called and the intereter is started. When this is
    * called, it is guaranteed that there is an empty site-packages directory.
@@ -303,6 +319,7 @@ async function initializeConfiguration(
     packageCacheDir: options.packageBaseUrl,
     enableRunUntilComplete: true,
     checkAPIVersion: true,
+    sharedLibraryPreloadThreshold: 8 * 1024 * 1024,
     BUILD_ID,
   };
   const config = Object.assign(
