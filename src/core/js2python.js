@@ -318,8 +318,8 @@ function js2python_convertOther(value, context) {
   let typeTag = getTypeTag(value);
   if (
     Array.isArray(value) ||
-    value === "[object HTMLCollection]" ||
-    value === "[object NodeList]"
+    typeTag === "[object HTMLCollection]" ||
+    typeTag === "[object NodeList]"
   ) {
     return js2python_convertList(value, context);
   }
