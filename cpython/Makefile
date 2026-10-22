@@ -52,10 +52,14 @@ sysconfigdata:
 	cd $(PYBUILD) && _PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(PYBUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
 	$(eval PYBUILDDIR=$(PYBUILD)/`cat $(PYBUILD)/pybuilddir.txt`)
 	PYODIDE_ROOT=$(PYODIDE_ROOT) PYTHONPATH=$(PYBUILDDIR) python$(PYMAJOR).$(PYMINOR) adjust_sysconfig.py
+	# Generate build-details.json into the same pybuilddir. This is included in
+	# the CPython `build_wasm` target, but not in our custom build. It must be
+	# generated before the copies below.
+	emmake make -C $(PYBUILD) build-details.json
 	mkdir -p $(PYINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	mkdir -p $(SYSCONFIGDATA_DIR)
-	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(PYINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
-	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
+	cp $(PYBUILDDIR)/*.{py,json} $(PYINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
+	cp $(PYBUILDDIR)/*.{py,json} $(SYSCONFIGDATA_DIR)
 
 LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS)
 
@@ -68,9 +72,6 @@ $(PYBUILD)/.patched_makefile:
 $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched_makefile
 	# touch libpython3.13.a so we don't remake it due to modified Makefile(??)
 	touch $(PYBUILD)/$(PYLIB)
-	# Ensure build-details.json is present before installing the library
-	# This is included in the CPython `build_wasm` target, but not in our custom build
-	emmake make -C $(PYBUILD) build-details.json
 	# Generate _missing_stdlib_info.py (used by traceback for better ModuleNotFound
 	# messages, new in 3.15). libinstall installs it, but the normal generator runs
 	# via `checksharedmods` which depends on sharedmods/BUILDPYTHON that we don't
