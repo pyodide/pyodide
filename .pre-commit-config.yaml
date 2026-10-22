@@ -18,21 +18,21 @@ repos:
       - id: requirements-txt-fixer
 
   - repo: https://github.com/biomejs/pre-commit
-    rev: 3ceccd6e1c33e8ad2c2f1162f2ac524e43d47f0d  # frozen: v2.5.2
+    rev: d1d67cb1a73ea0917eb553c4f025e212c8cd0465  # frozen: v2.5.15
     hooks:
       - id: biome-format
         additional_dependencies: ["@biomejs/biome@2.1.1"]
         types_or: [javascript, ts]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: c59bba8fb259db0fec2bbb77ad8ba51ea7341b56  # frozen: v0.15.20
+    rev: f12be1ebaa5351c1fc76472de98db2c3446c8253  # frozen: v0.16.10
     hooks:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: dd18dad857d6133e90bbe478f4f2f22ec0030269  # frozen: v22.1.5
+    rev: a9a8a861f30ed207ead7d5a3b7e8032283ba5da7  # frozen: v23.1.2
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]
@@ -47,13 +47,13 @@ repos:
       - id: rst-inline-touching-normal
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: 745eface02aef23e168a8afb6b5737818efbea95  # frozen: v0.11.0.1
+    rev: a6564f5d57444e123433a5c9af733e3975c77229  # frozen: v0.11.0.1-1
     hooks:
       - id: shellcheck
         exclude: ^src/templates/python$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: 2ccb47ff45ad361a21071a7eedda4c37e6ae8c5a  # frozen: v2.4.2
+    rev: 57b21406f092110c18776e39b0bda50d37c945c8  # frozen: v2.4.3
     hooks:
       - id: codespell
         args:
@@ -64,13 +64,13 @@ repos:
         exclude: ^(benchmark/benchmarks/pystone_benchmarks/pystone\.py|src/js/package-lock\.json|packages/matplotlib/extras/fontlist\.json)$
 
   - repo: https://github.com/woodruffw/zizmor-pre-commit
-    rev: "e3eebf65325ccc992422292cb7a4baee967cf815"  # frozen: v1.26.1
+    rev: "fa412071e4f5d44d44f9e365f4676f9df92456a2"  # frozen: v1.30.1
     hooks:
       - id: zizmor
         args: ["--pedantic", "--fix=safe"]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: d2823d321df3af8f878f7ee3414dc94d037145b9  # frozen: v2.1.0
+    rev: 2834ec6639549dd6796205c8f011dedcd587288b  # frozen: v2.4.0
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src)

@@ -113,6 +113,7 @@ You can import your package like a normal Python package:
 ```py
 import my_js_module
 from my_js_module.submodule import h, c
+
 assert my_js_module.f(7) == 50
 assert h(9) == 80
 assert c == 2
@@ -148,10 +149,13 @@ Note that the most straight forward way of doing this will not work:
 
 ```py
 from js import document
+
+
 def f(*args):
     document.querySelector("h1").innerHTML += "(>.<)"
 
-document.body.addEventListener('click', f)
+
+document.body.addEventListener("click", f)
 ```
 
 Now every time you click, an error will be raised (see {ref}`call-js-from-py`).
@@ -161,13 +165,16 @@ To do this correctly use {py:func}`~pyodide.ffi.create_proxy` as follows:
 ```py
 from js import document
 from pyodide.ffi import create_proxy
+
+
 def f(*args):
     document.querySelector("h1").innerHTML += "(>.<)"
 
+
 proxy_f = create_proxy(f)
-document.body.addEventListener('click', proxy_f)
+document.body.addEventListener("click", proxy_f)
 # Store proxy_f in Python then later:
-document.body.removeEventListener('click', proxy_f)
+document.body.removeEventListener("click", proxy_f)
 proxy_f.destroy()
 ```
 
@@ -177,12 +184,16 @@ The most obvious translation of the JavaScript code won't work:
 
 ```py
 import json
-resp = await js.fetch('/someurl', {
-  "method": "POST",
-  "body": json.dumps({ "some" : "json" }),
-  "credentials": "same-origin",
-  "headers": { "Content-Type": "application/json" }
-})
+
+resp = await js.fetch(
+    "/someurl",
+    {
+        "method": "POST",
+        "body": json.dumps({"some": "json"}),
+        "credentials": "same-origin",
+        "headers": {"Content-Type": "application/json"},
+    },
+)
 ```
 
 The {js:func}`fetch` API ignores the options that we attempted to provide. You can do
@@ -192,11 +203,13 @@ this correctly in one of two ways:
 import json
 from pyodide.ffi import to_js
 from js import Object
-resp = await js.fetch('example.com/some_api',
-  method= "POST",
-  body= json.dumps({ "some" : "json" }),
-  credentials= "same-origin",
-  headers= Object.fromEntries(to_js({ "Content-Type": "application/json" })),
+
+resp = await js.fetch(
+    "example.com/some_api",
+    method="POST",
+    body=json.dumps({"some": "json"}),
+    credentials="same-origin",
+    headers=Object.fromEntries(to_js({"Content-Type": "application/json"})),
 )
 ```
 
@@ -245,6 +258,8 @@ follows:
 
 ```py
 from contextlib import _RedirectStream
+
+
 class redirect_stdin(_RedirectStream):
     _stream = "stdin"
 ```
@@ -349,12 +364,15 @@ For example:
 
 ```py
 from pathlib import Path
+
 Path("mymodule.py").write_text("""\
 def hello():
   print("hello world!")
-"""
-)
-from mymodule import hello # may raise "ModuleNotFoundError: No module named 'mymodule'"
+""")
+from mymodule import (
+    hello,
+)  # may raise "ModuleNotFoundError: No module named 'mymodule'"
+
 hello()
 ```
 
@@ -364,13 +382,14 @@ importing the module:
 ```py
 import importlib
 from pathlib import Path
+
 Path("mymodule.py").write_text("""\
 def hello():
   print("hello world!")
-"""
-)
-importlib.invalidate_caches() # Make sure Python notices the new .py file
+""")
+importlib.invalidate_caches()  # Make sure Python notices the new .py file
 from mymodule import hello
+
 hello()
 ```
 
@@ -480,10 +499,11 @@ def _can_start_thread() -> bool:
         return sys._emscripten_info.pthreads
     return platform.machine() not in ("wasm32", "wasm64")
 
+
 can_start_thread = _can_start_thread()
 
 if not can_start_thread:
-  n_threads = 1
+    n_threads = 1
 ```
 
 You can still import the packages and use the general info API, but you cannot
@@ -500,8 +520,7 @@ False
 True
 >>> def target(nums):
 ...     print(sum(nums))
-...
->>> t = threading.Thread(target=target, args=([1, 2, 3], ))
+>>> t = threading.Thread(target=target, args=([1, 2, 3],))
 >>> t.run()
 6
 >>> t.start()
