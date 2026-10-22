@@ -17,6 +17,8 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Fixed a bug that `NodeList` and `HTMLCollection` was not converted to Python list when passed to `to_py()`, contrary to what was specified in the documentation.
+
 - {{ Fix }} Fixed a bug that converting a multidimensional PIL-style buffer to JavaScript with `toJs()` was failing.
 
 - {{ Fix }} `WebLoop.call_later()` and `WebLoop.call_at()` no longer raise
