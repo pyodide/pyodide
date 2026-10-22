@@ -5,8 +5,7 @@
 //
 // Each case performs OPS operations, so the per-call overhead dominates.
 
-export const description =
-  "Calls and attribute access between JS and Python";
+export const description = "Calls and attribute access between JS and Python";
 
 const OPS = 20_000;
 
