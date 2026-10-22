@@ -114,18 +114,23 @@ function isReservedWord(word) {
 
 function normalizeReservedWords(word) {
   // clang-format off
-  // 1. if word is not a reserved word followed by 0 or more underscores, return
+  // 1. without a trailing underscore the word is always returned unchanged
+  //    95 is the char code of "_".
+  if (word.charCodeAt(word.length - 1) !== 95) {
+    return word;
+  }
+  // 2. if word is not a reserved word followed by 0 or more underscores, return
   //    it unchanged.
   const noTrailing_ = word.replace(/_*$/, "");
   if (!isReservedWord(noTrailing_)) {
     return word;
   }
-  // 2. If there is at least one trailing underscore, return the word with a
+  // 3. If there is at least one trailing underscore, return the word with a
   //    single underscore removed.
   if (noTrailing_ !== word) {
     return word.slice(0, -1);
   }
-  // 3. If the word is exactly a reserved word, return it unchanged
+  // 4. If the word is exactly a reserved word, return it unchanged
   return word;
   // clang-format on
 }
