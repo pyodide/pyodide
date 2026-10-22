@@ -1232,6 +1232,29 @@ def test_memoryview_conversion(selenium):
     )
 
 
+@pytest.mark.parametrize("shape", [[4], [3, 4], [2, 3, 4]])
+@run_in_pyodide
+def test_buffer_suboffsets_conversion(selenium, shape):
+    from _testbuffer import ND_PIL, ndarray
+    from math import prod
+
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    nd = ndarray(list(range(prod(shape))), shape=shape, format="i", flags=ND_PIL)
+    suboffsets = memoryview(nd).suboffsets
+    assert suboffsets and suboffsets[0] >= 0
+
+    to_list = run_js(
+        """
+        const toList = (x) =>
+          ArrayBuffer.isView(x) ? Array.from(x) : Array.from(x, toList);
+        toList
+        """
+    )
+    assert to_list(to_js(nd)).to_py() == memoryview(nd).tolist()
+
+
 def test_python2js_with_depth(selenium):
     selenium.run_js(
         """
