@@ -36,6 +36,12 @@ _November 13, 2026_
   CPython, the callback runs as soon as possible.
   {pr}`6489`
 
+### Python / JavaScript type conversions
+
+- {{ Fix }} Fixed an exception when converting a multidimensional PIL-style
+  buffer to JavaScript with `toJs()`.
+  {pr}`6497`
+
 ### `python` CLI entrypoint
 
 - {{ Fix }} The Windows `python` CLI now handles paths across multiple drive
