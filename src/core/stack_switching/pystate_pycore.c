@@ -8,6 +8,7 @@
 // All internal headers require Py_BUILD_CORE_MODULE to be defined.
 #define Py_BUILD_CORE_MODULE 1
 
+// pycore_obmalloc.h uses `bool` without including stdbool.h itself.
 #include <stdbool.h>
 
 #include "Python.h"

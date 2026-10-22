@@ -73,6 +73,9 @@ typedef struct
   int py_recursion_remaining;
   // Depth of the trace / profile callbacks currently running.
   int tracing;
+  // The sys.monitoring event currently being dispatched, or -1. Set while a
+  // monitoring callback runs, so it belongs to the frame chain that is
+  // executing.
   int what_event;
   // Trashcan state, a chain of objects awaiting deallocation. Borrowed, the
   // objects have a refcount of 0 and are owned by the chain.
@@ -106,10 +109,16 @@ static TaskState outer;
  * load_task_state() or init_fresh_task().
  */
 static void
-save_task_state(TaskState* dst, PyThreadState* tstate)
+save_task_state(PyThreadState* tstate, TaskState* dst)
 {
   dst->context = tstate->context;
   dst->current_frame = tstate->current_frame;
+  // exc_info is the head of a linked list of _PyErr_StackItems. Generators and
+  // coroutines push their own item while they run, and the bottom of the list
+  // is always tstate->exc_state. If exc_info points at tstate->exc_state we
+  // record NULL instead, since tstate->exc_state is an address inside the
+  // shared thread state and load_task_state() has to recompute it rather than
+  // reuse the pointer.
   dst->exc_info =
     tstate->exc_info == &tstate->exc_state ? NULL : tstate->exc_info;
   dst->exc_state = tstate->exc_state;
@@ -155,9 +164,10 @@ load_task_state(PyThreadState* tstate, TaskState* src)
 }
 
 /**
- * Set up the thread state for a brand new task. Must be called right after
- * save_task_state() so that the fields we inherit from the caller (recursion
- * depth, tracing depth) are still there. Steals a reference to `context`.
+ * Set up the thread state for a brand new task. Called right after
+ * save_task_state() in enter_promising_task(): the fields we inherit from the
+ * caller are still on the thread state and everything else is replaced with a
+ * blank slate. Steals a reference to `context`.
  */
 static void
 init_fresh_task(PyThreadState* tstate, PyObject* context)
@@ -225,7 +235,7 @@ enter_promising_task(void)
     return -1;
   }
   PyThreadState* tstate = PyThreadState_Get();
-  save_task_state(&outer, tstate);
+  save_task_state(tstate, &outer);
   init_fresh_task(tstate, context);
   in_task = true;
   return 0;
@@ -275,7 +285,7 @@ captureTaskState(void)
     return NULL;
   }
   PyThreadState* tstate = PyThreadState_Get();
-  save_task_state(saved, tstate);
+  save_task_state(tstate, saved);
   load_task_state(tstate, &outer);
   in_task = false;
   return saved;
@@ -290,7 +300,7 @@ restoreTaskState(TaskState* saved)
 {
   assert(!in_task);
   PyThreadState* tstate = PyThreadState_Get();
-  save_task_state(&outer, tstate);
+  save_task_state(tstate, &outer);
   load_task_state(tstate, saved);
   free(saved);
   in_task = true;
