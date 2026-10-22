@@ -159,7 +159,6 @@ load_task_state(PyThreadState* tstate, TaskState* src)
   PyObject* old =
     pystate_swap_asyncio_running_task(tstate, src->asyncio_running_task);
   assert(old == NULL);
-  (void)old;
   memset(src, 0, sizeof(*src));
 }
 
