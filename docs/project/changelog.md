@@ -38,6 +38,10 @@ _November 13, 2026_
 
 ### Python / JavaScript type conversions
 
+- {{ Fix }} `NodeList` and `HTMLCollection` are now converted to a Python list
+  when passed to `to_py()`.
+  {pr}`6498`
+
 - {{ Fix }} Fixed an exception when converting a multidimensional PIL-style
   buffer to JavaScript with `toJs()`.
   {pr}`6497`
