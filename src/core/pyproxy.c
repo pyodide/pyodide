@@ -36,6 +36,7 @@ static PyObject* Generator;
 static PyObject* AsyncGenerator;
 static PyObject* Sequence;
 static PyObject* MutableSequence;
+static PyObject* abc_get_cache_token;
 static PyObject* iscoroutinefunction;
 
 _Py_IDENTIFIER(result);
@@ -261,6 +262,64 @@ type_getflags(PyTypeObject* obj_type)
   return result;
 }
 
+// type_getflags runs whenever we create a PyProxy and its ABC checks are
+// slow, so we cache its results. The result depends on:
+//
+// 1. the type's slots, which can change when the type or one of its bases is
+//    modified. Python invalidates tp_version_tag when this happens, and version
+//    tags are never reused, so we can use it as the key.
+// 2. the ABC registry, e.g. `Sequence.register(cls)` changes the result
+//    without changing `cls`. abc.get_cache_token() changes whenever any ABC
+//    registry is modified.
+#define TYPE_FLAGS_CACHE_SIZE 256
+
+static struct
+{
+  unsigned int version_tag; // 0 means the entry is unused
+  long long abc_token;
+  int flags;
+} type_flags_cache[TYPE_FLAGS_CACHE_SIZE];
+
+static long long
+get_abc_cache_token(void)
+{
+  PyObject* token = PyObject_CallNoArgs(abc_get_cache_token);
+  if (token == NULL) {
+    return -1;
+  }
+  long long result = PyLong_AsLongLong(token);
+  Py_DECREF(token);
+  return result;
+}
+
+static int
+type_getflags_cached(PyTypeObject* obj_type)
+{
+  // Assigns a version tag if the type doesn't have one yet. This fails if
+  // Python ran out of version tags, then we don't cache.
+  if (!PyUnstable_Type_AssignVersionTag(obj_type)) {
+    return type_getflags(obj_type);
+  }
+  long long abc_token = get_abc_cache_token();
+  if (abc_token == -1 && PyErr_Occurred()) {
+    return -1;
+  }
+  unsigned int version_tag = obj_type->tp_version_tag;
+  int index = version_tag % TYPE_FLAGS_CACHE_SIZE;
+  if (type_flags_cache[index].version_tag == version_tag &&
+      type_flags_cache[index].abc_token == abc_token) {
+    return type_flags_cache[index].flags;
+  }
+  int flags = type_getflags(obj_type);
+  if (flags == -1) {
+    return -1;
+  }
+  type_flags_cache[index].version_tag = version_tag;
+  type_flags_cache[index].abc_token = abc_token;
+  type_flags_cache[index].flags = flags;
+  return flags;
+}
+
 static int dict_flags;
 static int tuple_flags;
 static int list_flags;
@@ -292,7 +351,7 @@ pyproxy_getflags(PyObject* pyobj, bool is_json_adaptor)
     return result;
   }
   PyTypeObject* obj_type = Py_TYPE(pyobj);
-  int result = type_getflags(obj_type);
+  int result = type_getflags_cached(obj_type);
   FAIL_IF_MINUS_ONE(result);
   // Check for some flags that depend on the object itself and not just the
   // type.
@@ -1553,6 +1612,12 @@ pyproxy_init(PyObject* core)
   FAIL_IF_NULL(Sequence);
   MutableSequence = PyObject_GetAttrString(collections_abc, "MutableSequence");
   FAIL_IF_NULL(MutableSequence);
+
+  DECLARE_PY_OBJECT(abc);
+  abc = PyImport_ImportModule("abc");
+  FAIL_IF_NULL(abc);
+  abc_get_cache_token = PyObject_GetAttrString(abc, "get_cache_token");
+  FAIL_IF_NULL(abc_get_cache_token);
 
   DECLARE_PY_OBJECT(docstring_source);
   docstring_source = PyImport_ImportModule("_pyodide._core_docs");
