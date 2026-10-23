@@ -262,15 +262,6 @@ type_getflags(PyTypeObject* obj_type)
   return result;
 }
 
-// type_getflags runs whenever we create a PyProxy and its ABC checks are
-// slow, so we cache its results. The result depends on:
-//
-// 1. the type's slots, which can change when the type or one of its bases is
-//    modified. Python invalidates tp_version_tag when this happens, and version
-//    tags are never reused, so we can use it as the key.
-// 2. the ABC registry, e.g. `Sequence.register(cls)` changes the result
-//    without changing `cls`. abc.get_cache_token() changes whenever any ABC
-//    registry is modified.
 #define TYPE_FLAGS_CACHE_SIZE 256
 
 static struct
@@ -295,8 +286,7 @@ get_abc_cache_token(void)
 static int
 type_getflags_cached(PyTypeObject* obj_type)
 {
-  // Assigns a version tag if the type doesn't have one yet. This fails if
-  // Python ran out of version tags, then we don't cache.
+  // This fails if Python ran out of version tags, then we don't cache.
   if (!PyUnstable_Type_AssignVersionTag(obj_type)) {
     return type_getflags(obj_type);
   }
