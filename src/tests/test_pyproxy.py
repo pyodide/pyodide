@@ -2846,4 +2846,3 @@ def test_pyproxy_flags_after_type_modified(selenium):
     del A.__len__  # type: ignore[attr-defined]
     assert not has_length(A())
     assert not has_length(B())
-
