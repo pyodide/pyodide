@@ -60,6 +60,13 @@ declare function Py_EXIT(): void;
 declare function enterTask(): void;
 
 function isPyProxy(jsobj: any): jsobj is PyProxy {
+  // Fast path for primitives
+  if (
+    (typeof jsobj !== "object" || jsobj === null) &&
+    typeof jsobj !== "function"
+  ) {
+    return false;
+  }
   try {
     return jsobj instanceof PyProxy;
   } catch (e) {
@@ -667,6 +674,8 @@ export interface PyProxy {
 
 const dispose = Symbol.dispose ?? Symbol("dispose");
 
+const hasInstance = Function.prototype[Symbol.hasInstance];
+
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` is an object that allows idiomatic use of a Python object from
  * JavaScript. See :ref:`type-translations-pyproxy`.
@@ -677,8 +686,8 @@ export class PyProxy {
 
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return [PyProxy, PyProxyFunction].some((cls) =>
-      Function.prototype[Symbol.hasInstance].call(cls, obj),
+    return (
+      hasInstance.call(PyProxy, obj) || hasInstance.call(PyProxyFunction, obj)
     );
   }
 
