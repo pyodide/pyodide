@@ -457,9 +457,11 @@ _python2js_immutable(PyObject* x)
     return Jsv_false;
   } else if (x == py_jsnull) {
     return Jsv_null;
-  } else if (PyObject_IsInstance(x, py_JsBigInt)) {
-    return _python2js_bigint(x);
   } else if (PyLong_Check(x)) {
+    if (!PyLong_CheckExact(x) &&
+        PyObject_TypeCheck(x, (PyTypeObject*)py_JsBigInt)) {
+      return _python2js_bigint(x);
+    }
     return _python2js_long(x);
   } else if (PyFloat_Check(x)) {
     return _python2js_float(x);

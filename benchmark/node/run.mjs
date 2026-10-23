@@ -14,6 +14,8 @@
 // Options:
 //   --suite NAME    Only run the given suite (can be repeated).
 //   --filter REGEX  Only run cases whose "suite/case" name matches REGEX.
+//   --rounds N      Run each suite N times per build (default: 1),
+//                   and report the median over the rounds.
 //   --json FILE     Also write the results to FILE as JSON.
 //   --list          List the available suites and exit.
 //
@@ -150,6 +152,20 @@ async function runInChild(suiteName, distDir, filter) {
   return JSON.parse(await readFile(outFile, "utf8"));
 }
 
+// Combine the results of several rounds by taking the median of each metric.
+function medianOfRounds(roundResults) {
+  const combined = {};
+  for (const caseName of Object.keys(roundResults[0])) {
+    combined[caseName] = {};
+    for (const metric of Object.keys(roundResults[0][caseName])) {
+      combined[caseName][metric] = median(
+        roundResults.map((r) => r[caseName][metric]),
+      );
+    }
+  }
+  return combined;
+}
+
 function printSuite(suiteName, labels, perDist) {
   const fmt = (x) => (x === undefined ? "-" : x.toFixed(2)).padStart(14);
   const caseNames = Object.keys(perDist[0]);
@@ -160,7 +176,7 @@ function printSuite(suiteName, labels, perDist) {
     ...new Set(caseNames.flatMap((c) => Object.keys(perDist[0][c]))),
   ];
   const width = Math.max(14, ...caseNames.map((c) => c.length + 2));
-  console.log(`\n## ${suiteName} (ms, median of ${REPEATS})`);
+  console.log(`\n## ${suiteName} (ms)`);
   const header = ["case".padEnd(width)];
   for (const label of labels) {
     for (const m of metrics) {
@@ -199,6 +215,7 @@ async function main() {
       suite: { type: "string", multiple: true },
       filter: { type: "string" },
       json: { type: "string" },
+      rounds: { type: "string", default: "1" },
       list: { type: "boolean" },
       worker: { type: "string" },
       out: { type: "string" },
@@ -240,20 +257,32 @@ async function main() {
     distDirs.push(await resolveDist(d));
   }
 
+  const rounds = Number(opts.rounds);
+  if (!Number.isInteger(rounds) || rounds < 1) {
+    throw new Error(`--rounds must be a positive integer, got ${opts.rounds}`);
+  }
+
   const results = Object.fromEntries(labels.map((l) => [l, {}]));
   for (const suiteName of suites) {
+    // perRound[i][r] is the result of round r for build i
+    const perRound = labels.map(() => []);
+    for (let r = 0; r < rounds; r++) {
+      for (let i = 0; i < dists.length; i++) {
+        perRound[i].push(await runInChild(suiteName, distDirs[i], opts.filter));
+      }
+    }
     for (let i = 0; i < dists.length; i++) {
-      results[labels[i]][suiteName] = await runInChild(
-        suiteName,
-        distDirs[i],
-        opts.filter,
-      );
+      results[labels[i]][suiteName] = medianOfRounds(perRound[i]);
     }
   }
 
   for (let i = 0; i < dists.length; i++) {
     console.log(`${labels[i]}: ${dists[i]}`);
   }
+  console.log(
+    `Times are medians of ${REPEATS} repeats` +
+      (rounds > 1 ? `, then the median over ${rounds} rounds` : ""),
+  );
   for (const suiteName of suites) {
     printSuite(
       suiteName,
@@ -266,6 +295,7 @@ async function main() {
     const output = {
       unit: "ms",
       repeats: REPEATS,
+      rounds,
       dists: Object.fromEntries(labels.map((l, i) => [l, dists[i]])),
       results,
     };
