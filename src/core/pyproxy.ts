@@ -687,8 +687,7 @@ export class PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
     return (
-      hasInstance.call(PyProxy, obj) ||
-      hasInstance.call(PyProxyFunction, obj)
+      hasInstance.call(PyProxy, obj) || hasInstance.call(PyProxyFunction, obj)
     );
   }
 
