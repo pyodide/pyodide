@@ -458,9 +458,6 @@ _python2js_immutable(PyObject* x)
   } else if (x == py_jsnull) {
     return Jsv_null;
   } else if (PyLong_Check(x)) {
-    // Previously, this was PyObject_IsInstance(x, py_JsBigInt)
-    // which is heavy. Instead, JsBigInt is always a subclass of int,
-    // so we can just check if x is not a PyLong and is a JsBigInt.
     if (!PyLong_CheckExact(x) &&
         PyObject_TypeCheck(x, (PyTypeObject*)py_JsBigInt)) {
       return _python2js_bigint(x);
