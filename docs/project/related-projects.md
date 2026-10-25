@@ -60,6 +60,7 @@
 - [wc-code](https://github.com/vanillawc/wc-code) is a library to run
   JavaScript, Python, and Theme in the browser with inline code blocks.
   It uses Pyodide to execute Python code.
+- [Pytml](https://pytml.js.org) is a small JavaScript library that runs Python in HTML with `<py>` tags. It uses Pyodide to execute Python code and automatically connects HTML elements to Python variables, so `print()`, `input()`, and button clicks work without writing JavaScript.[GitHub](https://github.com/nodex-ar/pytml)
 - [SymPy Beta](https://github.com/eagleoflqj/sympy_beta) is a fork of SymPy
   Gamma. It's an in-browser answer engine with a Pyodide backend.
 - [react-py](https://github.com/elilambnz/react-py) is a library that allows for easy integration of Pyodide in React applications. It provides convenient hooks for running Python code.
