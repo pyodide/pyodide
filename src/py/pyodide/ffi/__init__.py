@@ -60,6 +60,7 @@ __all__ = [
     "destroy_proxies",
     "to_js",
     "run_sync",
+    "can_run_sync",
     "IN_PYODIDE",
     "register_js_module",
     "unregister_js_module",

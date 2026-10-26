@@ -17,6 +17,8 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Added `can_run_sync` to `pyodide.ffi.__all__` so type checkers recognize it as a public export.
+
 - {{ Fix }} Fixed a bug that `instanceof pyodide.ffi.PyMutableSequence` was true for every Python sequence, including `tuple`.
 
 - {{ Fix }} Fixed a bug that `NodeList` and `HTMLCollection` was not converted to Python list when passed to `to_py()`, contrary to what was specified in the documentation.
