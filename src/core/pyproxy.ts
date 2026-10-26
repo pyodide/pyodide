@@ -1912,7 +1912,7 @@ export class PySequenceMethods {
 export class PyMutableSequence extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyMutableSequence {
-    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_SEQUENCE);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_MUTABLE_SEQUENCE);
   }
 }
 
