@@ -2820,3 +2820,28 @@ def test_pyproxy_using(selenium):
         f();
         """
     )
+
+
+@run_in_pyodide
+def test_pyproxy_mutable_sequence_instanceof(selenium):
+    from collections.abc import MutableSequence, Sequence
+
+    from pyodide.code import run_js
+
+    is_sequence = run_js("(p) => p instanceof pyodide.ffi.PySequence")
+    is_mutable_sequence = run_js("(p) => p instanceof pyodide.ffi.PyMutableSequence")
+
+    # A list is a mutable sequence
+    assert is_sequence([1, 2])
+    assert is_mutable_sequence([1, 2])
+
+    # A tuple and a range are immutable sequences
+    for seq in [(1, 2), range(2)]:
+        assert isinstance(seq, Sequence)
+        assert not isinstance(seq, MutableSequence)
+        assert is_sequence(seq)
+        assert not is_mutable_sequence(seq)
+
+    # Not a sequence
+    assert not is_sequence({1: 2})
+    assert not is_mutable_sequence({1: 2})

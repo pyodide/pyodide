@@ -29,6 +29,12 @@ _November 13, 2026_
   the way greenlet handles stack switching.
   {pr}`6466` {pr}`6487`
 
+### JavaScript API
+
+- {{ Fix }} Fixed a bug that `instanceof pyodide.ffi.PyMutableSequence` was true
+  for every Python sequence, including `tuple`.
+  {pr}`6503`
+
 ### Python API
 
 - {{ Fix }} `WebLoop.call_later()` and `WebLoop.call_at()` no longer raise
