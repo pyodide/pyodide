@@ -267,9 +267,10 @@ type_getflags(PyTypeObject* obj_type)
 static struct
 {
   unsigned int version_tag; // 0 means the entry is unused
-  long long abc_token;
   int flags;
 } type_flags_cache[TYPE_FLAGS_CACHE_SIZE];
+
+static long long type_flags_cache_abc_token = -1;
 
 static long long
 get_abc_cache_token(void)
@@ -294,10 +295,15 @@ type_getflags_cached(PyTypeObject* obj_type)
   if (abc_token == -1 && PyErr_Occurred()) {
     return -1;
   }
+  // The token changes whenever a class is registered with any ABC, which can
+  // change the flags of any type, so clear the whole cache.
+  if (abc_token != type_flags_cache_abc_token) {
+    memset(type_flags_cache, 0, sizeof(type_flags_cache));
+    type_flags_cache_abc_token = abc_token;
+  }
   unsigned int version_tag = obj_type->tp_version_tag;
   int index = version_tag % TYPE_FLAGS_CACHE_SIZE;
-  if (type_flags_cache[index].version_tag == version_tag &&
-      type_flags_cache[index].abc_token == abc_token) {
+  if (type_flags_cache[index].version_tag == version_tag) {
     return type_flags_cache[index].flags;
   }
   int flags = type_getflags(obj_type);
@@ -305,7 +311,6 @@ type_getflags_cached(PyTypeObject* obj_type)
     return -1;
   }
   type_flags_cache[index].version_tag = version_tag;
-  type_flags_cache[index].abc_token = abc_token;
   type_flags_cache[index].flags = flags;
   return flags;
 }
