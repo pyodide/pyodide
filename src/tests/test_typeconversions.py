@@ -314,7 +314,6 @@ def test_number_conversions_3(selenium_module_scope, n):
     from pyodide.code import run_js
 
     jsty = run_js("(n) => typeof n")(n)
-    # Safe integers (|n| <= Number.MAX_SAFE_INTEGER) are converted to a Number
     if -(2**53) < n < 2**53:
         assert jsty == "number"
     else:
