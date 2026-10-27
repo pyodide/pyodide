@@ -202,21 +202,17 @@ function js2python_convertList(obj, context) {
   if (list === 0) {
     return 0;
   }
-  let item = 0;
   try {
     context.cache.set(obj, list);
-    for (let i = 0; i < obj.length; i++) {
-      item = js2python_convert_with_context(obj[i], context);
+    const length = obj.length;
+    for (let i = 0; i < length; i++) {
+      const item = js2python_convert_with_context(obj[i], context);
       // PyList_SetItem steals a reference to item no matter what
-      _Py_IncRef(item);
       if (_PyList_SetItem(list, i, item) === -1) {
         throw new PropagateError();
       }
-      _Py_DecRef(item);
-      item = 0;
     }
   } catch (e) {
-    _Py_DecRef(item);
     _Py_DecRef(list);
     throw e;
   }
