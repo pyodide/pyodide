@@ -59,12 +59,15 @@ declare function Py_EXIT(): void;
 // end-pyodide-skip
 declare function enterTask(): void;
 
+function isPrimitive(x: any): boolean {
+  return (typeof x !== "object" || x === null) && typeof x !== "function";
+}
+
 function isPyProxy(jsobj: any): jsobj is PyProxy {
-  // Fast path for primitives
-  if (
-    (typeof jsobj !== "object" || jsobj === null) &&
-    typeof jsobj !== "function"
-  ) {
+  // This check is also inside the `instanceof` check below.
+  // However, checking here first was faster due to V8 not inlining
+  // an `instanceof` with a custom Symbol.hasInstance.
+  if (isPrimitive(jsobj)) {
     return false;
   }
   try {
@@ -686,9 +689,11 @@ export class PyProxy {
 
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    if (isPrimitive(obj)) {
+      return false;
+    }
     return (
-      hasInstance.call(PyProxy, obj) ||
-      hasInstance.call(PyProxyFunction, obj)
+      hasInstance.call(PyProxy, obj) || hasInstance.call(PyProxyFunction, obj)
     );
   }
 
