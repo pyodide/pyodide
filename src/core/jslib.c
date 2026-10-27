@@ -128,8 +128,9 @@ JsvBigInt_fromDigits,
 
 EM_JS(JsVal,
 Jsv_BigIntToNum, (JsVal x), {
-  if (-Number.MAX_SAFE_INTEGER < x &&
-      x < Number.MAX_SAFE_INTEGER) {
+  // Convert to a Number if it is a safe integer (like Number.isSafeInteger).
+  if (-Number.MAX_SAFE_INTEGER <= x &&
+      x <= Number.MAX_SAFE_INTEGER) {
     return Number(x);
   }
   return x;
