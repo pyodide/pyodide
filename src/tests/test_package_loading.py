@@ -111,12 +111,12 @@ def test_uri_mismatch(selenium_standalone_refresh):
 
 def test_invalid_package_name(selenium):
     with pytest.raises(
-        selenium.JavascriptException,
+        RuntimeError,
         match=r"'wrong name\+\$' is not a valid package name or URL",
     ):
         selenium.load_package("wrong name+$")
     with pytest.raises(
-        selenium.JavascriptException,
+        RuntimeError,
         match="'tcp://some_url' is not a valid package name or URL",
     ):
         selenium.load_package("tcp://some_url")
@@ -201,9 +201,7 @@ def test_load_handle_failure(selenium_standalone_refresh):
     selenium = selenium_standalone_refresh
     selenium.load_package("micropip")
     selenium.run("import micropip")
-    with pytest.raises(
-        selenium.JavascriptException, match="No known package with name 'micropip2'"
-    ):
+    with pytest.raises(RuntimeError, match="No known package with name 'micropip2'"):
         selenium.load_package("micropip2")
     assert "Loaded micropip" in selenium.logs
 
@@ -212,7 +210,8 @@ def test_load_handle_failure(selenium_standalone_refresh):
 def test_load_failure_retry(selenium_standalone_refresh):
     """Check that a package can be loaded after failing to load previously"""
     selenium = selenium_standalone_refresh
-    selenium.load_package("http://invalidurl/micropip-2021.3-py3-none-any.whl")
+    with pytest.raises(RuntimeError, match="invalidurl"):
+        selenium.load_package("http://invalidurl/micropip-2021.3-py3-none-any.whl")
     assert selenium.logs.count("Loading micropip") == 1
     assert (
         selenium.logs.count("The following error occurred while loading micropip:") == 1
