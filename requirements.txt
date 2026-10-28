@@ -14,6 +14,6 @@ pytest-asyncio
 pytest-benchmark
 pytest-cov
 pytest-httpserver
-pytest-pyodide==0.59.0
+pytest-pyodide==0.59.3
 setuptools; python_version>='3.12'
 sphinx-click
