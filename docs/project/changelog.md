@@ -44,6 +44,10 @@ _November 13, 2026_
 
 ### Python / JavaScript type conversions
 
+- {{ Fix }} A Python `int` equal to `Number.MAX_SAFE_INTEGER` or
+  `-Number.MAX_SAFE_INTEGER` is now converted to a `Number` instead of a
+  `BigInt`. {pr}`6510`
+
 - {{ Fix }} `NodeList` and `HTMLCollection` are now converted to a Python list
   when passed to `to_py()`.
   {pr}`6498`
