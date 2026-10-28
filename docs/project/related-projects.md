@@ -40,6 +40,10 @@
 - [Cubite](https://cubite.io) is a multi-tenant LMS platform that uses Pyodide for in-browser Python execution in course content via a custom [EditorJS plugin](https://github.com/amirtds/editorjs-code-editor). Read more about [how Cubite uses Pyodide for interactive learning](https://cubite.io/blogs/run-python-in-browser-pyodide-editorjs).
 - [codeplug.org](https://codeplug.org) is an in-browser suite for programming amateur radio transceivers. It leverages [CHIRP](https://chirpmyradio.com/projects/chirp/wiki/Home)'s radio drivers using Pyodide and WebSerial to let the user program radios from anywhere.
 - [Pyodios](https://apps.apple.com/us/app/pyodios/id6762922366) is an iOS application that uses Pyodide to run Python code locally on your iPhone and iPad. For examples of the app, see the [documentation website](https://pyodios.caffeinatedmath.com/).
+- [Coddy](https://coddy.tech/playground/python) is a learn-to-code platform whose
+  Python playground and embeddable editor run on Pyodide, with interactive
+  `input()` and turtle graphics. Its pygame and Django lessons also run on Pyodide
+  in the browser.
 
 ## Workarounds for common WASM and browser limitations
 
