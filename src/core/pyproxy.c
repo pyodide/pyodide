@@ -270,16 +270,16 @@ static struct
   int flags;
 } type_flags_cache[TYPE_FLAGS_CACHE_SIZE];
 
-static long long type_flags_cache_abc_token = -1;
+static uint64_t type_flags_cache_abc_token = -1;
 
-static long long
+static uint64_t
 get_abc_cache_token(void)
 {
   PyObject* token = PyObject_CallNoArgs(abc_get_cache_token);
   if (token == NULL) {
     return -1;
   }
-  long long result = PyLong_AsLongLong(token);
+  uint64_t result = PyLong_AsUnsignedLongLong(token);
   Py_DECREF(token);
   return result;
 }
@@ -291,7 +291,7 @@ type_getflags_cached(PyTypeObject* obj_type)
   if (!PyUnstable_Type_AssignVersionTag(obj_type)) {
     return type_getflags(obj_type);
   }
-  long long abc_token = get_abc_cache_token();
+  uint64_t abc_token = get_abc_cache_token();
   if (abc_token == -1 && PyErr_Occurred()) {
     return -1;
   }
