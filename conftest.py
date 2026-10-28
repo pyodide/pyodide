@@ -3,6 +3,7 @@ Various common utilities for testing.
 """
 
 import contextlib
+import dataclasses
 import os
 import pathlib
 import re
@@ -160,12 +161,18 @@ def pytest_configure(config):
 
     old_cwd_relative_nodeid = config.cwd_relative_nodeid
 
+    def shorten(path):
+        return path.replace("src/tests/", "").replace("packages/", "")
+
     def cwd_relative_nodeid(*args):
         result = old_cwd_relative_nodeid(*args)
-        result = result.replace("src/tests/", "")
-        result = result.replace("packages/", "")
-        result = result.replace("::test_", "::")
-        return result
+        if isinstance(result, str):
+            # pytest < 9.2: nodeids are plain strings
+            return shorten(result).replace("::test_", "::")
+
+        # pytest >= 9.2: nodeids are NodeId dataclasses
+        names = tuple(n.removeprefix("test_") for n in result.names)
+        return dataclasses.replace(result, path=shorten(result.path), names=names)
 
     config.cwd_relative_nodeid = cwd_relative_nodeid
 
