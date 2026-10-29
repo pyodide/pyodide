@@ -2823,6 +2823,32 @@ def test_pyproxy_using(selenium):
 
 
 @run_in_pyodide
+def test_pyproxy_flags_after_type_modified(selenium):
+    # The flags of a PyProxy are cached per type. Make sure that the cache is
+    # invalidated when the class or one of its bases is modified.
+    from pyodide.code import run_js
+
+    has_length = run_js("(p) => p instanceof pyodide.ffi.PyProxyWithLength")
+
+    class A:
+        pass
+
+    class B(A):
+        pass
+
+    assert not has_length(A())
+    assert not has_length(B())
+
+    A.__len__ = lambda self: 3  # type: ignore[attr-defined]
+    assert has_length(A())
+    assert has_length(B())
+
+    del A.__len__  # type: ignore[attr-defined]
+    assert not has_length(A())
+    assert not has_length(B())
+
+
+@run_in_pyodide
 def test_pyproxy_mutable_sequence_instanceof(selenium):
     from collections.abc import MutableSequence, Sequence
 
