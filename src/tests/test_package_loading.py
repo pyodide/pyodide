@@ -100,23 +100,22 @@ def test_list_loaded_urls(selenium_standalone_refresh):
 
 def test_uri_mismatch(selenium_standalone_refresh):
     selenium_standalone_refresh.load_package("micropip")
-    selenium_standalone_refresh.load_package(
-        "http://some_url/micropip-3.0.6-py3-none-any.whl"
-    )
-    assert (
-        "URI mismatch, attempting to load package micropip"
-        in selenium_standalone_refresh.logs
-    )
+    with pytest.raises(
+        RuntimeError, match="URI mismatch, attempting to load package micropip"
+    ):
+        selenium_standalone_refresh.load_package(
+            "http://some_url/micropip-3.0.6-py3-none-any.whl"
+        )
 
 
 def test_invalid_package_name(selenium):
     with pytest.raises(
-        selenium.JavascriptException,
+        RuntimeError,
         match=r"'wrong name\+\$' is not a valid package name or URL",
     ):
         selenium.load_package("wrong name+$")
     with pytest.raises(
-        selenium.JavascriptException,
+        RuntimeError,
         match="'tcp://some_url' is not a valid package name or URL",
     ):
         selenium.load_package("tcp://some_url")
@@ -201,9 +200,7 @@ def test_load_handle_failure(selenium_standalone_refresh):
     selenium = selenium_standalone_refresh
     selenium.load_package("micropip")
     selenium.run("import micropip")
-    with pytest.raises(
-        selenium.JavascriptException, match="No known package with name 'micropip2'"
-    ):
+    with pytest.raises(RuntimeError, match="No known package with name 'micropip2'"):
         selenium.load_package("micropip2")
     assert "Loaded micropip" in selenium.logs
 
@@ -212,11 +209,11 @@ def test_load_handle_failure(selenium_standalone_refresh):
 def test_load_failure_retry(selenium_standalone_refresh):
     """Check that a package can be loaded after failing to load previously"""
     selenium = selenium_standalone_refresh
-    selenium.load_package("http://invalidurl/micropip-2021.3-py3-none-any.whl")
+    with pytest.raises(
+        RuntimeError, match="The following error occurred while loading micropip:"
+    ):
+        selenium.load_package("http://invalidurl/micropip-2021.3-py3-none-any.whl")
     assert selenium.logs.count("Loading micropip") == 1
-    assert (
-        selenium.logs.count("The following error occurred while loading micropip:") == 1
-    )
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == []
     selenium.load_package("micropip")
     selenium.run("import micropip")
@@ -230,26 +227,29 @@ def test_load_twice(selenium_standalone_refresh):
 
 
 def test_load_twice_different_source(selenium_standalone_refresh):
-    selenium_standalone_refresh.load_package(
-        [
-            "https://foo/micropip-2021.3-py3-none-any.whl",
-            "https://bar/micropip-2021.3-py3-none-any.whl",
-        ]
-    )
-    assert (
-        "Loading same package micropip from https://bar/micropip-2021.3-py3-none-any.whl and https://foo/micropip-2021.3-py3-none-any.whl"
-        in selenium_standalone_refresh.logs
-    )
+    with pytest.raises(
+        RuntimeError,
+        match="Loading same package micropip from https://bar/micropip-2021.3-py3-none-any.whl and https://foo/micropip-2021.3-py3-none-any.whl",
+    ):
+        selenium_standalone_refresh.load_package(
+            [
+                "https://foo/micropip-2021.3-py3-none-any.whl",
+                "https://bar/micropip-2021.3-py3-none-any.whl",
+            ]
+        )
 
 
 def test_load_twice_same_source(selenium_standalone_refresh):
-    selenium_standalone_refresh.load_package(
-        [
-            "https://foo/micropip-2021.3-py3-none-any.whl",
-            "https://foo/micropip-2021.3-py3-none-any.whl",
-        ]
-    )
-    assert "Loading same package micropip" not in selenium_standalone_refresh.logs
+    # The fake URL can't be fetched, so loading fails; we only check that no
+    # "same package" conflict is reported for identical sources.
+    with pytest.raises(RuntimeError) as excinfo:
+        selenium_standalone_refresh.load_package(
+            [
+                "https://foo/micropip-2021.3-py3-none-any.whl",
+                "https://foo/micropip-2021.3-py3-none-any.whl",
+            ]
+        )
+    assert "Loading same package micropip" not in str(excinfo.value)
 
 
 def test_js_load_package_from_python(selenium_standalone_refresh):
