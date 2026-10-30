@@ -148,9 +148,10 @@ declare global {
   export const __pyproxyGen_asend: (ptr: number, idarg: number) => PyAwaitable;
   export const __pyproxyGen_areturn: (ptr: number) => PyAwaitable;
   export const __pyproxyGen_athrow: (ptr: number, idarg: number) => PyAwaitable;
+  export const __pyproxy_intern_attr_name: (attr: string) => number;
   export const __pyproxy_getattr: (
     ptr: number,
-    attr: string,
+    attr: number,
     cache: Map<string, any>,
   ) => any;
   export const __pyproxy_setattr: (
