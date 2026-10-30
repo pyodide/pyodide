@@ -132,6 +132,20 @@ function checkEntry(index: number, value: any, expected: any): void {
 // snapshot) and in syncUpSnapshotLoad1 (when using it).
 const NUM_STATIC_JS_REFS = 6;
 
+/**
+ * Check that the last static js ref in the immortal table is the novalue
+ * sentinel. The sentinel is an opaque wasm-gc struct so we compare it by
+ * identity against Module.novalue.
+ */
+function checkJsNoValue() {
+  const shouldBeJsNoValue = Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
+  if (shouldBeJsNoValue !== Module.novalue) {
+    throw new Error(
+      `Internal error: expected js_no_value object at index ${NUM_STATIC_JS_REFS}`,
+    );
+  }
+}
+
 API.serializeHiwireState = function (
   serializer?: (obj: any) => any,
   checkEntryFn?: (index: number, value: any, expected: any) => void,
@@ -203,12 +217,7 @@ API.serializeHiwireState = function (
     throw new Error(`Can't serialize object at index ${i}`);
   }
   const immortalKeys = [];
-  const shouldBeJsNoValue = Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
-  if (shouldBeJsNoValue?.noValueMarker !== 1) {
-    throw new Error(
-      `Internal error: expected js_no_value object at index ${NUM_STATIC_JS_REFS}`,
-    );
-  }
+  checkJsNoValue();
   for (let i = NUM_STATIC_JS_REFS + 1; ; i++) {
     let v;
     try {
@@ -303,12 +312,7 @@ export function syncUpSnapshotLoad1() {
   Module._jslib_init();
   // We expect everything after this in the immortal table to be interned strings.
   // We need to know where to start looking for the strings so that we serialized correctly.
-  const shouldBeJsNoValue = Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
-  if (shouldBeJsNoValue?.noValueMarker !== 1) {
-    throw new Error(
-      `Internal error: expected js_no_value object at index ${NUM_STATIC_JS_REFS}`,
-    );
-  }
+  checkJsNoValue();
   // Set API._pyodide to a proxy of the _pyodide module.
   // Normally called by import _pyodide.
   Module._init_pyodide_proxy();
