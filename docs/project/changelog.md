@@ -59,6 +59,11 @@ myst:
   early version of the JSPI proposal. Node 20 is end of life since March 2026.
   {pr}`6465`
 
+- {{ Performance }} The internal "no value" sentinel used during Python to
+  JavaScript conversion is now a wasm-gc object, like the error sentinel. This
+  means checking for it no longer requires calling out to JavaScript.
+  {pr}`6519`
+
 ## Version 314.0.7
 
 _September 14, 2026_
