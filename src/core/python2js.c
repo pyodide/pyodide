@@ -17,7 +17,7 @@ static JsVal
 _python2js_unicode(PyObject* x);
 
 static inline JsVal
-_python2js_immutable(PyObject* x);
+_python2js_immutable(PyObject* x, bool* is_immutable);
 
 int
 _python2js_add_to_cache(JsVal cache, PyObject* pyparent, JsVal jsparent);
@@ -312,15 +312,21 @@ _python2js_sequence(ConversionContext* context, PyObject* x)
     DECLARE_PY_OBJECT(pyitem);
     pyitem = PySequence_GetItem(x, i);
     FAIL_IF_NULL(pyitem);
-    JsVal jsitem = _python2js(context, pyitem);
-    FAIL_IF_JS_ERROR(jsitem);
-    if (JsvNoValue_Check(jsitem)) {
-      JsVal index = JsvNum_fromInt(JsvArray_Push(jsarray, JS_ERROR));
-      _python2js_addto_postprocess_list(
-        hiwire_get(context->jspostprocess_list), jsarray, index, pyitem);
+    bool is_immutable;
+    JsVal jsitem = _python2js_immutable(pyitem, &is_immutable);
+    if (is_immutable) {
+      FAIL_IF_JS_ERROR(jsitem);
     } else {
-      JsvArray_Push(jsarray, jsitem);
+      jsitem = _python2js(context, pyitem);
+      FAIL_IF_JS_ERROR(jsitem);
+      if (JsvNoValue_Check(jsitem)) {
+        JsVal index = JsvNum_fromInt(JsvArray_Push(jsarray, JS_ERROR));
+        _python2js_addto_postprocess_list(
+          hiwire_get(context->jspostprocess_list), jsarray, index, pyitem);
+        continue;
+      }
     }
+    JsvArray_Push(jsarray, jsitem);
   }
   return jsarray;
 }
@@ -358,22 +364,29 @@ _python2js_dict(ConversionContext* context, PyObject* x)
     FAIL_IF_NULL(pykey);
     PyObject* pyval = PyTuple_GetItem(item, 1);
     FAIL_IF_NULL(pyval);
-    JsVal jskey = _python2js_immutable(pykey);
-    if (JsvError_Check(jskey) || JsvNoValue_Check(jskey)) {
-      FAIL_IF_ERR_OCCURRED();
+    bool is_immutable;
+    JsVal jskey = _python2js_immutable(pykey, &is_immutable);
+    if (!is_immutable) {
       PyErr_Format(
         conversion_error, "Cannot use %R as a key for a Javascript Map", pykey);
       FAIL();
     }
-    JsVal jsval = _python2js(context, pyval);
-    FAIL_IF_JS_ERROR(jsval);
-    if (JsvNoValue_Check(jsval)) {
-      _python2js_addto_postprocess_list(
-        hiwire_get(context->jspostprocess_list), jsdict, jskey, pyval);
+    FAIL_IF_JS_ERROR(jskey);
+    JsVal jsval = _python2js_immutable(pyval, &is_immutable);
+    if (is_immutable) {
+      FAIL_IF_JS_ERROR(jsval);
     } else {
-      FAIL_IF_MINUS_ONE(
-        context->dict_add_keyvalue(context, jsdict, jskey, jsval));
+      jsval = _python2js(context, pyval);
+      FAIL_IF_JS_ERROR(jsval);
+      if (JsvNoValue_Check(jsval)) {
+        _python2js_addto_postprocess_list(
+          hiwire_get(context->jspostprocess_list), jsdict, jskey, pyval);
+        Py_CLEAR(item);
+        continue;
+      }
     }
+    FAIL_IF_MINUS_ONE(
+      context->dict_add_keyvalue(context, jsdict, jskey, jsval));
     Py_CLEAR(item);
   }
   FAIL_IF_ERR_OCCURRED();
@@ -408,13 +421,14 @@ _python2js_set(ConversionContext* context, PyObject* x)
   FAIL_IF_NULL(iter);
   DECLARE_PY_OBJECT(pykey);
   while ((pykey = PyIter_Next(iter))) {
-    JsVal jskey = _python2js_immutable(pykey);
-    if (JsvError_Check(jskey) || JsvNoValue_Check(jskey)) {
-      FAIL_IF_ERR_OCCURRED();
+    bool is_immutable;
+    JsVal jskey = _python2js_immutable(pykey, &is_immutable);
+    if (!is_immutable) {
       PyErr_Format(
         conversion_error, "Cannot use %R as a key for a Javascript Set", pykey);
       FAIL();
     }
+    FAIL_IF_JS_ERROR(jskey);
     FAIL_IF_MINUS_ONE(JsvSet_Add(jsset, jskey));
     Py_CLEAR(pykey);
   }
@@ -441,14 +455,32 @@ _python2js_set(ConversionContext* context, PyObject* x)
   } while (0)
 
 /**
- * Convert x if x is an immutable python type for which there exists an
- * equivalent immutable JavaScript type. Otherwise return Js_novalue.
+ * If x is immutable, convert it with _python2js_immutable and return it (or
+ * fail).
+ */
+#define RETURN_IF_IMMUTABLE(x)                                                 \
+  do {                                                                         \
+    bool _is_immutable;                                                        \
+    JsVal _immutable_result = _python2js_immutable(x, &_is_immutable);         \
+    if (_is_immutable) {                                                       \
+      FAIL_IF_JS_ERROR(_immutable_result);                                     \
+      return _immutable_result;                                                \
+    }                                                                          \
+  } while (0)
+
+/**
+ * If x is an immutable python type for which there exists an equivalent
+ * immutable JavaScript type, set *is_immutable to true and return the converted
+ * value (or JS_ERROR if the conversion failed). Otherwise set *is_immutable to
+ * false and return Js_novalue.
  *
- * Return type would be Option<JsRef>
+ * Reporting whether x is immutable in C lets callers avoid calling into
+ * JavaScript to check for Js_novalue.
  */
 static inline JsVal
-_python2js_immutable(PyObject* x)
+_python2js_immutable(PyObject* x, bool* is_immutable)
 {
+  *is_immutable = true;
   if (Py_IsNone(x)) {
     return Jsv_undefined;
   } else if (Py_IsTrue(x)) {
@@ -468,21 +500,7 @@ _python2js_immutable(PyObject* x)
   } else if (PyUnicode_Check(x)) {
     return _python2js_unicode(x);
   }
-  return Jsv_novalue;
-}
-
-/**
- * If x is a wrapper around a JavaScript object, unwrap the JavaScript object
- * and return it. Otherwise, return Js_novalue.
- *
- * Return type would be Option<JsRef>
- */
-static inline JsVal
-_python2js_proxy(PyObject* x)
-{
-  if (JsProxy_Check(x)) {
-    return JsProxy_Val(x);
-  }
+  *is_immutable = false;
   return Jsv_novalue;
 }
 
@@ -500,8 +518,10 @@ static JsVal
 _python2js_deep(ConversionContext* context, PyObject* x)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  RETURN_IF_HAS_VALUE(_python2js_immutable(x));
-  RETURN_IF_HAS_VALUE(_python2js_proxy(x));
+  RETURN_IF_IMMUTABLE(x);
+  if (JsProxy_Check(x)) {
+    return JsProxy_Val(x);
+  }
   if (context->eager_converter) {
     RETURN_IF_HAS_VALUE(
       python2js__eager_converter(hiwire_get(context->jscontext), x));
@@ -573,14 +593,17 @@ EMSCRIPTEN_KEEPALIVE JsVal
 _python2js(ConversionContext *context, PyObject* x)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
+  // Immutable values are never in the cache.
+  RETURN_IF_IMMUTABLE(x);
   JsVal val = _python2js_cache_lookup(hiwire_get(context->cache), x);
   if (!JsvError_Check(val)) {
     return val;
   }
   FAIL_IF_ERR_OCCURRED();
   if (context->depth == 0) {
-    RETURN_IF_HAS_VALUE(_python2js_immutable(x));
-    RETURN_IF_HAS_VALUE(_python2js_proxy(x));
+    if (JsProxy_Check(x)) {
+      return JsProxy_Val(x);
+    }
     if (context->default_converter) {
       return python2js__default_converter(hiwire_get(context->jscontext), x);
     }
@@ -616,8 +639,10 @@ python2js_inner(PyObject* x, JsVal proxies, bool track_proxies, bool gc_register
       PyErr_SetString(internal_error, "Internal error occurred in python2js");
     }
   });
-  RETURN_IF_HAS_VALUE(_python2js_immutable(x));
-  RETURN_IF_HAS_VALUE(_python2js_proxy(x));
+  RETURN_IF_IMMUTABLE(x);
+  if (JsProxy_Check(x)) {
+    return JsProxy_Val(x);
+  }
   if (track_proxies && JsvError_Check(proxies)) {
     PyErr_SetString(conversion_error, "No conversion known for x.");
     FAIL();
