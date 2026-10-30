@@ -372,7 +372,6 @@ _python2js_dict(ConversionContext* context, PyObject* x)
       FAIL();
     }
     FAIL_IF_JS_ERROR(jskey);
-    // See the comment in _python2js_sequence
     JsVal jsval = _python2js_immutable(pyval, &is_immutable);
     if (is_immutable) {
       FAIL_IF_JS_ERROR(jsval);
@@ -476,8 +475,7 @@ _python2js_set(ConversionContext* context, PyObject* x)
  * false and return Js_novalue.
  *
  * Reporting whether x is immutable in C lets callers avoid calling into
- * JavaScript to check for Js_novalue. (JsVal is a WebAssembly reference type,
- * so we can't return it through a pointer instead.)
+ * JavaScript to check for Js_novalue.
  */
 static inline JsVal
 _python2js_immutable(PyObject* x, bool* is_immutable)
