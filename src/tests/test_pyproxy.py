@@ -2871,3 +2871,21 @@ def test_pyproxy_mutable_sequence_instanceof(selenium):
     # Not a sequence
     assert not is_sequence({1: 2})
     assert not is_mutable_sequence({1: 2})
+
+
+@run_in_pyodide
+def test_pyproxy_instanceof_revoked_proxy(selenium):
+    # `instanceof` on a revoked Proxy throws by default, but PyProxy's
+    # Symbol.hasInstance returns false, like the other PyProxy classes.
+    from pyodide.code import run_js
+
+    assert run_js(
+        """
+        const p = Proxy.revocable({}, {});
+        p.revoke();
+        [
+            p.proxy instanceof pyodide.ffi.PyProxy,
+            p.proxy instanceof pyodide.ffi.PySequence,
+        ]
+        """
+    ).to_py() == [False, False]
