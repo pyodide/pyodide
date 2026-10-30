@@ -2871,3 +2871,30 @@ def test_pyproxy_mutable_sequence_instanceof(selenium):
     # Not a sequence
     assert not is_sequence({1: 2})
     assert not is_mutable_sequence({1: 2})
+
+
+@run_in_pyodide
+def test_pyproxy_getattr_many_names(selenium):
+    # PyProxy caches the Python strings for attribute names up to a limit.
+    # Check that attribute access still works for names beyond that limit.
+    from types import SimpleNamespace
+
+    from pyodide.code import run_js
+
+    names = [f"attr_{i}" for i in range(2000)] + ["ünïcödé", "名前", "😀"]
+    o = SimpleNamespace(**{name: i for i, name in enumerate(names)})
+    values = run_js(
+        """
+        (o, names) => {
+            const values = [];
+            for (let round = 0; round < 2; round++) {
+                for (const name of names) {
+                    values.push(o[name]);
+                }
+            }
+            return values;
+        }
+        """
+    )(o, names)
+    expected = list(range(len(names)))
+    assert values.to_py() == expected * 2

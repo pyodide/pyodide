@@ -2097,16 +2097,42 @@ function python_hasattr(jsobj: PyProxy, jskey: any) {
   return result !== 0;
 }
 
+// Interned Python strings for attribute names, see _pyproxy_intern_attr_name.
+// We hold a reference to each of them, so we limit how many we keep.
+// The size 1000 is arbitrary. Normally there are not many attribute names used in Python,
+// So we set the limit large enough to hold common attribute names without
+// causing memory pressure.
+const MAX_INTERNED_ATTR_NAMES = 1000;
+const internedAttrNames: Map<string, number> = new Map();
+
 // Returns a JsRef in order to allow us to differentiate between "not found"
 // (in which case we return 0) and "found 'None'" (in which case we return
 // undefined).
-function python_getattr(jsobj: PyProxy, key: any) {
+function python_getattr(jsobj: PyProxy, key: string) {
   const { shared } = _getAttrs(jsobj);
   let cache = shared.cache.map;
   let result;
   try {
     Py_ENTER();
-    result = __pyproxy_getattr(shared.ptr, key, cache);
+    let pykey = internedAttrNames.get(key);
+    let ownsKey = false;
+    if (pykey === undefined) {
+      pykey = __pyproxy_intern_attr_name(key);
+      if (pykey === 0) {
+        // Should not happen, but just in case (e.g. no memory left in Python)
+        result = Module.error;
+      } else if (internedAttrNames.size < MAX_INTERNED_ATTR_NAMES) {
+        internedAttrNames.set(key, pykey);
+      } else {
+        ownsKey = true;
+      }
+    }
+    if (pykey !== 0) {
+      result = __pyproxy_getattr(shared.ptr, pykey, cache);
+    }
+    if (ownsKey) {
+      _Py_DecRef(pykey);
+    }
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);

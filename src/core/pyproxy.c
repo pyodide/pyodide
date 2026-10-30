@@ -512,8 +512,28 @@ python2js_json_adaptor(PyObject* x, JsVal proxyCache, bool is_json_adaptor)
   return result;
 }
 
+/**
+ * Convert an attribute name to an interned Python string.
+ *
+ * Returns a new reference.
+ */
+EMSCRIPTEN_KEEPALIVE PyObject*
+_pyproxy_intern_attr_name(JsVal key)
+{
+  PyObject* pykey = js2python(key);
+  if (pykey == NULL) {
+    return NULL;
+  }
+  PyUnicode_InternInPlace(&pykey);
+  return pykey;
+}
+
+/**
+ * pykey is a borrowed reference to an attribute name created with
+ * _pyproxy_intern_attr_name.
+ */
 EMSCRIPTEN_KEEPALIVE JsVal
-_pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
+_pyproxy_getattr(PyObject* pyobj, PyObject* pykey, JsVal proxyCache)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
   ON_FAIL({
@@ -522,9 +542,6 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
     }
   });
 
-  DECLARE_PY_OBJECT(pykey);
-  pykey = js2python(key);
-  FAIL_IF_NULL(pykey);
   // If it's a method, we use the descriptor pointer as the cache key rather
   // than the actual bound method. This allows us to reuse bound methods from
   // the cache.
