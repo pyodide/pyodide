@@ -59,20 +59,27 @@ declare function Py_EXIT(): void;
 // end-pyodide-skip
 declare function enterTask(): void;
 
-function isPrimitive(x: any): boolean {
-  return (typeof x !== "object" || x === null) && typeof x !== "function";
-}
+// The default `instanceof` behavior, which ignores Symbol.hasInstance
+const hasInstance = Function.prototype[Symbol.hasInstance];
 
+// PyProxy[Symbol.hasInstance] calls this. We don't use `instanceof` here since
+// V8 doesn't inline an `instanceof` with a custom Symbol.hasInstance, while it
+// can inline a call to this function.
 function isPyProxy(jsobj: any): jsobj is PyProxy {
-  // This check is also inside the `instanceof` check below.
-  // However, checking here first was faster due to V8 not inlining
-  // an `instanceof` with a custom Symbol.hasInstance.
-  if (isPrimitive(jsobj)) {
+  // Fast path for primitives, which are the most common input
+  if (
+    (typeof jsobj !== "object" || jsobj === null) &&
+    typeof jsobj !== "function"
+  ) {
     return false;
   }
   try {
-    return jsobj instanceof PyProxy;
+    return (
+      hasInstance.call(PyProxy, jsobj) ||
+      hasInstance.call(PyProxyFunction, jsobj)
+    );
   } catch (e) {
+    // Revoked proxies throw
     return false;
   }
 }
@@ -677,8 +684,6 @@ export interface PyProxy {
 
 const dispose = Symbol.dispose ?? Symbol("dispose");
 
-const hasInstance = Function.prototype[Symbol.hasInstance];
-
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` is an object that allows idiomatic use of a Python object from
  * JavaScript. See :ref:`type-translations-pyproxy`.
@@ -689,12 +694,7 @@ export class PyProxy {
 
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    if (isPrimitive(obj)) {
-      return false;
-    }
-    return (
-      hasInstance.call(PyProxy, obj) || hasInstance.call(PyProxyFunction, obj)
-    );
+    return isPyProxy(obj);
   }
 
   /**
