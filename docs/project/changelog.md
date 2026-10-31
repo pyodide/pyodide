@@ -59,6 +59,15 @@ myst:
   early version of the JSPI proposal. Node 20 is end of life since March 2026.
   {pr}`6465`
 
+- {{ Performance }} Shared libraries inside a package are no longer all
+  compiled while the package is installing. By default only libraries of 8MiB
+  or more, which Chromium refuses to compile synchronously on the main thread,
+  are compiled during installation; the rest are compiled when they are first
+  imported. This makes {js:func}`pyodide.loadPackage` faster and avoids
+  compiling libraries that are never imported. The threshold can be configured
+  with the `sharedLibraryPreloadThreshold` option of {js:func}`loadPyodide`;
+  pass `0` to get the previous behavior. {pr}`6422`
+
 ## Version 314.0.7
 
 _September 14, 2026_
