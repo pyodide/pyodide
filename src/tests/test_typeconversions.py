@@ -314,7 +314,7 @@ def test_number_conversions_3(selenium_module_scope, n):
     from pyodide.code import run_js
 
     jsty = run_js("(n) => typeof n")(n)
-    if -(2**53) + 1 < n < 2**53 - 1:
+    if -(2**53) < n < 2**53:
         assert jsty == "number"
     else:
         assert jsty == "bigint"
@@ -470,6 +470,28 @@ def test_bigint_conversions3(selenium_module_scope, n, exp):
 
         s = json.dumps(val)
         main(selenium, s)
+
+
+@pytest.mark.parametrize(
+    "n, js_type",
+    [
+        (2**31, "number"),
+        (-(2**31) - 1, "number"),
+        (2**53 - 1, "number"),
+        (-(2**53 - 1), "number"),
+        (2**53, "bigint"),
+        (-(2**53), "bigint"),
+    ],
+)
+@run_in_pyodide
+def test_python_int_to_js_safe_integer_bound(selenium, n, js_type):
+    # Python ints that fit in a safe integer (Number.isSafeInteger) are
+    # converted to a JS number, larger ones to a BigInt.
+    from pyodide.code import run_js
+
+    [result_type, result_str] = run_js("(x) => [typeof x, x.toString()]")(n)
+    assert result_type == js_type
+    assert result_str == str(n)
 
 
 @given(obj=any_equal_to_self_strategy.filter(no_hypothesis))
