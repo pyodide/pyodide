@@ -219,10 +219,16 @@ function getInstantiateWasmFunc(
     ) => void,
   ) {
     (async function () {
-      const { Jsv_GetError_import, JsvError_Check } =
-        await jsvErrorImportPromise;
+      const {
+        Jsv_GetError_import,
+        JsvError_Check,
+        Jsv_GetNoValue_import,
+        JsvNoValue_Check,
+      } = await jsvErrorImportPromise;
       imports.env.Jsv_GetError_import = Jsv_GetError_import;
       imports.env.JsvError_Check = JsvError_Check;
+      imports.env.Jsv_GetNoValue_import = Jsv_GetNoValue_import;
+      imports.env.JsvNoValue_Check = JsvNoValue_Check;
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {
