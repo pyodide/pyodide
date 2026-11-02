@@ -7,11 +7,13 @@
 #include "jslib.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
+#include "python2js.h"
 #include <emscripten.h>
 #include <stdio.h>
 
 static PyObject* tbmod = NULL;
 static PyObject* _pyodide_importhook = NULL;
+static PyObject* format_exception_for_js = NULL;
 
 _Py_IDENTIFIER(__qualname__);
 _Py_IDENTIFIER(add_note_to_module_not_found_error);
@@ -144,21 +146,41 @@ EM_JS(void, log_python_error, (JsVal jserror), {
  * WARNING: dereferencing the error pointer stored on the PythonError is a
  * use-after-free bug.
  */
-// Does the fallible work of wrap_exception. `exc` is borrowed. Returns a JS
-// error on success or JS_ERROR if something went wrong while formatting (in
-// which case wrap_exception builds a fallback error).
+/**
+ * Format exc with sys.excepthook and return the result as a JS string.
+ */
 static JsVal
-wrap_exception_inner(PyObject* exc)
+format_exception(PyObject* exc)
 {
-  FAIL_RETURN_VALUE(JS_ERROR);
-
-  if (PyErr_GivenExceptionMatches(exc, PyExc_ModuleNotFoundError)) {
-    DECLARE_PY_OBJECT(res);
-    res = _PyObject_CallMethodIdOneArg(
-      _pyodide_importhook, &PyId_add_note_to_module_not_found_error, exc);
-    FAIL_IF_NULL(res);
+  PyObject* formatted = PyObject_CallOneArg(format_exception_for_js, exc);
+  if (formatted == NULL) {
+    // Failed to format exception using sys.excepthook,
+    // then fallback to the default error formatting using the PyErr_Print.
+    // Normally, this shouldn't happen, but it happens when:
+    // 1) User replaces `sys.excepthook` with a custom exception hook.
+    // 2) User replaces `traceback.print_exception` with a custom exception
+    //    printer.
+    PyErr_Clear();
+    return Jsv_novalue;
   }
+  JsVal result = Jsv_novalue;
+  if (!Py_IsNone(formatted)) {
+    result = python2js(formatted);
+    if (JsvError_Check(result)) {
+      PyErr_Clear();
+      result = Jsv_novalue;
+    }
+  }
+  Py_DECREF(formatted);
+  return result;
+}
 
+/**
+ * Format exc by calling PyErr_Print() and capturing what it writes to stderr.
+ */
+static JsVal
+format_exception_with_pyerr_print(PyObject* exc)
+{
   capture_stderr();
   PyErr_SetRaisedException(Py_NewRef(exc));
   // print standard traceback to standard error, clear the error flag, and set
@@ -177,7 +199,28 @@ wrap_exception_inner(PyObject* exc)
   // in the outer Python. Hypothetically this could cause trouble and we should
   // fix it, but it's probably not worth the effort.
   PyErr_Print();
-  JsVal formatted_exception = restore_stderr();
+  return restore_stderr();
+}
+
+// Does the fallible work of wrap_exception. `exc` is borrowed. Returns a JS
+// error on success or JS_ERROR if something went wrong while formatting (in
+// which case wrap_exception builds a fallback error).
+static JsVal
+wrap_exception_inner(PyObject* exc)
+{
+  FAIL_RETURN_VALUE(JS_ERROR);
+
+  if (PyErr_GivenExceptionMatches(exc, PyExc_ModuleNotFoundError)) {
+    DECLARE_PY_OBJECT(res);
+    res = _PyObject_CallMethodIdOneArg(
+      _pyodide_importhook, &PyId_add_note_to_module_not_found_error, exc);
+    FAIL_IF_NULL(res);
+  }
+
+  JsVal formatted_exception = format_exception(exc);
+  if (JsvNoValue_Check(formatted_exception)) {
+    formatted_exception = format_exception_with_pyerr_print(exc);
+  }
 
   DECLARE_PY_OBJECT(typestr);
   typestr = _PyObject_GetAttrId((PyObject*)Py_TYPE(exc), &PyId___qualname__);
@@ -284,6 +327,13 @@ error_handling_init(PyObject* core_module)
 
   tbmod = PyImport_ImportModule("traceback");
   FAIL_IF_NULL(tbmod);
+
+  DECLARE_PY_OBJECT(_pyodide_error_handling);
+  _pyodide_error_handling = PyImport_ImportModule("_pyodide._error_handling");
+  FAIL_IF_NULL(_pyodide_error_handling);
+  format_exception_for_js =
+    PyObject_GetAttrString(_pyodide_error_handling, "format_exception_for_js");
+  FAIL_IF_NULL(format_exception_for_js);
 
   return 0;
 }
