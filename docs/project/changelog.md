@@ -17,6 +17,11 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Fixed a bug where, with `pyodide.setDebug(true)`, some errors were
+  replaced by an unhelpful `SystemError: ... returned NULL without setting an
+  exception`, for example when calling `run_sync()` where stack switching is
+  not possible. {issue}`6478`
+
 - {{ Fix }} Fixed a bug that a Python `int` equal to `Number.MAX_SAFE_INTEGER` or `-Number.MAX_SAFE_INTEGER` was converted to a JavaScript `BigInt` instead of a `Number`.
 
 - {{ Fix }} Fixed a bug that `instanceof pyodide.ffi.PyMutableSequence` was true for every Python sequence, including `tuple`.

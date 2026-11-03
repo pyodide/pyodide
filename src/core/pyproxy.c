@@ -89,7 +89,15 @@ EM_JS(void, destroy_proxy, (JsVal px, Js_Identifier* msg_ptr), {
   if (msg_ptr) {
     msg = _JsvString_FromId(msg_ptr);
   }
-  Module.pyproxy_destroy(px, msg, false);
+  // We are often called from cleanup code with a Python error set. In debug
+  // mode pyproxy_destroy calls repr() on the proxy, which would clobber it, so
+  // save the error and restore it afterwards.
+  const exc = _PyErr_GetRaisedException();
+  try {
+    Module.pyproxy_destroy(px, msg, false);
+  } finally {
+    _PyErr_SetRaisedException(exc);
+  }
 });
 
 static PyObject* asyncio;

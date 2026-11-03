@@ -192,7 +192,18 @@ def test_syncify_null(selenium):
 
 @requires_jspi
 @pytest.mark.requires_dynamic_linking
-def test_syncify_no_suspender(selenium):
+@pytest.mark.parametrize("debug", [False, True])
+def test_syncify_no_suspender(selenium, debug):
+    # In debug mode, destroying the temporary proxy used to call repr() while
+    # the RuntimeError was set, which lost it and raised a SystemError instead.
+    orig = selenium.run_js(f"return pyodide.setDebug({str(debug).lower()});")
+    try:
+        _check_syncify_no_suspender(selenium)
+    finally:
+        selenium.run_js(f"pyodide.setDebug({str(orig).lower()});")
+
+
+def _check_syncify_no_suspender(selenium):
     selenium.run_js(
         """
         await pyodide.loadPackage("pytest");
