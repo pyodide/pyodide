@@ -41,6 +41,7 @@
 - [codeplug.org](https://codeplug.org) is an in-browser suite for programming amateur radio transceivers. It leverages [CHIRP](https://chirpmyradio.com/projects/chirp/wiki/Home)'s radio drivers using Pyodide and WebSerial to let the user program radios from anywhere.
 - [Pyodios](https://apps.apple.com/us/app/pyodios/id6762922366) is an iOS application that uses Pyodide to run Python code locally on your iPhone and iPad. For examples of the app, see the [documentation website](https://pyodios.caffeinatedmath.com/).
 - [Frappe Playground](https://github.com/lubusIN/frappe-playground) is an in-browser playground for Frappe running entirely client-side using Pyodide.
+- [CodeJo](https://codejo.pages.dev) is an old-school "Just Start Coding" environment, built into a browser window. Nothing fancy. Just start coding!
 
 ## Workarounds for common WASM and browser limitations
 
