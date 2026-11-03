@@ -1,0 +1,17 @@
+package:
+  name: pyodide-tblib
+  version: 3.2.3
+  top-level:
+    - tblib
+  tag:
+    - core
+    - pytest
+    - min-scipy-stack
+source:
+  url: https://files.pythonhosted.org/packages/65/12/d91be04a60cd7349cc86358e0915dcfe5edbfcf83875c458e220756872b5/pyodide_tblib-3.2.3-py3-none-any.whl
+  sha256: 2960f305fe3ef1f5fed9ff098c959104af144627a53033a469183200e50d7ea0
+about:
+  home: https://github.com/ionelmc/python-tblib
+  PyPI: https://pypi.org/project/pyodide-tblib
+  summary: Traceback serialization library.
+  license: BSD-2-Clause
