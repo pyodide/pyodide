@@ -439,14 +439,8 @@ _pyproxy_type(PyObject* ptrobj)
 }
 
 EMSCRIPTEN_KEEPALIVE int
-_pyproxy_hasattr(PyObject* pyobj, JsVal jskey)
+_pyproxy_hasattr(PyObject* pyobj, PyObject* pykey)
 {
-  FAIL_RETURN_VALUE(-1);
-  DECLARE_PY_OBJECT(pykey);
-
-  pykey = js2python(jskey);
-  FAIL_IF_NULL(pykey);
-
   return PyObject_HasAttr(pyobj, pykey);
 }
 
@@ -528,10 +522,6 @@ _pyproxy_intern_attr_name(JsVal key)
   return pykey;
 }
 
-/**
- * pykey is a borrowed reference to an attribute name created with
- * _pyproxy_intern_attr_name.
- */
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_getattr(PyObject* pyobj, PyObject* pykey, JsVal proxyCache)
 {
@@ -581,12 +571,9 @@ _pyproxy_getattr(PyObject* pyobj, PyObject* pykey, JsVal proxyCache)
 };
 
 EMSCRIPTEN_KEEPALIVE int
-_pyproxy_setattr(PyObject* pyobj, JsVal key, JsVal value)
+_pyproxy_setattr(PyObject* pyobj, PyObject* pykey, JsVal value)
 {
   FAIL_RETURN_VALUE(-1);
-  DECLARE_PY_OBJECT(pykey);
-  pykey = js2python(key);
-  FAIL_IF_NULL(pykey);
   DECLARE_PY_OBJECT(pyval);
   pyval = js2python(value);
   FAIL_IF_NULL(pyval);
@@ -596,13 +583,9 @@ _pyproxy_setattr(PyObject* pyobj, JsVal key, JsVal value)
 }
 
 EMSCRIPTEN_KEEPALIVE int
-_pyproxy_delattr(PyObject* pyobj, JsVal idkey)
+_pyproxy_delattr(PyObject* pyobj, PyObject* pykey)
 {
   FAIL_RETURN_VALUE(-1);
-  DECLARE_PY_OBJECT(pykey);
-
-  pykey = js2python(idkey);
-  FAIL_IF_NULL(pykey);
   FAIL_IF_MINUS_ONE(PyObject_DelAttr(pyobj, pykey));
 
   return 0;

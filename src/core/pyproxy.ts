@@ -2096,12 +2096,16 @@ export class PyMutableSequenceMethods {
 // deal with straining out the spurious "Function" properties "prototype",
 // "arguments", and "length", to deal with correctly satisfying the Proxy
 // invariants, and to deal with the mro
-function python_hasattr(jsobj: PyProxy, jskey: any) {
+function python_hasattr(jsobj: PyProxy, jskey: string) {
   let ptrobj = _getPtr(jsobj);
-  let result;
+  let result = -1;
   try {
     Py_ENTER();
-    result = __pyproxy_hasattr(ptrobj, jskey);
+    const pykey = attrNameToPy(jskey);
+    if (pykey !== 0) {
+      result = __pyproxy_hasattr(ptrobj, pykey);
+      releaseAttrName(jskey, pykey);
+    }
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2114,11 +2118,35 @@ function python_hasattr(jsobj: PyProxy, jskey: any) {
 
 // Interned Python strings for attribute names, see _pyproxy_intern_attr_name.
 // We hold a reference to each of them, so we limit how many we keep.
-// The size 1000 is arbitrary. Normally there are not many attribute names used in Python,
-// So we set the limit large enough to hold common attribute names without
-// causing memory pressure.
 const MAX_INTERNED_ATTR_NAMES = 1000;
 const internedAttrNames: Map<string, number> = new Map();
+
+// Converts an attribute name to a Python string. Returns 0 on error. Call
+// releaseAttrName() when done with the result.
+function attrNameToPy(key: string): number {
+  let pykey = internedAttrNames.get(key);
+  if (pykey !== undefined) {
+    return pykey;
+  }
+  if (internedAttrNames.size < MAX_INTERNED_ATTR_NAMES) {
+    pykey = __pyproxy_intern_attr_name(key);
+    if (pykey !== 0) {
+      internedAttrNames.set(key, pykey);
+    }
+    return pykey;
+  }
+  return _js2python(key);
+}
+
+function releaseAttrName(key: string, pykey: number) {
+  if (
+    // Only release if we're at the limit and the key isn't in the cache
+    internedAttrNames.size === MAX_INTERNED_ATTR_NAMES &&
+    !internedAttrNames.has(key)
+  ) {
+    _Py_DecRef(pykey);
+  }
+}
 
 // Returns a JsRef in order to allow us to differentiate between "not found"
 // (in which case we return 0) and "found 'None'" (in which case we return
@@ -2126,27 +2154,13 @@ const internedAttrNames: Map<string, number> = new Map();
 function python_getattr(jsobj: PyProxy, key: string) {
   const { shared } = _getAttrs(jsobj);
   let cache = shared.cache.map;
-  let result;
+  let result = Module.error;
   try {
     Py_ENTER();
-    let pykey = internedAttrNames.get(key);
-    let ownsKey = false;
-    if (pykey === undefined) {
-      pykey = __pyproxy_intern_attr_name(key);
-      if (pykey === 0) {
-        // Should not happen, but just in case (e.g. no memory left in Python)
-        result = Module.error;
-      } else if (internedAttrNames.size < MAX_INTERNED_ATTR_NAMES) {
-        internedAttrNames.set(key, pykey);
-      } else {
-        ownsKey = true;
-      }
-    }
+    const pykey = attrNameToPy(key);
     if (pykey !== 0) {
       result = __pyproxy_getattr(shared.ptr, pykey, cache);
-    }
-    if (ownsKey) {
-      _Py_DecRef(pykey);
+      releaseAttrName(key, pykey);
     }
     Py_EXIT();
   } catch (e) {
@@ -2161,12 +2175,16 @@ function python_getattr(jsobj: PyProxy, key: string) {
   return result;
 }
 
-function python_setattr(jsobj: PyProxy, jskey: any, jsval: any) {
+function python_setattr(jsobj: PyProxy, jskey: string, jsval: any) {
   let ptrobj = _getPtr(jsobj);
-  let err;
+  let err = -1;
   try {
     Py_ENTER();
-    err = __pyproxy_setattr(ptrobj, jskey, jsval);
+    const pykey = attrNameToPy(jskey);
+    if (pykey !== 0) {
+      err = __pyproxy_setattr(ptrobj, pykey, jsval);
+      releaseAttrName(jskey, pykey);
+    }
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2176,12 +2194,16 @@ function python_setattr(jsobj: PyProxy, jskey: any, jsval: any) {
   }
 }
 
-function python_delattr(jsobj: PyProxy, jskey: any) {
+function python_delattr(jsobj: PyProxy, jskey: string) {
   let ptrobj = _getPtr(jsobj);
-  let err;
+  let err = -1;
   try {
     Py_ENTER();
-    err = __pyproxy_delattr(ptrobj, jskey);
+    const pykey = attrNameToPy(jskey);
+    if (pykey !== 0) {
+      err = __pyproxy_delattr(ptrobj, pykey);
+      releaseAttrName(jskey, pykey);
+    }
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);

@@ -87,6 +87,7 @@ declare global {
   export const _JsProxy_Check: (ptr: number) => number;
 
   export const _python2js: (pyobj: number) => any;
+  export const _js2python: (val: any) => number;
   export const _python2js_custom: (
     obj: number,
     depth: number,
@@ -156,11 +157,11 @@ declare global {
   ) => any;
   export const __pyproxy_setattr: (
     ptr: number,
-    attr: string,
+    attr: number,
     value: any,
   ) => number;
-  export const __pyproxy_delattr: (ptr: number, attr: string) => number;
-  export const __pyproxy_hasattr: (ptr: number, attr: string) => number;
+  export const __pyproxy_delattr: (ptr: number, attr: number) => number;
+  export const __pyproxy_hasattr: (ptr: number, attr: number) => number;
   export const __pyproxy_slice_assign: (
     ptr: number,
     start: number,
