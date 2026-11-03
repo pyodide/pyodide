@@ -15,7 +15,7 @@ bool tracerefs;
   JS_BUILTIN(true)                                                             \
   JS_BUILTIN(false)                                                            \
   JS_CONST(error, _Jsv_GetError())                                             \
-  JS_CONST(novalue, { noValueMarker : 1 })
+  JS_CONST(novalue, _Jsv_GetNoValue())
 
 // we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
 // definitions of HIWIRE_INIT_CONST to ensure everything lines up properly
@@ -30,13 +30,23 @@ JS_INIT_CONSTS();
 JsVal
 Jsv_GetError_import(void);
 
+JsVal
+Jsv_GetNoValue_import(void);
+
 EMSCRIPTEN_KEEPALIVE JsVal
 Jsv_GetError(void)
 {
   return Jsv_GetError_import();
 }
 
+EMSCRIPTEN_KEEPALIVE JsVal
+Jsv_GetNoValue(void)
+{
+  return Jsv_GetNoValue_import();
+}
+
 int JsvError_Check(JsVal);
+int JsvNoValue_Check(JsVal);
 
 EM_JS_NUM(int, jslib_init_js, (void), {
   JS_INIT_CONSTS();
@@ -57,12 +67,6 @@ jslib_init(void)
   FAIL_IF_MINUS_ONE(jslib_init_js());
   return 0;
 }
-
-// clang-format off
-EM_JS(int, JsvNoValue_Check, (JsVal v), {
-  return v === Module.novalue;
-});
-// clang-format on
 
 // ==================== Conversions between JsRef and JsVal ====================
 

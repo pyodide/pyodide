@@ -2874,6 +2874,24 @@ def test_pyproxy_mutable_sequence_instanceof(selenium):
 
 
 @run_in_pyodide
+def test_pyproxy_instanceof_revoked_proxy(selenium):
+    # `instanceof` on a revoked Proxy throws by default, but PyProxy's
+    # Symbol.hasInstance returns false, like the other PyProxy classes.
+    from pyodide.code import run_js
+
+    assert run_js(
+        """
+        const p = Proxy.revocable({}, {});
+        p.revoke();
+        [
+            p.proxy instanceof pyodide.ffi.PyProxy,
+            p.proxy instanceof pyodide.ffi.PySequence,
+        ]
+        """
+    ).to_py() == [False, False]
+
+
+@run_in_pyodide
 def test_pyproxy_getattr_many_names(selenium):
     # PyProxy caches the Python strings for attribute names up to a limit.
     # Check that attribute access still works for names beyond that limit.

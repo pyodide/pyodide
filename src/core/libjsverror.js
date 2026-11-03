@@ -3,4 +3,6 @@
 addToLibrary({
   Jsv_GetError_import: () => {},
   JsvError_Check: () => {},
+  Jsv_GetNoValue_import: () => {},
+  JsvNoValue_Check: () => {},
 });

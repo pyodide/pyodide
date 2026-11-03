@@ -24,11 +24,17 @@
 // A suite module exports:
 //
 //   export const description = "...";   // shown by --list
+//   export const usesPyodide = false;   // optional, see below
 //   export async function run(pyodide, ctx) {
 //     // ctx.filter(caseName) -> whether the case was selected by --filter
 //     // await ctx.measure(fn) -> median time of fn() in ms (fn may be async)
+//     // ctx.distDir -> path of the build being benchmarked
 //     return { [caseName]: { [metricName]: ms, ... }, ... };
 //   }
+//
+// By default the runner loads Pyodide before calling run(). A suite that
+// measures loading itself (e.g. by starting new processes) can set
+// `usesPyodide = false`, then run() gets `undefined` instead.
 //
 // A suite should throw if it detects incorrect results; the runner then exits
 // with a non-zero status.
@@ -54,6 +60,8 @@ const CORE_FILES = [
   "python_stdlib.zip",
   "pyodide-lock.json",
 ];
+// Downloaded if available, used by the startup suite
+const OPTIONAL_FILES = ["snapshot.bin"];
 
 function median(xs) {
   const s = [...xs].sort((a, b) => a - b);
@@ -84,14 +92,18 @@ async function runWorker(suiteName, distDir, filter, outFile) {
   const suite = await import(
     pathToFileURL(path.join(SUITES_DIR, `${suiteName}.mjs`)).href
   );
-  const { loadPyodide } = await import(
-    pathToFileURL(path.join(distDir, "pyodide.mjs")).href
-  );
-  const pyodide = await loadPyodide({ indexURL: distDir + "/" });
+  let pyodide;
+  if (suite.usesPyodide !== false) {
+    const { loadPyodide } = await import(
+      pathToFileURL(path.join(distDir, "pyodide.mjs")).href
+    );
+    pyodide = await loadPyodide({ indexURL: distDir + "/" });
+  }
   const regex = filter ? new RegExp(filter) : null;
   const ctx = {
     filter: (caseName) => !regex || regex.test(`${suiteName}/${caseName}`),
     measure,
+    distDir,
   };
   const results = await suite.run(pyodide, ctx);
   await writeFile(outFile, JSON.stringify(results));
@@ -103,9 +115,12 @@ async function resolveDist(dist) {
   }
   const base = dist.endsWith("/") ? dist : dist + "/";
   const dir = await mkdtemp(path.join(os.tmpdir(), "pyodide-bench-"));
-  for (const file of CORE_FILES) {
+  for (const file of [...CORE_FILES, ...OPTIONAL_FILES]) {
     const resp = await fetch(base + file);
     if (!resp.ok) {
+      if (OPTIONAL_FILES.includes(file)) {
+        continue;
+      }
       throw new Error(`Failed to download ${base + file}: ${resp.status}`);
     }
     await writeFile(
