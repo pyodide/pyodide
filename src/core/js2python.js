@@ -257,6 +257,44 @@ function js2python_convertMap(obj, entries, context) {
   return dict;
 }
 
+/**
+ * Like js2python_convertMap, but for plain objects. Iterating over Object.keys()
+ * instead of Object.entries() avoids allocating an array for each entry.
+ */
+function js2python_convertObject(obj, context) {
+  const keys = Object.keys(obj);
+  let dict = _PyDict_New();
+  if (dict === 0) {
+    return 0;
+  }
+  let value_py = 0;
+  try {
+    context.cache.set(obj, dict);
+    for (let i = 0; i < keys.length; i++) {
+      const key_js = keys[i];
+      // keyCache is used to reuse Python strings for the same key.
+      // It is useful, for example, when converting a array of JSON values:
+      // [ { id: 1, name: "Alice" }, { id: 2, name: "Bob" } ]
+      let key_py = context.keyCache.get(key_js);
+      if (key_py === undefined) {
+        key_py = js2python_string(key_js);
+        context.keyCache.set(key_js, key_py);
+      }
+      value_py = js2python_convert_with_context(obj[key_js], context);
+      if (_PyDict_SetItem(dict, key_py, value_py) === -1) {
+        throw new PropagateError();
+      }
+      _Py_DecRef(value_py);
+      value_py = 0;
+    }
+  } catch (e) {
+    _Py_DecRef(value_py);
+    _Py_DecRef(dict);
+    throw e;
+  }
+  return dict;
+}
+
 function js2python_convertSet(obj, context) {
   let set = _PySet_New(0);
   if (set === 0) {
@@ -331,7 +369,7 @@ function js2python_convertOther(value, context) {
     typeTag === "[object Object]" &&
     (value.constructor === undefined || value.constructor.name === "Object")
   ) {
-    return js2python_convertMap(value, Object.entries(value), context);
+    return js2python_convertObject(value, context);
   }
   if (typeTag === "[object ArrayBuffer]" || ArrayBuffer.isView(value)) {
     let [format_utf8, itemsize] = Module.get_buffer_datatype(value);
@@ -394,6 +432,8 @@ function js2python_convert_with_context(value, context) {
 function js2python_convert(val, { depth, defaultConverter }) {
   let context = {
     cache: new Map(),
+    // Python strings for the keys of objects.
+    keyCache: new Map(),
     depth,
     defaultConverter,
     // arguments for defaultConverter
@@ -407,7 +447,13 @@ function js2python_convert(val, { depth, defaultConverter }) {
       }
     },
   };
-  return js2python_convert_with_context(val, context);
+  try {
+    return js2python_convert_with_context(val, context);
+  } finally {
+    for (const key of context.keyCache.values()) {
+      _Py_DecRef(key);
+    }
+  }
 }
 
 Module.js2python_convert = js2python_convert;
