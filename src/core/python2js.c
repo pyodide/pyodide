@@ -315,17 +315,19 @@ _python2js_sequence(ConversionContext* context, PyObject* x)
     // Convert immutable items here so that they skip the call to _python2js.
     JsVal jsitem = _python2js_immutable(pyitem);
     FAIL_IF_JS_ERROR(jsitem);
-    if (JsvNoValue_Check(jsitem)) {
-      jsitem = _python2js(context, pyitem);
-      FAIL_IF_JS_ERROR(jsitem);
-      if (JsvNoValue_Check(jsitem)) {
-        JsVal index = JsvNum_fromInt(JsvArray_Push(jsarray, JS_ERROR));
-        _python2js_addto_postprocess_list(
-          hiwire_get(context->jspostprocess_list), jsarray, index, pyitem);
-        continue;
-      }
+    if (!JsvNoValue_Check(jsitem)) {
+      JsvArray_Push(jsarray, jsitem);
+      continue;
     }
-    JsvArray_Push(jsarray, jsitem);
+    jsitem = _python2js(context, pyitem);
+    FAIL_IF_JS_ERROR(jsitem);
+    if (!JsvNoValue_Check(jsitem)) {
+      JsvArray_Push(jsarray, jsitem);
+      continue;
+    }
+    JsVal index = JsvNum_fromInt(JsvArray_Push(jsarray, JS_ERROR));
+    _python2js_addto_postprocess_list(
+      hiwire_get(context->jspostprocess_list), jsarray, index, pyitem);
   }
   return jsarray;
 }
@@ -376,15 +378,14 @@ _python2js_dict(ConversionContext* context, PyObject* x)
     if (JsvNoValue_Check(jsval)) {
       jsval = _python2js(context, pyval);
       FAIL_IF_JS_ERROR(jsval);
-      if (JsvNoValue_Check(jsval)) {
-        _python2js_addto_postprocess_list(
-          hiwire_get(context->jspostprocess_list), jsdict, jskey, pyval);
-        Py_CLEAR(item);
-        continue;
-      }
     }
-    FAIL_IF_MINUS_ONE(
-      context->dict_add_keyvalue(context, jsdict, jskey, jsval));
+    if (JsvNoValue_Check(jsval)) {
+      _python2js_addto_postprocess_list(
+        hiwire_get(context->jspostprocess_list), jsdict, jskey, pyval);
+    } else {
+      FAIL_IF_MINUS_ONE(
+        context->dict_add_keyvalue(context, jsdict, jskey, jsval));
+    }
     Py_CLEAR(item);
   }
   FAIL_IF_ERR_OCCURRED();
@@ -511,7 +512,6 @@ static JsVal
 _python2js_deep(ConversionContext* context, PyObject* x)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
   if (context->eager_converter) {
     RETURN_IF_HAS_VALUE(
@@ -584,8 +584,7 @@ EMSCRIPTEN_KEEPALIVE JsVal
 _python2js(ConversionContext *context, PyObject* x)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  // Immutable values are never in the cache and never become proxies, so
-  // convert them before looking them up in the cache.
+  // Immutable values are never in the cache and never become proxies
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   JsVal val = _python2js_cache_lookup(hiwire_get(context->cache), x);
   if (!JsvError_Check(val)) {
@@ -593,7 +592,6 @@ _python2js(ConversionContext *context, PyObject* x)
   }
   FAIL_IF_ERR_OCCURRED();
   if (context->depth == 0) {
-    RETURN_IF_HAS_VALUE(_python2js_immutable(x));
     RETURN_IF_HAS_VALUE(_python2js_proxy(x));
     if (context->default_converter) {
       return python2js__default_converter(hiwire_get(context->jscontext), x);
