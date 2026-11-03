@@ -31,6 +31,9 @@ _November 13, 2026_
 
 ### JavaScript API
 
+- {{ Fix }} Fixed a `SystemError` caused by `pyodide.setDebug(true)`.
+  {pr}`6524`
+
 - {{ Fix }} Fixed a bug that `instanceof pyodide.ffi.PyMutableSequence` was true
   for every Python sequence, including `tuple`.
   {pr}`6503`
