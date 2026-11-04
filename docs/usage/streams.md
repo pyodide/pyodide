@@ -274,9 +274,10 @@ understand partial lines of text or for quick and dirty code.
 The batched handler receives a string which is either:
 
 1. a complete line of text with the newline removed or
-2. a partial line of text that was flushed.
+2. a partial line of text, when the stream is closed or fsync'd.
 
-For instance after:
+Flushing the stream does not pass a partial line to the batched handler. For
+instance after:
 
 ```py
 print("hello!")
@@ -285,9 +286,12 @@ print("partial line", end="")
 sys.stdout.flush()
 ```
 
-the batched handler is called with `"hello!"` and then with `"partial line"`.
-Note that there is no indication that `"hello!"` was a complete line of text and
-`"partial line"` was not.
+the batched handler has only been called with `"hello!"`. `"partial line"` is
+held until a newline is written, or until the stream is closed or fsync'd (for
+example with `os.fsync(sys.stdout.fileno())`). Note that there is no indication
+that a string passed this way was a partial line. If you need partial lines as
+soon as they are written, use a write handler or a raw handler (see below)
+instead.
 
 ### A raw handler
 
