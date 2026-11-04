@@ -82,9 +82,7 @@ jobs:
     needs: get_python_version
     permissions:
       contents: read
-      # For tokenless Codecov uploads via OIDC (not granted on fork PRs,
-      # where codecov-action falls back to tokenless upload)
-      id-token: write
+      id-token: write  # For tokenless Codecov uploads via OIDC
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
