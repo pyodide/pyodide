@@ -1,21 +1,22 @@
 comment: false
 
+github_checks:
+  annotations: false
+
 coverage:
   status:
+    # Coverage only reflects the host-runnable Python tests
+    # (`pytest --runtime=host`), so report it without failing PRs.
     project:
       default:
-        # Commits pushed to main should not make the overall
-        # project coverage decrease by more than 1%:
         target: auto
         threshold: 1%
+        informational: true
     patch:
       default:
-        # Be tolerant on slight code coverage diff on PRs to limit
-        # noisy red coverage status on github PRs.
-        # Note: The coverage stats are still uploaded
-        # to codecov so that PR reviewers can see uncovered lines
         target: auto
         threshold: 1%
+        informational: true
 
 codecov:
   notify:
