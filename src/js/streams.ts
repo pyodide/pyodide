@@ -428,10 +428,11 @@ export function setStdin(
  * A batched handler to provide to :js:func:`~pyodide.setStdout` or
  * :js:func:`~pyodide.setStderr`.
  *
- * The ``handler.batched()`` handler is called with a string whenever a newline
- * character is written or stdout is flushed. In the former case, the received
- * line will end with a newline, in the latter case it will not. Streams
- * implemented with a batched handlers cannot be a tty.
+ * The ``handler.batched()`` handler is called with a string each time a newline
+ * character is written, with the newline removed. A partial line is only passed
+ * when the stream is closed or fsync'd, not when it is flushed. Use a write or
+ * raw handler if you need partial lines as soon as they are written. Streams
+ * implemented with a batched handler cannot be a tty.
  */
 export interface BatchedWriteHandler {
   batched: (output: string) => void;
