@@ -2150,6 +2150,33 @@ def test_python_error_message_custom_excepthook(selenium):
     assert msg == "custom hook: boom\n"
 
 
+@run_in_pyodide
+def test_python_error_message_formatting_fails(selenium):
+    # If formatting the message without PyErr_Print() raises, we fall back to
+    # PyErr_Print()
+    from types import SimpleNamespace
+    from unittest.mock import patch
+
+    import _pyodide._error_handling
+    from pyodide.code import run_js
+
+    def string_io():
+        raise RuntimeError("formatting failed")
+
+    def raise_it():
+        raise ValueError("boom")
+
+    with patch.object(
+        _pyodide._error_handling, "io", SimpleNamespace(StringIO=string_io)
+    ):
+        msg = run_js("(f) => { try { f(); } catch (e) { return e.message; } }")(
+            raise_it
+        )
+    assert msg.startswith("Traceback (most recent call last):")
+    assert msg.endswith("ValueError: boom\n")
+    assert "formatting failed" not in msg
+
+
 def test_python_version(selenium):
     selenium.run_js(
         """

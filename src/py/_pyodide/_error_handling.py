@@ -13,10 +13,17 @@ def format_exception_for_js(exc: BaseException) -> str | None:
     """
 
     hook = getattr(sys, "excepthook", None)
-    # If a user switched `sys.excepthook`, we can't use it to format the exception
-    # because it might not be compatible with the default exception hook.
-    # So just return None and let the caller fall back to the default error formatting.
-    if hook is not traceback.print_exception or isinstance(exc, SystemExit):
+    # PyErr_Print() calls sys.excepthook(type, value, traceback), which writes
+    # to sys.stderr: the default hook sys.__excepthook__ takes no file
+    # argument. We set sys.excepthook to traceback.print_exception (see
+    # set_excepthook()), which also takes a file argument, so we can make it
+    # write to a StringIO. A hook set by the user may not take a file argument,
+    # so we return None to let the caller fall back to PyErr_Print().
+    if hook is not traceback.print_exception:
+        return None
+    # If the inspect flag isn't set, PyErr_Print() exits for SystemExit. We set
+    # it except in the CLI runner, where sys.exit() should exit.
+    if isinstance(exc, SystemExit) and not sys.flags.inspect:
         return None
     tb = exc.__traceback__
     # Same as PyErr_Print()
@@ -30,5 +37,5 @@ def format_exception_for_js(exc: BaseException) -> str | None:
         # PyErr_Print() doesn't call the hook in this case
         return ""
     file = io.StringIO()
-    hook(type(exc), exc, tb, file=file)
+    traceback.print_exception(type(exc), exc, tb, file=file)
     return file.getvalue()

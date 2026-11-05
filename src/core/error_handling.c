@@ -133,49 +133,6 @@ EM_JS(void, log_python_error, (JsVal jserror), {
 #endif
 
 /**
- * Wrap the exception in a JavaScript PythonError object.
- *
- * The return value of this function is always a JavaScript error object. It
- * never returns null.
- *
- * We are cautious about leaking the Python stack frame, so we don't increment
- * the reference count on the exception object, we just store a pointer to it.
- * Later we can check if this pointer is equal to sys.last_exc and if so restore
- * the exception (see restore_sys_last_exception).
- *
- * WARNING: dereferencing the error pointer stored on the PythonError is a
- * use-after-free bug.
- */
-/**
- * Format exc with sys.excepthook and return the result as a JS string.
- */
-static JsVal
-format_exception(PyObject* exc)
-{
-  PyObject* formatted = PyObject_CallOneArg(format_exception_for_js, exc);
-  if (formatted == NULL) {
-    // Failed to format exception using sys.excepthook,
-    // then fallback to the default error formatting using the PyErr_Print.
-    // Normally, this shouldn't happen, but it happens when:
-    // 1) User replaces `sys.excepthook` with a custom exception hook.
-    // 2) User replaces `traceback.print_exception` with a custom exception
-    //    printer.
-    PyErr_Clear();
-    return Jsv_novalue;
-  }
-  JsVal result = Jsv_novalue;
-  if (!Py_IsNone(formatted)) {
-    result = python2js(formatted);
-    if (JsvError_Check(result)) {
-      PyErr_Clear();
-      result = Jsv_novalue;
-    }
-  }
-  Py_DECREF(formatted);
-  return result;
-}
-
-/**
  * Format exc by calling PyErr_Print() and capturing what it writes to stderr.
  */
 static JsVal
@@ -202,6 +159,27 @@ format_exception_with_pyerr_print(PyObject* exc)
   return restore_stderr();
 }
 
+/**
+ * Format exc like PyErr_Print() does and return the result as a JS string.
+ */
+static JsVal
+format_exception(PyObject* exc)
+{
+  PyObject* formatted = PyObject_CallOneArg(format_exception_for_js, exc);
+  JsVal result = JS_ERROR;
+  if (formatted != NULL && !Py_IsNone(formatted)) {
+    result = python2js(formatted);
+  }
+  Py_XDECREF(formatted);
+  if (!JsvError_Check(result)) {
+    return result;
+  }
+  // Fall back to PyErr_Print() if format_exception_for_js returned None,
+  // because it can't format exc, or if formatting raised.
+  PyErr_Clear();
+  return format_exception_with_pyerr_print(exc);
+}
+
 // Does the fallible work of wrap_exception. `exc` is borrowed. Returns a JS
 // error on success or JS_ERROR if something went wrong while formatting (in
 // which case wrap_exception builds a fallback error).
@@ -218,9 +196,6 @@ wrap_exception_inner(PyObject* exc)
   }
 
   JsVal formatted_exception = format_exception(exc);
-  if (JsvNoValue_Check(formatted_exception)) {
-    formatted_exception = format_exception_with_pyerr_print(exc);
-  }
 
   DECLARE_PY_OBJECT(typestr);
   typestr = _PyObject_GetAttrId((PyObject*)Py_TYPE(exc), &PyId___qualname__);
