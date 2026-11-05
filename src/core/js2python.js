@@ -262,7 +262,6 @@ function js2python_convertMap(obj, entries, context) {
  * instead of Object.entries() avoids allocating an array for each entry.
  */
 function js2python_convertObject(obj, context) {
-  const keys = Object.keys(obj);
   let dict = _PyDict_New();
   if (dict === 0) {
     return 0;
@@ -270,8 +269,7 @@ function js2python_convertObject(obj, context) {
   let value_py = 0;
   try {
     context.cache.set(obj, dict);
-    for (let i = 0; i < keys.length; i++) {
-      const key_js = keys[i];
+    for (const key_js of Object.keys(obj)) {
       // keyCache is used to reuse Python strings for the same key.
       // It is useful, for example, when converting a array of JSON values:
       // [ { id: 1, name: "Alice" }, { id: 2, name: "Bob" } ]
