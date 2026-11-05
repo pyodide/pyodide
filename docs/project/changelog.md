@@ -19,6 +19,7 @@ myst:
 
 - {{ Fix }} Fixed a bug that `WebLoop.create_task()` raised `AttributeError` when a task factory was set.
   It now passes its arguments on to the task factory like the default asyncio event loop does.
+  {pr}`6525`
 
 - {{ Fix }} Fixed a bug that a Python `int` equal to `Number.MAX_SAFE_INTEGER` or `-Number.MAX_SAFE_INTEGER` was converted to a JavaScript `BigInt` instead of a `Number`.
 
