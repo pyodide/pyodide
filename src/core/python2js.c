@@ -312,15 +312,21 @@ _python2js_sequence(ConversionContext* context, PyObject* x)
     DECLARE_PY_OBJECT(pyitem);
     pyitem = PySequence_GetItem(x, i);
     FAIL_IF_NULL(pyitem);
-    JsVal jsitem = _python2js(context, pyitem);
+    JsVal jsitem = _python2js_immutable(pyitem);
     FAIL_IF_JS_ERROR(jsitem);
-    if (JsvNoValue_Check(jsitem)) {
-      JsVal index = JsvNum_fromInt(JsvArray_Push(jsarray, JS_ERROR));
-      _python2js_addto_postprocess_list(
-        hiwire_get(context->jspostprocess_list), jsarray, index, pyitem);
-    } else {
+    if (!JsvNoValue_Check(jsitem)) {
       JsvArray_Push(jsarray, jsitem);
+      continue;
     }
+    jsitem = _python2js(context, pyitem);
+    FAIL_IF_JS_ERROR(jsitem);
+    if (!JsvNoValue_Check(jsitem)) {
+      JsvArray_Push(jsarray, jsitem);
+      continue;
+    }
+    JsVal index = JsvNum_fromInt(JsvArray_Push(jsarray, JS_ERROR));
+    _python2js_addto_postprocess_list(
+      hiwire_get(context->jspostprocess_list), jsarray, index, pyitem);
   }
   return jsarray;
 }
@@ -348,8 +354,12 @@ _python2js_dict(ConversionContext* context, PyObject* x)
   DECLARE_PY_OBJECT(iter);
   iter = PyObject_GetIter(items);
   FAIL_IF_NULL(iter);
-  DECLARE_PY_OBJECT(item);
-  while ((item = PyIter_Next(iter))) {
+  for (;;) {
+    DECLARE_PY_OBJECT(item);
+    item = PyIter_Next(iter);
+    if (item == NULL) {
+      break;
+    }
     if (!PyTuple_Check(item)) {
       PyErr_SetString(PyExc_TypeError, "expected tuple");
       FAIL();
@@ -365,16 +375,22 @@ _python2js_dict(ConversionContext* context, PyObject* x)
         conversion_error, "Cannot use %R as a key for a Javascript Map", pykey);
       FAIL();
     }
-    JsVal jsval = _python2js(context, pyval);
+    JsVal jsval = _python2js_immutable(pyval);
     FAIL_IF_JS_ERROR(jsval);
-    if (JsvNoValue_Check(jsval)) {
-      _python2js_addto_postprocess_list(
-        hiwire_get(context->jspostprocess_list), jsdict, jskey, pyval);
-    } else {
+    if (!JsvNoValue_Check(jsval)) {
       FAIL_IF_MINUS_ONE(
         context->dict_add_keyvalue(context, jsdict, jskey, jsval));
+      continue;
     }
-    Py_CLEAR(item);
+    jsval = _python2js(context, pyval);
+    FAIL_IF_JS_ERROR(jsval);
+    if (!JsvNoValue_Check(jsval)) {
+      FAIL_IF_MINUS_ONE(
+        context->dict_add_keyvalue(context, jsdict, jskey, jsval));
+      continue;
+    }
+    _python2js_addto_postprocess_list(
+      hiwire_get(context->jspostprocess_list), jsdict, jskey, pyval);
   }
   FAIL_IF_ERR_OCCURRED();
   if (context->dict_postprocess) {
@@ -500,7 +516,6 @@ static JsVal
 _python2js_deep(ConversionContext* context, PyObject* x)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
   if (context->eager_converter) {
     RETURN_IF_HAS_VALUE(
@@ -573,13 +588,14 @@ EMSCRIPTEN_KEEPALIVE JsVal
 _python2js(ConversionContext *context, PyObject* x)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
+  // Immutable values are never in the cache and never become proxies
+  RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   JsVal val = _python2js_cache_lookup(hiwire_get(context->cache), x);
   if (!JsvError_Check(val)) {
     return val;
   }
   FAIL_IF_ERR_OCCURRED();
   if (context->depth == 0) {
-    RETURN_IF_HAS_VALUE(_python2js_immutable(x));
     RETURN_IF_HAS_VALUE(_python2js_proxy(x));
     if (context->default_converter) {
       return python2js__default_converter(hiwire_get(context->jscontext), x);
