@@ -408,7 +408,6 @@ jobs:
               || echo "Comparison with main failed, skipping"
       - run:
           name: compare pyperformance with main
-          no_output_timeout: 40m
           command: |
             PYPERFORMANCE_ARGS="--processes 3 --values 2" \
             node benchmark/node/run.mjs \

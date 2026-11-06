@@ -86,16 +86,22 @@ export async function run(_pyodide, { filter, distDir }) {
   await installDeps(depsDir);
 
   const names = (await runChild(distDir, depsDir, ["list"])).filter(filter);
+  // Progress goes to stderr, the results are printed by the runner at the end
+  console.error(`pyperformance: ${names.length} benchmarks for ${distDir}`);
   const results = {};
-  for (const name of names) {
+  for (const [i, name] of names.entries()) {
+    const progress = `[${i + 1}/${names.length}] pyperformance/${name}`;
+    const t0 = performance.now();
     let times;
     try {
       times = await runChild(distDir, depsDir, ["run", name, ...pyperfArgs]);
     } catch (e) {
       const stderr = e.stderr?.trim().split("\n").slice(-20).join("\n");
-      console.error(`pyperformance/${name} failed:\n${stderr ?? e}`);
+      console.error(`${progress} failed:\n${stderr ?? e}`);
       continue;
     }
+    const seconds = ((performance.now() - t0) / 1000).toFixed(1);
+    console.error(`${progress} (${seconds} s)`);
     for (const [caseName, time] of Object.entries(times)) {
       results[caseName] = { time };
     }
