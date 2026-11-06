@@ -2053,6 +2053,130 @@ def test_python_error(selenium):
     assert ty == "TypeError"
 
 
+@run_in_pyodide
+def test_python_error_message_without_capturing_stderr(selenium):
+    # With the default sys.excepthook, we format the message of a PythonError
+    # without redirecting stderr, so that we never leave it redirected if the
+    # runtime stops executing Python in the middle.
+    from pyodide.code import run_js
+
+    def raise_it():
+        raise ValueError("boom")
+
+    msg = run_js(
+        """
+        (f) => {
+            const capture = pyodide._api.capture_stderr;
+            pyodide._api.capture_stderr = () => {
+                throw new Error("capture_stderr should not be called");
+            };
+            try {
+                f();
+            } catch (e) {
+                return e.message;
+            } finally {
+                pyodide._api.capture_stderr = capture;
+            }
+        }
+        """
+    )(raise_it)
+    assert msg.endswith("ValueError: boom\n")
+
+
+@run_in_pyodide
+def test_python_error_message_reentrant(selenium):
+    # Formatting an exception can convert another exception to JavaScript.
+    from pyodide.code import run_js
+
+    def raise_inner():
+        raise ValueError("inner")
+
+    class Outer(Exception):
+        def __str__(self):
+            inner_msg = run_js(
+                "(f) => { try { f(); } catch (e) { return e.message; } }"
+            )(raise_inner)
+            assert inner_msg.endswith("ValueError: inner\n")
+            return "outer"
+
+    def raise_outer():
+        raise Outer()
+
+    msg = run_js("(f) => { try { f(); } catch (e) { return e.message; } }")(raise_outer)
+    assert msg.endswith("Outer: outer\n")
+
+
+@run_in_pyodide
+def test_python_error_message_with_redirected_stderr(selenium):
+    # The message doesn't depend on where sys.stderr points to.
+    import contextlib
+    import io
+
+    from pyodide.code import run_js
+
+    def raise_it():
+        raise ValueError("boom")
+
+    stderr = io.StringIO()
+    with contextlib.redirect_stderr(stderr):
+        msg = run_js("(f) => { try { f(); } catch (e) { return e.message; } }")(
+            raise_it
+        )
+    assert msg.endswith("ValueError: boom\n")
+    assert stderr.getvalue() == ""
+
+
+@run_in_pyodide
+def test_python_error_message_custom_excepthook(selenium):
+    # A custom sys.excepthook formats the message of a PythonError
+    import sys
+
+    from pyodide.code import run_js
+
+    def hook(ty, val, tb):
+        print("custom hook:", val, file=sys.stderr)
+
+    def raise_it():
+        raise ValueError("boom")
+
+    old_hook = sys.excepthook
+    sys.excepthook = hook
+    try:
+        msg = run_js("(f) => { try { f(); } catch (e) { return e.message; } }")(
+            raise_it
+        )
+    finally:
+        sys.excepthook = old_hook
+    assert msg == "custom hook: boom\n"
+
+
+@run_in_pyodide
+def test_python_error_message_formatting_fails(selenium):
+    # If formatting the message without PyErr_Print() raises, we fall back to
+    # PyErr_Print()
+    from types import SimpleNamespace
+    from unittest.mock import patch
+
+    import _pyodide._error_handling
+    from pyodide.code import run_js
+
+    def string_io():
+        raise RuntimeError("formatting failed")
+
+    def raise_it():
+        raise ValueError("boom")
+
+    with patch.object(
+        _pyodide._error_handling, "io", SimpleNamespace(StringIO=string_io)
+    ):
+        msg = run_js("(f) => { try { f(); } catch (e) { return e.message; } }")(
+            raise_it
+        )
+    assert msg.startswith("Traceback (most recent call last):")
+    assert msg.endswith("ValueError: boom\n")
+    assert "formatting failed" not in msg
+
+
 def test_python_version(selenium):
     selenium.run_js(
         """
