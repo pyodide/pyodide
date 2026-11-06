@@ -252,6 +252,7 @@ EXPORTS=_main \
    ,__PyErr_CheckSignals \
    ,_PyErr_CheckSignals \
    ,_PyErr_Clear \
+   ,_PyErr_GetRaisedException \
    ,_PyErr_Occurred \
    ,_PyErr_Print \
    ,_PyErr_SetRaisedException \
