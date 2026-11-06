@@ -40,6 +40,11 @@ _November 13, 2026_
 
 ### Python API
 
+- {{ Fix }} `WebLoop.create_task()` no longer raises an `AttributeError` when a
+  task factory is set. It now passes its arguments on to the task factory like
+  the default asyncio event loop does.
+  {pr}`6525`
+
 - {{ Fix }} `WebLoop.call_later()` and `WebLoop.call_at()` no longer raise
   `ValueError("Can't schedule in the past")` for a delay in the past: as in
   CPython, the callback runs as soon as possible.
