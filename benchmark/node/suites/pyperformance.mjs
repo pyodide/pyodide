@@ -69,7 +69,7 @@ async function installDeps(depsDir) {
 async function runChild(distDir, depsDir, args) {
   const { stdout } = await execFileAsync(
     process.execPath,
-    [CHILD, distDir, depsDir, ...args],
+    ["--experimental-wasm-jspi", CHILD, distDir, depsDir, ...args],
     { maxBuffer: 64 * 1024 * 1024 },
   );
   return JSON.parse(stdout);
