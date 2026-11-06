@@ -572,14 +572,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         return time.monotonic()
 
-    def create_task(
-        self,
-        coro: Coroutine[Any, Any, T],
-        *,
-        name: str | None = None,
-        context: contextvars.Context | None = None,
-        eager_start: bool | None = None,
-    ) -> Task[T]:
+    def create_task(self, coro: Coroutine[Any, Any, T], **kwargs: Any) -> Task[T]:
         """Schedule a coroutine object.
 
         Return a task object.
@@ -588,17 +581,14 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         self._check_closed()
         if self._task_factory is None:
-            task: PyodideTask[T] = PyodideTask(
-                coro, loop=self, name=name, context=context
-            )
+            task: PyodideTask[T] = PyodideTask(coro, loop=self, **kwargs)
             if task._source_traceback:  # type: ignore[attr-defined]
                 # Added comment:
                 # this only happens if get_debug() returns True.
                 # In that case, remove create_task from _source_traceback.
                 del task._source_traceback[-1]  # type: ignore[attr-defined]
         else:
-            task = self._task_factory(self, coro)
-            asyncio.tasks._set_task_name(task, name)  # type: ignore[attr-defined]
+            task = self._task_factory(self, coro, **kwargs)
 
         self._in_progress += 1
         task.add_done_callback(self._decrement_in_progress)
