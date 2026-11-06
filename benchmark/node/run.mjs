@@ -25,6 +25,7 @@
 //
 //   export const description = "...";   // shown by --list
 //   export const usesPyodide = false;   // optional, see below
+//   export const runByDefault = false;  // optional, see below
 //   export async function run(pyodide, ctx) {
 //     // ctx.filter(caseName) -> whether the case was selected by --filter
 //     // await ctx.measure(fn) -> median time of fn() in ms (fn may be async)
@@ -35,6 +36,9 @@
 // By default the runner loads Pyodide before calling run(). A suite that
 // measures loading itself (e.g. by starting new processes) can set
 // `usesPyodide = false`, then run() gets `undefined` instead.
+//
+// A slow suite can set `runByDefault = false`, then it only runs when it is
+// selected with --suite.
 //
 // A suite should throw if it detects incorrect results; the runner then exits
 // with a non-zero status.
@@ -168,27 +172,42 @@ async function runInChild(suiteName, distDir, filter) {
 }
 
 // Combine the results of several rounds by taking the median of each metric.
+// A case can be missing from some rounds, e.g. pyperformance leaves out
+// benchmarks that failed.
 function medianOfRounds(roundResults) {
+  const values = {};
+  for (const result of roundResults) {
+    for (const [caseName, metrics] of Object.entries(result)) {
+      values[caseName] ??= {};
+      for (const [metric, value] of Object.entries(metrics)) {
+        (values[caseName][metric] ??= []).push(value);
+      }
+    }
+  }
   const combined = {};
-  for (const caseName of Object.keys(roundResults[0])) {
+  for (const [caseName, metrics] of Object.entries(values)) {
     combined[caseName] = {};
-    for (const metric of Object.keys(roundResults[0][caseName])) {
-      combined[caseName][metric] = median(
-        roundResults.map((r) => r[caseName][metric]),
-      );
+    for (const [metric, xs] of Object.entries(metrics)) {
+      combined[caseName][metric] = median(xs);
     }
   }
   return combined;
 }
 
 function printSuite(suiteName, labels, perDist) {
-  const fmt = (x) => (x === undefined ? "-" : x.toFixed(2)).padStart(14);
-  const caseNames = Object.keys(perDist[0]);
+  // Small values get significant digits, e.g. pyperformance has cases that
+  // take microseconds.
+  const fmtNum = (x) => (x < 0.1 ? x.toPrecision(3) : x.toFixed(2));
+  const fmt = (x) => (x === undefined ? "-" : fmtNum(x)).padStart(14);
+  // A case can be missing for one of the builds
+  const caseNames = [...new Set(perDist.flatMap((r) => Object.keys(r)))];
   if (caseNames.length === 0) {
     return;
   }
   const metrics = [
-    ...new Set(caseNames.flatMap((c) => Object.keys(perDist[0][c]))),
+    ...new Set(
+      perDist.flatMap((r) => Object.values(r).flatMap((m) => Object.keys(m))),
+    ),
   ];
   const width = Math.max(14, ...caseNames.map((c) => c.length + 2));
   console.log(`\n## ${suiteName} (ms)`);
@@ -254,7 +273,18 @@ async function main() {
     return;
   }
 
-  const suites = opts.suite ?? available;
+  let suites = opts.suite;
+  if (!suites) {
+    suites = [];
+    for (const name of available) {
+      const suite = await import(
+        pathToFileURL(path.join(SUITES_DIR, `${name}.mjs`)).href
+      );
+      if (suite.runByDefault !== false) {
+        suites.push(name);
+      }
+    }
+  }
   for (const name of suites) {
     if (!available.includes(name)) {
       throw new Error(

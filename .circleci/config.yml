@@ -406,6 +406,16 @@ jobs:
               --json benchmark-results/node-compare.json \
               https://cdn.jsdelivr.net/pyodide/dev/full/ dist \
               || echo "Comparison with main failed, skipping"
+      - run:
+          name: compare pyperformance with main
+          no_output_timeout: 40m
+          command: |
+            PYPERFORMANCE_ARGS="--processes 3 --values 2" \
+            node benchmark/node/run.mjs \
+              --suite pyperformance \
+              --json benchmark-results/pyperformance-compare.json \
+              https://cdn.jsdelivr.net/pyodide/dev/full/ dist \
+              || echo "pyperformance comparison with main failed, skipping"
       - store_artifacts:
           path: benchmark-results
 
