@@ -312,7 +312,6 @@ _python2js_sequence(ConversionContext* context, PyObject* x)
     DECLARE_PY_OBJECT(pyitem);
     pyitem = PySequence_GetItem(x, i);
     FAIL_IF_NULL(pyitem);
-    // Convert immutable items here so that they skip the call to _python2js.
     JsVal jsitem = _python2js_immutable(pyitem);
     FAIL_IF_JS_ERROR(jsitem);
     if (!JsvNoValue_Check(jsitem)) {
@@ -355,8 +354,12 @@ _python2js_dict(ConversionContext* context, PyObject* x)
   DECLARE_PY_OBJECT(iter);
   iter = PyObject_GetIter(items);
   FAIL_IF_NULL(iter);
-  DECLARE_PY_OBJECT(item);
-  while ((item = PyIter_Next(iter))) {
+  for (;;) {
+    DECLARE_PY_OBJECT(item);
+    item = PyIter_Next(iter);
+    if (item == NULL) {
+      break;
+    }
     if (!PyTuple_Check(item)) {
       PyErr_SetString(PyExc_TypeError, "expected tuple");
       FAIL();
@@ -372,21 +375,22 @@ _python2js_dict(ConversionContext* context, PyObject* x)
         conversion_error, "Cannot use %R as a key for a Javascript Map", pykey);
       FAIL();
     }
-    // See the comment in _python2js_sequence
     JsVal jsval = _python2js_immutable(pyval);
     FAIL_IF_JS_ERROR(jsval);
-    if (JsvNoValue_Check(jsval)) {
-      jsval = _python2js(context, pyval);
-      FAIL_IF_JS_ERROR(jsval);
-    }
-    if (JsvNoValue_Check(jsval)) {
-      _python2js_addto_postprocess_list(
-        hiwire_get(context->jspostprocess_list), jsdict, jskey, pyval);
-    } else {
+    if (!JsvNoValue_Check(jsval)) {
       FAIL_IF_MINUS_ONE(
         context->dict_add_keyvalue(context, jsdict, jskey, jsval));
+      continue;
     }
-    Py_CLEAR(item);
+    jsval = _python2js(context, pyval);
+    FAIL_IF_JS_ERROR(jsval);
+    if (!JsvNoValue_Check(jsval)) {
+      FAIL_IF_MINUS_ONE(
+        context->dict_add_keyvalue(context, jsdict, jskey, jsval));
+      continue;
+    }
+    _python2js_addto_postprocess_list(
+      hiwire_get(context->jspostprocess_list), jsdict, jskey, pyval);
   }
   FAIL_IF_ERR_OCCURRED();
   if (context->dict_postprocess) {
