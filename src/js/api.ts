@@ -837,33 +837,37 @@ API.finalizeBootstrap = function (
   snapshotDeserializer?: (obj: any) => any,
 ): PyodideAPI {
   if (snapshotConfig) {
+    // When restoring a snapshot, _pyodide_core is already in sys.modules.
     syncUpSnapshotLoad1();
-  }
-  let [err, captured_stderr] = API.rawRun("import _pyodide_core");
-  if (err) {
-    API.fatal_loading_error(
-      "Failed to import _pyodide_core\n",
-      captured_stderr,
-    );
+  } else {
+    let [err, captured_stderr] = API.rawRun("import _pyodide_core");
+    if (err) {
+      API.fatal_loading_error(
+        "Failed to import _pyodide_core\n",
+        captured_stderr,
+      );
+    }
   }
 
-  // First make internal dict so that we can use runPythonInternal.
+  // Avoid running Python source code here: it would go through the parser and
+  // compiler, which is slow before the wasm code for them is warmed up. This
+  // matters most when restoring a snapshot. _pyodide._base imports builtins
+  // and importlib.import_module, so we can get everything we need from it.
+  const base = API._pyodide._base;
+  const import_module = base.import_module;
+  const builtinsModule = base.builtins;
+
+  // Make internal dict so that we can use runPythonInternal.
   // runPythonInternal uses a separate namespace, so we don't pollute the main
   // environment with variables from our setup.
-  API.runPythonInternal_dict = API._pyodide._base.eval_code("{}") as PyProxy;
-  API.importlib = API.runPythonInternal("import importlib; importlib");
-  let import_module = API.importlib.import_module;
-
+  API.runPythonInternal_dict = builtinsModule.dict() as PyProxy;
+  API.importlib = import_module("importlib");
   API.sys = import_module("sys");
   API.os = import_module("os");
 
   // Set up globals
-  let globals = API.runPythonInternal(
-    "import __main__; __main__.__dict__",
-  ) as PyDict;
-  let builtins = API.runPythonInternal(
-    "import builtins; builtins.__dict__",
-  ) as PyDict;
+  const globals = import_module("__main__").__dict__ as PyDict;
+  const builtins = builtinsModule.__dict__ as PyDict;
   API.globals = wrapPythonGlobals(globals, builtins);
 
   // Set up key Javascript modules.
