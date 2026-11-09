@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from setuptools import Extension, setup
 
 setup(
