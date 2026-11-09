@@ -408,13 +408,29 @@ jobs:
               || echo "Comparison with main failed, skipping"
       - run:
           name: compare pyperformance with main
+          # The runner alternates the order of the builds between rounds, so
+          # with two rounds, the machine getting slower or faster during the
+          # run affects both builds about equally.
           command: |
-            PYPERFORMANCE_ARGS="--processes 3 --values 2" \
+            PYPERFORMANCE_ARGS="--processes 1 --values 3" \
+            PYPERFORMANCE_OUTPUT_DIR=benchmark-results/pyperformance \
             node benchmark/node/run.mjs \
               --suite pyperformance \
+              --rounds 2 \
               --json benchmark-results/pyperformance-compare.json \
               https://cdn.jsdelivr.net/pyodide/dev/full/ dist \
               || echo "pyperformance comparison with main failed, skipping"
+      - run:
+          name: significant pyperformance changes
+          # Comparing a build with itself, changes of up to ~4% were reported
+          # as significant, so hide changes smaller than 5%.
+          command: |
+            PYTHONPATH=benchmark/node/.pyperformance python3 -m pyperf compare_to \
+              --table \
+              --min-speed 5 \
+              benchmark-results/pyperformance/base.json \
+              benchmark-results/pyperformance/new.json \
+              || echo "pyperf compare_to failed, skipping"
       - store_artifacts:
           path: benchmark-results
 

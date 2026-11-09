@@ -15,7 +15,8 @@
 //   --suite NAME    Only run the given suite (can be repeated).
 //   --filter REGEX  Only run cases whose "suite/case" name matches REGEX.
 //   --rounds N      Run each suite N times per build (default: 1),
-//                   and report the median over the rounds.
+//                   and report the median over the rounds. The order of the
+//                   builds alternates between rounds.
 //   --json FILE     Also write the results to FILE as JSON.
 //   --list          List the available suites and exit.
 //
@@ -30,6 +31,8 @@
 //     // ctx.filter(caseName) -> whether the case was selected by --filter
 //     // await ctx.measure(fn) -> median time of fn() in ms (fn may be async)
 //     // ctx.distDir -> path of the build being benchmarked
+//     // ctx.label -> "base" or "new" when comparing two builds, else "dist"
+//     // ctx.round -> index of the round (see --rounds), starting at 0
 //     return { [caseName]: { [metricName]: ms, ... }, ... };
 //   }
 //
@@ -92,7 +95,7 @@ async function measure(fn) {
 }
 
 // Runs a single suite against a single build, in this process.
-async function runWorker(suiteName, distDir, filter, outFile) {
+async function runWorker(suiteName, distDir, filter, outFile, label, round) {
   const suite = await import(
     pathToFileURL(path.join(SUITES_DIR, `${suiteName}.mjs`)).href
   );
@@ -108,6 +111,8 @@ async function runWorker(suiteName, distDir, filter, outFile) {
     filter: (caseName) => !regex || regex.test(`${suiteName}/${caseName}`),
     measure,
     distDir,
+    label,
+    round,
   };
   const results = await suite.run(pyodide, ctx);
   await writeFile(outFile, JSON.stringify(results));
@@ -142,7 +147,7 @@ async function listSuites() {
     .sort();
 }
 
-async function runInChild(suiteName, distDir, filter) {
+async function runInChild(suiteName, distDir, filter, label, round) {
   const outFile = path.join(
     await mkdtemp(path.join(os.tmpdir(), "pyodide-bench-out-")),
     "results.json",
@@ -153,6 +158,10 @@ async function runInChild(suiteName, distDir, filter) {
     suiteName,
     "--out",
     outFile,
+    "--label",
+    label,
+    "--round",
+    String(round),
   ];
   if (filter) {
     args.push("--filter", filter);
@@ -253,12 +262,21 @@ async function main() {
       list: { type: "boolean" },
       worker: { type: "string" },
       out: { type: "string" },
+      label: { type: "string" },
+      round: { type: "string" },
     },
     allowPositionals: true,
   });
 
   if (opts.worker) {
-    await runWorker(opts.worker, positionals[0], opts.filter, opts.out);
+    await runWorker(
+      opts.worker,
+      positionals[0],
+      opts.filter,
+      opts.out,
+      opts.label,
+      Number(opts.round),
+    );
     return;
   }
 
@@ -312,8 +330,16 @@ async function main() {
     // perRound[i][r] is the result of round r for build i
     const perRound = labels.map(() => []);
     for (let r = 0; r < rounds; r++) {
-      for (let i = 0; i < dists.length; i++) {
-        perRound[i].push(await runInChild(suiteName, distDirs[i], opts.filter));
+      // Alternate the order, so that if the machine gets slower or faster
+      // during the run, it doesn't always affect the same build.
+      const order = dists.map((_, i) => i);
+      if (r % 2 === 1) {
+        order.reverse();
+      }
+      for (const i of order) {
+        perRound[i].push(
+          await runInChild(suiteName, distDirs[i], opts.filter, labels[i], r),
+        );
       }
     }
     for (let i = 0; i < dists.length; i++) {

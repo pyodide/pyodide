@@ -18,6 +18,15 @@
 //   PYPERFORMANCE_ARGS      Options for pyperf (default: "--fast"),
 //                           e.g. "--rigorous" or "--values 3 --processes 5".
 //   PYTHON                  The host Python to run pip with (default: python3).
+//   PYPERFORMANCE_OUTPUT_DIR  If set, also save pyperf's results for each
+//                           build as LABEL.json (base.json and new.json when
+//                           comparing two builds) in this directory, with the
+//                           values of all rounds. Compare them with
+//                           `python -m pyperf compare_to base.json new.json`
+//                           to see which differences are significant.
+//
+// pyperf's warnings about unstable results (e.g. a large standard deviation)
+// are printed with the progress.
 
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -37,8 +46,8 @@ const CHILD = path.join(HERE, "..", "helpers", "pyperformance_child.mjs");
 const REQUIREMENTS = [
   "pyperformance==1.14.0",
   "packaging",
-  // Remove pin when pyperf 2.11.0 is out
-  "pyperf @ git+https://github.com/psf/pyperf@6c20d27abb9752ed9da75559e3bca260126cb25b",
+  // 2.11.0 added --in-process
+  "pyperf==2.11.0",
 ];
 
 const execFileAsync = promisify(execFile);
@@ -75,7 +84,7 @@ async function runChild(distDir, depsDir, args) {
   return JSON.parse(stdout);
 }
 
-export async function run(_pyodide, { filter, distDir }) {
+export async function run(_pyodide, { filter, distDir, label, round }) {
   const depsDir = path.resolve(
     process.env.PYPERFORMANCE_DEPS_DIR ??
       path.join(HERE, "..", ".pyperformance"),
@@ -84,6 +93,16 @@ export async function run(_pyodide, { filter, distDir }) {
     .split(/\s+/)
     .filter(Boolean);
   await installDeps(depsDir);
+  let appendFile = "";
+  if (process.env.PYPERFORMANCE_OUTPUT_DIR) {
+    const outputDir = path.resolve(process.env.PYPERFORMANCE_OUTPUT_DIR);
+    appendFile = path.join(outputDir, `${label}.json`);
+    await mkdir(outputDir, { recursive: true });
+    if (round === 0) {
+      // The later rounds add to the file
+      await rm(appendFile, { force: true });
+    }
+  }
 
   const names = (await runChild(distDir, depsDir, ["list"])).filter(filter);
   // Progress goes to stderr, the results are printed by the runner at the end
@@ -94,7 +113,12 @@ export async function run(_pyodide, { filter, distDir }) {
     const t0 = performance.now();
     let times;
     try {
-      times = await runChild(distDir, depsDir, ["run", name, ...pyperfArgs]);
+      times = await runChild(distDir, depsDir, [
+        "run",
+        name,
+        appendFile,
+        ...pyperfArgs,
+      ]);
     } catch (e) {
       const stderr = e.stderr?.trim().split("\n").slice(-20).join("\n");
       console.error(`${progress} failed:\n${stderr ?? e}`);
@@ -102,8 +126,11 @@ export async function run(_pyodide, { filter, distDir }) {
     }
     const seconds = ((performance.now() - t0) / 1000).toFixed(1);
     console.error(`${progress} (${seconds} s)`);
-    for (const [caseName, time] of Object.entries(times)) {
+    for (const [caseName, { time, warnings }] of Object.entries(times)) {
       results[caseName] = { time };
+      for (const warning of warnings) {
+        console.error(`  WARNING: ${caseName}: ${warning}`);
+      }
     }
   }
   return results;

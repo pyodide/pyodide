@@ -11,6 +11,7 @@ import runpy
 import sys
 
 import pyperf
+from pyperf._cli import format_checks
 from pyperformance import _manifest
 
 # Benchmarks that can't run in Pyodide.
@@ -50,9 +51,23 @@ def list_benchmarks() -> str:
     return json.dumps(sorted(names))
 
 
-def run_benchmark(name: str, pyperf_args: list[str]) -> str:
-    """Run a benchmark, returning the median time of each of its pyperf
-    benchmarks in ms, as JSON.
+def _warnings(bench: pyperf.Benchmark) -> list[str]:
+    """pyperf's warnings about the stability of the result of bench."""
+    return [
+        line[2:]
+        for line in format_checks(bench)
+        # We run few values per process and combine processes with --rounds
+        # instead, so this would warn for almost all benchmarks.
+        if line.startswith("* ") and not line.startswith("* Not enough samples")
+    ]
+
+
+def run_benchmark(name: str, pyperf_args: list[str], append_file: str) -> str:
+    """Run a benchmark. Returns, as JSON, the median time in ms and pyperf's
+    warnings about its stability for each pyperf benchmark of the script.
+
+    If append_file isn't empty, the results are also added to that pyperf JSON
+    file, which can be compared with `python -m pyperf compare_to`.
     """
     bench = _benchmarks()[name]
     if os.path.exists(RESULT_FILE):
@@ -65,6 +80,8 @@ def run_benchmark(name: str, pyperf_args: list[str]) -> str:
         "--output",
         RESULT_FILE,
     ]
+    if append_file:
+        sys.argv += ["--append", append_file]
     # some benchmark scripts import modules from the same directory
     sys.path.insert(0, os.path.dirname(bench.runscript))
     try:
@@ -78,5 +95,5 @@ def run_benchmark(name: str, pyperf_args: list[str]) -> str:
     for b in pyperf.BenchmarkSuite.load(RESULT_FILE):
         if b.get_unit() != "second":
             raise RuntimeError(f"Unexpected unit {b.get_unit()} for {b.get_name()}")
-        results[b.get_name()] = b.median() * 1000
+        results[b.get_name()] = {"time": b.median() * 1000, "warnings": _warnings(b)}
     return json.dumps(results)
