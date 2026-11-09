@@ -333,12 +333,8 @@ def test_cpp_exceptions_and_syncify(selenium):
 @requires_jspi
 @pytest.mark.requires_dynamic_linking
 def test_two_way_transfer(selenium):
-    # Two calls suspend in run_sync() and are resumed in an order that we
-    # choose. We resume them by resolving the promises they wait for rather
-    # than with timers, so that the order doesn't depend on timing.
     res = selenium.run_js(
         """
-        // The resolve functions of the promises that the calls wait for
         const waiting = {};
         let onWait;
         function wait(n) {
