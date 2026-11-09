@@ -238,7 +238,7 @@ python-makefile: $(PYBUILD)/Makefile
 
 CONFIG_SITE_FILE=./Tools/wasm/emscripten/config.site-wasm32-emscripten
 
-$(PYBUILD)/Makefile: $(PYBUILD)/.patched
+$(PYBUILD)/Makefile: $(PYBUILD)/.patched $(PYINSTALL)/lib/libsqlite3.a
 	# ac_cv_func_shutdown :
 	#   Emscripten does not support shutdown syscall, but we want to enable it
 	#   to enable shutdown method in NodeSockFS.
@@ -251,6 +251,13 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 	#   30 on systems with 16 bit pointers. WASM has 32 bit pointers so Python
 	#   will default to the size 15 digits but WASM has native 64 bit arithmetic
 	#   so it is more efficient to use 30 bit digits.
+	#
+	# LIBSQLITE3_CFLAGS / LIBSQLITE3_LIBS :
+	#   Without these, configure checks the sqlite3 features against the
+	#   Emscripten sqlite3 port (-sUSE_SQLITE3), which is built with
+	#   SQLITE_OMIT_LOAD_EXTENSION. Point it to our own build of sqlite3, which
+	#   is the one we actually link with, so that
+	#   --enable-loadable-sqlite-extensions works.
 	( \
 		cd $(PYBUILD); \
 		CONFIG_SITE=$(CONFIG_SITE_FILE) READELF=true emconfigure \
@@ -258,6 +265,9 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 			  CFLAGS="${PYTHON_CFLAGS}" \
 			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1" \
 			  PLATFORM_TRIPLET="$(PLATFORM_TRIPLET)" \
+			  LIBSQLITE3_CFLAGS="-I$(PYINSTALL)/include/sqlite3" \
+			  LIBSQLITE3_LIBS="-L$(PYINSTALL)/lib -lsqlite3" \
+			  --enable-loadable-sqlite-extensions \
 			  --without-pymalloc \
 			  --disable-shared \
 			  --disable-ipv6 \
