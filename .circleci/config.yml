@@ -408,9 +408,6 @@ jobs:
               || echo "Comparison with main failed, skipping"
       - run:
           name: compare pyperformance with main
-          # The runner alternates the order of the builds between rounds, so
-          # with two rounds, the machine getting slower or faster during the
-          # run affects both builds about equally.
           command: |
             PYPERFORMANCE_ARGS="--processes 1 --values 3" \
             PYPERFORMANCE_OUTPUT_DIR=benchmark-results/pyperformance \
@@ -431,6 +428,20 @@ jobs:
               benchmark-results/pyperformance/base.json \
               benchmark-results/pyperformance/new.json \
               || echo "pyperf compare_to failed, skipping"
+      - run:
+          name: pyperformance compared with native CPython
+          # Run the same benchmarks with the CPython of the image, to see where
+          # Pyodide is much slower than native CPython.
+          command: |
+            python3 --version
+            python3 benchmark/node/helpers/pyperformance_native.py \
+              benchmark-results/pyperformance/native.json \
+              --processes 2 --values 3 \
+            && PYTHONPATH=benchmark/node/.pyperformance python3 -m pyperf compare_to \
+              --table \
+              benchmark-results/pyperformance/native.json \
+              benchmark-results/pyperformance/new.json \
+            || echo "Comparison with native CPython failed, skipping"
       - store_artifacts:
           path: benchmark-results
 
