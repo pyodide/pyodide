@@ -849,10 +849,6 @@ API.finalizeBootstrap = function (
     }
   }
 
-  // Avoid running Python source code here: it would go through the parser and
-  // compiler, which is slow before the wasm code for them is warmed up. This
-  // matters most when restoring a snapshot. _pyodide._base imports builtins
-  // and importlib.import_module, so we can get everything we need from it.
   const base = API._pyodide._base;
   const import_module = base.import_module;
   const builtinsModule = base.builtins;
