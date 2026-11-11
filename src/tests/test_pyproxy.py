@@ -2889,3 +2889,40 @@ def test_pyproxy_instanceof_revoked_proxy(selenium):
         ]
         """
     ).to_py() == [False, False]
+
+
+@run_in_pyodide
+def test_pyproxy_attrs_many_names(selenium):
+    # PyProxy caches the Python strings for attribute names up to a limit.
+    # Check that attribute access still works for names beyond that limit.
+    from types import SimpleNamespace
+
+    from pyodide.code import run_js
+
+    names = [f"attr_{i}" for i in range(2000)] + ["ünïcödé", "名前", "😀"]
+    o = SimpleNamespace(**{name: i for i, name in enumerate(names)})
+    values = run_js(
+        """
+        (o, names) => {
+            const values = [];
+            for (let round = 0; round < 2; round++) {
+                for (const name of names) {
+                    values.push(name in o, o[name]);
+                }
+            }
+            for (const name of names) {
+                o[name] = name;
+            }
+            for (const name of names.slice(0, 1000)) {
+                delete o[name];
+            }
+            return values;
+        }
+        """
+    )(o, names)
+    expected = [x for i in range(len(names)) for x in (True, i)]
+    assert values.to_py() == expected * 2
+    for name in names[:1000]:
+        assert not hasattr(o, name)
+    for name in names[1000:]:
+        assert getattr(o, name) == name
