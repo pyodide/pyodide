@@ -17,6 +17,11 @@ myst:
 
 ## Unreleased
 
+- {{ Feature }} The `sqlite3` module now supports loadable extensions:
+  `sqlite3.Connection.enable_load_extension()` and
+  `sqlite3.Connection.load_extension()` are now available.
+  {pr}`6533`
+
 - {{ Fix }} Fixed a bug that `WebLoop.create_task()` raised `AttributeError` when a task factory was set.
   It now passes its arguments on to the task factory like the default asyncio event loop does.
   {pr}`6525`
