@@ -433,58 +433,6 @@ jobs:
       - store_artifacts:
           path: benchmark-results
 
-  benchmark-pyperformance:
-    <<: *defaults
-    resource_class: medium+
-    environment:
-      # Skip the slowest benchmarks to stay below the time limit of the job:
-      # most of the async_tree variants and bpe_tokeniser.
-      PYPERFORMANCE_FILTER: "^pyperformance/(?!bpe_tokeniser$|async_tree_(?!io$|eager$|cpu_io_mixed$))"
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: compare pyperformance with main
-          command: |
-            mkdir -p benchmark-results
-            PYPERFORMANCE_ARGS="--processes 1 --values 3" \
-            PYPERFORMANCE_OUTPUT_DIR=benchmark-results/pyperformance \
-            node benchmark/node/run.mjs \
-              --suite pyperformance \
-              --filter "$PYPERFORMANCE_FILTER" \
-              --rounds 2 \
-              --json benchmark-results/pyperformance-compare.json \
-              https://cdn.jsdelivr.net/pyodide/dev/full/ dist \
-              || echo "pyperformance comparison with main failed, skipping"
-      - run:
-          name: significant pyperformance changes
-          # Comparing a build with itself, changes of up to ~4% were reported
-          # as significant, so hide changes smaller than 5%.
-          command: |
-            PYTHONPATH=benchmark/node/.pyperformance python3 -m pyperf compare_to \
-              --table \
-              --min-speed 5 \
-              benchmark-results/pyperformance/base.json \
-              benchmark-results/pyperformance/new.json \
-              || echo "pyperf compare_to failed, skipping"
-      - run:
-          name: pyperformance compared with native CPython
-          # Run the same benchmarks with the CPython of the image, to see where
-          # Pyodide is much slower than native CPython.
-          command: |
-            python3 --version
-            python3 benchmark/node/helpers/pyperformance_native.py \
-              --filter "$PYPERFORMANCE_FILTER" \
-              benchmark-results/pyperformance/native.json \
-              --processes 1 --values 3 \
-            && PYTHONPATH=benchmark/node/.pyperformance python3 -m pyperf compare_to \
-              --table \
-              benchmark-results/pyperformance/native.json \
-              benchmark-results/pyperformance/new.json \
-            || echo "Comparison with native CPython failed, skipping"
-      - store_artifacts:
-          path: benchmark-results
-
   test-js:
     <<: *defaults
     resource_class: large
@@ -909,13 +857,6 @@ workflows:
               only: /.*/
 
       - benchmark-node:
-          requires:
-            - build-core
-          filters:
-            tags:
-              only: /.*/
-
-      - benchmark-pyperformance:
           requires:
             - build-core
           filters:
