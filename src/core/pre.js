@@ -134,3 +134,30 @@ function normalizeReservedWords(word) {
   return word;
   // clang-format on
 }
+
+// JS strings for attribute names.
+const attrNames = new Map();
+// Normally there aren't many attribute names, so this is plenty.
+const MAX_ATTR_NAMES = 1000;
+
+/**
+ * Convert the name of an attribute of a JsProxy to JavaScript.
+ *
+ * cname is the name encoded as UTF-8. If pyname is nonzero, it's the Python
+ * string for the name and it's immortal: then we cache the JS string, so that
+ * we don't have to decode the name again and property lookups with it are
+ * faster.
+ */
+function attrNameToJs(cname, pyname) {
+  if (!pyname) {
+    return normalizeReservedWords(UTF8ToString(cname));
+  }
+  let jskey = attrNames.get(pyname);
+  if (jskey === undefined) {
+    jskey = normalizeReservedWords(UTF8ToString(cname));
+    if (attrNames.size < MAX_ATTR_NAMES) {
+      attrNames.set(pyname, jskey);
+    }
+  }
+  return jskey;
+}
