@@ -42,6 +42,7 @@
 - [Pyodios](https://apps.apple.com/us/app/pyodios/id6762922366) is an iOS application that uses Pyodide to run Python code locally on your iPhone and iPad. For examples of the app, see the [documentation website](https://pyodios.caffeinatedmath.com/).
 - [Frappe Playground](https://github.com/lubusIN/frappe-playground) is an in-browser playground for Frappe running entirely client-side using Pyodide.
 - [CodeJo](https://codejo.pages.dev) is an old-school "Just Start Coding" environment, built into a browser window. Nothing fancy. Just start coding!
+- [CodeGrove](https://www.madlyproductivepathways.com/codegrove) is a free code editor for students and teachers that runs Python and turtle graphics in the browser, with no accounts.
 
 ## Workarounds for common WASM and browser limitations
 
