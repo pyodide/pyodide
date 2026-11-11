@@ -7,7 +7,7 @@ defaults: &defaults
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
     - image: pyodide/pyodide-env:20260211-chrome145-firefox146-py314
-  environment:
+  environment: &default_environment
     EMSDK_NUM_CORES: 3
     EMCC_CORES: 3
     PYODIDE_JOBS: 3
@@ -28,8 +28,16 @@ jobs:
         type: integer
         default: 0
     <<: *defaults
+    # Setting `environment` here replaces the whole mapping from `defaults`, so
+    # merge the default environment back in explicitly.
     environment:
-      - DISABLE_DYLINK: << parameters.disable_dylink >>
+      <<: *default_environment
+      DISABLE_DYLINK: << parameters.disable_dylink >>
+      # Since 0.25, python_stdlib.zip in the full distribution has been
+      # deflate-compressed, because the default environment (level 0) was
+      # accidentally not applied to this job.
+      # TODO: decide whether to keep this or change to 0 to match other packages
+      PYODIDE_ZIP_COMPRESSION_LEVEL: 6
     steps:
       - checkout
       - run: git submodule sync
@@ -37,9 +45,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
-            - -core-v20220915-{{ checksum "cpython/Makefile" }}
-            - -core-v20220915
+            - -core-v20261110-dylink<< parameters.disable_dylink >>-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}-
+            - -core-v20261110-dylink<< parameters.disable_dylink >>-{{ checksum "cpython/Makefile" }}-
+            - -core-v20261110-dylink<< parameters.disable_dylink >>-
 
       - run:
           name: calculate build hash for ccache
@@ -100,7 +108,9 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+          # CircleCI caches are immutable, so make the key unique per build and
+          # restore the most recent one by prefix.
+          key: -core-v20261110-dylink<< parameters.disable_dylink >>-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}-{{ epoch }}
 
       - run:
           name: Clean up workspace
@@ -344,11 +354,25 @@ jobs:
         description: pytest-cache-dir.
         type: string
         default: ""
+      dist-dir:
+        description: Workspace directory to use as dist/ for the tests.
+        type: string
+        default: "dist"
     <<: *defaults
     resource_class: medium+
     steps:
       - attach_workspace:
           at: .
+      - when:
+          condition:
+            not:
+              equal: [dist, << parameters.dist-dir >>]
+          steps:
+            - run:
+                name: use << parameters.dist-dir >> as dist
+                command: |
+                  rm -rf dist
+                  mv << parameters.dist-dir >> dist
       - run:
           name: test
           command: |
@@ -714,18 +738,21 @@ workflows:
             tags:
               only: /.*/
           post-steps:
+            # build-full-packages runs concurrently and also persists dist/, so
+            # persist this dist/ under another name to avoid workspace conflicts.
+            - run: mv dist dist-core-packages
             - persist_to_workspace:
                 root: .
                 paths:
                   - ./packages
-                  - ./dist
+                  - ./dist-core-packages
 
       - build-packages:
           name: build-full-packages
           enable_prebuilt_packages: ${USE_PREBUILT_PACKAGES}
           packages: "*"
           requires:
-            - build-core-packages
+            - build-core
           filters:
             tags:
               only: /.*/
@@ -733,7 +760,6 @@ workflows:
             - persist_to_workspace:
                 root: .
                 paths:
-                  - ./packages
                   - ./dist
 
       - test-main:
@@ -812,6 +838,7 @@ workflows:
           name: test-core-packages-chrome
           test-params: --runtime=chrome-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_chrome
+          dist-dir: dist-core-packages
           requires:
             - build-core-packages
           filters:
@@ -822,6 +849,7 @@ workflows:
           name: test-core-packages-firefox
           test-params: --runtime=firefox-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_firefox
+          dist-dir: dist-core-packages
           requires:
             - build-core-packages
           filters:
@@ -832,6 +860,7 @@ workflows:
           name: test-core-packages-node
           test-params: --runtime=node-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_node
+          dist-dir: dist-core-packages
           requires:
             - build-core-packages
           filters:
@@ -902,6 +931,7 @@ workflows:
 
       - create-xbuild-env:
           requires:
+            - build-core-packages
             - build-full-packages
           filters:
             tags:
@@ -909,6 +939,7 @@ workflows:
 
       - create-xbuild-env-debug:
           requires:
+            - build-core-packages
             - build-pyodide-debug
           filters:
             tags:
