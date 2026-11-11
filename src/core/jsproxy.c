@@ -383,16 +383,29 @@ JsProxy_js_id(PyObject* self, void* _unused)
   return PyLong_FromLong(result_c);
 }
 
-EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
-  const jskey = normalizeReservedWords(UTF8ToString(ptrkey));
+/**
+ * Returns attr if attrNameToJs may cache the JS string for it,
+ * else NULL.
+ */
+static inline PyObject*
+cacheable_attr_name(PyObject* attr)
+{
+  return _Py_IsImmortal(attr) ? attr : NULL;
+}
+
+// clang-format off
+EM_JS_VAL(JsVal,
+JsProxy_GetAttr_js,
+(JsVal jsobj, const char* ptrkey, PyObject* pyname),
+{
+  const jskey = attrNameToJs(ptrkey, pyname);
   const result = jsobj[jskey];
-  // clang-format off
   if (result === undefined && !(jskey in jsobj)) {
-    // clang-format on
     return Module.error;
   }
   return result;
 });
+// clang-format on
 
 // JsMethodCallSingleton is a special structure which we return from
 // JsProxy_GetMethod. The purpose of it is to optimize method calls
@@ -545,7 +558,8 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
     FAIL();
   }
 
-  JsVal jsresult = JsProxy_GetAttr_js(JsProxy_VAL(self), key);
+  JsVal jsresult =
+    JsProxy_GetAttr_js(JsProxy_VAL(self), key, cacheable_attr_name(attr));
   if (JsvError_Check(jsresult)) {
     if (!PyErr_Occurred()) {
       PyErr_SetString(PyExc_AttributeError, key);
@@ -607,17 +621,22 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
 // clang-format off
 EM_JS_NUM(errcode,
 JsProxy_SetAttr_js,
-(JsVal jsobj, const char* ptrkey, JsVal jsval),
+(JsVal jsobj, const char* ptrkey, PyObject* pyname, JsVal jsval),
 {
-  let jskey = normalizeReservedWords(UTF8ToString(ptrkey));
+  let jskey = attrNameToJs(ptrkey, pyname);
   jsobj[jskey] = jsval;
 });
 // clang-format on
 
-EM_JS_NUM(errcode, JsProxy_DelAttr_js, (JsVal jsobj, const char* ptrkey), {
-  let jskey = normalizeReservedWords(UTF8ToString(ptrkey));
+// clang-format off
+EM_JS_NUM(errcode,
+JsProxy_DelAttr_js,
+(JsVal jsobj, const char* ptrkey, PyObject* pyname),
+{
+  let jskey = attrNameToJs(ptrkey, pyname);
   delete jsobj[jskey];
 });
+// clang-format on
 
 /**
  * setattr / delttr overload. TODO: Raise an error if the attribute exists on
@@ -642,10 +661,12 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
   }
 
   if (pyvalue == NULL) {
-    FAIL_IF_MINUS_ONE(JsProxy_DelAttr_js(JsProxy_VAL(self), key));
+    FAIL_IF_MINUS_ONE(
+      JsProxy_DelAttr_js(JsProxy_VAL(self), key, cacheable_attr_name(attr)));
   } else {
     JsVal jsvalue = python2js(pyvalue);
-    FAIL_IF_MINUS_ONE(JsProxy_SetAttr_js(JsProxy_VAL(self), key, jsvalue));
+    FAIL_IF_MINUS_ONE(JsProxy_SetAttr_js(
+      JsProxy_VAL(self), key, cacheable_attr_name(attr), jsvalue));
   }
 
   return 0;
