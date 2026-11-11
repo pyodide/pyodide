@@ -17,6 +17,10 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Fixed a bug that `PyProxy.getBuffer()` failed for a buffer stored past
+  2GB of the WebAssembly heap.
+  {issue}`6545`
+
 - {{ Fix }} Fixed a bug that `WebLoop.create_task()` raised `AttributeError` when a task factory was set.
   It now passes its arguments on to the task factory like the default asyncio event loop does.
   {pr}`6525`
