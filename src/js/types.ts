@@ -551,7 +551,6 @@ export interface API {
     installDir: string,
     metadata?: ReadonlyMap<string, string>,
   ) => Promise<void>;
-  _Comlink: any;
 
   dsodir: string;
   sys: PyProxy;

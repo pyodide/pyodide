@@ -4375,10 +4375,6 @@ JsProxy_create_with_type(int type_flags,
   return result;
 }
 
-EM_JS_BOOL(bool, is_comlink_proxy, (JsVal obj), {
-  return !!(API.Comlink && value[API.Comlink.createEndpoint]);
-});
-
 /**
  * Create a JsProxy. In case it's a method, bind "this" to the argument. (In
  * most cases "this" will be NULL, `JsProxy_create` specializes to this case.)
@@ -4391,18 +4387,12 @@ JsProxy_create_with_this(JsVal object,
                          PyObject* sig,
                          bool is_py_json)
 {
-  int type_flags = 0;
-  if (is_comlink_proxy(object)) {
-    // Comlink proxies are weird and break our feature detection pretty badly.
-    type_flags = IS_CALLABLE | IS_AWAITABLE | IS_ARRAY;
-  } else {
-    type_flags = JsProxy_compute_typeflags(object, is_py_json);
-    if (type_flags == -1) {
-      fail_test();
-      PyErr_SetString(internal_error,
-                      "Internal error occurred in JsProxy_compute_typeflags");
-      return NULL;
-    }
+  int type_flags = JsProxy_compute_typeflags(object, is_py_json);
+  if (type_flags == -1) {
+    fail_test();
+    PyErr_SetString(internal_error,
+                    "Internal error occurred in JsProxy_compute_typeflags");
+    return NULL;
   }
   return JsProxy_create_with_type(type_flags, object, this, sig);
 }

@@ -17,6 +17,10 @@ myst:
 
 ## Unreleased
 
+- {{ API }} `pyodide.registerComlink()` is deprecated and has no effect. It
+  never worked as intended: Comlink proxies were always detected like ordinary
+  JavaScript objects.
+
 - {{ Fix }} Fixed a bug that `WebLoop.create_task()` raised `AttributeError` when a task factory was set.
   It now passes its arguments on to the task factory like the default asyncio event loop does.
   {pr}`6525`
