@@ -171,16 +171,9 @@ typedef struct
   };
   JsRef js;
   PyObject* signature;
-  // Cache for the type's _js_type_flags, computed lazily by JsProxy_getflags.
-  // JS_TYPE_FLAGS_UNCACHED (-2) means "not yet computed"; it cannot collide
-  // with a valid flags value (>= 0) nor with the -1 error return. The flags
-  // are immutable per type (set once in JsProxy_create_subtype and never
-  // mutated), so caching them per instance is safe.
-  int js_type_flags_cache;
+  int js_type_flags;
 } JsProxy;
 // clang-format on
-
-#define JS_TYPE_FLAGS_UNCACHED (-2)
 
 // Position of dict needs to match between exception objects and other cases.
 _Static_assert(offsetof(PyBaseExceptionObject, dict) == offsetof(JsProxy, dict),
@@ -207,22 +200,7 @@ _Static_assert(offsetof(PyBaseExceptionObject, dict) == offsetof(JsProxy, dict),
 int
 JsProxy_getflags(PyObject* self)
 {
-  int cached = ((JsProxy*)self)->js_type_flags_cache;
-  if (cached != JS_TYPE_FLAGS_UNCACHED) {
-    return cached;
-  }
-  DECLARE_PY_OBJECT(pyflags);
-  pyflags = _PyObject_GetAttrId((PyObject*)Py_TYPE(self), &PyId__js_type_flags);
-  if (pyflags == NULL) {
-    return -1;
-  }
-  int result = PyLong_AsLong(pyflags);
-  // PyLong_AsLong returns -1 on error; don't cache an error result.
-  if (result == -1 && PyErr_Occurred()) {
-    return -1;
-  }
-  ((JsProxy*)self)->js_type_flags_cache = result;
-  return result;
+  return ((JsProxy*)self)->js_type_flags;
 }
 
 #define OBJMAP_HEREDITARY 1
@@ -276,9 +254,6 @@ static int
 JsProxy_clear(PyObject* self)
 {
   int flags = JsProxy_getflags(self);
-  if (flags == -1) {
-    return -1;
-  }
   if ((flags & IS_CALLABLE) && (JsMethod_THIS_REF(self) != NULL)) {
     JsVal this = hiwire_pop(JsMethod_THIS_REF(self));
     if (pyproxy_Check(this)) {
@@ -3191,12 +3166,12 @@ static PyTypeObject JsProxyType = {
 };
 
 static int
-JsProxy_cinit(PyObject* obj, JsVal val, PyObject* sig)
+JsProxy_cinit(PyObject* obj, JsVal val, PyObject* sig, int type_flags)
 {
   JsProxy* self = (JsProxy*)obj;
   self->js = hiwire_new_deduplicate(val);
   self->signature = Py_XNewRef(sig);
-  self->js_type_flags_cache = JS_TYPE_FLAGS_UNCACHED;
+  self->js_type_flags = type_flags;
 #ifdef DEBUG_F
   extern bool tracerefs;
   if (tracerefs) {
@@ -4376,7 +4351,7 @@ JsProxy_create_with_type(int type_flags,
   FAIL_IF_NULL(type);
 
   result = type->tp_alloc(type, 0);
-  FAIL_IF_NONZERO(JsProxy_cinit(result, object, sig));
+  FAIL_IF_NONZERO(JsProxy_cinit(result, object, sig, type_flags));
   if (type_flags & IS_CALLABLE) {
     FAIL_IF_NONZERO(JsMethod_cinit(result, this));
   }
