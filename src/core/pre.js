@@ -149,13 +149,15 @@ const MAX_ATTR_NAMES = 1000;
  * faster.
  */
 function attrNameToJs(cname, pyname) {
-  if (!pyname || attrNames.size === MAX_ATTR_NAMES) {
+  if (!pyname) {
     return normalizeReservedWords(UTF8ToString(cname));
   }
   let jskey = attrNames.get(pyname);
   if (jskey === undefined) {
     jskey = normalizeReservedWords(UTF8ToString(cname));
-    attrNames.set(pyname, jskey);
+    if (attrNames.size < MAX_ATTR_NAMES) {
+      attrNames.set(pyname, jskey);
+    }
   }
   return jskey;
 }
