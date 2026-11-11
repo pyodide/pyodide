@@ -10,7 +10,6 @@
 #include <emscripten.h>
 #include <stdio.h>
 
-static PyObject* tbmod = NULL;
 static PyObject* _pyodide_importhook = NULL;
 
 _Py_IDENTIFIER(__qualname__);
@@ -281,9 +280,6 @@ error_handling_init(PyObject* core_module)
   FAIL_IF_NULL(conversion_error);
 
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
-
-  tbmod = PyImport_ImportModule("traceback");
-  FAIL_IF_NULL(tbmod);
 
   return 0;
 }
