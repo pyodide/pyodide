@@ -396,9 +396,9 @@ cacheable_attr_name(PyObject* attr)
 // clang-format off
 EM_JS_VAL(JsVal,
 JsProxy_GetAttr_js,
-(JsVal jsobj, const char* ptrkey, PyObject* pyname),
+(JsVal jsobj, const char* cname, PyObject* pyname),
 {
-  const jskey = attrNameToJs(ptrkey, pyname);
+  const jskey = attrNameToJs(cname, pyname);
   const result = jsobj[jskey];
   if (result === undefined && !(jskey in jsobj)) {
     return Module.error;
@@ -621,9 +621,9 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
 // clang-format off
 EM_JS_NUM(errcode,
 JsProxy_SetAttr_js,
-(JsVal jsobj, const char* ptrkey, PyObject* pyname, JsVal jsval),
+(JsVal jsobj, const char* cname, PyObject* pyname, JsVal jsval),
 {
-  let jskey = attrNameToJs(ptrkey, pyname);
+  let jskey = attrNameToJs(cname, pyname);
   jsobj[jskey] = jsval;
 });
 // clang-format on
@@ -631,9 +631,9 @@ JsProxy_SetAttr_js,
 // clang-format off
 EM_JS_NUM(errcode,
 JsProxy_DelAttr_js,
-(JsVal jsobj, const char* ptrkey, PyObject* pyname),
+(JsVal jsobj, const char* cname, PyObject* pyname),
 {
-  let jskey = attrNameToJs(ptrkey, pyname);
+  let jskey = attrNameToJs(cname, pyname);
   delete jsobj[jskey];
 });
 // clang-format on

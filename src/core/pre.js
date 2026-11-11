@@ -143,21 +143,19 @@ const MAX_ATTR_NAMES = 1000;
 /**
  * Convert the name of an attribute of a JsProxy to JavaScript.
  *
- * ptrkey is the name encoded as UTF-8. If pyname is nonzero, it's the Python
+ * cname is the name encoded as UTF-8. If pyname is nonzero, it's the Python
  * string for the name and it's immortal: then we cache the JS string, so that
  * we don't have to decode the name again and property lookups with it are
  * faster.
  */
-function attrNameToJs(ptrkey, pyname) {
-  if (!pyname) {
-    return normalizeReservedWords(UTF8ToString(ptrkey));
+function attrNameToJs(cname, pyname) {
+  if (!pyname || attrNames.size === MAX_ATTR_NAMES) {
+    return normalizeReservedWords(UTF8ToString(cname));
   }
   let jskey = attrNames.get(pyname);
   if (jskey === undefined) {
-    jskey = normalizeReservedWords(UTF8ToString(ptrkey));
-    if (attrNames.size < MAX_ATTR_NAMES) {
-      attrNames.set(pyname, jskey);
-    }
+    jskey = normalizeReservedWords(UTF8ToString(cname));
+    attrNames.set(pyname, jskey);
   }
   return jskey;
 }
