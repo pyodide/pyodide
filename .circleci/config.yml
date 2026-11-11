@@ -406,13 +406,31 @@ jobs:
               --json benchmark-results/node-compare.json \
               https://cdn.jsdelivr.net/pyodide/dev/full/ dist \
               || echo "Comparison with main failed, skipping"
+      - store_artifacts:
+          path: benchmark-results
+
+  benchmark-pyperformance:
+    <<: *defaults
+    resource_class: medium+
+    environment:
+      # Skip the slowest benchmarks to stay below the time limit of the job:
+      # most of the async_tree variants and bpe_tokeniser.
+      PYPERFORMANCE_FILTER: "^pyperformance/(?!bpe_tokeniser$|async_tree_(?!io$|eager$|cpu_io_mixed$))"
+    steps:
+      - attach_workspace:
+          at: .
       - run:
           name: compare pyperformance with main
+          # The runner alternates the order of the builds between rounds, so
+          # with two rounds, the machine getting slower or faster during the
+          # run affects both builds about equally.
           command: |
+            mkdir -p benchmark-results
             PYPERFORMANCE_ARGS="--processes 1 --values 3" \
             PYPERFORMANCE_OUTPUT_DIR=benchmark-results/pyperformance \
             node benchmark/node/run.mjs \
               --suite pyperformance \
+              --filter "$PYPERFORMANCE_FILTER" \
               --rounds 2 \
               --json benchmark-results/pyperformance-compare.json \
               https://cdn.jsdelivr.net/pyodide/dev/full/ dist \
@@ -435,8 +453,9 @@ jobs:
           command: |
             python3 --version
             python3 benchmark/node/helpers/pyperformance_native.py \
+              --filter "$PYPERFORMANCE_FILTER" \
               benchmark-results/pyperformance/native.json \
-              --processes 2 --values 3 \
+              --processes 1 --values 3 \
             && PYTHONPATH=benchmark/node/.pyperformance python3 -m pyperf compare_to \
               --table \
               benchmark-results/pyperformance/native.json \
@@ -864,6 +883,13 @@ workflows:
               only: /.*/
 
       - benchmark-node:
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+
+      - benchmark-pyperformance:
           requires:
             - build-core
           filters:

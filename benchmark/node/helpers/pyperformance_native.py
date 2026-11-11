@@ -2,7 +2,10 @@
 Python, to compare Pyodide with native CPython.
 
 Usage:
-  python3 pyperformance_native.py OUTPUT_FILE [PYPERF_ARGS...]
+  python3 pyperformance_native.py [--filter REGEX] OUTPUT_FILE [PYPERF_ARGS...]
+
+--filter selects benchmarks like the --filter option of run.mjs: only the ones
+whose "pyperformance/NAME" matches REGEX.
 
 Runs the same benchmarks as ../suites/pyperformance.mjs, each in a new process
 and with pyperf's --in-process option like in Pyodide, and writes pyperf's
@@ -14,8 +17,10 @@ The suite must have run before, to install pyperf and pyperformance into
 PYPERFORMANCE_DEPS_DIR (default: benchmark/node/.pyperformance).
 """
 
+import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -29,12 +34,17 @@ import pyperformance_driver  # noqa: E402
 
 
 def main() -> None:
-    output_file = os.path.abspath(sys.argv[1])
-    pyperf_args = sys.argv[2:]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--filter")
+    parser.add_argument("output_file")
+    args, pyperf_args = parser.parse_known_args()
+    output_file = os.path.abspath(args.output_file)
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     if os.path.exists(output_file):
         os.remove(output_file)
     names = json.loads(pyperformance_driver.list_benchmarks())
+    if args.filter:
+        names = [n for n in names if re.search(args.filter, f"pyperformance/{n}")]
     benchmarks = pyperformance_driver._benchmarks()
     env = dict(os.environ, PYTHONPATH=DEPS_DIR)
     for i, name in enumerate(names):
