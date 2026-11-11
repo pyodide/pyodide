@@ -11,7 +11,7 @@ source:
 build:
   # sqlite3ext.h of the sqlite3 version that Pyodide is built with
   cflags: |
-    -I${PYTHONINCLUDE}/../sqlite3
+    -I$(PYTHONINCLUDE)/../sqlite3
   exports: requested
 about:
   license: MPL-2.0
