@@ -421,9 +421,6 @@ jobs:
           at: .
       - run:
           name: compare pyperformance with main
-          # The runner alternates the order of the builds between rounds, so
-          # with two rounds, the machine getting slower or faster during the
-          # run affects both builds about equally.
           command: |
             mkdir -p benchmark-results
             PYPERFORMANCE_ARGS="--processes 1 --values 3" \
