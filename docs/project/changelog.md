@@ -86,6 +86,11 @@ myst:
   means checking for it no longer requires calling out to JavaScript.
   {pr}`6519`
 
+- {{ Fix }} Stack switching now works with Safari on iOS. This drops support for
+  iOS versions 18.0 -- 18.5 but nobody should be running those versions because
+  they have unpatched security vulnerabilities.
+  {pr}`6467`
+
 ## Version 314.0.7
 
 _September 14, 2026_
