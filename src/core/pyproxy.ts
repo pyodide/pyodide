@@ -3088,9 +3088,6 @@ export class PyBufferMethods {
     }
 
     const {
-      start_ptr,
-      smallest_ptr,
-      largest_ptr,
       readonly,
       format,
       itemsize,
@@ -3100,6 +3097,11 @@ export class PyBufferMethods {
       c_contiguous,
       f_contiguous,
     } = result;
+    // Pointers come from Wasm as signed 32-bit numbers, so they are negative
+    // once the heap grows past 2GB.
+    const start_ptr = result.start_ptr >>> 0;
+    const smallest_ptr = result.smallest_ptr >>> 0;
+    const largest_ptr = result.largest_ptr >>> 0;
 
     let success = false;
     try {
