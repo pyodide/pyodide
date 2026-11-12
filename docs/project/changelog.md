@@ -17,6 +17,11 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Pyodide now supports `Float16Array`. It will translate half
+  float Python buffers into `Float16Array` and vice versa. Converting a half
+  float buffer requires a JavaScript runtime with `Float16Array` support.
+  {pr}`6005`
+
 - {{ API }} `pyodide.registerComlink()` is deprecated and has no effect. It
   never worked as intended: Comlink proxies were always detected like ordinary
   JavaScript objects.
