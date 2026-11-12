@@ -87,6 +87,11 @@ Module.processBufferFormatString = function (formatStr, errorMessage = "") {
       arrayType = BigUint64Array;
       break;
     case "e":
+      if (globalThis.Float16Array === undefined) {
+        throw new Error(
+          "Float16Array is not supported on this browser." + errorMessage,
+        );
+      }
       arrayType = Float16Array;
       break;
     case "f":
