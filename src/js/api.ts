@@ -665,12 +665,10 @@ export class PyodideAPI_ {
   }
 
   /**
-   * Tell Pyodide about Comlink.
-   * Necessary to enable importing Comlink proxies into Python.
+   * Deprecated: This function has no effect.
+   * @deprecated
    */
-  static registerComlink(Comlink: any) {
-    API._Comlink = Comlink;
-  }
+  static registerComlink() {}
 
   /**
    * Sets the interrupt buffer to be ``interrupt_buffer``. This is only useful
