@@ -19,7 +19,7 @@ myst:
 
 - {{ Fix }} Fixed a bug that `toJs()` put a reference back to a dict at the
   wrong index of a list, when the list is inside that dict.
-  {pr}`6549`
+  {pr}`6550`
 
 - {{ API }} `pyodide.registerComlink()` is deprecated and has no effect. It
   never worked as intended: Comlink proxies were always detected like ordinary
