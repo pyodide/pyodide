@@ -307,7 +307,7 @@ export async function initializeNodeSockFS(
         return sock.stream.flags;
       }
       if (cmd === cDefs.F_SETFL) {
-        sock.stream.flags = module.HEAP32[varargs / 4];
+        sock.stream.flags = module.HEAP32[varargs >>> 2];
         return 0;
       }
       return -cDefs.EINVAL;
@@ -659,11 +659,11 @@ export async function initializeNodeSockFS(
       const waits: Promise<void>[] = [];
       for (let i = 0; i < nfds; i++) {
         const pollfd = fds + POLLFD_SIZE * i;
-        const fd = module.HEAP32[(pollfd + POLLFD_FD) >> 2];
-        const events = module.HEAP16[(pollfd + POLLFD_EVENTS) >> 1];
+        const fd = module.HEAP32[(pollfd + POLLFD_FD) >>> 2];
+        const events = module.HEAP16[(pollfd + POLLFD_EVENTS) >>> 1];
         const setRevents = (flags: number): void => {
           flags &= events | cDefs.POLLERR | cDefs.POLLHUP;
-          module.HEAP16[(pollfd + POLLFD_REVENTS) >> 1] = flags;
+          module.HEAP16[(pollfd + POLLFD_REVENTS) >>> 1] = flags;
           if (flags) {
             count++;
           }

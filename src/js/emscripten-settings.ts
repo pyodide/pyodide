@@ -2,6 +2,7 @@
 
 import { PyodideConfigWithDefaults } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
+import { initializeOPFS } from "./fs/opfs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type PyodideModule, type FSType } from "./types";
 import { getJsvErrorImport } from "generated/jsverror";
@@ -32,7 +33,8 @@ export interface EmscriptenSettings {
   readonly locateFile: (file: string) => string;
 
   noInitialRun?: boolean;
-  INITIAL_MEMORY?: number;
+  INITIAL_MEMORY: number;
+  wasmMemory?: WebAssembly.Memory;
   exitCode?: number;
 }
 
@@ -49,6 +51,7 @@ export function createSettings(
     noImageDecoding: true,
     noAudioDecoding: true,
     noWasmDecoding: false,
+    INITIAL_MEMORY: DEFAULT_INITIAL_MEMORY,
     preRun: getFileSystemInitializationFuncs(config),
     print: config.stdout,
     printErr: config.stderr,
@@ -191,6 +194,7 @@ function getFileSystemInitializationFuncs(
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
     initializeNativeFS,
+    initializeOPFS,
     ...callFsInitHook(config.fsInit),
   ];
 }
@@ -215,10 +219,16 @@ function getInstantiateWasmFunc(
     ) => void,
   ) {
     (async function () {
-      const { Jsv_GetError_import, JsvError_Check } =
-        await jsvErrorImportPromise;
+      const {
+        Jsv_GetError_import,
+        JsvError_Check,
+        Jsv_GetNoValue_import,
+        JsvNoValue_Check,
+      } = await jsvErrorImportPromise;
       imports.env.Jsv_GetError_import = Jsv_GetError_import;
       imports.env.JsvError_Check = JsvError_Check;
+      imports.env.Jsv_GetNoValue_import = Jsv_GetNoValue_import;
+      imports.env.JsvNoValue_Check = JsvNoValue_Check;
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {

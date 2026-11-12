@@ -15,9 +15,138 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} Fixed a bug that `PyProxy.getBuffer()` failed for a buffer stored past
+  2GB of the WebAssembly heap.
+  {issue}`6545`
+
+- {{ Enhancement }} Pyodide now supports `Float16Array`. It will translate half
+  float Python buffers into `Float16Array` and vice versa. Converting a half
+  float buffer requires a JavaScript runtime with `Float16Array` support.
+  {pr}`6005`
+
+- {{ API }} `pyodide.registerComlink()` is deprecated and has no effect. It
+  never worked as intended: Comlink proxies were always detected like ordinary
+  JavaScript objects.
+  {pr}`6541`
+
+- {{ Fix }} Fixed a bug that `WebLoop.create_task()` raised `AttributeError` when a task factory was set.
+  It now passes its arguments on to the task factory like the default asyncio event loop does.
+  {pr}`6525`
+
+- {{ Fix }} Fixed a bug where, with `pyodide.setDebug(true)`, some errors were
+  replaced by an unhelpful `SystemError: ... returned NULL without setting an
+  exception`, for example when calling `run_sync()` where stack switching is
+  not possible. {issue}`6478`
+
+- {{ Fix }} Fixed a bug that a Python `int` equal to `Number.MAX_SAFE_INTEGER` or `-Number.MAX_SAFE_INTEGER` was converted to a JavaScript `BigInt` instead of a `Number`.
+
+- {{ Fix }} Fixed a bug that `instanceof pyodide.ffi.PyMutableSequence` was true for every Python sequence, including `tuple`.
+
+- {{ Fix }} Fixed a bug that `NodeList` and `HTMLCollection` was not converted to Python list when passed to `to_py()`, contrary to what was specified in the documentation.
+
+- {{ Fix }} Fixed a bug that converting a multidimensional PIL-style buffer to JavaScript with `toJs()` was failing.
+
+- {{ Fix }} `WebLoop.call_later()` and `WebLoop.call_at()` no longer raise
+  `ValueError("Can't schedule in the past")` for a delay in the past: as in
+  CPython, the callback runs as soon as possible. A short `asyncio.wait_for()`
+  or `asyncio.timeout()` timeout could raise it.
+
+- {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
+  that caps how far the WebAssembly heap of that instance may grow. Once the
+  total heap reaches the limit, further allocations fail with a `MemoryError`.
+  By default there is no limit beyond the build-time maximum.
+  {issue}`6482`
+
+- {{ Fix }} The Windows `python` CLI now handles paths across multiple drive
+  letters by mounting referenced drives at distinct virtual roots such as `/c`
+  and `/d`.
+
+- {{ Fix }} Fixed a segfault error in the garbage collector due to stack
+  switching. The garbage collector would walk `tstate.current_frame` to find
+  objects it could mark as definitely alive. However, `tstate.current_frame`
+  includes some stack memory which can be evicted when the task is suspended. To
+  fix, we null out `tstate.current_frame` while the task is suspended and
+  restore it when we resume.
+  {pr}`6466`
+
+- {{ Fix }} Fixed a fatal error when using pybind11 extensions that acquire the
+  GIL. PyBind11 caches a thread state in a TLS variable, which since we only
+  have one thread is a global. It then assumes it can restore this tstate.
+  However, {pr}`6421` gave each stack switching task a thread state of its own,
+  violating this assumption. There is now a single thread state again, just like
+  the way greenlet handles stack switching.
+
+- {{ Breaking }} Removed support for JSPI with Node 20. This support used an
+  early version of the JSPI proposal. Node 20 is end of life since March 2026.
+  {pr}`6465`
+
+- {{ Performance }} The internal "no value" sentinel used during Python to
+  JavaScript conversion is now a wasm-gc object, like the error sentinel. This
+  means checking for it no longer requires calling out to JavaScript.
+  {pr}`6519`
+
+## Version 314.0.7
+
+_September 14, 2026_
+
+- {{ Feature }} Added a `dedent` option to {js:func}`pyodide.runPython` and
+  {js:func}`pyodide.runPythonAsync` (and to the underlying
+  {py:func}`pyodide.code.eval_code`, {py:func}`pyodide.code.eval_code_async`
+  and {py:class}`pyodide.code.CodeRunner`) to control whether the source is
+  dedented before being run. Defaults to `True`, which preserves the existing
+  behavior. {pr}`6448`
+
+## Version 314.0.6
+
+_August 25, 2026_
+
+- {{ Fix }} Fixed a regression in the interaction between signal handling and
+  stack switching caused by {pr}`6421`.
+  {pr}`6435`
+
+- {{ Fix }} `sys.settrace()` and `sys.setprofile()` callbacks are now correctly
+  handled when stack switching.
+  {pr}`6435`
+
+- {{ Fix }} {py:func}`asyncio.get_running_loop` no longer reports a loop that is
+  not actually running from inside a function called with stack switching
+  enabled. {pr}`6435`
+
+- {{ Fix }} Fixed `loadPackage()` reporting `No known package with name` when it
+  is given a requirement specifier such as `numpy>=1.0`. It now points at
+  `micropip.install()`, which does accept them. See {issue}`5135`. {pr}`6432`
+
+## Version 314.0.5
+
+_August 15, 2026_
+
+- {{ Fix }} Fixed several bugs in how the Python thread state is managed when
+  stack switching, which made `contextvars` and `threading.local()` behave
+  incorrectly around `pyodide.ffi.run_sync()`:
+
+  - Top level code no longer loses its `contextvars` context,
+    `threading.local()` values and thread dict when suspended stacks resume in a
+    different order than they suspended in.
+  - `contextvars` set inside a call that suspends are no longer visible to a
+    later unrelated stack switch, and no longer keep the objects they reference
+    alive forever.
+  - `threading.local()` is now consistently shared with calls that stack
+    switch.
+  - `sys.set_asyncgen_hooks()` now applies inside a call that stack switches, so
+    async generators created there are handed to the event loop that has to shut
+    them down.
+  - `PyThreadState_Clear()` is now called before `PyThreadState_Delete()`, as
+    the C API requires.
+  - A Python entry point invoked with stack switching enabled now runs
+    with a copy of the `contextvars` context so `ContextVar.set()` calls it makes
+    are never visible to the caller afterwards.
+  {pr}`6421`
+
 ## Version 314.0.4
 
-_Aug 4, 2026_
+_August 4, 2026_
 
 - {{ Fix }} Fixed `loop.create_connection()` not handling synthetic IP addresses
   returned by Emscripten's `getaddrinfo()`. {pr}`6397`
@@ -189,6 +318,11 @@ _June 09, 2026_
   are passed to Python.
   {pr}`6245`
 
+## Version 0.29.5
+
+_September 15, 2026_
+
+{{Fix}} Fix compatibility of python cli with Node 26.
 
 ## Version 0.29.4
 
@@ -477,6 +611,12 @@ _July 4, 2025_
   - pygame-ce
   - pyproj
   - zarr
+
+## Version 0.27.8
+
+_September 15, 2026_
+
+{{Fix}} Fix compatibility of python cli with Node 26.
 
 ## Version 0.27.7
 

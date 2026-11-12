@@ -3,6 +3,8 @@ export PYODIDE_EMSCRIPTEN_VERSION ?= 5.0.3
 export PYODIDE_EMSDK_DIR=$(PYODIDE_ROOT)/emsdk/emsdk-$(PYODIDE_EMSCRIPTEN_VERSION)
 export PYODIDE_VERSION ?= 314.1.0.dev0
 export PYODIDE_ABI_VERSION ?= 2026_0
+# Initial size of the WebAssembly heap in bytes, also used by the JS runtime
+export INITIAL_MEMORY ?= 31457280
 
 export PYTHON_ARCHIVE_SHA256=c609e078adab90e2c6bacb6afafacd5eaf60cd94cf670f1e159565725fcd448d
 
@@ -12,7 +14,7 @@ export RUST_TOOLCHAIN ?= 1.97.1
 export RUSTFLAGS =
 
 # URL to the prebuilt packages
-export PYODIDE_PREBUILT_PACKAGES_BASE=https://github.com/pyodide/pyodide-recipes/releases/download/314-20260729
+export PYODIDE_PREBUILT_PACKAGES_BASE=https://github.com/pyodide/pyodide-recipes/releases/download/314-20260911
 export PYODIDE_PREBUILT_PACKAGES_URL=$(PYODIDE_PREBUILT_PACKAGES_BASE)/packages.tar.gz
 export PYODIDE_PREBUILT_PACKAGES_LOCKFILE=$(PYODIDE_PREBUILT_PACKAGES_BASE)/pyodide-lock.json
 export ENABLE_PREBUILT_PACKAGES ?= 0
@@ -110,6 +112,15 @@ export DBG_LDFLAGS_SOURCEMAPDEBUG=-gseparate-dwarf
 
 export DBGFLAGS=$(DBGFLAGS_NODEBUG)
 
+ifdef PYODIDE_ASAN
+	export PYODIDE_SYMBOLS=1
+	# -fsanitize-recover=address makes it possible to continue on errors
+	# by setting ASAN_OPTIONS=halt_on_error=0.
+	# With the default halt_on_error=1 the runtime still aborts on the first error.
+	EXTRA_CFLAGS+= -fsanitize=address -fsanitize-recover=address
+	EXTRA_LDFLAGS+= -fsanitize=address
+endif
+
 ifdef PYODIDE_DEBUG
 	export PYODIDE_SYMBOLS=1
 	export PYODIDE_DEBUG_JS=1
@@ -161,9 +172,10 @@ export MAIN_MODULE_LDFLAGS_COMMON= $(LDFLAGS_BASE) \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
 	-s FORCE_FILESYSTEM=1 \
-	-s INITIAL_MEMORY=31457280 \
+	-s INITIAL_MEMORY=$(INITIAL_MEMORY) \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s MAXIMUM_MEMORY=4GB \
+	-s IMPORTED_MEMORY \
 	-s FS_DEBUG=1 \
 	-s STACK_SIZE=10MB \
 	-s EXPORTED_FUNCTIONS='$(EXPORTS)' \
@@ -240,6 +252,7 @@ EXPORTS=_main \
    ,__PyErr_CheckSignals \
    ,_PyErr_CheckSignals \
    ,_PyErr_Clear \
+   ,_PyErr_GetRaisedException \
    ,_PyErr_Occurred \
    ,_PyErr_Print \
    ,_PyErr_SetRaisedException \

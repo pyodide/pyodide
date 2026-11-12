@@ -98,18 +98,29 @@ run_main()
   return exitcode;
 }
 
+int
+enter_promising_task(void);
+
 void
-set_suspender(JsVal suspender);
+exit_promising_task(void);
 
 /**
- * call _pyproxy_apply but save the error flag into the argument so it can't be
- * observed by unrelated Python callframes. callPyObjectKwargsSuspending will
- * restore the error flag before calling pythonexc2js(). See
- * test_stack_switching.test_throw_from_switcher for a detailed explanation.
+ * Run main with stack switching enabled.
+ *
+ * Like _pyproxy_apply_promising, main runs as a promising task of its own. See
+ * the ownership model at the top of pystate.c.
  */
 EMSCRIPTEN_KEEPALIVE int
-run_main_promising(JsVal suspender)
+run_main_promising(void)
 {
-  set_suspender(suspender);
-  return run_main();
+  if (enter_promising_task() != 0) {
+    PyErr_Print();
+    return 1;
+  }
+  // Note: run_main() may call exit(), in which case control never returns here
+  // and exit_promising_task() is never called. That's okay because the runtime
+  // shuts down.
+  int exitcode = run_main();
+  exit_promising_task();
+  return exitcode;
 }

@@ -219,6 +219,22 @@ def test_eval_code_async_simple():
         c.send(None)
 
 
+def test_eval_code_async_dedent():
+    indented_source = """
+        1 + 1
+    """
+
+    # default (dedent=True): indented top-level code runs fine.
+    c = eval_code_async(indented_source)
+    with pytest.raises(StopIteration, match="2"):
+        c.send(None)
+
+    # dedent=False: mis-indented top-level code raises IndentationError.
+    c = eval_code_async(indented_source, dedent=False)
+    with pytest.raises(IndentationError):
+        c.send(None)
+
+
 def test_eval_code_async_loop():
     async def slow_identity(i):
         await asyncio.sleep(0.1)
