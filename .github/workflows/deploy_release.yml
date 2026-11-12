@@ -14,7 +14,7 @@ permissions: {}
 jobs:
   build-pyodide-py-pypi:
     name: Build pyodide-py Python distributions
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -44,7 +44,7 @@ jobs:
   publish-pyodide-py-pypi:
     name: Publish pyodide-py to PyPI
     needs: build-pyodide-py-pypi
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name == 'release' && github.event.action == 'published'
     environment:
       name: PyPi
