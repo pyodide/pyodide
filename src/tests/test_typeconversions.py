@@ -1117,6 +1117,28 @@ def test_recursive_dict_to_js(selenium):
 
 
 @run_in_pyodide
+def test_recursive_dict_in_list_to_js(selenium):
+    # A list item that refers to a dict that is still being converted is filled
+    # in at the end of the conversion. Check that it goes to the right index.
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    x: Any = {}
+    x["l"] = [x, 1]
+    check = run_js(
+        """
+        (res) => {
+            const l = res instanceof Map ? res.get("l") : res.l;
+            return l.length === 2 && l[0] === res && l[1] === 1;
+        }
+        """
+    )
+    assert check(to_js(x))
+    assert check(to_js(x, dict_converter=run_js("Object.fromEntries")))
+    assert check(to_js(x, dict_converter=run_js("(entries) => new Map(entries)")))
+
+
+@run_in_pyodide
 def test_dict_subclass_to_js(selenium):
     """See issue #4636"""
     from collections import ChainMap
