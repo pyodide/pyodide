@@ -29,6 +29,11 @@ _November 13, 2026_
   the way greenlet handles stack switching.
   {pr}`6466` {pr}`6487`
 
+- {{ Fix }} Stack switching now works with Safari on iOS. This drops support for
+  iOS versions 18.0 -- 18.5 but nobody should be running those versions because
+  they have unpatched security vulnerabilities.
+  {pr}`6552`
+
 ### JavaScript API
 
 - {{ Fix }} Fixed a `SystemError` caused by `pyodide.setDebug(true)`.
