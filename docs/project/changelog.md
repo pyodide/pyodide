@@ -17,6 +17,10 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Fixed a bug that `PyProxy.getBuffer()` failed for a buffer stored past
+  2GB of the WebAssembly heap.
+  {issue}`6545`
+
 - {{ Enhancement }} Pyodide now supports `Float16Array`. It will translate half
   float Python buffers into `Float16Array` and vice versa. Converting a half
   float buffer requires a JavaScript runtime with `Float16Array` support.
