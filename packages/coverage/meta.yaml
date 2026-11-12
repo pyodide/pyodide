@@ -9,9 +9,6 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/0c/d6/2b53ab3ee99f2262e6f0b8369a43f6d66658eab45510331c0b3d5c8c4272/coverage-7.6.12.tar.gz
   sha256: 48cfc4641d95d34766ad41d9573cc0f22a48aa88d22657a1fe01dca0dbae4de2
-requirements:
-  run:
-    - sqlite3
 about:
   home: https://github.com/nedbat/coveragepy
   PyPI: https://pypi.org/project/coverage

@@ -19,7 +19,7 @@ def test_snapshot_bad_magic(selenium_standalone_noload):
     with pytest.raises(selenium.JavascriptException, match=match):
         selenium.run_js(
             """
-            const pyodide = await loadPyodide({_loadSnapshot: new Uint8Array(20 * (1<<20))});
+            const pyodide = await loadPyodide({_loadSnapshot: new Uint8Array(32 * (1<<20))});
             """
         )
 
@@ -36,7 +36,7 @@ def test_snapshot_bad_build_id(selenium_standalone_noload):
     with pytest.raises(selenium.JavascriptException, match=match):
         selenium.run_js(
             """
-            const snp = new Uint8Array(20 * (1<<20));
+            const snp = new Uint8Array(32 * (1<<20));
             const snp32 = new Uint32Array(snp.buffer);
             snp32[0] =  0x706e7300; // snapshot magic
 
@@ -253,6 +253,7 @@ def test_snapshot_serializer_need_deserializer(selenium_standalone_noload):
 
 
 @requires_jspi
+@pytest.mark.requires_dynamic_linking
 def test_syncify_in_snapshot_load(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     selenium.run_js(

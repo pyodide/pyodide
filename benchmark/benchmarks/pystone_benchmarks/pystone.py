@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# flake8: noqa
+# flake8: noqa  # noqa: PGH004
 
 # setup: pass
 # run: pystone()

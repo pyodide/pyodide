@@ -1,13 +1,13 @@
 package:
   name: libopenblas
-  version: 0.3.26
+  version: 0.3.28
   tag:
     - core
     - library
     - shared_library
 source:
-  sha256: 4e6e4f5cb14c209262e33e6816d70221a2fe49eb69eaf0a06f065598ac602c68
-  url: https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.26/OpenBLAS-0.3.26.tar.gz
+  sha256: f1003466ad074e9b0c8d421a204121100b0751c96fc6fcf3d1456bd12f8a00a1
+  url: https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.28/OpenBLAS-0.3.28.tar.gz
   patches:
     - patches/0001-Add-Wno-return-type-flag.patch
     - patches/0002-Align-xerbla_array-signature-with-scipy-expectation.patch
@@ -32,7 +32,13 @@ build:
     sed -ri 's@int ([cz](dotc|dotu|ladiv))@void \1@g' lapack-netlib/SRC/*.c\
         lapack-netlib/SRC/DEPRECATED/*.c
 
+    # When TARGET=RISCV64_GENERIC, OpenBLAS adds `-march` and `-mabi` flags to the compiler.
+    # However, they are not supported by Emscripten, and started to cause build failures from recent Emscripten versions (>4.X).
+    sed -i 's@ifeq ($(CORE), RISCV64_GENERIC)@ifeq ($(CORE), NOT_RISCV64_GENERIC)@g' Makefile.riscv64
+    sed -i 's@ifeq ($(TARGET), RISCV64_GENERIC)@ifeq ($(TARGET), NOT_RISCV64_GENERIC)@g' Makefile.prebuild
+
     emmake make libs shared \
+        BINARY=32 \
         CC="emcc -msimd128" \
         HOSTCC=gcc \
         TARGET=RISCV64_GENERIC \
@@ -49,6 +55,9 @@ build:
 
     cp libopenblas.so dist
     emmake make install PREFIX=${WASM_LIBRARY_DIR}
+    # We need to copy the shared library again as the make install
+    # does not know we've modified the binary with libf2c symbols.
+    cp dist/libopenblas.so ${WASM_LIBRARY_DIR}/lib/libopenblas.so
 
 requirements:
   host:

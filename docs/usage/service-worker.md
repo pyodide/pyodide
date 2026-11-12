@@ -27,15 +27,13 @@ will require a server to be running for this example.
 
 ### Setup
 
-Setup your project to serve the service worker script `sw.js`, and a
-`XMLHttpRequest` polyfill - one such polyfill that works in service workers is
-[xhr-shim](https://www.npmjs.com/package/xhr-shim). You should also serve
-`pyodide.js`, and all its associated `.asm.js`, `.json`, and `.wasm`
-files as well, though this is not strictly required if `pyodide.js` is pointing
+You serve
+`pyodide.mjs`, and all its associated `.asm.mjs`, `.json`, and `.wasm`
+files as well, though this is not strictly required if `pyodide.mjs` is pointing
 to a site serving current versions of these files. The simplest way to serve the
 required files is to use a CDN, such as `https://cdn.jsdelivr.net/pyodide`.
 
-Update the `sw.js` sample so that it has a valid URL for `pyodide.js`, and sets
+Update the `sw.js` sample so that it has a valid URL for `pyodide.mjs`, and sets
 {js:func}`indexURL <exports.loadPyodide>` to the location of the supporting
 files.
 
@@ -50,9 +48,8 @@ a sample is provided below:
 
 ### Consumer
 
-In our consumer, we want to register our service worker - in the html below,
-we're registering a classic-type service worker. For convenience, we also
-provide a button that fetches data and logs it.
+In our consumer, we want to register our service worker as a module-type worker.
+For convenience, we also provide a button that fetches data and logs it.
 
 ```html
 <!doctype html>
@@ -62,9 +59,9 @@ provide a button that fetches data and logs it.
       /* UPDATE PATHS TO POINT TO YOUR ASSETS */
       const SERVICE_WORKER_PATH = "/sw.js";
       const JSON_FILE_PATH = "./data.json";
-      /* IF USING MODULE-TYPE SERVICE WORKER, REPLACE THESE OPTIONS */
       const REGISTRATION_OPTIONS = {
         scope: "/",
+        type: "module",
       };
 
       // modified snippet from
@@ -110,14 +107,10 @@ provide a button that fetches data and logs it.
 ### Service worker
 
 To set up Pyodide in a service worker, you'll need to do the following:
-
-1. Polyfill `XMLHttpRequest` because it isn't available in service workers'
-   global scopes.
-2. Import Pyodide
-3. We don't need it for this example, but if you're planning on calling
-   `loadPyodide` after [installation](https://web.dev/service-worker-lifecycle/)
-   of the service worker, import `pyodide.asm.js` too.
-
+1. Statically import `pyodide.asm.mjs` pass the default export to `loadPyodide` as `_createPyodideModule` option.
+   Norally, `pyodide.asm.mjs` is dynamically imported by `loadPyodide`, but service workers forbid dynamic `import()`,
+   so `loadPyodide` cannot load it automatically. Therefore, we need to pass the default export of `pyodide.asm.mjs` to `loadPyodide` as `_createPyodideModule` option.
+2. Import `loadPyodide` from `pyodide.mjs`
 After all the required scripts are imported, we call `loadPyodide` to set up
 Pyodide, then create a Python function called `modify_data`. This function add a
 `count` property to an object, where `count` is equal to the number of times
@@ -125,19 +118,17 @@ Pyodide, then create a Python function called `modify_data`. This function add a
 the Javascript variable `modifyData`. We also set up a fetch event handler that
 intercepts requests for json files so that any JSON object that is fetched is
 modified using `modifyData`.
-
 ```js
 /* sw.js */
-/* MODIFY IMPORT PATHS TO POINT TO YOUR SCRIPTS, REPLACE IF USING MODULE-TYPE WORKER */
-// We're using the npm package xhr-shim, which assigns self.XMLHttpRequestShim
-importScripts("./node_modules/xhr-shim/src/index.js");
-self.XMLHttpRequest = self.XMLHttpRequestShim;
-importScripts("./pyodide.js");
-// importScripts("./pyodide.asm.js"); // if loading Pyodide after installation phase, you'll need to import this too
+/* MODIFY IMPORT PATHS TO POINT TO YOUR SCRIPTS */
+// Service workers forbid dynamic import(), so we statically import
+// pyodide.asm.mjs and set the escape hatch that loadPyodide checks first.
+import createPyodideModule from "./pyodide.asm.mjs";
+import { loadPyodide } from "./pyodide.mjs";
 
 let modifyData;
 let pyodide;
-loadPyodide({}).then((_pyodide) => {
+loadPyodide({ createPyodideModule }).then((_pyodide) => {
   pyodide = _pyodide;
   let namespace = pyodide.globals.get("dict")();
 
@@ -214,68 +205,4 @@ self.addEventListener("install", function () {
 self.addEventListener("activate", function (event) {
   event.waitUntil(self.clients.claim());
 });
-```
-
-## Using module-type service workers
-
-While classic-type service workers have better cross-browser compatibility at
-the moment, module-type service workers make it easier to include external
-libraries in your service workers via ES module imports. There are environments
-where we can safely assume ES module support in service workers, such as
-Chromium-based browser extensions' background scripts. With the adjustments
-outlined below, you should be able to use our example with a module-type service
-worker.
-
-### Setup
-
-Serve `pyodide.mjs` instead of `pyodide.js`, the rest of the setup remains the
-same.
-
-### Consumers
-
-We need to use different registration options on the consumer side. Replace this
-section of the script:
-
-```js
-/* IF USING MODULE-TYPE SERVICE WORKER, REPLACE THESE OPTIONS */
-const REGISTRATION_OPTIONS = {
-  scope: "/",
-};
-```
-
-With the following:
-
-```js
-const REGISTRATION_OPTIONS = {
-  scope: "/",
-  // Note that specifying the type option can cause errors if the browser doesn't support module-type service workers
-  type: "module",
-};
-```
-
-### Service worker
-
-On the service worker side, we need to change the way we import scripts. Replace
-the importScripts calls shown below:
-
-```js
-/* sw.js */
-/* MODIFY IMPORT PATHS TO POINT TO YOUR SCRIPTS, REPLACE IF USING MODULE-TYPE WORKER */
-// We're using the npm package xhr-shim, which assigns self.XMLHttpRequestShim
-importScripts("./node_modules/xhr-shim/src/index.js");
-self.XMLHttpRequest = self.XMLHttpRequestShim;
-importScripts("./pyodide.js");
-// importScripts("./pyodide.asm.js"); // if loading Pyodide after installation phase, you'll need to import this too
-```
-
-With the following imports:
-
-```js
-/* sw.js */
-/* MODIFY IMPORT PATHS TO POINT TO YOUR SCRIPTS */
-// We're using the npm package xhr-shim, which assigns self.XMLHttpRequestShim
-import "./node_modules/xhr-shim/src/index.js";
-self.XMLHttpRequest = self.XMLHttpRequestShim;
-import "./pyodide.asm.js"; // IMPORTANT: This is compulsory in a module-type service worker, which cannot use importScripts
-import { loadPyodide } from "./pyodide.mjs"; // Note the .mjs extension
 ```

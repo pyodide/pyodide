@@ -91,6 +91,9 @@ class Uint8Array(_TypedArray):
 class Float64Array(_TypedArray):
     BYTES_PER_ELEMENT = 8
 
+class BigInt64Array(_TypedArray):
+    BYTES_PER_ELEMENT = 8
+
 class JSON(_JsObject):
     @staticmethod
     def stringify(a: JsProxy) -> str: ...

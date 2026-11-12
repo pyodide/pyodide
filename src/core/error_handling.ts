@@ -212,7 +212,7 @@ function isPyodideFrame(frame: StackFrame): boolean {
   if (fileName.includes("wasm-function")) {
     return true;
   }
-  if (!fileName.includes("pyodide.asm.js")) {
+  if (!fileName.includes("pyodide.asm.mjs")) {
     return false;
   }
   let funcName = frame.functionName || "";
@@ -393,7 +393,7 @@ API.errorConstructors = new Map(
     globalThis.SystemError,
   ]
     .filter((x) => x)
-    .map((x) => [x.constructor.name, x]),
+    .map((x) => [x.name, x]),
 );
 
 API.deserializeError = function (name: string, message: string, stack: string) {

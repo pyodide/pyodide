@@ -88,8 +88,9 @@ _python2js_float(PyObject* x)
 #endif
 
 static JsVal
-_python2js_long(PyObject* x)
+_python2js_bigint(PyObject* x)
 {
+  FAIL_RETURN_VALUE(JS_ERROR);
   int overflow;
   long x_long = PyLong_AsLongAndOverflow(x, &overflow);
   if (x_long == -1) {
@@ -97,7 +98,7 @@ _python2js_long(PyObject* x)
       FAIL_IF_ERR_OCCURRED();
     } else {
       // We want to group into u32 chunks for convenience of
-      // JsvNum_fromDigits. If the number of bits is evenly divisible by
+      // JsvBigInt_fromDigits. If the number of bits is evenly divisible by
       // 32, we overestimate the number of needed u32s by one.
       size_t nbits = _PyLong_NumBits(x);
       size_t ndigits = (nbits >> 5) + 1;
@@ -108,26 +109,67 @@ _python2js_long(PyObject* x)
                                             true /* little endian */,
                                             true /* signed */,
                                             true /* with_exceptions */));
-      return JsvNum_fromDigits(digits, ndigits);
+      return JsvBigInt_fromDigits(digits, ndigits);
     }
   }
-  return JsvNum_fromInt(x_long);
-finally:
-  return JS_ERROR;
+  return JsvBigInt_fromInt(x_long);
+}
+
+static JsVal
+_python2js_long(PyObject* x)
+{
+  FAIL_RETURN_VALUE(JS_ERROR);
+  int overflow;
+  long x_long = PyLong_AsLongAndOverflow(x, &overflow);
+  if (x_long == -1 && !overflow) {
+    FAIL_IF_ERR_OCCURRED();
+  }
+  if (!overflow) {
+    // On wasm32, long is 32 bits, so any non-overflowing value is a safe JS
+    // integer. Return it directly, avoiding a BigInt allocation and the extra
+    // EM_JS crossing performed by Jsv_BigIntToNum.
+    return JsvNum_fromInt(x_long);
+  }
+  // Overflow: fall back to the full bigint conversion then narrow to a Number
+  // if it is small enough.
+  JsVal res = _python2js_bigint(x);
+  FAIL_IF_JS_ERROR(res);
+  return Jsv_BigIntToNum(res);
 }
 
 // python2js string conversion
 //
 // FAQs:
 //
-// Q: Why do we use this approach rather than TextDecoder?
+// Q: Why do we mostly build strings with a `+=` loop rather than TextDecoder?
 //
-// A: TextDecoder does have an 'ascii' encoding and a 'ucs2' encoding which
-// sound promising. They work in many cases but not in all cases, particularly
-// when strings contain weird unprintable bytes. I suspect these conversion
-// functions are also considerably faster than TextDecoder because it takes
-// complicated extra code to cause the problematic edge case behavior of
-// TextDecoder.
+// A: TextDecoder cannot losslessly decode general UCS1 (latin-1) or UCS2 data:
+//
+//   - The WHATWG label `"latin1"` is an alias for windows-1252, which is *not*
+//     ISO-8859-1: it remaps bytes 0x80-0x9F to other code points. So decoding
+//     UCS1 bytes with it is wrong for any byte in 0x80-0x9F. (There is no
+//     standard TextDecoder encoding that is true ISO-8859-1.)
+//   - TextDecoder("utf-16le") looks like it should work for UCS2, but it
+//     strips/replaces lone surrogates (0xD800-0xDFFF), whereas Python strings
+//     may contain those code points and JS strings can hold them too. So it is
+//     also lossy for UCS2.
+//
+// However, for *ASCII* data (bytes 0x00-0x7F) windows-1252 agrees with ASCII
+// exactly, so we can use a `"latin1"` TextDecoder as a fast path. CPython
+// tracks ASCII-ness per string (PyUnicode_IS_ASCII), and _python2js_unicode
+// routes only ASCII strings to _python2js_ascii below. Benchmarks (Node 26 /
+// V8, Apple Silicon, two purpose-built binaries differing only in this file)
+// show TextDecoder has a roughly fixed ~100 ns cost while the `+=` loop grows
+// linearly, so TextDecoder is far faster for longer strings, e.g. ~10x at 512
+// chars and ~43x at 4096 chars, but slower for short strings. The measured
+// crossover is around 44-48 chars, so _python2js_ascii keeps the loop below a
+// length threshold of 64 (chosen conservatively past the crossover so no string
+// length regresses).
+//
+// Caveats handled in _python2js_ascii:
+//   - TextDecoder.decode throws on a view backed by a SharedArrayBuffer.
+//     Pyodide's heap is not SAB-backed today, but we guard against it (and fall
+//     back to the loop) for safety, mirroring Emscripten's UTF8ToString.
 //
 //
 // Q: Is it okay to use str += more_str in a loop? Does this perform a lot of
@@ -138,7 +180,25 @@ finally:
 // TODO: someone should compare += in a loop to building a list and using
 // list.join("") and see if one is faster than the other.
 
-EM_JS_VAL(JsVal, _python2js_ucs1, (const char* ptr, int len), {
+// Fast path for ASCII strings (PyUnicode_IS_ASCII). For longer strings, decode
+// the byte range with a cached TextDecoder; for short strings the `+=` loop is
+// faster, so keep using it below the threshold.
+EM_JS_VAL(JsVal, _python2js_ascii, (const char* ptr, int len), {
+  // TextDecoder beats the loop only once strings get long enough; the measured
+  // crossover is around 44-48 chars and we use 64 for margin (see the FAQ
+  // above). TextDecoder.decode also throws on a SharedArrayBuffer-backed view,
+  // so only take the fast path on a plain ArrayBuffer (Pyodide's heap today).
+  // Both checks are cheap, so we leave them inline rather than hoisting.
+  if (len >= 64) {
+    // Cache one TextDecoder instance. The `"latin1"` label is windows-1252, but
+    // it agrees with ASCII over 0x00-0x7F, which is all we feed it.
+    let decoder = Module._asciiTextDecoder;
+    if (!decoder) {
+      decoder = Module._asciiTextDecoder = new TextDecoder("latin1");
+    }
+    const start = HEAP_INDEX_8(ptr);
+    return decoder.decode(Module.HEAPU8.subarray(start, start + len));
+  }
   let jsstr = "";
   for (let i = 0; i < len; ++i) {
     jsstr += String.fromCharCode(DEREF_U8(ptr, i));
@@ -146,18 +206,54 @@ EM_JS_VAL(JsVal, _python2js_ucs1, (const char* ptr, int len), {
   return jsstr;
 });
 
-EM_JS_VAL(JsVal, _python2js_ucs2, (const char* ptr, int len), {
+EM_JS_VAL(JsVal, _python2js_ucs1, (const char* ptr, int len), {
+  const start = HEAP_INDEX_8(ptr);
   let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCharCode(DEREF_U16(ptr, i));
+  // Length 12 is the crossover point where the `+=` loop is faster than apply
+  // measured on Node 25.
+  if (len < 12) {
+    for (let i = 0; i < len; ++i) {
+      jsstr += String.fromCharCode(HEAPU8[start + i]);
+    }
+    return jsstr;
+  }
+
+  // The chunk size 8192 is measured to be the fastest in Node 25
+  for (let i = 0; i < len; i += 8192) {
+    jsstr += String.fromCharCode.apply(
+      null, HEAPU8.subarray(start + i, start + Math.min(i + 8192, len)));
+  }
+  return jsstr;
+});
+
+EM_JS_VAL(JsVal, _python2js_ucs2, (const char* ptr, int len), {
+  const start = HEAP_INDEX_16(ptr);
+  let jsstr = "";
+  if (len < 12) {
+    for (let i = 0; i < len; ++i) {
+      jsstr += String.fromCharCode(HEAPU16[start + i]);
+    }
+    return jsstr;
+  }
+  for (let i = 0; i < len; i += 8192) {
+    jsstr += String.fromCharCode.apply(
+      null, HEAPU16.subarray(start + i, start + Math.min(i + 8192, len)));
   }
   return jsstr;
 });
 
 EM_JS_VAL(JsVal, _python2js_ucs4, (const char* ptr, int len), {
+  const start = HEAP_INDEX_32(ptr);
   let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCodePoint(DEREF_U32(ptr, i));
+  if (len < 256) {
+    for (let i = 0; i < len; ++i) {
+      jsstr += String.fromCodePoint(HEAPU32[start + i]);
+    }
+    return jsstr;
+  }
+  for (let i = 0; i < len; i += 8192) {
+    jsstr += String.fromCodePoint.apply(
+      null, HEAPU32.subarray(start + i, start + Math.min(i + 8192, len)));
   }
   return jsstr;
 });
@@ -170,6 +266,11 @@ _python2js_unicode(PyObject* x)
   int length = (int)PyUnicode_GET_LENGTH(x);
   switch (kind) {
     case PyUnicode_1BYTE_KIND:
+      // Only pure-ASCII strings can use the TextDecoder fast path; non-ASCII
+      // UCS1 (latin-1) bytes 0x80-0x9F are mangled by the windows-1252 decoder.
+      if (PyUnicode_IS_ASCII(x)) {
+        return _python2js_ascii(data, length);
+      }
       return _python2js_ucs1(data, length);
     case PyUnicode_2BYTE_KIND:
       return _python2js_ucs2(data, length);
@@ -200,8 +301,7 @@ _python2js_unicode(PyObject* x)
 static JsVal
 _python2js_sequence(ConversionContext* context, PyObject* x)
 {
-  bool success = false;
-  PyObject* pyitem = NULL;
+  FAIL_RETURN_VALUE(JS_ERROR);
 
   JsVal jsarray = JsvArray_New();
   FAIL_IF_MINUS_ONE(
@@ -209,23 +309,26 @@ _python2js_sequence(ConversionContext* context, PyObject* x)
   Py_ssize_t length = PySequence_Size(x);
   FAIL_IF_MINUS_ONE(length);
   for (Py_ssize_t i = 0; i < length; ++i) {
-    PyObject* pyitem = PySequence_GetItem(x, i);
+    DECLARE_PY_OBJECT(pyitem);
+    pyitem = PySequence_GetItem(x, i);
     FAIL_IF_NULL(pyitem);
-    JsVal jsitem = _python2js(context, pyitem);
+    JsVal jsitem = _python2js_immutable(pyitem);
     FAIL_IF_JS_ERROR(jsitem);
-    if (JsvNoValue_Check(jsitem)) {
-      JsVal index = JsvNum_fromInt(JsvArray_Push(jsarray, JS_ERROR));
-      _python2js_addto_postprocess_list(
-        hiwire_get(context->jspostprocess_list), jsarray, index, pyitem);
-    } else {
+    if (!JsvNoValue_Check(jsitem)) {
       JsvArray_Push(jsarray, jsitem);
+      continue;
     }
-    Py_CLEAR(pyitem);
+    jsitem = _python2js(context, pyitem);
+    FAIL_IF_JS_ERROR(jsitem);
+    if (!JsvNoValue_Check(jsitem)) {
+      JsvArray_Push(jsarray, jsitem);
+      continue;
+    }
+    JsVal index = JsvNum_fromInt(JsvArray_Push(jsarray, JS_ERROR));
+    _python2js_addto_postprocess_list(
+      hiwire_get(context->jspostprocess_list), jsarray, index, pyitem);
   }
-  success = true;
-finally:
-  Py_CLEAR(pyitem);
-  return success ? jsarray : JS_ERROR;
+  return jsarray;
 }
 
 /**
@@ -235,10 +338,7 @@ finally:
 static JsVal
 _python2js_dict(ConversionContext* context, PyObject* x)
 {
-  bool success = false;
-  PyObject* items = NULL;
-  PyObject* iter = NULL;
-  PyObject* item = NULL;
+  FAIL_RETURN_VALUE(JS_ERROR);
 
   _Py_IDENTIFIER(items);
   JsVal jsdict = context->dict_new(context);
@@ -248,11 +348,18 @@ _python2js_dict(ConversionContext* context, PyObject* x)
 
   // PyDict_Next may or may not work on dict subclasses, so get the `.items()`
   // and iterate that instead. See issue #4636.
+  DECLARE_PY_OBJECT(items);
   items = _PyObject_CallMethodIdNoArgs(x, &PyId_items);
   FAIL_IF_NULL(items);
+  DECLARE_PY_OBJECT(iter);
   iter = PyObject_GetIter(items);
   FAIL_IF_NULL(iter);
-  while ((item = PyIter_Next(iter))) {
+  for (;;) {
+    DECLARE_PY_OBJECT(item);
+    item = PyIter_Next(iter);
+    if (item == NULL) {
+      break;
+    }
     if (!PyTuple_Check(item)) {
       PyErr_SetString(PyExc_TypeError, "expected tuple");
       FAIL();
@@ -268,16 +375,22 @@ _python2js_dict(ConversionContext* context, PyObject* x)
         conversion_error, "Cannot use %R as a key for a Javascript Map", pykey);
       FAIL();
     }
-    JsVal jsval = _python2js(context, pyval);
+    JsVal jsval = _python2js_immutable(pyval);
     FAIL_IF_JS_ERROR(jsval);
-    if (JsvNoValue_Check(jsval)) {
-      _python2js_addto_postprocess_list(
-        hiwire_get(context->jspostprocess_list), jsdict, jskey, pyval);
-    } else {
+    if (!JsvNoValue_Check(jsval)) {
       FAIL_IF_MINUS_ONE(
         context->dict_add_keyvalue(context, jsdict, jskey, jsval));
+      continue;
     }
-    Py_CLEAR(item);
+    jsval = _python2js(context, pyval);
+    FAIL_IF_JS_ERROR(jsval);
+    if (!JsvNoValue_Check(jsval)) {
+      FAIL_IF_MINUS_ONE(
+        context->dict_add_keyvalue(context, jsdict, jskey, jsval));
+      continue;
+    }
+    _python2js_addto_postprocess_list(
+      hiwire_get(context->jspostprocess_list), jsdict, jskey, pyval);
   }
   FAIL_IF_ERR_OCCURRED();
   if (context->dict_postprocess) {
@@ -286,12 +399,7 @@ _python2js_dict(ConversionContext* context, PyObject* x)
   }
   FAIL_IF_MINUS_ONE(
     _python2js_add_to_cache(hiwire_get(context->cache), x, jsdict));
-  success = true;
-finally:
-  Py_CLEAR(items);
-  Py_CLEAR(iter);
-  Py_CLEAR(item);
-  return success ? jsdict : JS_ERROR;
+  return jsdict;
 }
 
 /**
@@ -307,14 +415,14 @@ finally:
 static JsVal
 _python2js_set(ConversionContext* context, PyObject* x)
 {
-  bool success = false;
-  PyObject* iter = NULL;
-  PyObject* pykey = NULL;
+  FAIL_RETURN_VALUE(JS_ERROR);
   // result:
 
   JsVal jsset = JsvSet_New();
+  DECLARE_PY_OBJECT(iter);
   iter = PyObject_GetIter(x);
   FAIL_IF_NULL(iter);
+  DECLARE_PY_OBJECT(pykey);
   while ((pykey = PyIter_Next(iter))) {
     JsVal jskey = _python2js_immutable(pykey);
     if (JsvError_Check(jskey) || JsvNoValue_Check(jskey)) {
@@ -331,10 +439,7 @@ _python2js_set(ConversionContext* context, PyObject* x)
   // Otherwise, we'd fail on the set that contains itself.
   FAIL_IF_MINUS_ONE(
     _python2js_add_to_cache(hiwire_get(context->cache), x, jsset));
-  success = true;
-finally:
-  Py_CLEAR(pykey);
-  return success ? jsset : JS_ERROR;
+  return jsset;
 }
 
 /**
@@ -369,6 +474,10 @@ _python2js_immutable(PyObject* x)
   } else if (x == py_jsnull) {
     return Jsv_null;
   } else if (PyLong_Check(x)) {
+    if (!PyLong_CheckExact(x) &&
+        PyObject_TypeCheck(x, (PyTypeObject*)py_JsBigInt)) {
+      return _python2js_bigint(x);
+    }
     return _python2js_long(x);
   } else if (PyFloat_Check(x)) {
     return _python2js_float(x);
@@ -406,7 +515,7 @@ python2js__default_converter(JsVal jscontext, PyObject* object);
 static JsVal
 _python2js_deep(ConversionContext* context, PyObject* x)
 {
-  RETURN_IF_HAS_VALUE(_python2js_immutable(x));
+  FAIL_RETURN_VALUE(JS_ERROR);
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
   if (context->eager_converter) {
     RETURN_IF_HAS_VALUE(
@@ -431,7 +540,6 @@ _python2js_deep(ConversionContext* context, PyObject* x)
     return pyproxy_new(x);
   }
   PyErr_SetString(conversion_error, "No conversion known for x.");
-finally:
   return JS_ERROR;
 }
 
@@ -479,13 +587,15 @@ EM_JS(JsVal, _python2js_cache_lookup, (JsVal cache, PyObject* pyparent), {
 EMSCRIPTEN_KEEPALIVE JsVal
 _python2js(ConversionContext *context, PyObject* x)
 {
+  FAIL_RETURN_VALUE(JS_ERROR);
+  // Immutable values are never in the cache and never become proxies
+  RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   JsVal val = _python2js_cache_lookup(hiwire_get(context->cache), x);
   if (!JsvError_Check(val)) {
     return val;
   }
   FAIL_IF_ERR_OCCURRED();
   if (context->depth == 0) {
-    RETURN_IF_HAS_VALUE(_python2js_immutable(x));
     RETURN_IF_HAS_VALUE(_python2js_proxy(x));
     if (context->default_converter) {
       return python2js__default_converter(hiwire_get(context->jscontext), x);
@@ -500,8 +610,6 @@ _python2js(ConversionContext *context, PyObject* x)
     context->depth++;
     return result;
   }
-finally:
-  return JS_ERROR;
 }
 
 /**
@@ -512,6 +620,18 @@ finally:
 JsVal
 python2js_inner(PyObject* x, JsVal proxies, bool track_proxies, bool gc_register, bool is_json_adaptor)
 {
+  FAIL_RETURN_VALUE(JS_ERROR);
+  ON_FAIL({
+    if (PyErr_Occurred()) {
+      if (!PyErr_ExceptionMatches(conversion_error)) {
+        _PyErr_FormatFromCause(conversion_error,
+                               "Conversion from python to javascript failed");
+      }
+    } else {
+      fail_test();
+      PyErr_SetString(internal_error, "Internal error occurred in python2js");
+    }
+  });
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
   if (track_proxies && JsvError_Check(proxies)) {
@@ -524,17 +644,6 @@ python2js_inner(PyObject* x, JsVal proxies, bool track_proxies, bool gc_register
     JsvArray_Push(proxies, proxy);
   }
   return proxy;
-finally:
-  if (PyErr_Occurred()) {
-    if (!PyErr_ExceptionMatches(conversion_error)) {
-      _PyErr_FormatFromCause(conversion_error,
-                             "Conversion from python to javascript failed");
-    }
-  } else {
-    fail_test();
-    PyErr_SetString(internal_error, "Internal error occurred in python2js");
-  }
-  return JS_ERROR;
 }
 
 /**
@@ -590,7 +699,8 @@ static int
 _JsObject_Set(ConversionContext *context, JsVal obj, JsVal key, JsVal value) {
   int result = _JsObject_Set_js(obj, key, value);
   if (result == -2) {
-    PyObject* pykey = js2python(key);
+    DECLARE_PY_OBJECT(pykey);
+    pykey = js2python(key);
     if (pykey == NULL) {
       PyErr_SetString(
         conversion_error, "Key collision when converting Python dictionary to JavaScript.");
@@ -598,7 +708,6 @@ _JsObject_Set(ConversionContext *context, JsVal obj, JsVal key, JsVal value) {
     }
     PyErr_Format(
       conversion_error, "Key collision when converting Python dictionary to JavaScript. Key: %R", pykey);
-    Py_CLEAR(pykey);
     return -1;
   }
   return result;
@@ -845,6 +954,7 @@ to_js(PyObject* self,
       Py_ssize_t nargs,
       PyObject* kwnames)
 {
+  FAIL_RETURN_VALUE(NULL);
   PyObject* obj = NULL;
   int depth = -1;
   PyObject* pyproxies = NULL;
@@ -894,7 +1004,6 @@ to_js(PyObject* self,
     Py_INCREF(obj);
     return obj;
   }
-  PyObject* py_result = NULL;
 
   JsVal proxies;
   if (!create_proxies) {
@@ -926,6 +1035,18 @@ to_js(PyObject* self,
   if (py_eager_converter) {
     js_eager_converter = python2js(py_eager_converter);
   }
+  _Defer
+  {
+    if (pyproxy_Check(js_dict_converter)) {
+      destroy_proxy(js_dict_converter, NULL);
+    }
+    if (pyproxy_Check(js_default_converter)) {
+      destroy_proxy(js_default_converter, NULL);
+    }
+    if (pyproxy_Check(js_eager_converter)) {
+      destroy_proxy(js_eager_converter, NULL);
+    }
+  };
   JsVal js_result = python2js_custom(obj,
                                      depth,
                                      proxies,
@@ -933,21 +1054,12 @@ to_js(PyObject* self,
                                      js_default_converter,
                                      js_eager_converter);
   FAIL_IF_JS_ERROR(js_result);
+  PyObject* py_result = NULL;
   if (pyproxy_Check(js_result)) {
     // Oops, just created a PyProxy. Wrap it I guess?
     py_result = JsProxy_create(js_result);
   } else {
     py_result = js2python(js_result);
-  }
-finally:
-  if (pyproxy_Check(js_dict_converter)) {
-    destroy_proxy(js_dict_converter, NULL);
-  }
-  if (pyproxy_Check(js_default_converter)) {
-    destroy_proxy(js_default_converter, NULL);
-  }
-  if (pyproxy_Check(js_eager_converter)) {
-    destroy_proxy(js_eager_converter, NULL);
   }
   return py_result;
 }
@@ -969,11 +1081,11 @@ EM_JS_NUM(errcode, destroy_proxies_js, (JsVal proxies_id), {
 static PyObject*
 destroy_proxies_(PyObject* self, PyObject* arg)
 {
+  FAIL_RETURN_VALUE(NULL);
   if (!JsProxy_Check(arg)) {
     PyErr_SetString(PyExc_TypeError, "Expected a JsProxy for the argument");
     return NULL;
   }
-  bool success = false;
 
   JsVal proxies = JsProxy_Val(arg);
   if (!JsvArray_Check(proxies)) {
@@ -983,13 +1095,7 @@ destroy_proxies_(PyObject* self, PyObject* arg)
   }
   FAIL_IF_MINUS_ONE(destroy_proxies_js(proxies));
 
-  success = true;
-finally:
-  if (success) {
-    Py_RETURN_NONE;
-  } else {
-    return NULL;
-  }
+  Py_RETURN_NONE;
 }
 
 static PyMethodDef methods[] = {
@@ -1007,20 +1113,21 @@ static PyMethodDef methods[] = {
 };
 
 PyObject* py_jsnull = NULL;
+PyObject* py_JsBigInt = NULL;
 
 int
 python2js_init(PyObject* core)
 {
-  bool success = false;
-  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core_docs");
+  FAIL_RETURN_VALUE(-1);
+  DECLARE_PY_OBJECT(docstring_source);
+  docstring_source = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(docstring_source);
   FAIL_IF_MINUS_ONE(
     add_methods_and_set_docstrings(core, methods, docstring_source));
   py_jsnull = PyObject_GetAttrString(docstring_source, "jsnull");
   FAIL_IF_NULL(py_jsnull);
+  py_JsBigInt = PyObject_GetAttrString(docstring_source, "JsBigInt");
+  FAIL_IF_NULL(py_JsBigInt);
 
-  success = true;
-finally:
-  Py_CLEAR(docstring_source);
-  return success ? 0 : -1;
+  return 0;
 }

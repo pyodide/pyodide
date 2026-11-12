@@ -34,8 +34,63 @@ def test_asyncio_sleep(selenium):
     )
 
 
-def test_cancel_handle(selenium_standalone):
-    selenium_standalone.run_js(
+def test_asyncio_sleep_overflowing_delay(selenium):
+    @run_in_pyodide
+    async def test(selenium):
+        import asyncio
+
+        import pytest
+
+        task = asyncio.ensure_future(asyncio.sleep(1e9))
+        await asyncio.sleep(0.1)
+        assert not task.done()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    test(selenium)
+    assert "TimeoutOverflowWarning" not in selenium.logs
+
+
+@run_in_pyodide
+async def test_call_later_skips_scheduling_for_infinite_delay(selenium):
+    import asyncio
+    import math
+
+    from pyodide import webloop
+
+    scheduled = []
+    orig_scheduleCallback = webloop.scheduleCallback  # type: ignore[attr-defined]
+    webloop.scheduleCallback = lambda cb, ms: scheduled.append(ms)  # type: ignore[attr-defined]
+    try:
+        loop = asyncio.get_event_loop()
+        # math.inf must never be scheduled; a finite overflow still clamps.
+        h = loop.call_later(math.inf, lambda: None)
+        assert scheduled == []
+        assert not h.cancelled()
+
+        loop.call_later(1e9, lambda: None)
+        assert scheduled == [webloop._MAX_TIMEOUT_MS]
+    finally:
+        webloop.scheduleCallback = orig_scheduleCallback  # type: ignore[attr-defined]
+
+
+@run_in_pyodide
+async def test_call_later_negative_delay(selenium):
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    fut = loop.create_future()
+    loop.call_later(-1, fut.set_result, "later")
+    assert await fut == "later"
+
+    fut = loop.create_future()
+    loop.call_at(loop.time() - 1, fut.set_result, "at")
+    assert await fut == "at"
+
+
+def test_cancel_handle(selenium_standalone_refresh):
+    selenium_standalone_refresh.run_js(
         """
         await pyodide.runPythonAsync(`
             import asyncio
@@ -213,8 +268,8 @@ def test_run_in_executor(selenium):
 
 
 @pytest.mark.xfail(reason="Works locally but failing in test suite as of #2022.")
-def test_webloop_exception_handler(selenium_standalone):
-    selenium = selenium_standalone
+def test_webloop_exception_handler(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     selenium.run_async(
         """
         import asyncio
@@ -261,7 +316,7 @@ async def test_pyodide_future():
 
     fut = PyodideFuture()
     increment = lambda x: x + 1
-    tostring = lambda x: repr(x)
+    tostring = repr
 
     def raises(x):
         raise Exception(x)
@@ -355,6 +410,28 @@ async def test_pyodide_future():
     except Exception:
         pass
     assert rf.exception() == e
+
+    # Cancelling the source future must propagate to chained futures rather
+    # than leaving them pending forever (gh-XXXX).
+    fut = PyodideFuture()
+    rf = fut.then(increment)
+    fut.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await rf
+
+    ran = 0
+
+    def incran():
+        nonlocal ran
+        ran += 1
+
+    fut = PyodideFuture()
+    rf = fut.finally_(incran)
+    fut.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await rf
+    # finally_ still runs on cancellation, then propagates the cancellation.
+    assert ran == 1
 
 
 @run_in_pyodide
@@ -662,3 +739,66 @@ async def test_warning_after_shutdown(selenium):
         await g.aclose()
 
     assert any(issubclass(warn.category, ResourceWarning) for warn in w)
+
+
+@run_in_pyodide
+async def test_create_task_with_task_factory(selenium):
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    calls = []
+
+    def factory(loop, coro, **kwargs):
+        calls.append(kwargs)
+        return asyncio.Task(coro, loop=loop, **kwargs)
+
+    async def f():
+        return 7
+
+    loop.set_task_factory(factory)
+    try:
+        task = loop.create_task(f(), name="my task")
+        assert await task == 7
+        assert task.get_name() == "my task"
+        assert calls == [{"name": "my task"}]
+    finally:
+        loop.set_task_factory(None)
+
+
+@run_in_pyodide
+async def test_eager_task_factory(selenium):
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    started = []
+
+    async def f():
+        started.append(True)
+        return 7
+
+    loop.set_task_factory(asyncio.eager_task_factory)
+    try:
+        task = loop.create_task(f(), name="eager")
+        # An eager task starts running in create_task
+        assert started == [True]
+        assert await task == 7
+        assert task.get_name() == "eager"
+    finally:
+        loop.set_task_factory(None)
+
+
+@run_in_pyodide
+async def test_create_task_eager_start(selenium):
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    started = []
+
+    async def f():
+        started.append(True)
+        return 7
+
+    task = loop.create_task(f(), eager_start=True)
+    # An eager task starts running in create_task
+    assert started == [True]
+    assert await task == 7

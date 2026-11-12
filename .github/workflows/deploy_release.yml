@@ -1,36 +1,64 @@
 name: deploy-release
+
 on:
   workflow_dispatch:
   release:
     types: [published]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
 jobs:
-  deploy-pyodide-py-pypi:
-    runs-on: ubuntu-latest
-    environment: PyPi
+  build-pyodide-py-pypi:
+    name: Build pyodide-py Python distributions
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: "3.11"
+          python-version: "3.x"
 
       - name: Install dependencies
-        run: python -m pip install build twine
+        run: python -m pip install build
 
-      - name: Build wheel
+      - name: Build sdist and wheel
         run: |
           cd src/py/
           python -m build .
 
-      - name: Check wheel
-        run: |
-          twine check src/py/dist/*
+      - name: Upload the distribution packages
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pyodide-py-distributions
+          path: src/py/dist/
+          if-no-files-found: error
+
+  publish-pyodide-py-pypi:
+    name: Publish pyodide-py to PyPI
+    needs: build-pyodide-py-pypi
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'release' && github.event.action == 'published'
+    environment:
+      name: PyPi
+      url: https://pypi.org/p/pyodide-py
+      deployment: false
+    permissions:
+      id-token: write # for OIDC trusted publishing
+
+    steps:
+      - name: Download pyodide-py Python distributions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: pyodide-py-distributions
+          path: dist/
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN_PYODIDE_PY }}
-          packages_dir: src/py/dist/
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3

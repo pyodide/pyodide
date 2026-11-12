@@ -17,25 +17,361 @@ myst:
 
 ## Unreleased
 
-- {{ Enhancement }} A JavaScript object is now treated as an array-like object
-  if it has a `length` property and is iterable. Every JsProxy of an array-like
-  object now implements subscripting. {pr}`5991`
+- {{ Enhancement }} Pyodide now supports `Float16Array`. It will translate half
+  float Python buffers into `Float16Array` and vice versa. Converting a half
+  float buffer requires a JavaScript runtime with `Float16Array` support.
+  {pr}`6005`
+
+- {{ API }} `pyodide.registerComlink()` is deprecated and has no effect. It
+  never worked as intended: Comlink proxies were always detected like ordinary
+  JavaScript objects.
+  {pr}`6541`
+
+- {{ Fix }} Fixed a bug that `WebLoop.create_task()` raised `AttributeError` when a task factory was set.
+  It now passes its arguments on to the task factory like the default asyncio event loop does.
+  {pr}`6525`
+
+- {{ Fix }} Fixed a bug where, with `pyodide.setDebug(true)`, some errors were
+  replaced by an unhelpful `SystemError: ... returned NULL without setting an
+  exception`, for example when calling `run_sync()` where stack switching is
+  not possible. {issue}`6478`
+
+- {{ Fix }} Fixed a bug that a Python `int` equal to `Number.MAX_SAFE_INTEGER` or `-Number.MAX_SAFE_INTEGER` was converted to a JavaScript `BigInt` instead of a `Number`.
+
+- {{ Fix }} Fixed a bug that `instanceof pyodide.ffi.PyMutableSequence` was true for every Python sequence, including `tuple`.
+
+- {{ Fix }} Fixed a bug that `NodeList` and `HTMLCollection` was not converted to Python list when passed to `to_py()`, contrary to what was specified in the documentation.
+
+- {{ Fix }} Fixed a bug that converting a multidimensional PIL-style buffer to JavaScript with `toJs()` was failing.
+
+- {{ Fix }} `WebLoop.call_later()` and `WebLoop.call_at()` no longer raise
+  `ValueError("Can't schedule in the past")` for a delay in the past: as in
+  CPython, the callback runs as soon as possible. A short `asyncio.wait_for()`
+  or `asyncio.timeout()` timeout could raise it.
+
+- {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
+  that caps how far the WebAssembly heap of that instance may grow. Once the
+  total heap reaches the limit, further allocations fail with a `MemoryError`.
+  By default there is no limit beyond the build-time maximum.
+  {issue}`6482`
+
+- {{ Fix }} The Windows `python` CLI now handles paths across multiple drive
+  letters by mounting referenced drives at distinct virtual roots such as `/c`
+  and `/d`.
+
+- {{ Fix }} Fixed a segfault error in the garbage collector due to stack
+  switching. The garbage collector would walk `tstate.current_frame` to find
+  objects it could mark as definitely alive. However, `tstate.current_frame`
+  includes some stack memory which can be evicted when the task is suspended. To
+  fix, we null out `tstate.current_frame` while the task is suspended and
+  restore it when we resume.
+  {pr}`6466`
+
+- {{ Fix }} Fixed a fatal error when using pybind11 extensions that acquire the
+  GIL. PyBind11 caches a thread state in a TLS variable, which since we only
+  have one thread is a global. It then assumes it can restore this tstate.
+  However, {pr}`6421` gave each stack switching task a thread state of its own,
+  violating this assumption. There is now a single thread state again, just like
+  the way greenlet handles stack switching.
+
+- {{ Breaking }} Removed support for JSPI with Node 20. This support used an
+  early version of the JSPI proposal. Node 20 is end of life since March 2026.
+  {pr}`6465`
+
+- {{ Performance }} The internal "no value" sentinel used during Python to
+  JavaScript conversion is now a wasm-gc object, like the error sentinel. This
+  means checking for it no longer requires calling out to JavaScript.
+  {pr}`6519`
+
+## Version 314.0.7
+
+_September 14, 2026_
+
+- {{ Feature }} Added a `dedent` option to {js:func}`pyodide.runPython` and
+  {js:func}`pyodide.runPythonAsync` (and to the underlying
+  {py:func}`pyodide.code.eval_code`, {py:func}`pyodide.code.eval_code_async`
+  and {py:class}`pyodide.code.CodeRunner`) to control whether the source is
+  dedented before being run. Defaults to `True`, which preserves the existing
+  behavior. {pr}`6448`
+
+## Version 314.0.6
+
+_August 25, 2026_
+
+- {{ Fix }} Fixed a regression in the interaction between signal handling and
+  stack switching caused by {pr}`6421`.
+  {pr}`6435`
+
+- {{ Fix }} `sys.settrace()` and `sys.setprofile()` callbacks are now correctly
+  handled when stack switching.
+  {pr}`6435`
+
+- {{ Fix }} {py:func}`asyncio.get_running_loop` no longer reports a loop that is
+  not actually running from inside a function called with stack switching
+  enabled. {pr}`6435`
+
+- {{ Fix }} Fixed `loadPackage()` reporting `No known package with name` when it
+  is given a requirement specifier such as `numpy>=1.0`. It now points at
+  `micropip.install()`, which does accept them. See {issue}`5135`. {pr}`6432`
+
+## Version 314.0.5
+
+_August 15, 2026_
+
+- {{ Fix }} Fixed several bugs in how the Python thread state is managed when
+  stack switching, which made `contextvars` and `threading.local()` behave
+  incorrectly around `pyodide.ffi.run_sync()`:
+
+  - Top level code no longer loses its `contextvars` context,
+    `threading.local()` values and thread dict when suspended stacks resume in a
+    different order than they suspended in.
+  - `contextvars` set inside a call that suspends are no longer visible to a
+    later unrelated stack switch, and no longer keep the objects they reference
+    alive forever.
+  - `threading.local()` is now consistently shared with calls that stack
+    switch.
+  - `sys.set_asyncgen_hooks()` now applies inside a call that stack switches, so
+    async generators created there are handed to the event loop that has to shut
+    them down.
+  - `PyThreadState_Clear()` is now called before `PyThreadState_Delete()`, as
+    the C API requires.
+  - A Python entry point invoked with stack switching enabled now runs
+    with a copy of the `contextvars` context so `ContextVar.set()` calls it makes
+    are never visible to the caller afterwards.
+  {pr}`6421`
+
+## Version 314.0.4
+
+_August 4, 2026_
+
+- {{ Fix }} Fixed `loop.create_connection()` not handling synthetic IP addresses
+  returned by Emscripten's `getaddrinfo()`. {pr}`6397`
+
+## Version 314.0.3
+
+_July 24, 2026_
+
+- {{ Enhancement }} Reduced the standard library size by excluding the
+  `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
+  to use the `_zoneinfo` C extension. {pr}`6331`
+
+- {{ Fix }} Fixed startTls() not releasing the stream lock when upgrading a
+  socket to TLS, which could cause a crash in some JS runtimes. {pr}`6344`
+
+- {{ Enhancement }} Release archives for cross build envs are now
+  also published as `.tar.gz` alongside the existing `.tar.bz2` archives. New
+  releases will use `.tar.gz` as the primary format in the cross-build
+  environment metadata. {pr}`6346`
+
+## Version 314.0.2
+
+_June 30, 2026_
+
+- {{ Fix }} Fixed a reference-counting bug when copying FFI converters that
+  could free a converter's pre/post-convert callback while still in use.
+  {pr}`6294`
+
+- {{ Enhancement }} Package changes in the lockfile:
+  - healpy is added back to the lockfile, which was removed in 314.0.0 release.
+  - scipy is updated from 1.17.1 to 1.18.0
+  - Following packages are removed from the lockfile as these packages now have PyEmscripten wheels in PyPI.
+    - blosc2
+    - fastcan
+    - gsw
+    - RobotRaconteur
+
+## Version 314.0.1
+
+_June 26, 2026_
+
+- {{ Fix }} `setTimeout()`'s 32-bit signed integer limit was causing a
+  `TimeoutOverflowWarning` for delays past ~24.8 days in
+  `WebLoop.call_later()`. Finite delays past that limit are now clamped to
+  it, and an infinite delay (`asyncio.sleep(math.inf)`) now stays pending
+  until cancelled. {pr}`6306`, {pr}`6310`
+
+- {{ Fix }} `PyodideFuture.then()` and `finally_()` no longer hang when the
+  source future is cancelled; the cancellation now propagates to the chained
+  future. {pr}`6290`
+
+- {{ Fix }} Deserialized JavaScript errors now keep their original type
+  (`TypeError`, `RangeError`, etc.) instead of always becoming a plain `Error`.
+  {pr}`6291`
+
+- {{ Fix }} `SSLSocket.read()` no longer raises `TypeError` when called with a
+  buffer argument. {pr}`6295`
+
+- {{ Fix }} Fixed memory leaks of internal `JsFuncSignature` and `Buffer`
+  objects, whose deallocators never freed the object itself. {pr}`6293`
+
+- {{ Fix }} `update()` on a JavaScript `Map` proxy now applies keyword
+  arguments instead of silently dropping them. {pr}`6292`
+
+- {{ Fix }} Fixed Node.js socket stream lock release order. {pr}`6312`
+
+- {{ Performance }} Sped up PyProxy creation. {pr}`6280`
+
+- {{ Performance }} Sped up conversion of small integers from Python to JavaScript. {pr}`6279`
+
+- {{ Performance }} Sped up conversion of strings from JavaScript to Python. {pr}`6281`
+
+- {{ Performance }} Sped up conversion of ASCII strings from Python to JavaScript using TextDecoder. {pr}`6283`
+
+- {{ Performance }} Sped up JsProxy operations by caching type flags. {pr}`6282`
+
+## Version 314.0.0
+
+_June 09, 2026_
+
+### General
+
+- {{ Update }} Upgraded to Python 3.14.2. {pr}`6161`
+
+- {{ ABI }} Upgraded Emscripten to 5.0.3 {pr}`6161`
+
+- {{ Breaking }} We do not unvendor stdlibs anymore. `sqlite3` and `lzma` are now bundled into Pyodide by default. The `pydecimal` and `test` packages have been removed from the distribution.
+  `pydoc_data` package is still in the distribution but needs to be explicitly loaded with
+  `loadPackage("pydoc_data")` to use. The `fullstdlib` option in loadPyodide is deprecated and a no-op.
+  {pr}`6151`
+
+- {{ Breaking }} The `ssl` module is now a stub implementation bundled with
+  Pyodide instead of being dynamically loaded with OpenSSL. This means the `ssl`
+  module is available immediately without loading additional packages, but
+  OpenSSL-dependent features (actual SSL/TLS connections, certificate validation,
+  etc.) are not available. Code that only imports `ssl` for constants, types, or
+  `SSLContext` configuration will continue to work. Code that attempts actual
+  SSL operations will raise `NotImplementedError`. Note that socket operations
+  using `ssl` never worked in Pyodide even before this change.
+  This change saves us more than 3MB (uncompressed) of space when using `ssl` module.
+  {pr}`6044`
+
+- {{ Breaking }} We do not provide hash functions in hashlib that are provided by OpenSSL.
+  Previously, this was available by running `pyodide.loadPackage('hashlib')` before importing
+  hashlib. Now, we do not provide hash functions coming from OpenSSL.
+  {pr}`6044`
+
+- {{ Breaking }} `pyodide.asm.js` has been renamed to `pyodide.asm.mjs` to properly indicate it is an ES module.
+  This change affects:
+  - Classic (non-module) workers: No longer supported
+  - Service workers: Instead of statically importing `pyodide.asm.js` they must now statically import `createPyodideModule` from `pyodide.asm.mjs`and pass the result as an argument to `loadPyodide` (see {ref}`using_from_service_worker`)
+  - Bundlers: Update configuration to reference the new filename
+  {pr}`6111`
+
+- {{ Feature }} The `compression.zstd` module (new in CPython 3.14) is now bundled in
+  Pyodide, providing native zstd compression and decompression support via `_zstd`.
+  {pr}`6240`
+
+- {{ Fix }} Stack switching used to sometimes leak stack memory, this is now
+  fixed. As a side effect, `callPromising()` and `runPythonAsync()` now always
+  yields to the event loop once before Python begins executing, so the ordering
+  of such calls may change.
+  {pr}`6260`
+
+### Python API
 
 - {{ Enhancement }} `PyProxy` now has a `[Symbol.dispose]` method.
   {pr}`6003`
 
-- {{ Enhancement }} A `JsProxy` of an object with a `[Symbol.dispose]` method is
-  now a context manager.
-  {pr}`6007`
-
-- {{ Enhancement }} `PyBufferView` (the return value of ) now has a
-  `[Symbol.dispose]` method.
+- {{ Enhancement }} `PyBufferView` (the return value of `PyProxy.getBuffer()`)
+  now has a `[Symbol.dispose]` method.
   {pr}`6003`
 
-- {{ Enhancement }} Pyodide now supports `Float16Array`. It will translate half
-  float Python buffers into `Float16Array` and vice versa. {pr}`6005`
+- {{ Enhancement }} If `isatty` is set to true on `stdout` or `stderr` it is now
+  possible to set the window size by providing a stdout/stderr handler which
+  implements the `getTerminalSize()` method. In particular, the default `stdout`
+  and `stderr` in Node now define this handler. These terminal sizes are
+  reported by `os.get_terminal_size()` and `shutil.get_terminal_size()`.
+  {pr}`6157`
+
+- {{ Enhancement }} Added experimental socket support in Node.js environment.
+  {pr}`6191` {pr}`6108` {pr}`6145` {pr}`6166` {pr}`6174`
+
+### JavaScript API
+
+- {{ Enhancement }} A JavaScript object is now treated as an array-like object
+  if it has a `length` property and is iterable. Every JsProxy of an array-like
+  object now implements subscripting.
+  {pr}`5991`
+
+- {{ Enhancement }} It is now possible to slice-subscript a JsProxy of an
+  array-like object.
+  {pr}`6019`
+
+- {{ Enhancement }} A `JsProxy` of an object with a `[Symbol.dispose]` method is
+  now a context manager. A `JsProxy` of an object with a `[Symbol.asyncDispose]`
+  method is now an async context manager.
+  {pr}`6007` {pr}`6014`
+
+- {{ Enhancement }} Added `pyodide.ffi.JsBigInt` which is a subtype of `int`.
+  Now bigint will be translated to Python as a `JsBigInt` and `JsBigInt` will be
+  translated to bigint. In particular, this makes bigint round trip. Now Python
+  integers greater than 2**53 will round trip to a `JsBigInt`. Since `JsBigInt`
+  supports all operations supported by `int`, this change should cause very
+  limited backwards incompatibility.
+  {pr}`6022`
+
+- {{ Fix }} Fixed invalid refcounting when multiple JS objects that share a reference
+  are passed to Python.
+  {pr}`6245`
+
+## Version 0.29.5
+
+_September 15, 2026_
+
+{{Fix}} Fix compatibility of python cli with Node 26.
+
+## Version 0.29.4
+
+_May 7, 2026_
+
+- {{ Enhancement }} Made Pyodide compatible with wheels tagged `pyemscripten`.
+  {pr}`6180`, {pr}`6203`
+
+- {{ Fix }} Fixed a bug where Python strings that contained codepoints above
+  0x00FF would be corrupted when read from JavaScript when they were located at
+  a WebAssembly memory address above 2GB. {pr}`6217`
+
+## Version 0.29.3
+
+_January 28, 2026_
+
+- {{ Enhancement }} Improved support for Windows platform in the `python` CLI entrypoint.
+  {pr}`6087`
+
+## Version 0.29.2
+
+_January 21, 2026_
+
+- {{ Enhancement }} Improved support for Windows platform in the `python` CLI entrypoint.
+  {pr}`6059` {pr}`6058`
+
+- {{ Fix }} Added missing `timeout=None` parameter to
+  `pyodide.webloop.WebLoop.shutdown_default_executor()`.
+  {pr}`6050`
+
+- {{ Enhancement }} New packages added:
+  - Bottleneck (1.6.0)
+  - Cartopy (0.25.0) (Disabled in 0.28, re-enabled)
+  - geopandas (1.1.1) (Disabled in 0.28, re-enabled)
+  - google-crc32c (1.8.0)
+  - healpy (1.19.0)
+  - ml_dtypes (0.5.4)
+  - pyarrow (22.0.0) (Disabled in 0.28, re-enabled)
+  - pycdfpp (0.8.5)
+  - pyproj (3.7.2) (Disabled in 0.28, re-enabled)
+  - pyrodigal (3.7.0)
+  - typing-inspection (0.4.2)
+
+## Version 0.29.1
+
+_January 7, 2026_
+
+- {{ Enhancement }} Improved support for Windows/MacOS platform in the `python` CLI entrypoint.
+  {pr}`6018` {pr}`6012` {pr}`6026` {pr}`6034` {pr}`6025`
 
 ## Version 0.29.0
+
+_October 20, 2025_
 
 - {{ Feature }} Added `pyxhr`, a synchronous HTTP client using XMLHttpRequest
   that provides a requests-like API for making synchronous HTTP requests in
@@ -271,6 +607,12 @@ _July 4, 2025_
   - pygame-ce
   - pyproj
   - zarr
+
+## Version 0.27.8
+
+_September 15, 2026_
+
+{{Fix}} Fix compatibility of python cli with Node 26.
 
 ## Version 0.27.7
 

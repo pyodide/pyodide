@@ -42,7 +42,7 @@ def _relaxed_call_sig(func: Callable[..., Any]) -> Signature | None:
             idx = None
             break
     else:
-        idx += 1
+        idx += 1  # type: ignore[operator]
     if idx is not None:
         new_params.insert(idx, Parameter("__var_positional", Parameter.VAR_POSITIONAL))
 

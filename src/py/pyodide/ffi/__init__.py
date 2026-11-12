@@ -1,4 +1,4 @@
-# flake8: noqa
+# flake8: noqa  # noqa: PGH004
 import sys
 
 import _pyodide._core_docs
@@ -65,4 +65,5 @@ __all__ = [
     "unregister_js_module",
     "JsNull",
     "jsnull",
+    "JsBigInt",
 ]

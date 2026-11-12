@@ -17,7 +17,7 @@ panels_add_bootstrap_css = False
 
 project = "Pyodide"
 author = "Pyodide contributors"
-copyright = "2019-2024, Pyodide contributors and Mozilla"
+copyright = "2019-2026, Pyodide contributors and Mozilla"
 
 suppress_warnings = ["config.cache"]
 nitpicky = True
@@ -34,6 +34,10 @@ def ignore_typevars():
         for typevar in PY_TYPEVARS_TO_IGNORE
     )
     nitpick_ignore.extend(("js:func", typevar) for typevar in JS_TYPEVARS_TO_IGNORE)
+
+    # sphinx_autodoc_typehints renders X | Y union syntax as typing.Union internally,
+    # but intersphinx cannot resolve typing.Union as a py:data reference.
+    nitpick_ignore.append(("py:data", "typing.Union"))
 
 
 ignore_typevars()
@@ -75,11 +79,18 @@ versionwarning_message = (
     "versioned (`dev`) URLs from the CDN for deployed applications!"
 )
 
+domain_notice_message = (
+    'This website, <strong><a href="https://pyodide.org">https://pyodide.org</a>'
+    "</strong>, is the sole official website of the Pyodide project. Any other "
+    "website purporting to represent Pyodide is not affiliated with, endorsed by, "
+    "or authorized by the Pyodide project or its maintainers in any capacity."
+)
+
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3.13", None),
+    "python": ("https://docs.python.org/3.14", None),
     "micropip": ("https://micropip.pyodide.org/en/stable/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
 }
@@ -118,13 +129,17 @@ html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
 # a list of builtin themes.
 #
 html_theme = "sphinx_book_theme"
-html_logo = "_static/img/pyodide-logo.png"
 
 # theme-specific options
 html_theme_options: dict[str, Any] = {
+    "logo": {
+        "image_light": "_static/img/pyodide-logo-light.svg",
+        "image_dark": "_static/img/pyodide-logo-dark.svg",
+    },
     "announcement": "",
     "repository_url": "https://github.com/pyodide/pyodide",
     "use_repository_button": True,
+    "extra_footer": f"<p>{domain_notice_message}</p>",
 }
 
 # paths that contain custom static files (such as style sheets)
@@ -389,7 +404,7 @@ def setup(app):
     app.add_config_value("global_replacements", {}, True)
     app.add_config_value("CDN_URL", "", True)
     files = []
-    for dir in ["core", "js"]:
+    for dir in ["core", "js", "js/fs"]:
         files += [
             str(x)
             for x in (Path("../src") / dir).glob("*.ts")

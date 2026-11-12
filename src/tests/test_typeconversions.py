@@ -142,6 +142,117 @@ def test_large_string_conversion(selenium):
     )("ab" * 20_000)
 
 
+@run_in_pyodide
+def test_js2python_string_codepoints(selenium):
+    """JS string -> Python str conversion (js2python_string) must handle all
+    three Python internal representations (UCS1/UCS2/UCS4) and decode UTF-16
+    surrogate pairs into a single astral code point, while passing lone
+    surrogates through as their bare code-unit value.
+    """
+    from pyodide.code import run_js
+
+    # A JS string returned to Python is converted by js2python_string.
+    js_string = run_js("(s) => s")
+
+    # UCS1 (<= U+00FF), UCS2 (<= U+FFFF), UCS4 (astral / emoji).
+    assert js_string("pyodidé") == "pyodidé"
+    assert js_string("碘化物") == "碘化物"
+    assert js_string("🐍") == "🐍"
+    assert js_string("a😀b漢c") == "a😀b漢c"
+
+    # A surrogate pair built from its two UTF-16 code units must decode to the
+    # single astral code point, not two separate characters.
+    pair = run_js("() => String.fromCharCode(0xD83D, 0xDE00)")()
+    assert pair == "😀"
+    assert len(pair) == 1
+    assert ord(pair) == 0x1F600
+
+    # Lone surrogates pass through as their bare code-unit value.
+    lone_high = run_js("() => String.fromCharCode(0xD83D)")()
+    assert len(lone_high) == 1
+    assert ord(lone_high) == 0xD83D
+    lone_low = run_js("() => String.fromCharCode(0xDE00)")()
+    assert len(lone_low) == 1
+    assert ord(lone_low) == 0xDE00
+
+    # A high surrogate not followed by a low surrogate stays lone, and the
+    # following character is preserved.
+    mixed = run_js("() => String.fromCharCode(0xD83D, 0x0041)")()
+    assert len(mixed) == 2
+    assert ord(mixed[0]) == 0xD83D
+    assert mixed[1] == "A"
+
+
+@run_in_pyodide
+def test_string_conversion_above_2gb(selenium):
+    """Regression test for a Python str -> JS string conversion bug that
+    fired only when the str's data buffer was allocated above the 2 GB WASM
+    heap boundary.
+
+    The DEREF_U16/U32/etc macros in src/core/jsmemops.h must use unsigned
+    right shift (>>>) to convert byte address -> typed-array element index;
+    with signed >>, an address >= 0x80000000 (allowed by MAXIMUM_MEMORY=4GB)
+    arrives in JS as a negative Number, and the shift sign-extends to an
+    out-of-bounds index. The result is a JS string with correct .length but
+    every charCodeAt() is 0.
+
+    To trigger we (1) grow the heap past 2 GB and (2) fragment with small
+    varied allocations until a fresh str data buffer lands above the
+    boundary. UCS2 is forced by including a codepoint > U+00FF, which routes
+    the conversion through _python2js_ucs2 / DEREF_U16.
+    """
+    import gc
+
+    from pyodide.code import run_js
+
+    inspect = run_js(
+        """
+        (s) => {
+            let nulCount = 0;
+            for (let i = 0; i < s.length; i++) {
+                if (s.charCodeAt(i) === 0) nulCount++;
+            }
+            return [s.length, nulCount];
+        }
+        """
+    )
+
+    def check(label):
+        s = chr(0x0100) + "x" * 1023
+        assert s.count("\x00") == 0, "source str corrupted on Python side"
+        length, nul_count = inspect(s).to_py()
+        assert length == len(s)
+        assert nul_count == 0, (
+            f"{label}: Python str -> JS string corruption "
+            f"({nul_count}/{length} chars are U+0000); str buffer likely "
+            "lives above 2 GB and DEREF_U16 sign-extended the byte address"
+        )
+
+    check("baseline (heap < 2 GB)")
+
+    # Grow the heap past 2 GB.
+    ballast = []
+    for _ in range(21):
+        try:
+            ballast.append(bytes(100 * 1024 * 1024))
+        except MemoryError:
+            break
+    check("after 2 GB ballast")
+
+    # Fragment with small varied allocations until something lands above the
+    # boundary. In practice the bug fires within ~15k iterations.
+    small = []
+    try:
+        for i in range(20000):
+            small.append(bytes(1000 + (i % 4000)))
+            if i and i % 1000 == 0:
+                check(f"during small allocs i={i}")
+    finally:
+        del small
+        del ballast
+        gc.collect()
+
+
 @given(
     n=st.one_of(
         st.integers(),
@@ -203,7 +314,7 @@ def test_number_conversions_3(selenium_module_scope, n):
     from pyodide.code import run_js
 
     jsty = run_js("(n) => typeof n")(n)
-    if -(2**53) + 1 < n < 2**53 - 1:
+    if -(2**53) < n < 2**53:
         assert jsty == "number"
     else:
         assert jsty == "bigint"
@@ -236,7 +347,7 @@ def test_nan_conversions(selenium):
 
 @given(n=st.integers())
 @std_hypothesis_settings
-def test_bigint_conversions(selenium_module_scope, n):
+def test_bigint_conversions1(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
         h = hex(n)
         selenium.run_js(f"self.h = {h!r};")
@@ -254,11 +365,15 @@ def test_bigint_conversions(selenium_module_scope, n):
             }
             pyodide.runPython(`
                 from js import n, h
+                from pyodide.ffi import JsBigInt
+
+                assert isinstance(n, JsBigInt)
                 n2 = int(h, 16)
                 assert n == n2
             `);
             let n2 = pyodide.globals.get("n2");
             let n3 = Number(n2);
+            let n4 = pyodide.globals.get("n");
             if(Number.isSafeInteger(n3)){
                 assert(() => typeof n2 === "number");
                 assert(() => n2 === Number(n));
@@ -266,6 +381,8 @@ def test_bigint_conversions(selenium_module_scope, n):
                 assert(() => typeof n2 === "bigint");
                 assert(() => n2 === n);
             }
+            assert(() => typeof n4 === "bigint");
+            assert(() => n4 === n);
             """
         )
 
@@ -277,7 +394,7 @@ def test_bigint_conversions(selenium_module_scope, n):
     )
 )
 @std_hypothesis_settings
-def test_big_int_conversions2(selenium_module_scope, n):
+def test_bigint_conversions2(selenium_module_scope, n):
     @run_in_pyodide
     def main(selenium, s):
         import json
@@ -309,12 +426,13 @@ def test_big_int_conversions2(selenium_module_scope, n):
     exp=st.integers(min_value=1, max_value=10),
 )
 @std_hypothesis_settings
-def test_big_int_conversions3(selenium_module_scope, n, exp):
+def test_bigint_conversions3(selenium_module_scope, n, exp):
     @run_in_pyodide
     def main(selenium, s):
         import json
 
         from pyodide.code import run_js
+        from pyodide.ffi import JsBigInt
 
         x_py = json.loads(s)
         x_js = run_js(
@@ -328,6 +446,13 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
             """
         )(x_py)
         assert x1 == x2
+
+        x_py_rt = run_js("(x) => x")(x_py)
+        assert x_py_rt == x_py
+        if x_py > 2**53:
+            assert isinstance(x_py_rt, JsBigInt)
+        else:
+            assert isinstance(x_py_rt, int)
 
         check = run_js(
             """
@@ -345,6 +470,28 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
 
         s = json.dumps(val)
         main(selenium, s)
+
+
+@pytest.mark.parametrize(
+    "n, js_type",
+    [
+        (2**31, "number"),
+        (-(2**31) - 1, "number"),
+        (2**53 - 1, "number"),
+        (-(2**53 - 1), "number"),
+        (2**53, "bigint"),
+        (-(2**53), "bigint"),
+    ],
+)
+@run_in_pyodide
+def test_python_int_to_js_safe_integer_bound(selenium, n, js_type):
+    # Python ints that fit in a safe integer (Number.isSafeInteger) are
+    # converted to a JS number, larger ones to a BigInt.
+    from pyodide.code import run_js
+
+    [result_type, result_str] = run_js("(x) => [typeof x, x.toString()]")(n)
+    assert result_type == js_type
+    assert result_str == str(n)
 
 
 @given(obj=any_equal_to_self_strategy.filter(no_hypothesis))
@@ -434,7 +581,7 @@ def test_hyp_tojs_no_crash(selenium, obj):
     max_examples=25,
 )
 @run_in_pyodide
-def test_hypothesis(selenium_standalone, obj):
+def test_hypothesis(selenium_standalone_refresh, obj):
     from pyodide.ffi import to_js
 
     to_js(obj)
@@ -1108,6 +1255,29 @@ def test_memoryview_conversion(selenium):
     )
 
 
+@pytest.mark.parametrize("shape", [[4], [3, 4], [2, 3, 4]])
+@run_in_pyodide
+def test_buffer_suboffsets_conversion(selenium, shape):
+    from _testbuffer import ND_PIL, ndarray
+    from math import prod
+
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    nd = ndarray(list(range(prod(shape))), shape=shape, format="i", flags=ND_PIL)
+    suboffsets = memoryview(nd).suboffsets
+    assert suboffsets and suboffsets[0] >= 0
+
+    to_list = run_js(
+        """
+        const toList = (x) =>
+          ArrayBuffer.isView(x) ? Array.from(x) : Array.from(x, toList);
+        toList
+        """
+    )
+    assert to_list(to_js(nd)).to_py() == memoryview(nd).tolist()
+
+
 def test_python2js_with_depth(selenium):
     selenium.run_js(
         """
@@ -1201,47 +1371,56 @@ def test_tojs5(selenium):
     )
 
 
+@run_in_pyodide
 def test_tojs6(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    a = [1, 2, 3, 4, 5]
+    b = [a, a, a, a, a]
+    respy = [b, b, b, b, b]
+
+    run_js(
         """
-        let respy = pyodide.runPython(`
-            a = [1, 2, 3, 4, 5]
-            b = [a, a, a, a, a]
-            [b, b, b, b, b]
-        `);
-        let total_refs = pyodide._module._hiwire_num_refs();
-        let res = respy.toJs();
-        let new_total_refs = pyodide._module._hiwire_num_refs();
-        respy.destroy();
-        assert(() => total_refs === new_total_refs);
-        assert(() => res[0] === res[1]);
-        assert(() => res[0][0] === res[1][1]);
-        assert(() => res[4][0] === res[1][4]);
+        (respy) => {
+            let total_refs = pyodide._module._hiwire_num_refs();
+            let res = respy.toJs();
+            let new_total_refs = pyodide._module._hiwire_num_refs();
+            assert(() => total_refs === new_total_refs);
+            assert(() => res[0] === res[1]);
+            assert(() => res[0][0] === res[1][1]);
+            assert(() => res[4][0] === res[1][4]);
+        }
         """
-    )
+    )(respy)
 
 
+@run_in_pyodide
 def test_tojs7(selenium):
-    selenium.run_js(
+    from typing import Any
+
+    from pyodide.code import run_js
+
+    # Create complex recursive structure with mixed types
+    a: list[Any] = [["b"]]
+    b: list[Any] = [1, 2, 3, a[0]]
+    a[0].append(b)
+    a.append(b)
+    respy = a
+
+    run_js(
         """
-        let respy = pyodide.runPython(`
-            a = [["b"]]
-            b = [1,2,3, a[0]]
-            a[0].append(b)
-            a.append(b)
-            a
-        `);
-        let total_refs = pyodide._module._hiwire_num_refs();
-        let res = respy.toJs();
-        let new_total_refs = pyodide._module._hiwire_num_refs();
-        respy.destroy();
-        assert(() => total_refs === new_total_refs);
-        assert(() => res[0][0] === "b");
-        assert(() => res[1][2] === 3);
-        assert(() => res[1][3] === res[0]);
-        assert(() => res[0][1] === res[1]);
+        (respy) => {
+            let total_refs = pyodide._module._hiwire_num_refs();
+            let res = respy.toJs();
+            let new_total_refs = pyodide._module._hiwire_num_refs();
+            assert(() => total_refs === new_total_refs);
+            assert(() => res[0][0] === "b");
+            assert(() => res[1][2] === 3);
+            assert(() => res[1][3] === res[0]);
+            assert(() => res[0][1] === res[1]);
+        }
         """
-    )
+    )(respy)
 
 
 @pytest.mark.skip_pyproxy_check
@@ -1405,6 +1584,32 @@ def test_to_py4(selenium, obj, msg):
 
     with pytest.raises((ConversionError, JsException), match=msg):
         a = run_js(f"pyodide.toPy(new {obj})")
+
+
+@pytest.mark.xfail_browsers(node="No document object")
+@run_in_pyodide
+def test_to_py_dom_collections(selenium):
+    from pyodide.code import run_js
+
+    run_js(
+        """
+        const div = document.createElement("div");
+        div.id = "to-py-dom-collections";
+        div.innerHTML = "<span></span><span></span><span></span>";
+        document.body.appendChild(div);
+        """
+    )
+    try:
+        node_list = run_js('document.querySelectorAll("#to-py-dom-collections > span")')
+        html_collection = run_js(
+            'document.getElementById("to-py-dom-collections").children'
+        )
+        for collection in [node_list, html_collection]:
+            result = collection.to_py()
+            assert isinstance(result, list)
+            assert [el.tagName for el in result] == ["SPAN", "SPAN", "SPAN"]
+    finally:
+        run_js('document.getElementById("to-py-dom-collections").remove()')
 
 
 @run_in_pyodide
@@ -2026,6 +2231,45 @@ def test_bind_pre_convert(selenium):
 
 
 @run_in_pyodide
+def test_converter_copy_refcount(selenium):
+    # Regression test: Converter.copy() used to share pre_convert/post_convert/extra
+    # without incrementing their refcounts, so deallocating a copy released a
+    # reference still owned by the original (double free / use-after-free).
+    import sys
+
+    from _pyodide_core import (
+        create_promise_converter,
+        js2py_deep,
+        py2js_deep,
+    )
+
+    # pre_convert (Py2JsConverter) and post_convert (Js2PyConverter) are settable
+    # members. Work on copies of the shared singletons so we never mutate them.
+    for base, attr in [(py2js_deep, "pre_convert"), (js2py_deep, "post_convert")]:
+        conv = base.copy()
+        sentinel = ["sentinel"]
+        setattr(conv, attr, sentinel)
+        rc = sys.getrefcount(sentinel)
+        copy = conv.copy()
+        assert sys.getrefcount(sentinel) == rc + 1  # copy() took its own reference
+        assert getattr(copy, attr) is sentinel
+        del copy
+        # Deallocating the copy must release only its own reference.
+        assert sys.getrefcount(sentinel) == rc
+        assert getattr(conv, attr) is sentinel
+
+    # `extra` has no public member; create_promise_converter stores the result
+    # converter there, and copy() must propagate and incref it.
+    result_conv = js2py_deep.copy()
+    promise_conv = create_promise_converter(result_conv)
+    rc = sys.getrefcount(result_conv)
+    copy = promise_conv.copy()
+    assert sys.getrefcount(result_conv) == rc + 1
+    del copy
+    assert sys.getrefcount(result_conv) == rc
+
+
+@run_in_pyodide
 def test_bind_construct(selenium):
     from typing import Annotated, Any, NotRequired, TypedDict
 
@@ -2203,3 +2447,246 @@ def test_js_callable_not_function(selenium):
         """
     )
     assert list(o.nonFuncCallable(1, 2, 3)) == [o, 1, 2, 3]
+
+
+@run_in_pyodide
+def test_js_bigint(selenium):
+    from pytest import raises
+
+    from pyodide.ffi import JsBigInt
+
+    m1 = JsBigInt(-1)
+    p1 = JsBigInt(1)
+    p13 = JsBigInt(13)
+    p21 = JsBigInt(21)
+    p31 = JsBigInt(31)
+
+    # Unary ops
+    # abs
+    assert isinstance(abs(m1), JsBigInt)
+    assert isinstance(abs(p1), JsBigInt)
+    assert m1 == -1
+    assert abs(m1) == 1
+    assert abs(p1) == 1
+
+    # plus
+    assert isinstance(+m1, JsBigInt)
+    assert +m1 == m1
+    assert +m1 == -1
+
+    # minus
+    assert isinstance(-m1, JsBigInt)
+    assert -m1 == p1
+    assert -m1 == 1
+
+    # invert
+    assert isinstance(~p21, JsBigInt)
+    assert ~p21 == ~21
+
+    # Binary ops
+    # comparison
+    assert m1 < p1
+    assert -1 < p1
+    assert 0.8 < p1
+    assert p1 < 2
+    assert p1 < 2.1
+
+    assert m1 <= p1
+    assert -1 <= p1
+    assert 0.8 <= p1
+    assert p1 <= 2
+    assert p1 <= 2.1
+    assert not (m1 > p1)
+    assert p1 == 1.0
+
+    # plus
+    assert isinstance(m1 + p1, JsBigInt)
+    assert isinstance((-1) + p1, int)
+    assert isinstance(m1 + 1, int)
+    assert m1 + p1 == 0
+    assert (-1) + p1 == 0
+    assert m1 + 1 == 0
+
+    assert isinstance(m1 + 0.3, float)
+    assert isinstance(0.3 + m1, float)
+    assert m1 + 0.3 == (-1) + 0.3
+    assert 0.3 + m1 == 0.3 + (-1)
+
+    # minus
+    assert isinstance(m1 - p1, JsBigInt)
+    assert isinstance((-1) - p1, int)
+    assert isinstance(m1 - 1, int)
+    assert m1 - p1 == -2
+    assert (-1) - p1 == -2
+    assert m1 - 1 == -2
+
+    assert isinstance(m1 - 0.3, float)
+    assert isinstance(0.3 - m1, float)
+    assert m1 - 0.3 == (-1) - 0.3
+    assert 0.3 - m1 == 0.3 - (-1)
+
+    # bitwise and
+    assert isinstance(p13 & p21, JsBigInt)
+    assert isinstance(p13 & 21, int)
+    assert isinstance(13 & p21, int)
+    assert p13 & p21 == 5
+    assert p13 & 21 == 5
+    assert 13 & p21 == 5
+
+    with raises(TypeError, match="'JsBigInt' and 'float'"):
+        p13 & 0.2  # type: ignore[operator]
+
+    with raises(TypeError, match="'float' and 'JsBigInt'"):
+        0.2 & p13  # type: ignore[operator]
+
+    # bitwise or
+    assert isinstance(p21 | p13, JsBigInt)
+    assert isinstance(p21 | 13, int)
+    assert isinstance(21 | p13, int)
+    assert p21 | p13 == 29
+    assert p21 | 13 == 29
+    assert 21 | p13 == 29
+
+    with raises(TypeError, match="'JsBigInt' and 'float'"):
+        p13 | 0.2  # type: ignore[operator]
+
+    with raises(TypeError, match="'float' and 'JsBigInt'"):
+        0.2 | p13  # type: ignore[operator]
+
+    # bitwise xor
+    assert isinstance(p21 ^ p13, JsBigInt)
+    assert isinstance(p21 ^ 13, int)
+    assert isinstance(21 ^ p13, int)
+    assert p21 ^ p13 == 24
+    assert p21 ^ 13 == 24
+    assert 21 ^ p13 == 24
+
+    with raises(TypeError, match="'JsBigInt' and 'float'"):
+        p13 ^ 0.2  # type: ignore[operator]
+
+    with raises(TypeError, match="'float' and 'JsBigInt'"):
+        0.2 ^ p13  # type: ignore[operator]
+
+    # left shift
+    assert isinstance(p21 << p13, JsBigInt)
+    assert isinstance(p21 << 13, JsBigInt)
+    assert isinstance(21 << p13, int)
+    assert p21 << p13 == 21 << 13
+    assert p21 << 13 == 21 << 13
+    assert 21 << p13 == 21 << 13
+
+    with raises(TypeError, match="'JsBigInt' and 'float'"):
+        p13 << 0.2  # type: ignore[operator]
+
+    with raises(TypeError, match="'float' and 'JsBigInt'"):
+        0.2 << p13  # type: ignore[operator]
+
+    # right shift
+    assert isinstance(p21 >> p13, JsBigInt)
+    assert isinstance(p21 >> 13, JsBigInt)
+    assert isinstance(21 >> p13, int)
+    assert p21 >> p13 == 21 >> 13
+    assert p21 >> 13 == 21 >> 13
+    assert 21 >> p13 == 21 >> 13
+
+    with raises(TypeError, match="'JsBigInt' and 'float'"):
+        p13 >> 0.2  # type: ignore[operator]
+
+    with raises(TypeError, match="'float' and 'JsBigInt'"):
+        0.2 >> p13  # type: ignore[operator]
+
+    # floor division
+    assert isinstance(p21 // p13, JsBigInt)
+    assert isinstance(21 // p13, int)
+    assert isinstance(p21 // 13, JsBigInt)
+    assert p21 // p13 == 1
+    assert 21 // p13 == 1
+    assert p21 // 13 == 1
+
+    # Surprisingly, 21 // 1.2 is a float even though floordiv always returns an
+    # int.
+    assert isinstance(p21 // 1.2, float)
+    assert p21 // 1.2 == 21 // 1.2
+
+    assert isinstance(29.7 // p13, float)
+    assert 29.7 // p13 == 29.7 // 13
+
+    # Division
+    assert isinstance(p21 / p13, float)
+    assert isinstance(p21 / 13, float)
+    assert isinstance(21 / p13, float)
+    assert p21 / p13 == 21 / 13
+    assert p21 / 13 == 21 / 13
+    assert 21 / p13 == 21 / 13
+
+    assert isinstance(p21 / 1.2, float)
+    assert p21 / 1.2 == 21 / 1.2
+
+    assert isinstance(29.7 / p13, float)
+    assert 29.7 / p13 == 29.7 / 13
+
+    # Modulus
+    assert isinstance(p21 % p13, JsBigInt)
+    assert isinstance(21 % p13, int)
+    assert isinstance(p21 % 13, JsBigInt)
+    assert p21 % p13 == 8
+    assert 21 % p13 == 8
+    assert p21 % 13 == 8
+
+    assert isinstance(p21 % 0.57, float)
+    assert p21 % 0.57 == 21 % 0.57
+
+    assert isinstance(49.3 % p21, float)
+    assert 49.3 % p21 == 49.3 % 21
+
+    # Power
+    assert isinstance(p21**p13, JsBigInt)
+    assert isinstance(p21**13, JsBigInt)
+    assert isinstance(21**p13, int)
+    assert p21**p13 == 21**13
+    assert p21**13 == 21**13
+    assert 21**p13 == 21**13
+
+    assert isinstance(p21**m1, float)
+    assert isinstance(p21**-1, float)
+    assert isinstance(21**m1, float)
+    assert p21**m1 == 21**-1
+    assert p21**-1 == 21**-1
+    assert 21**m1 == 21**-1
+
+    assert isinstance(1.9**p21, float)
+    assert 1.9**p21 == 1.9**21
+    assert isinstance(p21**1.9, float)
+    assert p21**1.9 == 21**1.9
+
+    # Ternary power
+    assert isinstance(pow(p21, m1, p31), JsBigInt)
+    assert isinstance(pow(p21, m1, 31), JsBigInt)
+    assert isinstance(pow(p21, -1, p31), JsBigInt)
+    assert isinstance(pow(p21, -1, 31), JsBigInt)
+
+    assert isinstance(pow(21, m1, p31), int)
+    assert isinstance(pow(21, m1, 31), int)
+    assert isinstance(pow(21, -1, p31), int)
+
+    assert pow(p21, m1, p31) == pow(21, -1, 31)
+    assert pow(p21, m1, 31) == pow(21, -1, 31)
+    assert pow(p21, -1, p31) == pow(21, -1, 31)
+    assert pow(p21, -1, 31) == pow(21, -1, 31)
+    assert pow(21, m1, p31) == pow(21, -1, 31)
+    assert pow(21, m1, 31) == pow(21, -1, 31)
+    assert pow(21, -1, p31) == pow(21, -1, 31)
+
+    msg = r"pow\(\) 3rd argument not allowed unless all arguments are integers"
+    with raises(TypeError, match=msg):
+        pow(p21, 0.5, p31)  # type:ignore[misc]
+
+
+@run_in_pyodide
+def test_js_bigint_construct_typed_array(selenium):
+    from js import BigInt64Array
+    from pyodide.ffi import JsBigInt
+
+    # Without JsBigInt we can't construct a BigInt64Array
+    a = BigInt64Array.new([JsBigInt(x) for x in range(1, 10, 2)])
+    assert list(a) == list(range(1, 10, 2))

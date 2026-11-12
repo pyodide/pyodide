@@ -62,14 +62,15 @@ The file `error_handling.h` defines several macros to help make error handling a
 In a language with exception handling as a feature, error propagation requires no explicit code, it is only if you want to prevent an error from propagating that you use a `try`/`catch` block. On the other hand, in C all error propagation must be done explicitly.
 
 We define macros to help make error propagation look as simple and uniform as possible.
-They can only be used in a function with a `finally:` label which should handle resource cleanup for both the success branch and all the failing branches (see structure of functions section below). When compiled with `DEBUG_F`, these commands will write a message to `console.error` reporting the line, function, and file where the error occurred.
+They can only be used in a function that begins with a `FAIL_RETURN_VALUE(sentinel)` statement, which declares the error sentinel `fail_return` and a `success` flag. On failure the macros return `fail_return` directly; resource cleanup is handled by `_Defer` blocks that run on every return (see structure of functions section below). When compiled with `DEBUG_F`, these commands will write a message to `console.error` reporting the line, function, and file where the error occurred.
 
-- `FAIL()` -- unconditionally `goto finally;`.
-- `FAIL_IF_NULL(ptr)` -- `goto finally;` if `ptr == NULL`. This should be used with any function that returns a pointer and follows the standard Python calling convention.
-- `FAIL_IF_MINUS_ONE(num)` -- `goto finally;` if `num == -1`. This should be used with any function that returns a number and follows the standard Python calling convention.
-- `FAIL_IF_NONZERO(num)` -- `goto finally;` if `num != 0`. Can be used with functions that return any nonzero error code on failure.
-- `FAIL_IF_ERR_OCCURRED()` -- `goto finally;` if the Python error indicator is set (in other words if `PyErr_Occurred()`).
-- `FAIL_IF_ERR_MATCHES(python_err_type)` -- `goto finally;` if `PyErr_ExceptionMatches(python_err_type)`, for example `FAIL_IF_ERR_MATCHES(PyExc_AttributeError);`
+- `FAIL_RETURN_VALUE(sentinel)` -- declare `fail_return = sentinel` (e.g. `NULL`, `-1`, or `JS_ERROR`) and `bool success = true`. Must be the first statement of the function body, before any `DECLARE_PY_OBJECT` / `_Defer`.
+- `FAIL()` -- unconditionally set `success = false` and `return fail_return;`.
+- `FAIL_IF_NULL(ptr)` -- `FAIL()` if `ptr == NULL`. This should be used with any function that returns a pointer and follows the standard Python calling convention.
+- `FAIL_IF_MINUS_ONE(num)` -- `FAIL()` if `num == -1`. This should be used with any function that returns a number and follows the standard Python calling convention.
+- `FAIL_IF_NONZERO(num)` -- `FAIL()` if `num != 0`. Can be used with functions that return any nonzero error code on failure.
+- `FAIL_IF_ERR_OCCURRED()` -- `FAIL()` if the Python error indicator is set (in other words if `PyErr_Occurred()`).
+- `FAIL_IF_JS_ERROR(val)` -- `FAIL()` if the `JsVal` is a JavaScript error sentinel.
 
 ### JavaScript to CPython calling convention adaptors
 
@@ -174,23 +175,24 @@ JsImport_CreateModule(PyObject* self, PyObject* args)
   }
 ```
 
-2. Forward declaration of owned references. This starts by declaring a success flag `bool success = false`. This will be used in the finally block to decide whether the finally block was entered after a successful execution or after an error. Then declare every reference counted variable that we will create during execution of the function. Finally, declare the variable that we are planning to return.
+2. Forward declaration of owned references. This starts by declaring the error sentinel and `success` flag with `FAIL_RETURN_VALUE(NULL)` (use `-1` for functions returning an `int` error code). `FAIL()` returns this sentinel and sets `success = false`, which `ON_FAIL` cleanup blocks use to decide whether to clear the result. Then declare every reference counted variable that we will create during execution of the function, attaching a `_Defer` block to release it (`DECLARE_PY_OBJECT(x)` does this in one step). Finally, declare the variable that we are planning to return.
    Typically, this will be called `result`, but in this case the function is named `CreateModule` so we name the return variable `module`.
 
 ```C
-  bool success = false;
+  FAIL_RETURN_VALUE(NULL);
   // Note: these are all the objects that we will own. If a function returns
-  // a borrow, we XINCREF the result so that we can CLEAR it in the finally block.
+  // a borrow, we XINCREF the result so that the _Defer block can CLEAR it.
   // Reference counting is hard, so it's good to be as explicit and consistent
   // as possible!
-  PyObject* sys_modules = NULL;
-  PyObject* importlib_machinery = NULL;
-  PyObject* ModuleSpec = NULL;
-  PyObject* spec = NULL;
-  PyObject* __dir__ = NULL;
-  PyObject* module_dict = NULL;
+  DECLARE_PY_OBJECT(sys_modules);
+  DECLARE_PY_OBJECT(importlib_machinery);
+  DECLARE_PY_OBJECT(ModuleSpec);
+  DECLARE_PY_OBJECT(spec);
+  DECLARE_PY_OBJECT(__dir__);
+  DECLARE_PY_OBJECT(module_dict);
   // result
   PyObject* module = NULL;
+  ON_FAIL({ Py_CLEAR(module); });
 ```
 
 3. The body of the function. The vast majority of API calls can return error codes. You MUST check every fallible API for an error. Also, as you are writing the code, you should look up every Python API you use that returns a reference to determine whether it returns a borrowed reference or a new one. If it returns a borrowed reference, immediately `Py_XINCREF()` the result to convert it into an owned reference (before `FAIL_IF_NULL`, to be consistent with the case where you use custom error handling).

@@ -60,10 +60,6 @@ These Docker images are also available from the Github packages at
 3. Run `make` to build.
 
 ```{note}
-If `make` is failing with `Permission denied`, you can run `./run_docker` with root permissions: `./run_docker --root`
-```
-
-```{note}
 You can control the resources allocated to the build by setting the env
 vars `EMSDK_NUM_CORE`, `EMCC_CORES` and `PYODIDE_JOBS` (the default for each is
 4).
@@ -102,7 +98,7 @@ Make sure the prerequisites for
 build a custom, patched version of emsdk, so there is no need to build it
 yourself prior.
 
-You need Python 3.13.2 to run the build scripts. To make sure that the correct
+You need Python 3.14.2 to run the build scripts. To make sure that the correct
 Python is used during the build it is recommended to use a [virtual
 environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment)
 or a conda environment.

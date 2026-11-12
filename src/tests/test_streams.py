@@ -1,7 +1,9 @@
+import subprocess
+
 import pytest
 from pytest_pyodide import run_in_pyodide
 
-from conftest import strip_assertions_stderr
+from conftest import DIST_PATH, strip_assertions_stderr
 
 
 @pytest.mark.skip_refcount_check
@@ -30,7 +32,6 @@ def test_custom_stdin1(selenium_standalone_noload):
             return stdinStringsGen.next().value;
         }
         const pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals : self,
             stdin,
         });
@@ -61,7 +62,6 @@ def test_custom_stdout1(selenium_standalone_noload, runtime):
             stderrStrings.push(s);
         }
         const pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals : self,
             stdout,
             stderr,
@@ -624,3 +624,75 @@ def test_node_eagain(selenium):
             pyodide.setStdin();
             """
         )
+
+
+@run_in_pyodide
+def test_get_terminal_size(selenium):
+    import shutil
+
+    from pyodide.code import run_js
+
+    run_js(
+        """
+        pyodide.setStdout({
+            isatty: true,
+            write(a) {},
+            getTerminalSize() {
+                return {rows: 80, columns: 150};
+            }
+        });
+        """
+    )
+    try:
+        assert (
+            str(shutil.get_terminal_size()) == "os.terminal_size(columns=150, lines=80)"
+        )
+    finally:
+        run_js(
+            """
+            pyodide.setStdout();
+            """
+        )
+
+
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
+def test_get_terminal_size_node(selenium, tmp_path):
+    import os
+    import pty
+
+    target_path = DIST_PATH / "pyodide.mjs"
+    script = (
+        """
+        import { loadPyodide } from "%s";
+        import * as tty from "node:tty";
+
+        globalThis.process = Object.assign({}, process, {stdout: new tty.WriteStream(1)});
+        process.stdout.fd = 1;
+        process.stdout.columns = 180;
+        process.stdout.rows = 50;
+
+        const pyodide = await loadPyodide();
+        pyodide.runPython(`
+            import shutil
+            import sys
+
+            print(shutil.get_terminal_size(), file=sys.stderr)
+        `);
+        """
+        % target_path
+    )
+    script_path = tmp_path / "script.mjs"
+    script_path.write_text(script)
+    primary, secondary = pty.openpty()
+    try:
+        res = subprocess.run(
+            ["node", script_path],
+            text=True,
+            check=True,
+            stdout=secondary,
+            stderr=subprocess.PIPE,
+        )
+    finally:
+        os.close(secondary)
+        os.close(primary)
+    assert res.stderr.strip() == "os.terminal_size(columns=180, lines=50)"

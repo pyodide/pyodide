@@ -1,0 +1,51 @@
+From f8dbe8999c2a7470d4e9a12759ac21fe9726e64b Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Fri, 20 Feb 2026 17:02:46 +0100
+Subject: [PATCH 8/9] Export _Py_emscripten_signal_clock and
+ _Py_emscripten_signal_in_memory
+
+Needed by signal handling in Cloudflare's JS runtime. This way we can trip a
+signal by setting
+```
+_Py_emscripten_signal_in_memory = signum
+_Py_emscripten_signal_clock = 0
+```
+---
+ Python/emscripten_signal.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/Python/emscripten_signal.c b/Python/emscripten_signal.c
+index 561b5b73cd6..8d91e29c1a6 100644
+--- a/Python/emscripten_signal.c
++++ b/Python/emscripten_signal.c
+@@ -25,21 +25,23 @@ EM_JS(int, _Py_CheckEmscriptenSignals_Helper, (void), {
+ });
+ 
+ EMSCRIPTEN_KEEPALIVE int Py_EMSCRIPTEN_SIGNAL_HANDLING = 0;
++EMSCRIPTEN_KEEPALIVE int _Py_emscripten_signal_in_memory = 0;
+ 
+ void
+ _Py_CheckEmscriptenSignals(void)
+ {
+-    if (!Py_EMSCRIPTEN_SIGNAL_HANDLING) {
+-        return;
++    int signal = _Py_emscripten_signal_in_memory;
++    _Py_emscripten_signal_in_memory = 0;
++    if (Py_EMSCRIPTEN_SIGNAL_HANDLING && signal == 0) {
++        signal = _Py_CheckEmscriptenSignals_Helper();
+     }
+-    int signal = _Py_CheckEmscriptenSignals_Helper();
+     if (signal) {
+         PyErr_SetInterruptEx(signal);
+     }
+ }
+ 
+ #define PY_EMSCRIPTEN_SIGNAL_INTERVAL 50
+-int _Py_emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
++EMSCRIPTEN_KEEPALIVE int _Py_emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
+ 
+ void
+ _Py_CheckEmscriptenSignalsPeriodically(void)
+-- 
+2.43.0
+

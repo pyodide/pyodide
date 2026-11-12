@@ -99,21 +99,26 @@ def test_code_runner():
     assert CodeRunner("1+1").compile().run() == 2
     assert CodeRunner("1+1\n1+1").compile().run() == 2
     assert CodeRunner("x + 7").compile().run({"x": 3}) == 10
-    cr = CodeRunner("x + 7")
 
-    # Ast transform
+    # Use constants > 255 so they are stored in co_consts rather than loaded
+    # via LOAD_SMALL_INT (Python 3.14+ loads ints 0-255 directly via opcode).
+    cr = CodeRunner("x + 700")
+
+    # Ast transform: change "x + 700" to "x * 300 + 700"
     import ast
 
     l = cr.ast.body[0].value.left  # type: ignore[attr-defined]
     cr.ast.body[0].value.left = ast.BinOp(  # type: ignore[attr-defined]
-        left=l, op=ast.Mult(), right=ast.Constant(value=2)
+        left=l, op=ast.Mult(), right=ast.Constant(value=300)
     )
-    assert cr.compile().run({"x": 3}) == 13
+    assert cr.compile().run({"x": 3}) == 1600
 
-    # Code transform
+    # Code transform: change "x * 300 + 700" to "x * 400 + 500"
     assert cr.code
-    cr.code = cr.code.replace(co_consts=(0, 3, 5, None))
-    assert cr.run({"x": 4}) == 17
+    co_consts = cr.code.co_consts
+    new_consts = tuple({300: 400, 700: 500}.get(c, c) for c in co_consts)
+    cr.code = cr.code.replace(co_consts=new_consts)
+    assert cr.run({"x": 4}) == 2100
 
 
 def test_code_runner_mode():
@@ -195,6 +200,26 @@ def test_eval_code():
     assert eval_code("2**1\n\n", ns, quiet_trailing_semicolon=False) == 2
     assert eval_code("4//2;\n", ns, quiet_trailing_semicolon=False) == 2
     assert eval_code("2**1;\n\n", ns, quiet_trailing_semicolon=False) == 2
+
+
+def test_eval_code_dedent():
+    indented_source = """
+        print("hello world")
+    """
+
+    # default (dedent=True) strips the common leading whitespace so the
+    # indented block runs fine.
+    eval_code(indented_source, {})
+
+    # dedent=False compiles the source as-is, so an indented top-level
+    # statement raises IndentationError just like it would with a plain
+    # `python -c` invocation.
+    with pytest.raises(IndentationError):
+        eval_code(indented_source, {}, dedent=False)
+
+    # dedent=False still works for source that is already flush with
+    # column 0.
+    assert eval_code("1 + 1", {}, dedent=False) == 2
 
 
 def test_eval_code_locals():
@@ -349,8 +374,8 @@ def test_relaxed_wrap():
     assert f5(1, 2, 3, 4, b=7, c=9) == [1, (2, 3, 4), 7, {"c": 9}]
 
 
-def test_unpack_archive(selenium_standalone):
-    selenium = selenium_standalone
+def test_unpack_archive(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     js_error = selenium.run_js(
         """
         var error = "";
@@ -794,6 +819,48 @@ def test_run_python_locals(selenium):
     )
 
 
+def test_run_python_dedent(selenium):
+    selenium.run_js(
+        """
+        // default: indented top-level code is dedented before running.
+        let result = pyodide.runPython("    1 + 1\\n");
+        assert(() => result === 2);
+
+        // dedent: false leaves mis-indented top-level code as-is, so it
+        // raises IndentationError like a normal Python interpreter would.
+        let raised = false;
+        try {
+            pyodide.runPython("    1 + 1\\n", { dedent: false });
+        } catch (e) {
+            raised = true;
+            assert(() => e.message.includes("IndentationError"));
+        }
+        assert(() => raised);
+        """
+    )
+
+
+def test_run_python_async_dedent(selenium):
+    selenium.run_js(
+        """
+        // default: indented top-level code is dedented before running.
+        let result = await pyodide.runPythonAsync("    1 + 1\\n");
+        assert(() => result === 2);
+
+        // dedent: false leaves mis-indented top-level code as-is, so it
+        // raises IndentationError like a normal Python interpreter would.
+        let raised = false;
+        try {
+            await pyodide.runPythonAsync("    1 + 1\\n", { dedent: false });
+        } catch (e) {
+            raised = true;
+            assert(() => e.message.includes("IndentationError"));
+        }
+        assert(() => raised);
+        """
+    )
+
+
 @run_in_pyodide
 def test_create_once_callable(selenium):
     import sys
@@ -814,13 +881,13 @@ def test_create_once_callable(selenium):
             destroyed = True
 
     f = Square()
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     proxy = create_once_callable(f)
-    assert sys.getrefcount(f) == 3
+    assert sys.getrefcount(f) == 2
 
     call7 = run_js("(f) => f(7)")
     assert call7(proxy) == 49
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     with raises(JsException, match="can only be called once"):
         call7(proxy)
     del f
@@ -860,20 +927,20 @@ def test_create_proxy(selenium):
     f = Test()
     import sys
 
-    assert sys.getrefcount(f) == 2
+    assert sys.getrefcount(f) == 1
     proxy = create_proxy(f)
-    assert sys.getrefcount(f) == 3
+    assert sys.getrefcount(f) == 2
     assert proxy() == 7
     testAddListener(proxy)
-    assert sys.getrefcount(f) == 3
-    assert testCallListener() == 7
-    assert sys.getrefcount(f) == 3
-    assert testCallListener() == 7
-    assert sys.getrefcount(f) == 3
-    assert testRemoveListener(proxy)
-    assert sys.getrefcount(f) == 3
-    proxy.destroy()
     assert sys.getrefcount(f) == 2
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 2
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 2
+    assert testRemoveListener(proxy)
+    assert sys.getrefcount(f) == 2
+    proxy.destroy()
+    assert sys.getrefcount(f) == 1
     destroyed = False
     del f
     assert destroyed
@@ -905,7 +972,7 @@ def test_create_proxy_roundtrip(selenium):
     assert o.f.unwrap() is f
     o.f.destroy()
     o.f = create_proxy(f, roundtrip=False)
-    assert o.f is f  # type: ignore[comparison-overlap]
+    assert o.f is f
     run_js("(o) => { o.f.destroy(); }")(o)
 
 
@@ -1004,8 +1071,8 @@ def test_restore_state(selenium):
 
 @pytest.mark.xfail_browsers(safari="TODO: traceback is not the same on Safari")
 @pytest.mark.skip_refcount_check
-def test_fatal_error(selenium_standalone):
-    assert selenium_standalone.run_js(
+def test_fatal_error(selenium_standalone_refresh):
+    assert selenium_standalone_refresh.run_js(
         """
         try {
             pyodide.runPython(`
@@ -1041,7 +1108,7 @@ def test_fatal_error(selenium_standalone):
         x = x.replace("\n\n", "\n")
         return x
 
-    err_msg = strip_stack_trace(selenium_standalone.logs)
+    err_msg = strip_stack_trace(selenium_standalone_refresh.logs)
     err_msg = "".join(strip_assertions_stderr(err_msg.splitlines(keepends=True)))
     assert (
         err_msg
@@ -1061,7 +1128,7 @@ def test_fatal_error(selenium_standalone):
             )
         ).strip()
     )
-    selenium_standalone.run_js(
+    selenium_standalone_refresh.run_js(
         """
         assertThrows(() => pyodide.runPython, "Error", "Pyodide already fatally failed and can no longer be used.")
         assertThrows(() => pyodide.globals, "Error", "Pyodide already fatally failed and can no longer be used.")
@@ -1070,8 +1137,8 @@ def test_fatal_error(selenium_standalone):
 
 
 @pytest.mark.skip_refcount_check
-def test_exit_error(selenium_standalone):
-    x = selenium_standalone.run_js(
+def test_exit_error(selenium_standalone_refresh):
+    x = selenium_standalone_refresh.run_js(
         """
         try {
             pyodide.runPython(`
@@ -1162,7 +1229,7 @@ def test_js_stackframes(selenium):
     def normalize_tb(t):
         res = []
         for [file, name] in t:
-            if file.endswith((".js", ".html")):
+            if file.endswith((".js", ".html", ".mjs")):
                 file = file.rpartition("/")[-1]
             if file.endswith(".py"):
                 file = "/".join(file.split("/")[-2:])
@@ -1170,31 +1237,31 @@ def test_js_stackframes(selenium):
                 "debugger eval code",
                 "evalmachine.<anonymous>",
             }:
-                file = "test.html"
+                file = "module_test.html"
             res.append([file, name])
         return res
 
     frames = [
         ["<exec>", "e"],
-        ["test.html", "d4"],
-        ["test.html", "d3"],
-        ["test.html", "d2"],
-        ["test.html", "d1"],
-        ["pyodide.asm.js", "runPython"],
+        ["module_test.html", "d4"],
+        ["module_test.html", "d3"],
+        ["module_test.html", "d2"],
+        ["module_test.html", "d1"],
+        ["pyodide.asm.mjs", "runPython"],
         ["_pyodide/_base.py", "eval_code"],
         ["_pyodide/_base.py", "run"],
         ["<exec>", "<module>"],
         ["<exec>", "c2"],
         ["<exec>", "c1"],
-        ["test.html", "b"],
-        ["pyodide.asm.js", "pyimport"],
+        ["module_test.html", "b"],
+        ["pyodide.asm.mjs", "pyimport"],
         ["_pyodide/_base.py", "pyimport_impl"],
     ]
     assert normalize_tb(res[: len(frames)]) == frames
 
 
-def test_reentrant_fatal(selenium_standalone):
-    selenium = selenium_standalone
+def test_reentrant_fatal(selenium_standalone_refresh):
+    selenium = selenium_standalone_refresh
     assert selenium.run_js(
         """
         function f(){
@@ -1258,13 +1325,13 @@ def test_weird_throws(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.parametrize("to_throw", ["Object.create(null);", "'Some message'", "null"])
-def test_weird_fatals(selenium_standalone, to_throw):
+def test_weird_fatals(selenium_standalone_refresh, to_throw):
     expected_message = {
         "Object.create(null);": "Error: A value of type object with tag [object Object] was thrown as an error!",
         "'Some message'": "Error: Some message",
         "null": "Error: A value of type object with tag [object Null] was thrown as an error!",
     }[to_throw]
-    msg = selenium_standalone.run_js(
+    msg = selenium_standalone_refresh.run_js(
         f"""
         self.f = function(){{ throw {to_throw} }};
         """
@@ -1328,6 +1395,44 @@ def test_env(selenium_standalone_noload):
     assert hashval == -2022708474
 
 
+def test_max_memory_bytes(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    result = selenium.run_js(
+        """
+        const MiB = 1024 * 1024;
+        let pyodide = await loadPyodide({ maxMemoryBytes: 256 * MiB });
+        let errorType;
+        try {
+            pyodide.runPython("bytearray(512 * 1024 * 1024)");
+        } catch (e) {
+            errorType = e.type;
+        }
+        return {
+            errorType,
+            // The interpreter is still usable, and allocations under the limit still work.
+            sum: pyodide.runPython("1 + 1"),
+            small: pyodide.runPython("len(bytearray(32 * 1024 * 1024))"),
+        };
+        """
+    )
+    assert result == {"errorType": "MemoryError", "sum": 2, "small": 32 * 1024 * 1024}
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "'1'", "NaN"])
+def test_max_memory_bytes_invalid(selenium_standalone_noload, value):
+    selenium = selenium_standalone_noload
+    error = selenium.run_js(
+        f"""
+        try {{
+            await loadPyodide({{ maxMemoryBytes: {value} }});
+        }} catch (e) {{
+            return e.name;
+        }}
+        """
+    )
+    assert error in ("RangeError", "TypeError")
+
+
 def test_version_variable(selenium):
     js_version = selenium.run_js(
         """
@@ -1366,8 +1471,20 @@ def test_abiVersion_variable(selenium):
         get_config_var("PYODIDE_ABI_VERSION")
         """
     )
+    pyemscripten_platform_version = selenium.run(
+        """
+        from sysconfig import get_config_var
 
-    assert lockfile_abi_version == py_abi_version == core_abi_version
+        get_config_var("PYEMSCRIPTEN_PLATFORM_VERSION")  # PEP 783
+        """
+    )
+
+    assert (
+        lockfile_abi_version
+        == py_abi_version
+        == core_abi_version
+        == pyemscripten_platform_version
+    )
 
 
 @run_in_pyodide
@@ -1381,7 +1498,6 @@ def test_default_sys_path(selenium):
     platlibdir = sys.platlibdir
     paths = [
         f"{prefix}{platlibdir}/python{major}{minor}.zip",
-        f"{prefix}{platlibdir}/python{major}.{minor}",
         f"{prefix}{platlibdir}/python{major}.{minor}/lib-dynload",
         f"{prefix}{platlibdir}/python{major}.{minor}/site-packages",
     ]
@@ -1395,27 +1511,6 @@ def test_sys_path0(selenium):
     import sys
 
     assert sys.path[0] == ""
-
-
-@pytest.mark.requires_dynamic_linking
-def test_fullstdlib(selenium_standalone_noload):
-    selenium = selenium_standalone_noload
-    selenium.run_js(
-        """
-        let pyodide = await loadPyodide({
-            fullStdLib: true,
-        });
-
-        await pyodide.loadPackage("micropip");
-
-        pyodide.runPython(`
-            import pyodide_js
-            import micropip
-            loaded_packages = micropip.list()
-            assert all((lib in micropip.list()) for lib in pyodide_js._api.lockfile_unvendored_stdlibs)
-        `);
-        """
-    )
 
 
 def test_loadPyodide_relative_index_url(selenium_standalone_noload):
@@ -1475,27 +1570,11 @@ def test_module_not_found_note(selenium_standalone):
     import pytest
 
     from _pyodide._importhook import add_note_to_module_not_found_error
-    from pyodide.code import run_js
 
-    unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
     lockfile_packages = [
         "micropip",
     ]
-
-    # When error is wrapped, add_note_to_module_not_found_error is called
-    with pytest.raises(ModuleNotFoundError) as e:
-        run_js("(f) => f()")(lambda: importlib.import_module("test"))
-    assert "unvendored from the Python standard library" in e.value.__notes__[0]
-    assert len(e.value.__notes__) == 1
-
-    for lib in unvendored_stdlibs:
-        with pytest.raises(ModuleNotFoundError) as e:
-            importlib.import_module(lib)
-        add_note_to_module_not_found_error(e.value)
-        add_note_to_module_not_found_error(e.value)
-        assert "unvendored from the Python standard library" in e.value.__notes__[0]
-        assert len(e.value.__notes__) == 1
 
     for lib in removed_stdlibs:
         with pytest.raises(ModuleNotFoundError) as e:
@@ -1526,13 +1605,6 @@ def test_module_not_found_note(selenium_standalone):
         add_note_to_module_not_found_error(e.value)
         assert getattr(e.value, "__notes__", None) is None
 
-    with pytest.raises(ModuleNotFoundError) as e:
-        importlib.import_module("_hashlib")
-    add_note_to_module_not_found_error(e.value)
-    add_note_to_module_not_found_error(e.value)
-    assert 'loadPackage("hashlib")' in e.value.__notes__[0]
-    assert len(e.value.__notes__) == 1
-
 
 @run_in_pyodide
 def test_importhook_called_from_pytest(selenium):
@@ -1555,6 +1627,155 @@ def test_importhook_called_from_pytest(selenium):
     _import_module_using_spec("a.b")
 
 
+@run_in_pyodide
+def test_windows_to_linux_path_finder(selenium):
+    from pathlib import Path
+
+    from _pyodide._importhook import WindowsToLinuxPathFinder
+
+    # not using tempfile for readability
+    c_tmp_dir = Path("/c/tmp/my/temporary/directory/for/testing")
+    d_tmp_dir = Path("/d/tmp/my/temporary/directory/for/testing")
+    c_tmp_dir.mkdir(parents=True, exist_ok=True)
+    d_tmp_dir.mkdir(parents=True, exist_ok=True)
+    c_module_file = c_tmp_dir / "test_module.py"
+    d_module_file = d_tmp_dir / "test_module.py"
+
+    # should not exist yet
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["C:\\my\\temporary\\directory\\for\\testing"]
+    )
+    assert spec is None
+
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["C:/my/temporary/directory/for/testing"]
+    )
+    assert spec is None
+
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["/tmp/my/temporary/directory/for/testing"]
+    )
+    assert spec is None
+
+    c_module_file.write_text("TEST_VALUE = 'c'")
+    d_module_file.write_text("TEST_VALUE = 'd'")
+
+    # now it should be found
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["C:\\tmp\\my\\temporary\\directory\\for\\testing"]
+    )
+    assert spec is not None
+    assert spec.origin == str(c_module_file)
+
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["C://tmp\\my//temporary\\directory/for//testing"]
+    )
+    assert spec is not None
+    assert spec.origin == str(c_module_file)
+
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["D:/tmp/my/temporary/directory/for/testing"]
+    )
+    assert spec is not None
+    assert spec.origin == str(d_module_file)
+
+    # This finder should not care about non-Windows paths
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "test_module", ["/tmp/my/temporary/directory/for/testing"]
+    )
+    assert spec is None
+
+    spec = WindowsToLinuxPathFinder.find_spec(
+        "non_existent_module", ["C:\\tmp\\my\\temporary\\directory\\for\\testing"]
+    )
+    assert spec is None
+
+    # cleanup
+    c_module_file.unlink()
+    d_module_file.unlink()
+    c_tmp_dir.rmdir()
+    d_tmp_dir.rmdir()
+
+
+@run_in_pyodide
+def test_windows_to_linux_path_finder_edge_cases(selenium):
+    """Test edge cases for WindowsToLinuxPathFinder."""
+    from _pyodide._importhook import WindowsToLinuxPathFinder
+
+    # Empty path list
+    spec = WindowsToLinuxPathFinder.find_spec("test_module", [])
+    assert spec is None
+
+    # None path (should use sys.path, but all conversions might fail)
+    spec = WindowsToLinuxPathFinder.find_spec("test_module", None)
+    assert spec is None
+
+    # zipimport path
+    spec = WindowsToLinuxPathFinder.find_spec("test_module", ["my_whl.whl"])
+    assert spec is None
+
+    # Drive-relative, UNC, and extended paths are not Windows absolute drive paths.
+    for path in ["C:relative", "\\\\server\\share", "\\\\?\\C:\\path"]:
+        spec = WindowsToLinuxPathFinder.find_spec("test_module", [path])
+        assert spec is None
+
+
+@run_in_pyodide
+def test_windows_to_linux_path_finder_registration(selenium_standalone):
+    import sys
+
+    from _pyodide._importhook import (
+        WindowsToLinuxPathFinder,
+        register_windows_finder,
+    )
+
+    def finder_count():
+        return sum(importer is WindowsToLinuxPathFinder for importer in sys.meta_path)
+
+    # Reconciliation is idempotent and removes finders inherited from a snapshot.
+    sys.meta_path.extend([WindowsToLinuxPathFinder, WindowsToLinuxPathFinder])
+    register_windows_finder(False)
+    assert finder_count() == 0
+    register_windows_finder(True)
+    register_windows_finder(True)
+    assert finder_count() == 1
+
+
+@run_in_pyodide
+def test_windows_to_linux_path_import(selenium_standalone):
+    import sys
+    from importlib import invalidate_caches
+    from pathlib import Path
+
+    from _pyodide._importhook import register_windows_finder
+
+    register_windows_finder(True)
+
+    tmp_dir = Path("/c/tmp/my/temporary/directory/for/testing/import")
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    module_file = tmp_dir / "test_module.py"
+
+    sys.path.append("C:\\tmp\\my\\temporary\\directory\\for\\testing\\import")
+    invalidate_caches()
+
+    try:
+        import test_module
+
+        raise AssertionError("Module should not be found yet")
+    except ModuleNotFoundError:
+        pass
+
+    module_file.write_text("TEST_VALUE = 456")
+
+    import test_module
+
+    assert test_module.TEST_VALUE == 456
+
+    # cleanup
+    module_file.unlink()
+    tmp_dir.rmdir()
+
+
 def test_args(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     assert selenium.run_js(
@@ -1568,7 +1789,6 @@ def test_args(selenium_standalone_noload):
             stderrStrings.push(s);
         }
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals : self,
             stdout,
             stderr,
@@ -1737,19 +1957,21 @@ def test_static_import(selenium_standalone_noload, tmp_path, httpserver):
     # copy dist to tmp_path to perform file changes safely
     shutil.copytree(DIST_PATH, tmp_path, dirs_exist_ok=True)
 
-    # define the directory to hide the statically imported pyodide.asm.js in
+    # define the directory to hide the statically imported pyodide.asm.mjs in
     hiding_dir = "hide_pyodide_asm_for_test"
 
-    # create the directory and move pyodide.asm.js to the directory
+    # create the directory and move pyodide.asm.mjs to the directory
     # so that dynamic import won't find it
     (tmp_path / hiding_dir).mkdir()
-    shutil.move(tmp_path / "pyodide.asm.js", tmp_path / hiding_dir / "pyodide.asm.js")
+    shutil.move(tmp_path / "pyodide.asm.mjs", tmp_path / hiding_dir / "pyodide.asm.mjs")
 
-    # make sure the test html references the new directory when importing pyodide.asm.js
+    # make sure the test html references the new directory when importing pyodide.asm.mjs
     test_html = (
         PYODIDE_ROOT / "src/templates/module_static_import_test.html"
     ).read_text()
-    test_html = test_html.replace("./pyodide.asm.js", f"./{hiding_dir}/pyodide.asm.js")
+    test_html = test_html.replace(
+        "./pyodide.asm.mjs", f"./{hiding_dir}/pyodide.asm.mjs"
+    )
     test_html_content = test_html.encode()
 
     # Setup httpserver to serve all necessary files
@@ -1762,10 +1984,10 @@ def test_static_import(selenium_standalone_noload, tmp_path, httpserver):
         status=200,
     )
 
-    # Serve the moved pyodide.asm.js file
-    pyodide_asm_data = (tmp_path / hiding_dir / "pyodide.asm.js").read_bytes()
+    # Serve the moved pyodide.asm.mjs file
+    pyodide_asm_data = (tmp_path / hiding_dir / "pyodide.asm.mjs").read_bytes()
     httpserver.expect_oneshot_request(
-        f"/{hiding_dir}/pyodide.asm.js"
+        f"/{hiding_dir}/pyodide.asm.mjs"
     ).respond_with_data(
         pyodide_asm_data,
         content_type="application/javascript",
@@ -1855,7 +2077,6 @@ def test_custom_python_stdlib_URL(selenium_standalone_noload, runtime):
         selenium.run_js(
             """
             let pyodide = await loadPyodide({
-                fullStdLib: false,
                 stdLibURL: "./python_stdlib2.zip",
             });
             // Check that we can import stdlib library modules
@@ -1969,17 +2190,20 @@ def test_hiwire_invalid_ref(selenium):
             }
             """
         )
-    msg = "hiwire_{} on invalid reference 77. This is most likely due to use after free. It may also be due to memory corruption."
+    # Index 0 is never allocated in libhiwire. Thus, ref=1 is guaranteed
+    # to be an invalid reference, preventing test flakiness.
+    ref = 1
+    msg = f"hiwire_{{}} on invalid reference {ref}. This is most likely due to use after free. It may also be due to memory corruption."
     with pytest.raises(JsException, match=msg.format("get")):
-        _hiwire_get(77)
+        _hiwire_get(ref)
     assert _api.fail_test
     _api.fail_test = False
     with pytest.raises(JsException, match=msg.format("incref")):
-        _hiwire_incref(77)
+        _hiwire_incref(ref)
     assert _api.fail_test
     _api.fail_test = False
     with pytest.raises(JsException, match=msg.format("decref")):
-        _hiwire_decref(77)
+        _hiwire_decref(ref)
     assert _api.fail_test
     _api.fail_test = False
 
@@ -2027,14 +2251,10 @@ def test_lockfile_api(selenium):
     from pyodide_js import lockfile
 
     lockfile_info = lockfile.info
-    lockfile_packages = lockfile.packages
 
     assert lockfile_info is not None
     assert lockfile_info.abi_version is not None
-    assert lockfile_info.version is not None
     assert lockfile_info.python is not None
-
-    assert lockfile_packages.micropip is not None
 
 
 def test_fs_init(selenium_standalone_noload):

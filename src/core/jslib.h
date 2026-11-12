@@ -30,6 +30,8 @@ typedef struct Js_Identifier
     x = NULL;                                                                  \
   } while (0)
 
+// ==================== Singletons ====================
+
 // Special JsRefs for singleton constants.
 extern JsRef Jsr_undefined;
 extern JsRef Jsr_true;
@@ -37,11 +39,9 @@ extern JsRef Jsr_false;
 extern JsRef Jsr_novalue;
 extern JsRef Jsr_error;
 
-// ==================== JS_ERROR ====================
-
 #define JS_ERROR hiwire_get(Jsr_error)
 
-__attribute__((import_module("sentinel"), import_name("is_sentinel"))) int
+int
 JsvError_Check(JsVal val);
 
 #define Jsv_undefined hiwire_get(Jsr_undefined)
@@ -49,7 +49,8 @@ JsvError_Check(JsVal val);
 #define Jsv_false hiwire_get(Jsr_false)
 #define Jsv_novalue hiwire_get(Jsr_novalue)
 
-int JsvNoValue_Check(JsVal);
+int
+JsvNoValue_Check(JsVal val);
 
 // ==================== Conversions between JsRef and JsVal ====================
 
@@ -65,13 +66,22 @@ JsRef_toVal(JsRef ref);
 // ==================== Primitive Conversions ====================
 
 JsVal
+JsvBigInt_fromInt(int x);
+
+JsVal
 JsvNum_fromInt(int x);
 
 JsVal
 JsvNum_fromDouble(double x);
 
+int
+JsvNum_toInt(JsVal v);
+
 JsVal
-JsvNum_fromDigits(const unsigned int* digits, size_t ndigits);
+JsvBigInt_fromDigits(const unsigned int* digits, size_t ndigits);
+
+JsVal
+Jsv_BigIntToNum(JsVal x);
 
 bool
 Jsv_to_bool(JsVal x);

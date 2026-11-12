@@ -1,7 +1,9 @@
 <div align="center">
-  <a href="https://github.com/pyodide/pyodide">
-  <img src="./docs/_static/img/pyodide-logo-readme.png" alt="Pyodide">
-  </a>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/_static/img/pyodide-logo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/_static/img/pyodide-logo-light.svg">
+  <img height="200" src="docs/_static/img/pyodide-logo-dark.svg">
+</picture>
 </div>
 
 [![NPM Latest Release](https://img.shields.io/npm/v/pyodide)](https://www.npmjs.com/package/pyodide)
@@ -49,6 +51,23 @@ your browser. For further information, see the
   a package to the Pyodide distribution](https://pyodide.org/en/stable/development/new-packages.html)
 - If you wish to experiment or contribute back to the Pyodide runtime, see the documentation on
   [building Pyodide from source](https://pyodide.org/en/stable/development/building-from-sources.html)
+
+## The Components of the Pyodide Project
+
+The Pyodide project consists of the following components:
+1. A build of CPython with a few patches (https://github.com/pyodide/pyodide/tree/main/cpython/)
+2. A JS/Python foreign function interface
+   (https://github.com/pyodide/pyodide/tree/main/src/core and
+   https://github.com/pyodide/pyodide/tree/main/src/py)
+3. JavaScript code for creating and managing Pyodide interpreters
+   (https://github.com/pyodide/pyodide/tree/main/src/js)
+4. A choice of Emscripten platform, which consists of a version + ABI-sensitive
+   flags + static libraries to link. This is described
+   [here](https://pyodide.org/en/stable/development/abi.html) and implemented in
+   (https://github.com/pyodide/pyodide/tree/main/Makefile.envs)
+5. A toolchain for [cross compiling](https://github.com/pyodide/pyodide-build)
+   [testing](https://github.com/pyodide/pytest-pyodide) and
+   [installing](https://github.com/pyodide/micropip) packages for Pyodide.
 
 ## History
 

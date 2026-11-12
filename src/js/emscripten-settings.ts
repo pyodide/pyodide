@@ -2,9 +2,10 @@
 
 import { PyodideConfigWithDefaults } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
+import { initializeOPFS } from "./fs/opfs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type PyodideModule, type FSType } from "./types";
-import { getSentinelImport } from "generated/sentinel";
+import { getJsvErrorImport } from "generated/jsverror";
 import { RUNTIME_ENV } from "./environments";
 
 /**
@@ -32,7 +33,8 @@ export interface EmscriptenSettings {
   readonly locateFile: (file: string) => string;
 
   noInitialRun?: boolean;
-  INITIAL_MEMORY?: number;
+  INITIAL_MEMORY: number;
+  wasmMemory?: WebAssembly.Memory;
   exitCode?: number;
 }
 
@@ -49,6 +51,7 @@ export function createSettings(
     noImageDecoding: true,
     noAudioDecoding: true,
     noWasmDecoding: false,
+    INITIAL_MEMORY: DEFAULT_INITIAL_MEMORY,
     preRun: getFileSystemInitializationFuncs(config),
     print: config.stdout,
     printErr: config.stderr,
@@ -154,6 +157,10 @@ function installStdlib(stdlibURL: string): PreRunFunc {
     Module.FS.mkdirTree("/lib");
     Module.API.sitePackages = `/lib/python${pymajor}.${pyminor}/site-packages`;
     Module.FS.mkdirTree(Module.API.sitePackages);
+    // Create empty platform stdlib directory so that CPython's getpath
+    // computation finds it. This prevents a warning about not finding it at
+    // startup.
+    Module.FS.mkdirTree(`/lib/python${pymajor}.${pyminor}/lib-dynload`);
     Module.addRunDependency("install-stdlib");
 
     try {
@@ -187,6 +194,7 @@ function getFileSystemInitializationFuncs(
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
     initializeNativeFS,
+    initializeOPFS,
     ...callFsInitHook(config.fsInit),
   ];
 }
@@ -195,18 +203,14 @@ function getInstantiateWasmFunc(
   indexURL: string,
 ): EmscriptenSettings["instantiateWasm"] {
   // @ts-ignore
-  if (SOURCEMAP || typeof WasmOffsetConverter !== "undefined") {
-    // According to the docs:
-    //
-    // "Sanitizers or source map is currently not supported if overriding
-    // WebAssembly instantiation with Module.instantiateWasm."
-    // https://emscripten.org/docs/api_reference/module.html?highlight=instantiatewasm#Module.instantiateWasm
-    //
-    // typeof WasmOffsetConverter !== "undefined" checks for asan.
+  if (DISABLE_INSTANTIATE_WASM) {
+    // Some build configurations don't work with instantiate-wasm.
+    // This will be broken because of the lack of initialization for JsvError stuff.
+    // TODO: Fix this...
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
-  const sentinelImportPromise = getSentinelImport();
+  const jsvErrorImportPromise = getJsvErrorImport();
   return function (
     imports: { [key: string]: { [key: string]: any } },
     successCallback: (
@@ -215,7 +219,16 @@ function getInstantiateWasmFunc(
     ) => void,
   ) {
     (async function () {
-      imports.sentinel = await sentinelImportPromise;
+      const {
+        Jsv_GetError_import,
+        JsvError_Check,
+        Jsv_GetNoValue_import,
+        JsvNoValue_Check,
+      } = await jsvErrorImportPromise;
+      imports.env.Jsv_GetError_import = Jsv_GetError_import;
+      imports.env.JsvError_Check = JsvError_Check;
+      imports.env.Jsv_GetNoValue_import = Jsv_GetNoValue_import;
+      imports.env.JsvNoValue_Check = JsvNoValue_Check;
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {

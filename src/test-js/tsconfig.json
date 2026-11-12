@@ -1,5 +1,6 @@
 {
+  "$schema": "http://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "module": "NodeNext"
+    "lib": ["ES2022", "DOM", "esnext.disposable"],
   }
 }

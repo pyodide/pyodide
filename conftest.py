@@ -3,6 +3,7 @@ Various common utilities for testing.
 """
 
 import contextlib
+import dataclasses
 import os
 import pathlib
 import re
@@ -16,9 +17,7 @@ DIST_PATH = PYODIDE_ROOT / "dist"
 
 sys.path.append(str(PYODIDE_ROOT / "src" / "py"))
 
-# importing this fixture has a side effect of making the safari webdriver reused during the session
 from pytest_pyodide import get_global_config
-from pytest_pyodide.runner import use_global_safari_service  # noqa: F401
 from pytest_pyodide.utils import package_is_built as _package_is_built
 
 os.environ["IN_PYTEST"] = "1"
@@ -43,8 +42,7 @@ def set_configs():
 
     pytest_pyodide_config.set_flags(
         "node",
-        pytest_pyodide_config.get_flags("node")
-        + ["--experimental-wasm-stack-switching"],
+        pytest_pyodide_config.get_flags("node") + ["--experimental-wasm-jspi"],
     )
 
     # There are a bunch of global objects that occasionally enter the hiwire cache
@@ -72,7 +70,6 @@ def set_configs():
         "chrome",
         """
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals : self,
         });
         """,
@@ -85,7 +82,6 @@ def set_configs():
         let snap = readFileSync("snapshot.bin");
         snap = new Uint8Array(snap.buffer);
         let pyodide = await loadPyodide({
-            fullStdLib: false,
             jsglobals: self,
             _loadSnapshot: snap,
         });
@@ -165,12 +161,18 @@ def pytest_configure(config):
 
     old_cwd_relative_nodeid = config.cwd_relative_nodeid
 
+    def shorten(path):
+        return path.replace("src/tests/", "").replace("packages/", "")
+
     def cwd_relative_nodeid(*args):
         result = old_cwd_relative_nodeid(*args)
-        result = result.replace("src/tests/", "")
-        result = result.replace("packages/", "")
-        result = result.replace("::test_", "::")
-        return result
+        if isinstance(result, str):
+            # pytest < 9.2: nodeids are plain strings
+            return shorten(result).replace("::test_", "::")
+
+        # pytest >= 9.2: nodeids are NodeId dataclasses
+        names = tuple(n.removeprefix("test_") for n in result.names)
+        return dataclasses.replace(result, path=shorten(result.path), names=names)
 
     config.cwd_relative_nodeid = cwd_relative_nodeid
 
@@ -206,6 +208,15 @@ def pytest_collection_modifyitems(config, items):
                     pytest.mark.skip(
                         reason="long_running test skipped (use '-m long_running' to run or set CI=1)"
                     )
+                )
+                continue
+
+        if item.get_closest_marker("db"):
+            # Skip db tests if mark not explicitly included
+            markexpr = config.getoption("-m", default="")
+            if "db" not in markexpr:
+                item.add_marker(
+                    pytest.mark.skip(reason="db test skipped (use '-m db' to run)")
                 )
                 continue
 
@@ -263,9 +274,10 @@ def pytest_runtest_call(item):
         result = yield
         return result
 
-    trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
+    all_markers = list(item.iter_markers())
+    trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in all_markers
     trace_hiwire_refs = (
-        trace_pyproxies and pytest.mark.skip_refcount_check.mark not in item.own_markers
+        trace_pyproxies and pytest.mark.skip_refcount_check.mark not in all_markers
     )
     yield from extra_checks_test_wrapper(
         browser, trace_hiwire_refs, trace_pyproxies, item
@@ -340,3 +352,25 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
             continue
         res.append(msg)
     return res
+
+
+@pytest.fixture(scope="function")
+def selenium_nodesock(selenium_standalone_refresh, runtime):
+    """
+    Fixture for testing NodeSockFS functionality.
+    """
+    # only_node marker doesn't work in fixture level...
+    if runtime != "node":
+        pytest.skip("Only works in node")
+
+    selenium = selenium_standalone_refresh
+
+    selenium.run_js(
+        """
+        await pyodide.useNodeSockFS();
+        """
+    )
+    try:
+        yield selenium
+    finally:
+        pass

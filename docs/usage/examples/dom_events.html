@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<script src="{{ PYODIDE_BASE_URL }}pyodide.js"></script>
+</head>
+
+<body>
+
+<h1>Pyodide DOM Interaction Example</h1>
+
+<button id="btn">Click me</button>
+<p id="output"></p>
+
+<script>
+async function main() {
+
+  let pyodide = await loadPyodide();
+
+  await pyodide.runPythonAsync(`
+from js import document
+from pyodide.ffi import create_proxy
+
+output = document.getElementById("output")
+button = document.getElementById("btn")
+
+def clicked(event):
+    output.innerText = "Button clicked from Python!"
+
+button.addEventListener("click", create_proxy(clicked))
+  `)
+
+}
+
+main()
+</script>
+
+</body>
+</html>

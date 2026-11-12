@@ -57,11 +57,29 @@ declare function DEREF_U32(ptr: number, offset: number): number;
 declare function Py_ENTER(): void;
 declare function Py_EXIT(): void;
 // end-pyodide-skip
+declare function enterTask(): void;
 
+// The default `instanceof` behavior, which ignores Symbol.hasInstance
+const hasInstance = Function.prototype[Symbol.hasInstance];
+
+// PyProxy[Symbol.hasInstance] calls this. We don't use `instanceof` here since
+// V8 doesn't inline an `instanceof` with a custom Symbol.hasInstance, while it
+// can inline a call to this function.
 function isPyProxy(jsobj: any): jsobj is PyProxy {
+  // Fast path for primitives, which are the most common input
+  if (
+    (typeof jsobj !== "object" || jsobj === null) &&
+    typeof jsobj !== "function"
+  ) {
+    return false;
+  }
   try {
-    return jsobj instanceof PyProxy;
+    return (
+      hasInstance.call(PyProxy, jsobj) ||
+      hasInstance.call(PyProxyFunction, jsobj)
+    );
   } catch (e) {
+    // Revoked proxies throw
     return false;
   }
 }
@@ -273,10 +291,17 @@ function pyproxy_new(
     _Py_IncRef(ptr);
   }
 
-  props = Object.assign(
-    { isBound: false, captureThis: false, boundArgs: [], roundtrip: false },
-    props,
-  );
+  // Fill in defaults with an explicit object literal rather than
+  // Object.assign. See the comment in gc_register_proxy below: the equivalent
+  // Object.assign call there accounted for over 20% of PyProxy creation time
+  // and the literal version was 100x faster. This is an even hotter path.
+  props = {
+    isBound: !!props?.isBound,
+    captureThis: !!props?.captureThis,
+    boundArgs: props?.boundArgs ?? [],
+    boundThis: props?.boundThis,
+    roundtrip: !!props?.roundtrip,
+  };
   let handlers;
   if (is_dict_adaptor) {
     handlers = PyProxyJsonAdaptorDictHandlers;
@@ -559,11 +584,8 @@ function callPyObjectKwargs(ptrobj: number, jsargs: any[], kwargs: any) {
  * It returns a promise. Inside Python, JS promises can be syncified, which
  * switches the stack to synchronously wait for them to be resolved.
  *
- * Pretty much everything is the same as callPyObjectKwargs except we use the
- * special JSPI-friendly promisingApply wrapper of `__pyproxy_apply`. This
- * causes the VM to invent a suspender and call a wrapper module which stores it
- * into suspenderGlobal (for later use by JsvPromise_syncify). Then it calls
- * _pyproxy_apply with the same arguments we gave to `promisingApply`.
+ * Pretty much everything is the same as callPyObjectKwargs except we use
+ * `_pyproxy_apply_promising`.
  */
 async function callPyObjectKwargsPromising(
   ptrobj: number,
@@ -582,11 +604,21 @@ async function callPyObjectKwargsPromising(
   const kwargs_values = Object.values(kwargs);
   const num_kwargs = kwargs_names.length;
   jsargs.push(...kwargs_values);
-
-  const stackTop = stackSave();
-  const exc = stackAlloc(4);
+  // We have to take ownership of the pointer before we sleep or else it could
+  // get freed out from under us. This also fixes a bug that was around before
+  // we added the sleep.
+  _Py_IncRef(ptrobj);
+  // Yield to the event loop before starting the task. We may have been called by
+  // WebAssembly stack frames which own data on the stack. We can't overwrite that
+  // data until those stack frames are finished with it. Returning to the event
+  // loop first unwinds all the caller frames. That way enterTask() is free to
+  // place the task wherever it likes.
+  await new Promise<void>((res) => API.scheduleCallback(res, 0));
   let result;
+  const exc = _malloc(4);
   try {
+    // enterTask() decides where the stackStop of the new task should be.
+    enterTask();
     Py_ENTER();
     // promisingApply clears the error flag and saves any error into excStatus.
     // This ensures that tasks that are run between when promisingApply resolves
@@ -609,26 +641,27 @@ async function callPyObjectKwargsPromising(
   } catch (e) {
     API.fatal_error(e);
   }
-  // Unwrap result
-  result = result[0];
-  if (result === Module.error) {
-    _PyErr_SetRaisedException(HEAPU32[exc / 4]);
-    try {
+  try {
+    // Unwrap result
+    result = result[0];
+    if (result === Module.error) {
+      _PyErr_SetRaisedException(DEREF_U32(exc, 0));
       _pythonexc2js();
-    } finally {
-      stackRestore(stackTop);
     }
-  }
-  // Automatically schedule coroutines
-  if (result && result.type === "coroutine" && result._ensure_future) {
-    Py_ENTER();
-    const is_coroutine = __iscoroutinefunction(ptrobj);
-    Py_EXIT();
-    if (is_coroutine) {
-      result._ensure_future();
+    // Automatically schedule coroutines
+    if (result && result.type === "coroutine" && result._ensure_future) {
+      Py_ENTER();
+      const is_coroutine = __iscoroutinefunction(ptrobj);
+      Py_EXIT();
+      if (is_coroutine) {
+        result._ensure_future();
+      }
     }
+    return result;
+  } finally {
+    _free(exc);
+    _Py_DecRef(ptrobj);
   }
-  return result;
 }
 
 Module.callPyObjectMaybePromising = async function (
@@ -661,9 +694,7 @@ export class PyProxy {
 
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return [PyProxy, PyProxyFunction].some((cls) =>
-      Function.prototype[Symbol.hasInstance].call(cls, obj),
-    );
+    return isPyProxy(obj);
   }
 
   /**
@@ -868,7 +899,7 @@ PyProxyFunction.prototype = PyProxyFunctionProto;
  */
 export class PyProxyWithLength extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyProxyWithLength {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_LENGTH);
   }
 }
@@ -904,7 +935,7 @@ export class PyLengthMethods {
  */
 export class PyProxyWithGet extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyProxyWithGet {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_GET);
   }
 }
@@ -989,7 +1020,7 @@ export class PyGetItemMethods {
  */
 export class PyProxyWithSet extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyProxyWithSet {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_SET);
   }
 }
@@ -1045,7 +1076,7 @@ export class PySetItemMethods {
  */
 export class PyProxyWithHas extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyProxyWithHas {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_CONTAINS);
   }
 }
@@ -1141,7 +1172,7 @@ function* iter_helper(
  */
 export class PyIterable extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyIterable {
     return (
       API.isPyProxy(obj) && !!(_getFlags(obj) & (IS_ITERABLE | IS_ITERATOR))
     );
@@ -1184,7 +1215,7 @@ export class PyIterableMethods {
       shared.cache.json_adaptor_map,
       isJsonAdaptor(this),
     );
-    Module.finalizationRegistry.register(result, [iterptr, undefined], token);
+    Module.finalizationRegistry.register(result, { ptr: iterptr }, token);
     return result;
   }
 }
@@ -1248,7 +1279,7 @@ async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
  */
 export class PyAsyncIterable extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyAsyncIterable {
     return (
       API.isPyProxy(obj) &&
       !!(_getFlags(obj) & (IS_ASYNC_ITERABLE | IS_ASYNC_ITERATOR))
@@ -1281,7 +1312,7 @@ export class PyAsyncIterableMethods {
     }
 
     let result = aiter_helper(iterptr, token);
-    Module.finalizationRegistry.register(result, [iterptr, undefined], token);
+    Module.finalizationRegistry.register(result, { ptr: iterptr }, token);
     return result;
   }
 }
@@ -1292,7 +1323,7 @@ export class PyAsyncIterableMethods {
  */
 export class PyIterator extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyIterator {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ITERATOR);
   }
 }
@@ -1345,7 +1376,7 @@ export class PyIteratorMethods {
  */
 export class PyGenerator extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyGenerator {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_GENERATOR);
   }
 }
@@ -1421,7 +1452,7 @@ export class PyGeneratorMethods {
  */
 export class PyAsyncIterator extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyAsyncIterator {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ASYNC_ITERATOR);
   }
 }
@@ -1485,7 +1516,7 @@ export class PyAsyncIteratorMethods {
  */
 export class PyAsyncGenerator extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyAsyncGenerator {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ASYNC_GENERATOR);
   }
 }
@@ -1588,7 +1619,7 @@ export class PyAsyncGeneratorMethods {
  */
 export class PySequence extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PySequence {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_SEQUENCE);
   }
 }
@@ -1895,8 +1926,8 @@ export class PySequenceMethods {
  */
 export class PyMutableSequence extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_SEQUENCE);
+  static [Symbol.hasInstance](obj: any): obj is PyMutableSequence {
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_MUTABLE_SEQUENCE);
   }
 }
 
@@ -2065,12 +2096,16 @@ export class PyMutableSequenceMethods {
 // deal with straining out the spurious "Function" properties "prototype",
 // "arguments", and "length", to deal with correctly satisfying the Proxy
 // invariants, and to deal with the mro
-function python_hasattr(jsobj: PyProxy, jskey: any) {
+function python_hasattr(jsobj: PyProxy, jskey: string) {
   let ptrobj = _getPtr(jsobj);
-  let result;
+  let result = -1;
   try {
     Py_ENTER();
-    result = __pyproxy_hasattr(ptrobj, jskey);
+    const pykey = attrNameToPy(jskey);
+    if (pykey !== 0) {
+      result = __pyproxy_hasattr(ptrobj, pykey);
+      releaseAttrName(jskey, pykey);
+    }
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2081,16 +2116,52 @@ function python_hasattr(jsobj: PyProxy, jskey: any) {
   return result !== 0;
 }
 
+// Interned Python strings for attribute names, see _pyproxy_intern_attr_name.
+// We hold a reference to each of them, so we limit how many we keep.
+const MAX_INTERNED_ATTR_NAMES = 1000;
+const internedAttrNames: Map<string, number> = new Map();
+
+// Converts an attribute name to a Python string. Returns 0 on error. Call
+// releaseAttrName() when done with the result.
+function attrNameToPy(key: string): number {
+  let pykey = internedAttrNames.get(key);
+  if (pykey !== undefined) {
+    return pykey;
+  }
+  if (internedAttrNames.size < MAX_INTERNED_ATTR_NAMES) {
+    pykey = __pyproxy_intern_attr_name(key);
+    if (pykey !== 0) {
+      internedAttrNames.set(key, pykey);
+    }
+    return pykey;
+  }
+  return _js2python(key);
+}
+
+function releaseAttrName(key: string, pykey: number) {
+  if (
+    // Only release if we're at the limit and the key isn't in the cache
+    internedAttrNames.size === MAX_INTERNED_ATTR_NAMES &&
+    !internedAttrNames.has(key)
+  ) {
+    _Py_DecRef(pykey);
+  }
+}
+
 // Returns a JsRef in order to allow us to differentiate between "not found"
 // (in which case we return 0) and "found 'None'" (in which case we return
 // undefined).
-function python_getattr(jsobj: PyProxy, key: any) {
+function python_getattr(jsobj: PyProxy, key: string) {
   const { shared } = _getAttrs(jsobj);
   let cache = shared.cache.map;
-  let result;
+  let result = Module.error;
   try {
     Py_ENTER();
-    result = __pyproxy_getattr(shared.ptr, key, cache);
+    const pykey = attrNameToPy(key);
+    if (pykey !== 0) {
+      result = __pyproxy_getattr(shared.ptr, pykey, cache);
+      releaseAttrName(key, pykey);
+    }
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2104,12 +2175,16 @@ function python_getattr(jsobj: PyProxy, key: any) {
   return result;
 }
 
-function python_setattr(jsobj: PyProxy, jskey: any, jsval: any) {
+function python_setattr(jsobj: PyProxy, jskey: string, jsval: any) {
   let ptrobj = _getPtr(jsobj);
-  let err;
+  let err = -1;
   try {
     Py_ENTER();
-    err = __pyproxy_setattr(ptrobj, jskey, jsval);
+    const pykey = attrNameToPy(jskey);
+    if (pykey !== 0) {
+      err = __pyproxy_setattr(ptrobj, pykey, jsval);
+      releaseAttrName(jskey, pykey);
+    }
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2119,12 +2194,16 @@ function python_setattr(jsobj: PyProxy, jskey: any, jsval: any) {
   }
 }
 
-function python_delattr(jsobj: PyProxy, jskey: any) {
+function python_delattr(jsobj: PyProxy, jskey: string) {
   let ptrobj = _getPtr(jsobj);
-  let err;
+  let err = -1;
   try {
     Py_ENTER();
-    err = __pyproxy_delattr(ptrobj, jskey);
+    const pykey = attrNameToPy(jskey);
+    if (pykey !== 0) {
+      err = __pyproxy_delattr(ptrobj, pykey);
+      releaseAttrName(jskey, pykey);
+    }
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2534,7 +2613,7 @@ const PyProxyDictHandlers = {
  */
 export class PyAwaitable extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyAwaitable {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_AWAITABLE);
   }
 }
@@ -3106,7 +3185,7 @@ export class PyBufferMethods {
  */
 export class PyDict extends PyProxy {
   /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyDict {
     // TODO: allow MutableMappings?
     return API.isPyProxy(obj) && obj.type === "dict";
   }

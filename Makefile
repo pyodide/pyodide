@@ -19,10 +19,11 @@ all-but-packages: \
 	check \
 	check-emcc \
 	$(CPYTHONINSTALL)/.installed-pyodide \
-	dist/pyodide.asm.js \
+	dist/pyodide.asm.mjs \
 	dist/pyodide.js \
 	dist/package.json \
 	dist/python \
+	dist/python.bat \
 	dist/python_cli_entry.mjs \
 	dist/python_stdlib.zip \
 	dist/test.html \
@@ -65,11 +66,11 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 
 # Don't use ccache here because it does not support #embed properly.
 # https://github.com/ccache/ccache/discussions/1366
-src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat emsdk/emsdk/.complete
+src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat $(PYODIDE_EMSDK_DIR)/.complete
 	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
-src/core/sentinel.wasm: src/core/sentinel.wat emsdk/emsdk/.complete
-	./emsdk/emsdk/upstream/bin/wasm-as $< -o $@ -all
+src/core/jsverror.wasm: src/core/jsverror.wat $(PYODIDE_EMSDK_DIR)/.complete
+	$(PYODIDE_EMSDK_DIR)/upstream/bin/wasm-as $< -o $@ -all
 
 src/core/libpyodide.a: \
 	src/core/docstring.o \
@@ -86,9 +87,11 @@ src/core/libpyodide.a: \
 	src/core/jsbind.o \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o \
+	src/core/stack_switching/pystate_pycore.o \
 	src/core/stack_switching/pystate.o \
 	src/core/stack_switching/suspenders.o \
-	src/core/print.o
+	src/core/print.o \
+	src/core/socket_syscalls.o
 
 	emar rcs src/core/libpyodide.a $(filter %.o,$^)
 
@@ -104,37 +107,33 @@ $(CPYTHONINSTALL)/lib/libpyodide.a: src/core/libpyodide.a
 $(CPYTHONINSTALL)/.installed-pyodide: $(CPYTHONINSTALL)/include/pyodide/.installed $(CPYTHONINSTALL)/lib/libpyodide.a
 	touch $@
 
-dist/pyodide.asm.js: \
+dist/pyodide.asm.mjs: \
 	dist \
 	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB) \
 	$(CPYTHONINSTALL)/.installed-pyodide
 
-	@date +"[%F %T] Building pyodide.asm.js..."
+	@date +"[%F %T] Building pyodide.asm.mjs..."
    # TODO(ryanking13): Link libgl to a side module not to the main module.
    # For unknown reason, a side module cannot see symbols when libGL is linked to it.
 	embuilder build libgl
-	$(CXX) -o dist/pyodide.asm.js -lpyodide src/core/main.o $(MAIN_MODULE_LDFLAGS)
+	$(CXX) -o dist/pyodide.asm.mjs -lpyodide src/core/main.o $(MAIN_MODULE_LDFLAGS)
 
 	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
-		cd dist && npx prettier -w pyodide.asm.js ; \
+		cd dist && npx prettier -w pyodide.asm.mjs ; \
 	fi
 
    # Strip out C++ symbols which all start __Z.
-   # There are 4821 of these and they have VERY VERY long names.
+   # There are ~3691 of these and they have VERY VERY long names.
+   # In the ES6 module format, these appear as:
+   #   1. Assignments: __ZSYM=Module["__ZSYM"]=wasmExports["_ZSYM"];
+   #   2. Variable declarations in a comma-separated var list: var ...,__ZSYM,...;
    # To show some stats on the symbols you can use the following:
-   # cat dist/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
-	$(SED) -i -E 's/var __Z[^;]*;//g' dist/pyodide.asm.js
-	$(SED) -i '1i "use strict";' dist/pyodide.asm.js
-	# Remove last 7 lines of pyodide.asm.js, see issue #2282
-	# Hopefully we will remove this after emscripten fixes it, upstream issue
-	# emscripten-core/emscripten#16518
-	# Sed nonsense from https://stackoverflow.com/a/13383331
-	$(SED) -i -n -e :a -e '1,7!{P;N;D;};N;ba' dist/pyodide.asm.js
-	echo "globalThis._createPyodideModule = _createPyodideModule;" >> dist/pyodide.asm.js
-
-	@date +"[%F %T] done building pyodide.asm.js."
+   # cat dist/pyodide.asm.mjs | grep -ohE '__Z[A-Za-z0-9_]+' | sort -u | wc -l
+	$(SED) -i -E 's/__Z[A-Za-z0-9_]+=[^;]*;//g' dist/pyodide.asm.mjs
+	$(SED) -i -E 's/,__Z[A-Za-z0-9_]+//g' dist/pyodide.asm.mjs
+	@date +"[%F %T] done building pyodide.asm.mjs."
 
 env:
 	env
@@ -156,13 +155,13 @@ src/js/generated/_pyodide.out.js:            \
 	cd src/js && npm run build-inner && cd -
 
 dist/pyodide.js:                             \
-		dist/pyodide.asm.js            		 \
+		dist/pyodide.asm.mjs            		 \
 		src/js/generated/_pyodide.out.js  	 \
 		src/js/pyodide.ts                    \
 		src/js/compat.ts                     \
 		src/js/emscripten-settings.ts        \
 		src/js/version.ts                    \
-		src/core/sentinel.wasm
+		src/core/jsverror.wasm
 	cd src/js && npm run build
 
 src/core/stack_switching/stack_switching.out.js: src/core/stack_switching/*.mjs node_modules/.installed
@@ -227,8 +226,8 @@ rwildcard=$(wildcard $1) $(foreach d,$1,$(call rwildcard,$(addsuffix /$(notdir $
 dist:
 	[ -d dist ] || mkdir dist
 
-dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB) .pyodide_build_installed
-	pyodide create-zipfile $(CPYTHONLIB) src/py --exclude "$(PYZIP_EXCLUDE_FILES)" --stub "$(PYZIP_JS_STUBS)" --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
+dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB)
+	./tools/create_zipfile.py $(CPYTHONLIB) src/py --exclude "$(PYZIP_EXCLUDE_FILES)" --stub "$(PYZIP_JS_STUBS)" --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
 dist/test.html: src/templates/test.html dist
 	cp $< $@
@@ -237,13 +236,27 @@ dist/makesnap.mjs: src/templates/makesnap.mjs dist
 	cp $< $@
 
 dist/snapshot.bin: all-but-packages dist/pyodide-lock.json dist/makesnap.mjs
-	cd dist && node --experimental-wasm-stack-switching makesnap.mjs
+	cd dist && node --experimental-wasm-jspi makesnap.mjs
 
 dist/module_test.html: src/templates/module_test.html dist
 	cp $< $@
 
 dist/python: src/templates/python dist
 	cp $< $@
+
+dist/python.bat: src/templates/python.bat dist
+	cp $< $@
+
+dist/python.exe: src/templates/python_exe.go dist
+	@if command -v go >/dev/null 2>&1; then \
+		cd src/templates && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o ../../dist/python.exe -ldflags='-s -w' python_exe.go && \
+		echo "Successfully built python.exe"; \
+	elif [ -n "$$CI" ]; then \
+		echo "ERROR: Go not found in CI environment" >&2; \
+		exit 1; \
+	else \
+		echo "WARNING: Go not found. Skipping python.exe build."; \
+	fi
 
 dist/python_cli_entry.mjs: src/templates/python_cli_entry.mjs dist
 	cp $< $@
@@ -275,7 +288,7 @@ clean-dist-dir:
 
 .PHONY: lint
 lint:
-	pre-commit run -a --show-diff-on-failure
+	prek -a --show-diff-on-failure
 
 benchmark: all
 	$(HOSTPYTHON) benchmark/benchmark.py all --output dist/benchmarks.json
@@ -304,7 +317,16 @@ clean-all: clean
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
-$(CPYTHONLIB): emsdk/emsdk/.complete
+# suspenders.c defines `syncifyHandler` which JSPI wraps in a
+# `WebAssembly.Suspending` object at runtime. Global-variable instrumentation
+# turns syncifyHandler into a GOT function pointer. At dylib load time the
+# dynamic linker then tries to resolve it as a plain function and aborts with
+# "bad export type". So disable asan's global instrumentation for suspenders.o.
+ifdef PYODIDE_ASAN
+src/core/stack_switching/suspenders.o: EXTRA_CFLAGS += -mllvm -asan-globals=0
+endif
+
+$(CPYTHONLIB): $(PYODIDE_EMSDK_DIR)/.complete
 	@date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	@date +"[%F %T] done building cpython..."
@@ -315,7 +337,7 @@ dist/pyodide-lock.json: $(CPYTHONLIB) .pyodide_build_installed
 	@date +"[%F %T] done building packages..."
 
 
-emsdk/emsdk/.complete:
+$(PYODIDE_EMSDK_DIR)/.complete:
 	@date +"[%F %T] Building emsdk..."
 	make -C emsdk
 	@date +"[%F %T] done building emsdk."
@@ -330,7 +352,7 @@ rust:
 check:
 	@./tools/dependency-check.sh
 
-check-emcc: emsdk/emsdk/.complete
+check-emcc: $(PYODIDE_EMSDK_DIR)/.complete
 	@python3 tools/check_ccache.py
 
 debug:

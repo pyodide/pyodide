@@ -2,6 +2,11 @@
 
 # Using Pyodide in a web worker
 
+```{note}
+Pyodide requires a module-type worker because `pyodide.asm.mjs` is an
+ES module. Classic workers using `importScripts()` are not supported.
+```
+
 This document includes an example demonstrating how to use Pyodide to execute
 Python scripts asynchronously in a web worker.
 

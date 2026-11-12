@@ -964,6 +964,35 @@ def test_pyproxy_gc_destroy(selenium):
     }
 
 
+@run_in_pyodide
+def test_topy_shared_ref_refcount(selenium):
+    # See: https://github.com/pyodide/pyodide/issues/5598
+    # Tests if toPy properly handles shared references
+    # without messing up with the refcount
+    from pyodide.code import run_js
+
+    def check(obj):
+        import sys
+
+        # All three elements should be the same object
+        assert obj[0] is obj[1] is obj[2]
+        # refcount should be at least 4:
+        #   1 for obj[0], 1 for obj[1], 1 for obj[2], 1 for the arg
+        rc = sys.getrefcount(obj[0])
+        assert rc >= 4, f"refcount too low: {rc}"
+
+    # Test with shared object literal
+    obj = run_js(
+        """
+        const shared = { x: 1 };
+        const obj = [shared, shared, shared];
+        const pyObj = pyodide.toPy(obj);
+        pyObj;
+        """
+    )
+    check(obj)
+
+
 def test_pyproxy_implicit_copy(selenium):
     result = selenium.run_js(
         """
@@ -1094,9 +1123,9 @@ def test_nogil(selenium):
 
 
 @pytest.mark.skip_pyproxy_check
-def test_fatal_error(selenium_standalone):
+def test_fatal_error(selenium_standalone_refresh):
     """Inject fatal errors in all the reasonable entrypoints"""
-    selenium_standalone.run_js(
+    selenium_standalone_refresh.run_js(
         """
         let fatal_error = false;
         let old_fatal_error = pyodide._api.fatal_error;
@@ -2545,10 +2574,16 @@ def test_automatic_coroutine_scheduling(selenium):
         pyodide.runPythonAsync("f(4)");
         d(g(5));
         h(6);
-        await sleep(0);
-        await sleep(0);
-        await sleep(0);
         const l = pyodide.globals.get("l");
+        // Wait for the automatically-scheduled coroutines to run. In Node the
+        // webloop schedules callbacks with setImmediate (check phase) while the
+        // test harness `sleep` uses setTimeout (timers phase), so the two can
+        // race under load. Poll a bounded number of event-loop turns until the
+        // expected results have been collected instead of assuming a fixed
+        // number of turns is enough.
+        for (let i = 0; i < 100 && l.length < 3; i++) {
+            await sleep(0);
+        }
         const res = l.toJs();
         for(let p of [f, g, l]) {
             p.destroy();
@@ -2786,3 +2821,109 @@ def test_pyproxy_using(selenium):
         f();
         """
     )
+
+
+@run_in_pyodide
+def test_pyproxy_flags_after_type_modified(selenium):
+    # The flags of a PyProxy are cached per type. Make sure that the cache is
+    # invalidated when the class or one of its bases is modified.
+    from pyodide.code import run_js
+
+    has_length = run_js("(p) => p instanceof pyodide.ffi.PyProxyWithLength")
+
+    class A:
+        pass
+
+    class B(A):
+        pass
+
+    assert not has_length(A())
+    assert not has_length(B())
+
+    A.__len__ = lambda self: 3  # type: ignore[attr-defined]
+    assert has_length(A())
+    assert has_length(B())
+
+    del A.__len__  # type: ignore[attr-defined]
+    assert not has_length(A())
+    assert not has_length(B())
+
+
+@run_in_pyodide
+def test_pyproxy_mutable_sequence_instanceof(selenium):
+    from collections.abc import MutableSequence, Sequence
+
+    from pyodide.code import run_js
+
+    is_sequence = run_js("(p) => p instanceof pyodide.ffi.PySequence")
+    is_mutable_sequence = run_js("(p) => p instanceof pyodide.ffi.PyMutableSequence")
+
+    # A list is a mutable sequence
+    assert is_sequence([1, 2])
+    assert is_mutable_sequence([1, 2])
+
+    # A tuple and a range are immutable sequences
+    for seq in [(1, 2), range(2)]:
+        assert isinstance(seq, Sequence)
+        assert not isinstance(seq, MutableSequence)
+        assert is_sequence(seq)
+        assert not is_mutable_sequence(seq)
+
+    # Not a sequence
+    assert not is_sequence({1: 2})
+    assert not is_mutable_sequence({1: 2})
+
+
+@run_in_pyodide
+def test_pyproxy_instanceof_revoked_proxy(selenium):
+    # `instanceof` on a revoked Proxy throws by default, but PyProxy's
+    # Symbol.hasInstance returns false, like the other PyProxy classes.
+    from pyodide.code import run_js
+
+    assert run_js(
+        """
+        const p = Proxy.revocable({}, {});
+        p.revoke();
+        [
+            p.proxy instanceof pyodide.ffi.PyProxy,
+            p.proxy instanceof pyodide.ffi.PySequence,
+        ]
+        """
+    ).to_py() == [False, False]
+
+
+@run_in_pyodide
+def test_pyproxy_attrs_many_names(selenium):
+    # PyProxy caches the Python strings for attribute names up to a limit.
+    # Check that attribute access still works for names beyond that limit.
+    from types import SimpleNamespace
+
+    from pyodide.code import run_js
+
+    names = [f"attr_{i}" for i in range(2000)] + ["ünïcödé", "名前", "😀"]
+    o = SimpleNamespace(**{name: i for i, name in enumerate(names)})
+    values = run_js(
+        """
+        (o, names) => {
+            const values = [];
+            for (let round = 0; round < 2; round++) {
+                for (const name of names) {
+                    values.push(name in o, o[name]);
+                }
+            }
+            for (const name of names) {
+                o[name] = name;
+            }
+            for (const name of names.slice(0, 1000)) {
+                delete o[name];
+            }
+            return values;
+        }
+        """
+    )(o, names)
+    expected = [x for i in range(len(names)) for x in (True, i)]
+    assert values.to_py() == expected * 2
+    for name in names[:1000]:
+        assert not hasattr(o, name)
+    for name in names[1000:]:
+        assert getattr(o, name) == name

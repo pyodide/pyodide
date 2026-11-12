@@ -98,31 +98,61 @@ installing the same prerequisites as for testing. Then run:
 PYODIDE_PACKAGES="numpy,matplotlib" make benchmark
 ```
 
+### Node.js benchmarks
+
+Microbenchmarks of the Pyodide runtime itself live in
+`benchmark/node/` and run in Node.js against a built `dist` directory. They
+don't need any packages to be built. To print the timings for a build, run:
+
+```bash
+node benchmark/node/run.mjs dist
+```
+
+To compare two builds, pass the baseline first. The `ratio` columns show the
+time of the second build relative to the baseline (new time / baseline time),
+so values below 1 mean the second build is faster. A build can also be
+given as the URL of a Pyodide distribution, e.g. to compare against the latest
+build of the `main` branch:
+
+```bash
+node benchmark/node/run.mjs https://cdn.jsdelivr.net/pyodide/dev/full/ dist
+```
+
+Use `--list` to see the available suites, `--suite NAME` to run a single
+suite, `--filter REGEX` to select cases by their `suite/case` name and
+`--json FILE` to save the results. The benchmarks run on CI for every PR,
+including a comparison with `main`.
+
+To add a benchmark, add a module to `benchmark/node/suites/`. It is picked up
+automatically and runs in a fresh Node.js process for each build. See the
+comment at the top of `benchmark/node/run.mjs` for the interface a suite needs
+to implement, and `benchmark/node/suites/string_conversion.mjs` for an example.
+
 ## Linting
 
-We lint with `pre-commit`.
+We lint with `prek`.
 
-Python is linted with `ruff`, `black` and `mypy`.
-JavaScript, markdown, yaml, and html are linted with `prettier`.
+Python is linted with `ruff` (for linting and formatting) and `mypy`.
+JavaScript and TypeScript are linted with `biome`.
 C is linted with `clang-format`.
 
 To lint the code, run:
 
 ```bash
-pre-commit run -a
+prek -a
 ```
 
 You can have the linter automatically run whenever you commit by running
 
 ```bash
-pip install pre-commit
-pre-commit install
+pip install prek
+prek install
 ```
 
 and this can later be disabled with
 
 ```bash
-pre-commit uninstall
+prek uninstall
 ```
 
 If you don't lint your code, certain lint errors will be fixed automatically by

@@ -1,6 +1,6 @@
 {
   "name": "pyodide",
-  "version": "0.30.0-dev.0",
+  "version": "314.1.0-dev.0",
   "description": "The Pyodide JavaScript package",
   "keywords": [
     "python",
@@ -9,7 +9,7 @@
   "homepage": "https://github.com/pyodide/pyodide",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pyodide/pyodide"
+    "url": "git+https://github.com/pyodide/pyodide.git"
   },
   "bugs": {
     "url": "https://github.com/pyodide/pyodide/issues"
@@ -51,7 +51,7 @@
       "types": "./ffi.d.ts"
     },
     "./pyodide.asm.wasm": "./pyodide.asm.wasm",
-    "./pyodide.asm.js": "./pyodide.asm.js",
+    "./pyodide.asm.mjs": "./pyodide.asm.mjs",
     "./python_stdlib.zip": "./python_stdlib.zip",
     "./pyodide.mjs": "./pyodide.mjs",
     "./pyodide.js": "./pyodide.js",
@@ -59,7 +59,7 @@
     "./pyodide-lock.json": "./pyodide-lock.json"
   },
   "files": [
-    "pyodide.asm.js",
+    "pyodide.asm.mjs",
     "pyodide.asm.wasm",
     "python_stdlib.zip",
     "pyodide.mjs",
@@ -85,7 +85,7 @@
     "build-inner": "node esbuild.config.inner.mjs",
     "build": "tsc --noEmit && node esbuild.config.outer.mjs",
     "test": "npm-run-all test:*",
-    "test:unit": "cross-env TEST_NODE=1 node --import tsx --experimental-wasm-stack-switching --test 'test/unit/**/*.test.*'",
+    "test:unit": "cross-env TEST_NODE=1 node --import tsx --experimental-wasm-jspi --test 'test/unit/**/*.test.*'",
     "test:node": "cross-env TEST_NODE=1 npx playwright test",
     "test:browser": "npx playwright test",
     "tsc": "tsc --noEmit",

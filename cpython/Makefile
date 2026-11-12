@@ -18,15 +18,32 @@ HIWIREBUILD=$(ROOT)/build/hiwire
 HIWIREREPO=https://github.com/pyodide/hiwire
 HIWIRE_COMMIT=6a1e67280a15d929ebeceee54a6358c9c8d5f697
 
+LZMABUILD=$(ROOT)/build/lzma
+LZMATARBALL=https://github.com/xz-mirror/xz/releases/download/v5.2.2/xz-5.2.2.tar.gz
+
+ZSTDBUILD=$(ROOT)/build/zstd
+ZSTDTARBALL=https://github.com/python/cpython-source-deps/archive/refs/tags/zstd-1.5.7.tar.gz
+
+# Not mandatory, but try to match the version of SQLite used in Emscripten
+# https://github.com/emscripten-core/emscripten/blob/4.0.9/tools/ports/sqlite3.py
+SQLITE3BUILD=$(ROOT)/build/sqlite3
+SQLITE3TARBALL=https://www.sqlite.org/2022/sqlite-autoconf-3390000.tar.gz
+
 ifdef CPYTHON_DEBUG
 	MAYBE_WITH_PYDEBUG=--with-pydebug
 endif
 
-all: $(PYINSTALL)/lib/$(PYLIB) libffi libhiwire
+all: $(PYINSTALL)/lib/$(PYLIB) libffi libhiwire liblzma libzstd
 
 libffi: $(PYINSTALL)/lib/libffi.a
 
 libhiwire: $(PYINSTALL)/lib/libhiwire.a
+
+liblzma: $(PYINSTALL)/lib/liblzma.a
+
+libzstd: $(PYINSTALL)/lib/libzstd.a
+
+libsqlite3: $(PYINSTALL)/lib/libsqlite3.a
 
 .PHONY: sysconfigdata
 sysconfigdata:
@@ -35,18 +52,20 @@ sysconfigdata:
 	cd $(PYBUILD) && _PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(PYBUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
 	$(eval PYBUILDDIR=$(PYBUILD)/`cat $(PYBUILD)/pybuilddir.txt`)
 	PYODIDE_ROOT=$(PYODIDE_ROOT) PYTHONPATH=$(PYBUILDDIR) python$(PYMAJOR).$(PYMINOR) adjust_sysconfig.py
+	# Generate build-details.json into the same pybuilddir. This is included in
+	# the CPython `build_wasm` target, but not in our custom build. It must be
+	# generated before the copies below.
+	emmake make -C $(PYBUILD) build-details.json
 	mkdir -p $(PYINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	mkdir -p $(SYSCONFIGDATA_DIR)
-	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(PYINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
-	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
+	cp $(PYBUILDDIR)/*.{py,json} $(PYINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
+	cp $(PYBUILDDIR)/*.{py,json} $(SYSCONFIGDATA_DIR)
 
-LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS) $$(LIBHACL_SHA2_OBJS)
+LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS)
 
 $(PYBUILD)/.patched_makefile:
 	# Clear out libinstall deps (we build what we want explicitly first)
 	cd $(PYBUILD) && $(SED) -i -e 's/libinstall:.*/libinstall:/' Makefile;
-	# Inject extra objects into libpython3.13.a so we don't have to link them
-	# separately
 	cd $(PYBUILD) && $(SED) -i '/MODOBJS=/s/$$/ $(LIBPYTHON_EXTRA_OBJECTS)/' Makefile
 	touch $(PYBUILD)/.patched_makefile
 
@@ -106,7 +125,7 @@ $(PYINSTALL)/lib/libffi.a :
 		&& git init \
 		&& git fetch --depth 1 $(LIBFFIREPO) $(LIBFFI_COMMIT) \
 		&& git checkout FETCH_HEAD \
-		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
+		&& . $(PYODIDE_EMSDK_DIR)/emsdk_env.sh \
 		&& ./testsuite/emscripten/build.sh --wasm-bigint \
 		&& make install \
 	)
@@ -122,16 +141,109 @@ $(PYINSTALL)/lib/libhiwire.a :
 		&& git init \
 		&& git fetch --depth 1 $(HIWIREREPO) $(HIWIRE_COMMIT) \
 		&& git checkout FETCH_HEAD \
-		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
+		&& . $(PYODIDE_EMSDK_DIR)/emsdk_env.sh \
 		&& CC=emcc EMSCRIPTEN_DEDUPLICATE=1 EXTERN_FAIL=1 make \
 	)
 	cp -r $(HIWIREBUILD)/dist/lib $(PYINSTALL)/
 	rm -rf $(PYINSTALL)/include/hiwire
 	cp -r $(HIWIREBUILD)/dist/include/ $(PYINSTALL)/include/hiwire
 
+$(PYINSTALL)/lib/liblzma.a :
+	rm -rf $(LZMABUILD)
+	mkdir $(LZMABUILD)
+	(\
+		cd $(LZMABUILD) \
+		&& wget -q -O - $(LZMATARBALL) | tar -xz --strip-components=1 \
+		&& . $(PYODIDE_EMSDK_DIR)/emsdk_env.sh \
+		&& . $(PYODIDE_ROOT)/pyodide_env.sh \
+		&& emconfigure ./configure \
+			CFLAGS="-fPIC -Os" \
+			--disable-xz \
+			--disable-xzdec \
+			--disable-lzmadec \
+			--disable-lzmainfo \
+			--disable-lzma-links \
+			--disable-scripts \
+			--disable-doc \
+			--enable-shared=no \
+			--disable-dependency-tracking \
+			--prefix=$(LZMABUILD)/dist \
+		&& emmake make \
+		&& emmake make install \
+	)
+
+	cp -r $(LZMABUILD)/dist/lib $(PYINSTALL)/
+	rm -rf $(PYINSTALL)/include/lzma
+	mkdir -p $(PYINSTALL)/include/lzma
+	cp -r $(LZMABUILD)/dist/include/* $(PYINSTALL)/include/lzma
+
+$(PYINSTALL)/lib/libzstd.a:
+	rm -rf $(ZSTDBUILD)
+	mkdir $(ZSTDBUILD)
+	(\
+		cd $(ZSTDBUILD) \
+		&& wget -q -O - $(ZSTDTARBALL) | tar -xz --strip-components=1 \
+		&& . $(PYODIDE_EMSDK_DIR)/emsdk_env.sh \
+		&& . $(PYODIDE_ROOT)/pyodide_env.sh \
+		&& emcmake cmake build/cmake \
+			-B build-wasm \
+			-DCMAKE_BUILD_TYPE=MinSizeRel \
+			-DCMAKE_C_FLAGS="-fPIC" \
+			-DZSTD_BUILD_SHARED=OFF \
+			-DZSTD_BUILD_STATIC=ON \
+			-DZSTD_BUILD_PROGRAMS=OFF \
+			-DZSTD_BUILD_TESTS=OFF \
+			-DZSTD_BUILD_CONTRIB=OFF \
+			-DZSTD_MULTITHREAD_SUPPORT=OFF \
+			-DZSTD_LEGACY_SUPPORT=OFF \
+			-DCMAKE_INSTALL_PREFIX=$(ZSTDBUILD)/dist \
+		&& emmake make -C build-wasm \
+		&& emmake make -C build-wasm install \
+	)
+	mkdir -p $(PYINSTALL)/lib
+	rm -rf $(PYINSTALL)/include/zstd
+	mkdir -p $(PYINSTALL)/include/zstd
+	cp $(ZSTDBUILD)/dist/lib/libzstd.a $(PYINSTALL)/lib/
+	cp -r $(ZSTDBUILD)/dist/include/* $(PYINSTALL)/include/zstd/
+
+$(PYINSTALL)/lib/libsqlite3.a:
+	rm -rf $(SQLITE3BUILD)
+	mkdir $(SQLITE3BUILD)
+	(\
+		cd $(SQLITE3BUILD) \
+		&& wget -q -O - $(SQLITE3TARBALL) | tar -xz --strip-components=1 \
+		&& . $(PYODIDE_EMSDK_DIR)/emsdk_env.sh \
+		&& . $(PYODIDE_ROOT)/pyodide_env.sh \
+		&& emconfigure ./configure \
+			CFLAGS="-fPIC -Os" \
+			--disable-readline \
+			--disable-threadsafe \
+			--disable-shared \
+			--enable-static \
+			--disable-static-shell \
+			--disable-dependency-tracking \
+			--prefix=$(SQLITE3BUILD)/dist \
+		&& emmake make libsqlite3.la \
+		&& emmake make install-libLTLIBRARIES install-includeHEADERS \
+	)
+
+	rm -rf $(PYINSTALL)/include/sqlite3
+	mkdir -p $(PYINSTALL)/include/sqlite3
+	mkdir -p $(PYINSTALL)/lib
+	cp -r $(SQLITE3BUILD)/dist/lib/* $(PYINSTALL)/lib/
+	cp -r $(SQLITE3BUILD)/dist/include/* $(PYINSTALL)/include/sqlite3
+
+
 python-makefile: $(PYBUILD)/Makefile
 
+CONFIG_SITE_FILE=./Tools/wasm/emscripten/config.site-wasm32-emscripten
+
 $(PYBUILD)/Makefile: $(PYBUILD)/.patched
+	# ac_cv_func_shutdown :
+	#   Emscripten does not support shutdown syscall, but we want to enable it
+	#   to enable shutdown method in NodeSockFS.
+	cd $(PYBUILD) && $(SED) -i 's/^ac_cv_func_shutdown=no//' $(CONFIG_SITE_FILE)
+
 	# --enable-big-digits=30 :
 	#   Python integers have "digits" of size 15 by default on systems with 32
 	#   bit pointers and size 30 on systems with 16 bit pointers. Python uses
@@ -141,7 +253,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 	#   so it is more efficient to use 30 bit digits.
 	( \
 		cd $(PYBUILD); \
-		CONFIG_SITE=./Tools/wasm/config.site-wasm32-emscripten READELF=true emconfigure \
+		CONFIG_SITE=$(CONFIG_SITE_FILE) READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
 			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1" \
@@ -162,7 +274,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 $(PYBUILD)/Modules/Setup.local: Setup.local
 	cp Setup.local $(PYBUILD)/Modules/
 
-$(PYBUILD)/$(PYLIB): $(PYBUILD)/Makefile $(PYBUILD)/pyconfig.h $(PYBUILD)/Modules/Setup.local $(PYINSTALL)/lib/libffi.a
+$(PYBUILD)/$(PYLIB): $(PYBUILD)/Makefile $(PYBUILD)/pyconfig.h $(PYBUILD)/Modules/Setup.local $(PYINSTALL)/lib/libffi.a $(PYINSTALL)/lib/liblzma.a $(PYINSTALL)/lib/libsqlite3.a $(PYINSTALL)/lib/libzstd.a
 	cp Setup.local $(PYBUILD)/Modules/
 	( \
 		cd $(PYBUILD); \

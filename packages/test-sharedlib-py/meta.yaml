@@ -14,6 +14,7 @@ requirements:
 source:
   path: src
 build:
+  vendor-sharedlib: false
   cflags: |
     -I$(PKGDIR)/../test-sharedlib/src/include
   ldflags: |

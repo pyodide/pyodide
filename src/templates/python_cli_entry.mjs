@@ -1,5 +1,63 @@
 import { loadPyodide } from "./pyodide.mjs";
-import { readdirSync } from "fs";
+import { readdirSync, statSync } from "fs";
+
+/**
+ * Convert an ordinary Windows absolute drive path to its mounted Emscripten
+ * path.
+ *
+ * For example, "C:\path\to\file" becomes "/c/path/to/file".
+ */
+function windowsPathToUnix(path) {
+  if (process.platform !== "win32") {
+    return path;
+  }
+
+  const match = /^([A-Za-z]):[\\/]/.exec(path);
+  if (!match) {
+    return path;
+  }
+
+  return `/${match[1].toLowerCase()}${path.slice(2).replace(/[\\/]+/g, "/")}`;
+}
+
+/**
+ * Return native Windows drive roots referenced by paths and their Emscripten
+ * mount points.
+ *
+ * On Windows, readdirSync("/") only returns the directory under the working drive (e.g. C:\)
+ * Since the working directory may differ from the directory that this script is executed from (== python is executed from),
+ * we need to mount the other drives as well.
+ */
+function windowsDriveMounts() {
+  const candidatePaths = getWindowsPathCandidates();
+  const drives = new Set();
+  for (const path of candidatePaths) {
+    const match = /^([A-Za-z]):[\\/]/.exec(path);
+    if (match) {
+      drives.add(match[1].toUpperCase());
+    }
+  }
+
+  return [...drives]
+    .sort()
+    .filter((drive) => {
+      const root = `${drive}:\\`;
+      return isAccessibleDriveRoot(root);
+    })
+    .map((drive) => {
+      const root = `${drive}:\\`;
+      return { root, mountpoint: `/${drive.toLowerCase()}` };
+    });
+}
+
+function isAccessibleDriveRoot(root) {
+  try {
+    return statSync(root).isDirectory();
+  } catch {
+    // Unavailable or inaccessible drive roots cannot be mounted.
+    return false;
+  }
+}
 
 /**
  * Determine which native top level directories to mount into the Emscripten
@@ -10,25 +68,134 @@ import { readdirSync } from "fs";
  * am not sure why but if we link tmp then the process silently fails.
  */
 function dirsToMount() {
+  if (process.platform === "win32") {
+    return windowsDriveMounts();
+  }
+
+  const filteredDirs = new Set([
+    // Unix
+    "dev",
+    "lib",
+    "proc",
+  ]);
+
   return readdirSync("/")
-    .filter((dir) => !["dev", "lib", "proc"].includes(dir))
-    .map((dir) => "/" + dir);
+    .filter((dir) => !filteredDirs.has(dir))
+    .filter((dir) => !dir.startsWith("$")) // System directories in Windows, such as $Recycle.Bin
+    .filter((dir) => {
+      // Use stat to confirm this entry is a directory.
+      try {
+        const st = statSync("/" + dir);
+        return st.isDirectory();
+      } catch (e) {
+        return false;
+      }
+    })
+    .map((dir) => ({ root: "/" + dir, mountpoint: "/" + dir }));
+}
+
+/**
+ * Escape backslashes in a Windows path for use in Python strings.
+ */
+function escapeWindowsPath(path) {
+  if (process.platform === "win32") {
+    return path.replace(/\\/g, "\\\\");
+  }
+  return path;
 }
 
 const thisProgramFlag = "--this-program=";
 const thisProgramIndex = process.argv.findIndex((x) =>
   x.startsWith(thisProgramFlag),
 );
-const args = process.argv.slice(thisProgramIndex + 1);
+const args = process.argv.slice(thisProgramIndex + 1).map(windowsPathToUnix);
 const _sysExecutable = process.argv[thisProgramIndex].slice(
   thisProgramFlag.length,
 );
 
+/**
+ * Return the paths to mount into the Emscripten file system.
+ * This is used only on Windows to determine which drives to mount.
+ *
+ * Alternatively, we can loop through all drives A-Z and check if they exist,
+ * but that introduces additional overhead. For now, we'll just use the paths
+ * that are passed to the script.
+ */
+function getWindowsPathCandidates() {
+  const pythonPath = process.env.PYTHONPATH?.split(";") ?? [];
+  return [
+    process.cwd(),
+    _sysExecutable,
+    ...process.argv.slice(thisProgramIndex + 1),
+    process.env.VIRTUAL_ENV,
+    ...pythonPath,
+  ];
+}
+
 function fsInit(FS) {
   const mounts = dirsToMount();
   for (const mount of mounts) {
-    FS.mkdirTree(mount);
-    FS.mount(FS.filesystems.NODEFS, { root: mount }, mount);
+    FS.mkdirTree(mount.mountpoint);
+    FS.mount(FS.filesystems.NODEFS, { root: mount.root }, mount.mountpoint);
+  }
+}
+
+function patchPlatformForUv(py) {
+  // UV uses sysconfig configs to determine platform details when installing
+  // packages through `uv pip`. When running on Windows, we need to patch
+  // sysconfig to return the correct values for a Windows platform.
+  if (process.platform !== "win32" || process.env.UV === undefined) {
+    return;
+  }
+
+  const virtualEnvPrefix = process.env.VIRTUAL_ENV || "/";
+  py.runPython(
+    `
+    import sys
+    import sysconfig
+    import os, ntpath, posixpath
+    sys.prefix = "${escapeWindowsPath(virtualEnvPrefix)}"
+    sys.executable = "${escapeWindowsPath(_sysExecutable)}"
+    sysconfig._INSTALL_SCHEMES['venv'] = sysconfig._INSTALL_SCHEMES['nt_venv']
+    def _abspath(path):
+      """uv tries to call abspath on a windows path, make it work"""
+      if ntpath.isabs(path):
+        return path
+      elif posixpath.isabs(path):  # we cannot use posixpath.abspath directly here because it ends up infinite recursion
+        return path
+      else:
+        return posixpath.abspath(path)
+    os.path.abspath = _abspath
+    `,
+  );
+}
+
+function calculateSysPath(py) {
+  // On windows, packages are installed in a different location (Lib\\site-packages)
+  // compared to other platforms (lib/pythonX.Y/site-packages).
+  // In this case, Python will not be able to setup the sys.path correctly by itself,
+  // so we need to manually add the site-packages path to sys.path.
+  if (process.platform === "win32") {
+    const virtualEnvPrefix = process.env.VIRTUAL_ENV;
+    if (!virtualEnvPrefix) {
+      return;
+    }
+
+    const sitePackagesPath = `${virtualEnvPrefix}\\Lib\\site-packages`;
+    // check if the path exists
+    const stat = statSync(sitePackagesPath);
+    if (!stat.isDirectory()) {
+      return;
+    }
+
+    py.runPython(
+      `
+      import sys
+      site_packages_path = "${windowsPathToUnix(sitePackagesPath)}"
+      if site_packages_path not in sys.path:
+          sys.path.append(site_packages_path)
+      `,
+    );
   }
 }
 
@@ -41,11 +208,14 @@ async function main() {
       env: Object.assign(
         {
           PYTHONINSPECT: "",
+          // In Windows, passing _sysExecutable doesn't seem to set sys.executable to python.bat
+          // since the python.bat batch file is not a real executable that Python interpreter can inspect.
+          // Therefore, we force set PYTHONEXECUTABLE here to ensure sys.executable is correct.
+          PYTHONEXECUTABLE: windowsPathToUnix(_sysExecutable),
         },
         process.env,
-        { HOME: process.cwd() },
+        { HOME: windowsPathToUnix(process.cwd()) },
       ),
-      fullStdLib: false,
       fsInit,
     });
   } catch (e) {
@@ -58,12 +228,47 @@ async function main() {
   }
   py.setStdout();
   py.setStderr();
+
+  try {
+    await py.useNodeSockFS();
+  } catch (e) {
+    console.warn("Failed to initialize socket support");
+  }
+
   let sideGlobals = py.runPython("{}");
   function handleExit(code) {
     if (code === undefined) {
       code = 0;
     }
-    if (py._module._Py_FinalizeEx() < 0) {
+
+    // Workaround: some native extensions don't implement
+    // tp_traverse, so Py_FinalizeEx may destroy type objects before their
+    // instances, crashing on stale function pointers in Wasm.
+    // Force-clearing modules and running GC here while types are still alive to
+    // avoid fatal errors during finalization.
+    // See:
+    //   1. https://pyo3.rs/v0.24.2/class/protocols.html#garbage-collector-integration
+    //   2. tp_traverse: https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse
+    //   3. https://github.com/pyodide/pyodide/issues/6234
+    try {
+      py.runPython("import sys, gc; sys.modules.clear(); gc.collect()");
+    } catch (e) {
+      // Best-effort — proceed to finalization even if this fails.
+    }
+    try {
+      if (py._module._Py_FinalizeEx() < 0) {
+        code = 120;
+      }
+    } catch (e) {
+      // During interpreter finalization, Python modules are being torn down.
+      // If a remaining live object triggers an error, we try to format it via sys.excepthook.
+      // However when there is a fatal error that we cannot process (e.g. function signature mismatch)
+      // excephook itself will fail and we cannot recover.
+      //
+      // Catch that here and print whatever we can extract so the real
+      // exception type and message are visible.
+      console.error("Error during interpreter finalization:");
+      console.error(e);
       code = 120;
     }
     // It's important to call `process.exit` immediately after
@@ -94,6 +299,10 @@ async function main() {
       console.error(e);
     }
   }
+
+  patchPlatformForUv(py);
+  calculateSysPath(py);
+
   py.runPython(
     `
     import asyncio
@@ -105,20 +314,6 @@ async function main() {
     loop._no_in_progress_handler = handleExit
     loop._system_exit_handler = handleExit
     loop._keyboard_interrupt_handler = lambda: handleExit(130)
-
-    # Make shutil.get_terminal_size tell the terminal size accurately.
-    import shutil
-    from js.process import stdout
-    import os
-    def get_terminal_size(fallback=(80, 24)):
-        columns = getattr(stdout, "columns", None)
-        rows = getattr(stdout, "rows", None)
-        if columns is None:
-            columns = fallback[0]
-        if rows is None:
-            rows = fallback[1]
-        return os.terminal_size((columns, rows))
-    shutil.get_terminal_size = get_terminal_size
     `,
     { globals: sideGlobals },
   );

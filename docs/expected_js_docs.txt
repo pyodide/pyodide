@@ -8,14 +8,18 @@ js:typealias
   pyodide.ffi.TypedArray
 js:interface
   exports.PyodideConfig
+  pyodide.BatchedWriteHandler
   pyodide.Lockfile
   pyodide.LockfileInfo
   pyodide.LockfilePackage
   pyodide.PackageData
+  pyodide.RawWriteHandler
+  pyodide.Writer
 js:attribute
   exports.PyodideConfig.args?
   exports.PyodideConfig.checkAPIVersion?
   exports.PyodideConfig.convertNullToNone?
+  exports.PyodideConfig.createPyodideModule?
   exports.PyodideConfig.enableRunUntilComplete?
   exports.PyodideConfig.env?
   exports.PyodideConfig.fullStdLib?
@@ -23,6 +27,7 @@ js:attribute
   exports.PyodideConfig.jsglobals?
   exports.PyodideConfig.lockFileContents?
   exports.PyodideConfig.lockFileURL?
+  exports.PyodideConfig.maxMemoryBytes?
   exports.PyodideConfig.packageBaseUrl?
   exports.PyodideConfig.packageCacheDir?
   exports.PyodideConfig.packages?
@@ -52,6 +57,8 @@ js:attribute
   pyodide.PackageData.name
   pyodide.PackageData.packageType
   pyodide.PackageData.version
+  pyodide.RawWriteHandler.isatty?
+  pyodide.Writer.isatty?
   pyodide.ffi.PyBufferView.c_contiguous
   pyodide.ffi.PyBufferView.data
   pyodide.ffi.PyBufferView.f_contiguous
@@ -78,6 +85,12 @@ js:function
   exports.PyodideConfig.stdin?
   exports.PyodideConfig.stdout?
   exports.loadPyodide
+  pyodide.BatchedWriteHandler.batched
+  pyodide.RawWriteHandler.getTerminalSize?
+  pyodide.RawWriteHandler.raw
+  pyodide.Writer.fsync?
+  pyodide.Writer.getTerminalSize?
+  pyodide.Writer.write
   pyodide.canvas.getCanvas2D
   pyodide.canvas.getCanvas3D
   pyodide.canvas.setCanvas2D
@@ -145,10 +158,12 @@ js:function
   pyodide.ffi.PySequence.some
   pyodide.ffi.PySequence.toJSON
   pyodide.ffi.PySequence.values
+  pyodide.initializeNodeSockFS
   pyodide.loadPackage
   pyodide.loadPackagesFromImports
   pyodide.mountNativeFS
   pyodide.mountNodeFS
+  pyodide.mountOPFS
   pyodide.pyimport
   pyodide.registerComlink
   pyodide.registerJsModule
@@ -162,6 +177,7 @@ js:function
   pyodide.toPy
   pyodide.unpackArchive
   pyodide.unregisterJsModule
+  pyodide.useNodeSockFS
 js:class
   pyodide.ffi.PyAsyncGenerator
   pyodide.ffi.PyAsyncIterable

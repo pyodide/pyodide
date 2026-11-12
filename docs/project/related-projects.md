@@ -17,6 +17,9 @@
   notebook with a Pyodide kernel (currently in French).
 - [JupyterLite](https://github.com/jupyterlite/jupyterlite) is a JupyterLab
   distribution that runs entirely in the browser, based on Pyodide.
+- [PyScript](https://pyscript.net/) is an open source platform for Python in the
+  browser. It defines `<script type="py">` html elements to allow creation of
+  JavaScript-free HTML/CSS/Python web applications.
 - [futurecoder](https://futurecoder.io/) is an interactive Python
   course running on Pyodide. It includes an
   [IDE](https://futurecoder.io/course/#ide) with a REPL,
@@ -34,6 +37,11 @@
 - [Online Laboratory for Climate Science and Meteorology](https://github.com/climet-eu/lab) is a
   JupyterLite-based environment that comes with additional packages from the weather and climate
   community, and patches to support loading and working with large (remote) datasets.
+- [Cubite](https://cubite.io) is a multi-tenant LMS platform that uses Pyodide for in-browser Python execution in course content via a custom [EditorJS plugin](https://github.com/amirtds/editorjs-code-editor). Read more about [how Cubite uses Pyodide for interactive learning](https://cubite.io/blogs/run-python-in-browser-pyodide-editorjs).
+- [codeplug.org](https://codeplug.org) is an in-browser suite for programming amateur radio transceivers. It leverages [CHIRP](https://chirpmyradio.com/projects/chirp/wiki/Home)'s radio drivers using Pyodide and WebSerial to let the user program radios from anywhere.
+- [Pyodios](https://apps.apple.com/us/app/pyodios/id6762922366) is an iOS application that uses Pyodide to run Python code locally on your iPhone and iPad. For examples of the app, see the [documentation website](https://pyodios.caffeinatedmath.com/).
+- [Frappe Playground](https://github.com/lubusIN/frappe-playground) is an in-browser playground for Frappe running entirely client-side using Pyodide.
+- [CodeJo](https://codejo.pages.dev) is an old-school "Just Start Coding" environment, built into a browser window. Nothing fancy. Just start coding!
 
 ## Workarounds for common WASM and browser limitations
 
@@ -54,7 +62,14 @@
 - [wc-code](https://github.com/vanillawc/wc-code) is a library to run
   JavaScript, Python, and Theme in the browser with inline code blocks.
   It uses Pyodide to execute Python code.
+- [Pytml](https://pytml.js.org) is a small JavaScript library that runs Python in HTML with `<py>` tags. It uses Pyodide to execute Python code and automatically connects HTML elements to Python variables, so `print()`, `input()`, and button clicks work without writing JavaScript.[GitHub](https://github.com/nodex-ar/pytml)
 - [SymPy Beta](https://github.com/eagleoflqj/sympy_beta) is a fork of SymPy
   Gamma. It's an in-browser answer engine with a Pyodide backend.
 - [react-py](https://github.com/elilambnz/react-py) is a library that allows for easy integration of Pyodide in React applications. It provides convenient hooks for running Python code.
 - [inseri core](https://wordpress.org/plugins/inseri-core/) is a WordPress plugin that introduces scientific and interactive Gutenberg blocks to facilitate open science. The [Python Code block](https://docs.inseri.swiss/blocks/python/) allows to run Python code in the browser using Pyodide.
+- [OpenMATB](https://github.com/juliencegarra/OpenMATB) is an open-source implementation
+  of the Multi-Attribute Task Battery, used in human factors and cognitive psychology
+  research. Its [browser version](https://juliencegarra.github.io/OpenMATB/#web) runs the
+  pyglet 3 application on Pyodide with WebGL and Web Audio, so that participants can take
+  part in experiments without installing anything
+  ([demo](https://juliencegarra.github.io/OpenMATB/app/index.html?demo=1)).

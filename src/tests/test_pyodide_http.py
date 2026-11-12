@@ -319,6 +319,19 @@ async def test_pyfetch_custom_fetcher(selenium):
     assert await response.text() == "test"
 
 
+@run_in_pyodide
+async def test_FetchResponse_empty_string(selenium):
+    import js
+    from pyodide.http import FetchResponse
+
+    # Test that FetchResponse can handle empty string URLs
+    # This should not raise an error
+    resp = FetchResponse("", await js.fetch(""))
+    assert resp._url == ""
+    cloned = resp.clone()
+    assert cloned._url == ""
+
+
 # pyxhr tests
 @pytest.fixture
 def xhr_test_server(httpserver):

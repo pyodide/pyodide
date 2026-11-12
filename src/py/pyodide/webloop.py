@@ -1,6 +1,7 @@
 import asyncio
 import contextvars
 import inspect
+import math
 import os
 import sys
 import time
@@ -19,6 +20,9 @@ if IN_PYODIDE:
 
 T = TypeVar("T")
 S = TypeVar("S")
+
+# setTimeout()'s max delay: a 32-bit signed int, in ms.
+_MAX_TIMEOUT_MS = 2**31 - 1
 
 
 class PyodideFuture(Future[T]):
@@ -106,6 +110,11 @@ class PyodideFuture(Future[T]):
                 raise x
 
         async def callback(fut: Future[T]) -> None:
+            if fut.cancelled():
+                # Propagate cancellation rather than calling fut.exception(),
+                # which would raise CancelledError and leave result pending.
+                result.cancel()
+                return
             e = fut.exception()
             try:
                 if e:
@@ -146,7 +155,6 @@ class PyodideFuture(Future[T]):
         result: PyodideFuture[T] = PyodideFuture()
 
         async def callback(fut: Future[T]) -> None:
-            exc = fut.exception()
             try:
                 r = onfinally()
                 while inspect.isawaitable(r):
@@ -154,7 +162,11 @@ class PyodideFuture(Future[T]):
             except Exception as e:
                 result.set_exception(e)
                 return
-            if exc:
+            # Read the outcome only after onfinally ran: fut.exception() raises
+            # if fut was cancelled, so check cancellation explicitly first.
+            if fut.cancelled():
+                result.cancel()
+            elif (exc := fut.exception()) is not None:
                 result.set_exception(exc)
             else:
                 result.set_result(fut.result())
@@ -260,6 +272,18 @@ class WebLoop(asyncio.AbstractEventLoop):
         if not self.is_closed():
             self.call_soon(asyncio.ensure_future, agen.aclose())
 
+    def _install_running_loop(self) -> None:
+        """Make ourselves the running loop.
+
+        Several WebLoops can be alive at once (for instance pytest-asyncio
+        makes a fresh loop for every test) and the newest one to be constructed
+        is the registered running loop. asyncio's enter_task() requires the
+        loop running a task's callbacks to be the running loop, so we claim the
+        spot every time we dispatch a handle.
+        """
+        if asyncio._get_running_loop() is not self:
+            asyncio._set_running_loop(self)
+
     def _install_asyncgen_hooks(self) -> None:
         """Install async generator hooks if not already installed."""
         if self._old_agen_hooks is not None:
@@ -301,7 +325,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                     }
                 )
 
-    async def shutdown_default_executor(self):
+    async def shutdown_default_executor(self, timeout=None):
         """Schedule the shutdown of the default executor.
 
         This is a no-op since WebLoop doesn't use thread executors.
@@ -440,11 +464,14 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         This uses `setTimeout(callback, delay)`
         """
-        if delay < 0:
-            raise ValueError("Can't schedule in the past")
+        # Like CPython's asyncio, a delay in the past runs the callback as soon as possible
+        delay = max(delay, 0)
         h = asyncio.Handle(callback, args, self, context=context)
+        if delay == math.inf:
+            return h
 
         def run_handle():
+            self._install_running_loop()
             self._install_asyncgen_hooks()
 
             if h.cancelled():
@@ -463,7 +490,8 @@ class WebLoop(asyncio.AbstractEventLoop):
                     raise
 
         scheduleCallback(
-            create_once_callable(run_handle, _may_syncify=True), delay * 1000
+            create_once_callable(run_handle, _may_syncify=True),
+            min(delay * 1000, _MAX_TIMEOUT_MS),
         )
 
         return h
@@ -544,13 +572,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         return time.monotonic()
 
-    def create_task(
-        self,
-        coro: Coroutine[T, Any, Any],
-        *,
-        name: str | None = None,
-        context: contextvars.Context | None = None,
-    ) -> Task[T]:
+    def create_task(self, coro: Coroutine[Any, Any, T], **kwargs: Any) -> Task[T]:
         """Schedule a coroutine object.
 
         Return a task object.
@@ -559,17 +581,14 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         self._check_closed()
         if self._task_factory is None:
-            task: PyodideTask[T] = PyodideTask(
-                coro, loop=self, name=name, context=context
-            )
+            task: PyodideTask[T] = PyodideTask(coro, loop=self, **kwargs)
             if task._source_traceback:  # type: ignore[attr-defined]
                 # Added comment:
                 # this only happens if get_debug() returns True.
                 # In that case, remove create_task from _source_traceback.
                 del task._source_traceback[-1]  # type: ignore[attr-defined]
         else:
-            task = self._task_factory(self, coro)
-            asyncio.tasks._set_task_name(task, name)  # type: ignore[attr-defined]
+            task = self._task_factory(self, coro, **kwargs)
 
         self._in_progress += 1
         task.add_done_callback(self._decrement_in_progress)
@@ -776,26 +795,135 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
 
     #
-    # High-level networking (TCP/UDP/DNS/TLS) methods — not available in browser environments
+    # High-level networking (TCP/UDP/DNS/TLS) methods
     #
 
     async def getaddrinfo(self, host, port, *, family=0, type=0, proto=0, flags=0):
-        """Asynchronous version of socket.getaddrinfo() (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "getaddrinfo() is not available in browser environments due to restricted raw network access."
+        """Asynchronous version of socket.getaddrinfo()."""
+        import socket
+
+        return await self.run_in_executor(
+            None, socket.getaddrinfo, host, port, family, type, proto, flags
         )
 
     async def getnameinfo(self, sockaddr, flags=0):
-        """Asynchronous version of socket.getnameinfo() (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "getnameinfo() is not available in browser environments due to restricted raw network access."
-        )
+        """Asynchronous version of socket.getnameinfo()."""
+        import socket
 
-    async def create_connection(self, protocol_factory, host=None, port=None, **kwargs):
-        """Open a streaming transport connection to a given address (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "create_connection() is not available in browser environments due to restricted raw socket access."
+        return await self.run_in_executor(None, socket.getnameinfo, sockaddr, flags)
+
+    async def _construct_socket(
+        self,
+        host,
+        port,
+        *,
+        family=0,
+        proto=0,
+        flags=0,
+        all_errors=False,
+    ):
+        """Resolve address and create a connected socket."""
+        import socket
+
+        infos = await self.getaddrinfo(
+            host,
+            port,
+            family=family,
+            type=socket.SOCK_STREAM,
+            proto=proto,
+            flags=flags,
         )
+        if not infos:
+            raise OSError("getaddrinfo() returned empty list")
+
+        exceptions: list[Exception] = []
+        sock = None
+        for af, socktype, sproto, _canonname, sa in infos:
+            try:
+                sock = socket.socket(af, socktype, sproto)
+                sock.setblocking(False)
+                await self.sock_connect(sock, sa)
+                break
+            except OSError as exc:
+                if sock is not None:
+                    sock.close()
+                    sock = None
+                exceptions.append(exc)
+        else:
+            if all_errors:
+                raise ExceptionGroup("create_connection failed", exceptions)
+
+            raise exceptions[-1]
+
+        return sock
+
+    async def create_connection(
+        self,
+        protocol_factory,
+        host=None,
+        port=None,
+        *,
+        ssl=None,
+        family=0,
+        proto=0,
+        flags=0,
+        sock=None,
+        local_addr=None,
+        server_hostname=None,
+        ssl_handshake_timeout=None,
+        ssl_shutdown_timeout=None,
+        happy_eyeballs_delay=None,
+        interleave=None,
+        all_errors=False,
+    ):
+        """Open a streaming transport connection to a given address.
+
+        Supports SSL/TLS is not implemented yet
+        """
+        import socket
+
+        if ssl is not None:
+            raise NotImplementedError(
+                "SSL/TLS via create_connection is not yet supported"
+            )
+
+        if sock is None and (host is None or port is None):
+            raise ValueError("host and port must be specified if sock is not provided")
+        elif sock is not None and (host is not None or port is not None):
+            raise ValueError("host/port and sock can not be specified at the same time")
+        elif sock is not None:
+            if sock.type != socket.SOCK_STREAM:
+                raise ValueError(f"A Stream Socket was expected, got {sock!r}")
+        else:  # host + port is passed, construct socket from it
+            sock = await self._construct_socket(
+                host,
+                port,
+                family=family,
+                proto=proto,
+                flags=flags,
+                all_errors=all_errors,
+            )
+
+        sock.setblocking(False)
+
+        protocol = protocol_factory()
+
+        # waiter is used to ensure the transport is fully initialized before returning
+        # See https://github.com/python/cpython/blob/abd5246305655fc09e4e3c668c8ca09a1b0fc638/Lib/asyncio/selector_events.py#L927
+        # for a similar pattern in CPython
+        waiter = self.create_future()
+
+        from pyodide._nodesock_transport import NodeSocketTransport
+
+        transport = NodeSocketTransport(self, sock, protocol, waiter)
+
+        try:
+            await waiter
+        except BaseException:
+            transport.close()
+            raise
+
+        return transport, protocol
 
     async def create_server(self, protocol_factory, host=None, port=None, **kwargs):
         """Create a TCP server (unsupported on WebLoop)."""
@@ -833,21 +961,28 @@ class WebLoop(asyncio.AbstractEventLoop):
             "start_tls() is not available in browser environments due to lack of low-level TLS controls."
         )
 
+    # Low-level socket operations methods
     #
-    # Low-level socket operations methods — not available in browser environments
-    #
+    # sock_connect, sock_recv, sock_recv_into, and sock_sendall delegate to
+    # JS-level async helpers exposed by NodeSockFS.
 
     async def sock_recv(self, sock, nbytes):
-        """Receive up to nbytes (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "sock_recv() is not available in browser environments due to restricted raw socket access."
-        )
+        """Receive up to *nbytes* from the socket."""
+        try:
+            from pyodide_js._api import _nodeSock
+        except ImportError:
+            raise NotImplementedError(
+                "sock_recv() is not available in browser environments due to restricted raw socket access."
+            ) from None
+        result = await _nodeSock.recv(sock.fileno(), nbytes)
+        return bytes(result)
 
     async def sock_recv_into(self, sock, buf):
-        """Receive into buf (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "sock_recv_into() is not available in browser environments due to restricted raw socket access."
-        )
+        """Receive data from the socket into *buf*."""
+        data = await self.sock_recv(sock, len(buf))
+        n = len(data)
+        buf[:n] = data
+        return n
 
     async def sock_recvfrom(self, sock, bufsize):
         """Receive a datagram up to bufsize (unsupported on WebLoop)."""
@@ -862,10 +997,19 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
 
     async def sock_sendall(self, sock, data):
-        """Send all data to the socket (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "sock_sendall() is not available in browser environments due to restricted raw socket access."
-        )
+        """Send all *data* to the socket."""
+        from pyodide.ffi import create_proxy
+
+        try:
+            from pyodide_js._api import _nodeSock
+        except ImportError:
+            raise NotImplementedError(
+                "sock_sendall() is not available in browser environments due to restricted raw socket access."
+            ) from None
+
+        data_proxy = create_proxy(data)
+        await _nodeSock.send(sock.fileno(), data_proxy)
+        data_proxy.destroy()
 
     async def sock_sendto(self, sock, data, address):
         """Send a datagram to address (unsupported on WebLoop)."""
@@ -874,10 +1018,15 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
 
     async def sock_connect(self, sock, address):
-        """Connect the socket to a remote address (unsupported on WebLoop)."""
-        raise NotImplementedError(
-            "sock_connect() is not available in browser environments due to restricted raw socket access."
-        )
+        """Connect the socket to a remote *address*."""
+        try:
+            from pyodide_js._api import _nodeSock
+        except ImportError:
+            raise NotImplementedError(
+                "sock_connect() is not available in browser environments due to restricted raw socket access."
+            ) from None
+        host, port = address[0], address[1]
+        await _nodeSock.connect(sock.fileno(), host, port)
 
     async def sock_accept(self, sock):
         """Accept a connection (unsupported on WebLoop)."""
@@ -924,7 +1073,9 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
 
 
-class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
+# TODO: asyncio's policy system is deprecated as of Python 3.14
+# we need to find an alternative way to set the event loop for pyodide
+class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore[name-defined]
     """
     A simple event loop policy for managing :py:class:`WebLoop`-based event loops.
     """

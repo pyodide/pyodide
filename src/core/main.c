@@ -5,42 +5,52 @@
 #include <jslib.h>
 #include <stdbool.h>
 
-#define FAIL_IF_STATUS_EXCEPTION(status)                                       \
-  if (PyStatus_Exception(status)) {                                            \
-    goto finally;                                                              \
-  }
+// The standard library is shipped as a zip file mounted at
+// /lib/python<major><minor>.zip
+#define STDLIB_ZIP_HELPER(major, minor) "/lib/python" #major #minor ".zip"
+#define STDLIB_ZIP_(major, minor) STDLIB_ZIP_HELPER(major, minor)
+#define STDLIB_ZIP STDLIB_ZIP_(PY_MAJOR_VERSION, PY_MINOR_VERSION)
 
 // Initialize python. exit() and print message to stderr on failure.
 static void
 initialize_python(int argc, char** argv)
 {
-  bool success = false;
-  PyStatus status;
-
   PyPreConfig preconfig;
   PyPreConfig_InitPythonConfig(&preconfig);
+  preconfig.utf8_mode = 1;
 
-  status = Py_PreInitializeFromBytesArgs(&preconfig, argc, argv);
-  FAIL_IF_STATUS_EXCEPTION(status);
+  PyStatus status = Py_PreInitializeFromBytesArgs(&preconfig, argc, argv);
+  if (PyStatus_Exception(status)) {
+    // This will exit().
+    Py_ExitStatusException(status);
+  }
 
   PyConfig config;
   PyConfig_InitPythonConfig(&config);
+  _Defer
+  {
+    PyConfig_Clear(&config);
+  };
 
   status = PyConfig_SetBytesArgv(&config, argc, argv);
-  FAIL_IF_STATUS_EXCEPTION(status);
+  if (PyStatus_Exception(status)) {
+    Py_ExitStatusException(status);
+  }
 
   status = PyConfig_SetBytesString(&config, &config.home, "/");
-  FAIL_IF_STATUS_EXCEPTION(status);
+  if (PyStatus_Exception(status)) {
+    Py_ExitStatusException(status);
+  }
+
+  // Point the standard library directory at the stdlib zip
+  status = PyConfig_SetBytesString(&config, &config.stdlib_dir, STDLIB_ZIP);
+  if (PyStatus_Exception(status)) {
+    Py_ExitStatusException(status);
+  }
 
   config.write_bytecode = false;
   status = Py_InitializeFromConfig(&config);
-  FAIL_IF_STATUS_EXCEPTION(status);
-
-  success = true;
-finally:
-  PyConfig_Clear(&config);
-  if (!success) {
-    // This will exit().
+  if (PyStatus_Exception(status)) {
     Py_ExitStatusException(status);
   }
 }
@@ -77,29 +87,40 @@ pymain_run_python(int* exitcode);
 EMSCRIPTEN_KEEPALIVE int
 run_main()
 {
-  int exitcode;
   // run_python may call exit() if `-h` or `-V` have been passed. If we stop it
   // from exiting, we'll segfault. So pop the keep alive, so that exit() will
   // call onExit and shut down the runtime. We notice this in pyodide.ts and
   // throw a ExitStatus error.
   emscripten_runtime_keepalive_pop();
+  int exitcode;
   pymain_run_python(&exitcode);
   emscripten_runtime_keepalive_push();
   return exitcode;
 }
 
+int
+enter_promising_task(void);
+
 void
-set_suspender(JsVal suspender);
+exit_promising_task(void);
 
 /**
- * call _pyproxy_apply but save the error flag into the argument so it can't be
- * observed by unrelated Python callframes. callPyObjectKwargsSuspending will
- * restore the error flag before calling pythonexc2js(). See
- * test_stack_switching.test_throw_from_switcher for a detailed explanation.
+ * Run main with stack switching enabled.
+ *
+ * Like _pyproxy_apply_promising, main runs as a promising task of its own. See
+ * the ownership model at the top of pystate.c.
  */
 EMSCRIPTEN_KEEPALIVE int
-run_main_promising(JsVal suspender)
+run_main_promising(void)
 {
-  set_suspender(suspender);
-  return run_main();
+  if (enter_promising_task() != 0) {
+    PyErr_Print();
+    return 1;
+  }
+  // Note: run_main() may call exit(), in which case control never returns here
+  // and exit_promising_task() is never called. That's okay because the runtime
+  // shuts down.
+  int exitcode = run_main();
+  exit_promising_task();
+  return exitcode;
 }
