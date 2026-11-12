@@ -54,6 +54,9 @@ _November 13, 2026_
   CPython, the callback runs as soon as possible.
   {pr}`6489`
 
+- {{ Fix }} Fixed a new event loop silently replacing the current running loop when
+  `asyncio.new_event_loop()` is called. {pr}`6342`
+
 ### Python / JavaScript type conversions
 
 - {{ Fix }} A Python `int` equal to `Number.MAX_SAFE_INTEGER` or
