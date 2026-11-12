@@ -60,11 +60,11 @@ EM_JS(PyObject*, pyproxy_AsPyObject, (JsVal val), {
 });
 
 EM_JS(void, destroy_proxies, (JsVal proxies, Js_Identifier* msg_ptr), {
-// clang-format off
+  // clang-format off
   if (proxies.length === 0) {
     return;
   }
-// clang-format on
+  // clang-format on
   let msg = undefined;
   if (msg_ptr) {
     msg = _JsvString_FromId(msg_ptr);
