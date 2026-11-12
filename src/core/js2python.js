@@ -370,7 +370,7 @@ function js2python_convertOther(value, context) {
     return js2python_convertObject(value, context);
   }
   if (typeTag === "[object ArrayBuffer]" || ArrayBuffer.isView(value)) {
-    let [format_utf8, itemsize] = Module.get_buffer_datatype(value);
+    let [format_utf8, itemsize] = API.get_buffer_datatype(value);
     return _JsBuffer_CopyIntoMemoryView(
       value,
       value.byteLength,

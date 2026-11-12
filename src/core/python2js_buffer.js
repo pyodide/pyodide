@@ -86,14 +86,20 @@ Module.processBufferFormatString = function (formatStr, errorMessage = "") {
       }
       arrayType = BigUint64Array;
       break;
+    case "e":
+      if (globalThis.Float16Array === undefined) {
+        throw new Error(
+          "Float16Array is not supported on this browser." + errorMessage,
+        );
+      }
+      arrayType = Float16Array;
+      break;
     case "f":
       arrayType = Float32Array;
       break;
     case "d":
       arrayType = Float64Array;
       break;
-    case "e":
-      throw new Error("Javascript has no Float16 support.");
     default:
       throw new Error(
         `Unrecognized format character '${formatChar}'.` + errorMessage,
