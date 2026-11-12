@@ -25,7 +25,7 @@ permissions: {}
 jobs:
   get_python_version:
     name: Get Python version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -50,7 +50,7 @@ jobs:
 
   check-docs:
     name: Check documentation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: get_python_version
     permissions:
       contents: read
@@ -81,7 +81,7 @@ jobs:
 
   test-python:
     name: Test Python
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: get_python_version
     permissions:
       contents: read
@@ -126,7 +126,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             pyodide_packages: "tag:core,tag:pyodide.test,numpy${{ needs.test-scipy-trigger.outputs.test-scipy == 'true' && ',scipy' || '' }}"
     runs-on: ${{ matrix.os }}
     needs: [test-scipy-trigger, get_python_version]
@@ -506,7 +506,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-24.04, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     needs: [build-core-linux, get_python_version]
     permissions:
@@ -546,7 +546,7 @@ jobs:
 
   test-db-integration:
     name: Test DB integrations
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [build-core-linux, get_python_version]
     services:
       mysql:
@@ -638,7 +638,7 @@ jobs:
 
   test-scipy-trigger:
     name: test-scipy-trigger
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -678,7 +678,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-24.04]
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -716,7 +716,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-24.04]
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -751,7 +751,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-24.04]
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
