@@ -111,3 +111,66 @@ catch_invoke_func(int x)
   }
   return msg;
 }
+
+// Python bindings. The C functions above stay exported so the tests that need
+// to call them directly from JavaScript can still do so.
+
+static PyObject*
+take_string(char* msg)
+{
+  PyObject* result = PyUnicode_FromString(msg);
+  free(msg);
+  return result;
+}
+
+static PyObject*
+py_catch_exc(PyObject* self, PyObject* arg)
+{
+  int x = PyLong_AsInt(arg);
+  if (x == -1 && PyErr_Occurred()) {
+    return NULL;
+  }
+  return take_string(catch_exc(x));
+}
+
+static PyObject*
+py_catch_invoke_func(PyObject* self, PyObject* arg)
+{
+  int x = PyLong_AsInt(arg);
+  if (x == -1 && PyErr_Occurred()) {
+    return NULL;
+  }
+  return take_string(catch_invoke_func(x));
+}
+
+static PyObject*
+py_set_jmp_func(PyObject* self, PyObject* Py_UNUSED(ignored))
+{
+  return PyLong_FromLong(set_jmp_func());
+}
+
+static PyMethodDef methods[] = {
+  { "catch_exc",
+    py_catch_exc,
+    METH_O,
+    "Call a function in libthrow.so that throws and catch the C++ exception." },
+  { "catch_invoke_func",
+    py_catch_invoke_func,
+    METH_O,
+    "Catch a C++ exception thrown through an invoke function." },
+  { "set_jmp_func",
+    py_set_jmp_func,
+    METH_NOARGS,
+    "setjmp here and longjmp back from libthrow.so." },
+  { NULL, NULL, 0, NULL },
+};
+
+static struct PyModuleDef module = {
+  PyModuleDef_HEAD_INIT, "_catch", NULL, -1, methods,
+};
+
+extern "C" PyMODINIT_FUNC
+PyInit__catch(void)
+{
+  return PyModule_Create(&module);
+}

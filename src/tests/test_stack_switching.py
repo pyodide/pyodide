@@ -314,7 +314,11 @@ def test_cpp_exceptions_and_syncify(selenium):
 
             await pyodide.loadPackage("test-cpp-exceptions")
             const Module = pyodide._module;
-            const catchlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-catch.so"].exports;
+            const catchlibPath = pyodide.runPython(`
+                import cpp_exceptions_test._catch
+                cpp_exceptions_test._catch.__file__
+            `);
+            const catchlib = pyodide._module.LDSO.loadedLibsByName[catchlibPath].exports;
             async function t(x){
                 Module.validSuspender.value = true;
                 const ptr = await Module.createPromising(catchlib.promising_catch_call_pyobj)(x);

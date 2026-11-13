@@ -66,6 +66,15 @@ _November 13, 2026_
   they have unpatched security vulnerabilities.
   {pr}`6552`
 
+- {{ Performance }} Shared libraries inside a package are no longer all
+  compiled while the package is installing. By default only libraries of 8MiB
+  or more, which Chromium refuses to compile synchronously on the main thread,
+  are compiled during installation; the rest are compiled when they are first
+  imported. This makes {js:func}`pyodide.loadPackage` faster and avoids
+  compiling libraries that are never imported. The threshold can be configured
+  with the `sharedLibraryPreloadThreshold` option of {js:func}`loadPyodide`;
+  pass `0` to get the previous behavior. {pr}`6422`
+
 ### JavaScript API
 
 - {{ Fix }} Fixed a `SystemError` caused by `pyodide.setDebug(true)`.
