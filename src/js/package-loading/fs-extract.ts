@@ -36,6 +36,8 @@ export function extractArchiveToFS(
   const dynlibs: string[] = [];
   let distInfoDir: string | undefined;
   let dataDir: string | undefined;
+  const root = resolve(installDir, ".");
+  const rootPrefix = root === "/" ? "/" : `${root}/`;
 
   for (const { name, data } of entries) {
     const firstComponent = name.split("/", 1)[0];
@@ -46,9 +48,9 @@ export function extractArchiveToFS(
       dataDir = firstComponent;
     }
 
-    const fullPath = resolve(installDir, name);
+    const fullPath = resolve(root, name);
     // Guard against zip-slip: a malicious archive must not escape installDir.
-    if (fullPath !== installDir && !fullPath.startsWith(installDir)) {
+    if (fullPath !== root && !fullPath.startsWith(rootPrefix)) {
       throw new Error(
         `Refusing to extract '${name}': path escapes '${installDir}'`,
       );

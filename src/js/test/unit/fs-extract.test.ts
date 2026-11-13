@@ -76,6 +76,42 @@ describe("extractArchiveToFS", () => {
     );
   });
 
+  it("rejects entries that escape into a sibling with the same prefix", () => {
+    const entries: ArchiveEntry[] = [
+      { name: "../site-packages-evil/x.py", data: enc.encode("x") },
+    ];
+    const { fs, files } = makeMockFS();
+    assert.throws(
+      () => extractArchiveToFS(fs, entries, SITE, extensionTags),
+      /escapes/,
+    );
+    assert.equal(files.size, 0);
+  });
+
+  for (const installDir of [`/${SITE}`, `${SITE}/`, `${SITE}/./`]) {
+    it(`accepts a non-normalized install directory '${installDir}'`, () => {
+      const soName = "pkg/_core.cpython-314-wasm32-emscripten.so";
+      const entries: ArchiveEntry[] = [
+        { name: "pkg/__init__.py", data: enc.encode("x = 1\n") },
+        { name: soName, data: new Uint8Array([0, 97, 115, 109]) },
+      ];
+      const { fs, files } = makeMockFS();
+      const result = extractArchiveToFS(fs, entries, installDir, extensionTags);
+      assert.deepEqual(
+        [...files.keys()],
+        [`${SITE}/pkg/__init__.py`, `${SITE}/${soName}`],
+      );
+      assert.deepEqual(result.dynlibs, [`${SITE}/${soName}`]);
+    });
+  }
+
+  it("allows any entry when installing into the root directory", () => {
+    const entries: ArchiveEntry[] = [{ name: "a/b.py", data: enc.encode("b") }];
+    const { fs, files } = makeMockFS();
+    extractArchiveToFS(fs, entries, "/", extensionTags);
+    assert.ok(files.has("/a/b.py"));
+  });
+
   it("reports no metadata dirs or dynlibs for a plain archive", () => {
     const entries: ArchiveEntry[] = [
       { name: "a.py", data: enc.encode("a") },
