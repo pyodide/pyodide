@@ -314,11 +314,10 @@ def test_cpp_exceptions_and_syncify(selenium):
 
             await pyodide.loadPackage("test-cpp-exceptions")
             const Module = pyodide._module;
-            // Nothing imports this library, so under the default on-demand
-            // strategy it is never compiled. Ask for it explicitly before
-            // reaching into the dynamic linker's table.
-            const catchlibPath = "/usr/lib/cpp-exceptions-test-catch.so";
-            await pyodide._api.loadDynlib(catchlibPath);
+            const catchlibPath = pyodide.runPython(`
+                import cpp_exceptions_test._catch
+                cpp_exceptions_test._catch.__file__
+            `);
             const catchlib = pyodide._module.LDSO.loadedLibsByName[catchlibPath].exports;
             async function t(x){
                 Module.validSuspender.value = true;

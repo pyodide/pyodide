@@ -180,9 +180,9 @@ export interface PyodideConfig {
    * The size in bytes at or above which a shared library (``.so`` file) inside
    * a package is compiled while the package is being installed.
    *
-   * This exists because in the main thread, there is a limit in size where
-   * WASM modules can be complied synchronously. Historically this was 4KiB
-   * in Chrome, but not it is a limit of 8MiB.
+   * This exists because on the main thread, browsers limit the size of WASM
+   * modules that can be compiled synchronously. Historically this limit was
+   * 4KiB in Chrome, but now it is 8MiB.
    *
    * Set to ``0`` to compile every shared library at install time, or to
    * ``Infinity`` to never compile them at install time (for instance, in
@@ -270,6 +270,8 @@ export interface PyodideConfig {
  */
 export type PyodideConfigWithDefaults = Required<PyodideConfig>;
 
+const DEFAULT_SHARED_LIBRARY_PRELOAD_THRESHOLD = 8 * 1024 * 1024; // 8MiB
+
 /**
  * @private
  * Initialize the configuration for Pyodide.
@@ -319,7 +321,7 @@ async function initializeConfiguration(
     packageCacheDir: options.packageBaseUrl,
     enableRunUntilComplete: true,
     checkAPIVersion: true,
-    sharedLibraryPreloadThreshold: 8 * 1024 * 1024,
+    sharedLibraryPreloadThreshold: DEFAULT_SHARED_LIBRARY_PRELOAD_THRESHOLD,
     BUILD_ID,
   };
   const config = Object.assign(
@@ -327,6 +329,15 @@ async function initializeConfiguration(
     options,
   ) as PyodideConfigWithDefaults;
   config.env.HOME ??= "/home/pyodide";
+
+  config.sharedLibraryPreloadThreshold ??=
+    DEFAULT_SHARED_LIBRARY_PRELOAD_THRESHOLD;
+  const threshold = config.sharedLibraryPreloadThreshold;
+  if (typeof threshold !== "number" || !(threshold >= 0)) {
+    throw new TypeError(
+      `sharedLibraryPreloadThreshold must be a non-negative number, got ${threshold}`,
+    );
+  }
 
   /**
    * `PyErr_Print()` will call `exit()` if the exception is a `SystemError`.
