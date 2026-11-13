@@ -87,6 +87,15 @@ _November 13, 2026_
   and `/d`.
   {pr}`6467`
 
+### Build system
+
+- {{ Fix }} The cross-build environment now ships pkg-config files for Python
+  (`python-3.14.pc`, `python3.pc`) in the directory
+  that `sysconfig.get_config_var("LIBPC")` points to. Before, build systems
+  like meson that look Python up via pkg-config could pick up the host
+  system's Python headers.
+  {pr}`6556`
+
 ## Version 314.0.7
 
 _September 14, 2026_
