@@ -88,7 +88,15 @@ EM_JS(void, destroy_proxy, (JsVal px, Js_Identifier* msg_ptr), {
   if (msg_ptr) {
     msg = _JsvString_FromId(msg_ptr);
   }
-  Module.pyproxy_destroy(px, msg, false);
+  // We are often called from cleanup code with a Python error set. In debug
+  // mode pyproxy_destroy calls repr() on the proxy, which would clobber it, so
+  // save the error and restore it afterwards.
+  const exc = _PyErr_GetRaisedException();
+  try {
+    Module.pyproxy_destroy(px, msg, false);
+  } finally {
+    _PyErr_SetRaisedException(exc);
+  }
 });
 
 static PyObject* asyncio;
@@ -765,8 +773,9 @@ exit_promising_task(void);
  * restore the error flag before calling pythonexc2js(). See
  * test_stack_switching.test_throw_from_switcher for a detailed explanation.
  *
- * We also give the task a thread state of its own for its whole lifetime. See
- * the comment at the top of pystate.c.
+ * We also give the task a frame chain, exception stack, and contextvars
+ * context of its own for its whole lifetime. See the comment at the top of
+ * pystate.c.
  */
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_apply_promising(JsVal suspender,
@@ -781,8 +790,7 @@ _pyproxy_apply_promising(JsVal suspender,
   JsVal res = JS_ERROR;
   if (enter_promising_task() == 0) {
     res = _pyproxy_apply(callable, jsargs, numposargs, jskwnames, numkwargs);
-    // Take the error flag off of the task thread state before handing control
-    // back, otherwise we'd read the error flag of the main thread state.
+    // Take the error flag off of the thread state before exiting the task.
     *exc = PyErr_GetRaisedException();
     exit_promising_task();
   } else {

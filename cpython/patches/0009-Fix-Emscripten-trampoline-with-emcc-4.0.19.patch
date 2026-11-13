@@ -1,18 +1,18 @@
-From 3df042a1a7c3f3c30c984d3acdecd780cbaae4b4 Mon Sep 17 00:00:00 2001
+From 51f7d78ac5d156890f69aa54d2abb6c76e4223e7 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 20 Feb 2026 13:04:21 +0100
-Subject: [PATCH 9/9] Fix Emscripten trampoline with emcc >= 4.0.19
+Subject: [PATCH 09/10] Fix Emscripten trampoline with emcc >= 4.0.19
 
 This undoes a change made as a part of PR 137470. We add an `emscripten_trampoline`
 field in `pycore_runtime_structs.h` and initialize it from JS initialization code with
 the wasm-gc based trampoline if possible. Otherwise we fall back to the JS trampoline.
 ---
- .../internal/pycore_emscripten_trampoline.h   |  3 -
- Include/internal/pycore_runtime_structs.h     | 10 ++
- Python/emscripten_trampoline.c                | 97 +++++++++++++++----
- configure                                     |  2 +-
- configure.ac                                  |  2 +-
- 5 files changed, 90 insertions(+), 24 deletions(-)
+ .../internal/pycore_emscripten_trampoline.h   |   3 -
+ Include/internal/pycore_runtime_structs.h     |  10 ++
+ Python/emscripten_trampoline.c                |  97 ++++++++++++++----
+ configure                                     | Bin 959990 -> 960026 bytes
+ configure.ac                                  |   2 +-
+ 5 files changed, 89 insertions(+), 23 deletions(-)
 
 diff --git a/Include/internal/pycore_emscripten_trampoline.h b/Include/internal/pycore_emscripten_trampoline.h
 index 16916f1a8eb..e37c53a64f4 100644
@@ -189,7 +189,7 @@ diff --git a/configure b/configure
 index 46eb0665bf4..fbacfcef923 100755
 --- a/configure
 +++ b/configure
-@@ -9617,7 +9617,7 @@ fi
+@@ -9617,7 +9617,7 @@ case $ac_sys_system in #(
  
          as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
      as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"
@@ -212,5 +212,5 @@ index bd4446e9488..761a30178e0 100644
      dnl Avoid bugs in JS fallback string decoding path
      AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
 -- 
-2.34.1
+2.55.0
 

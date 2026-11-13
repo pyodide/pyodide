@@ -10,6 +10,7 @@
     "composite": true,
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
     "strict": true,
+    "alwaysStrict": false,
     "noUnusedLocals": false,
     "types": ["node", "emscripten"],
     "experimentalDecorators": true,

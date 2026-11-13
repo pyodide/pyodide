@@ -1,0 +1,40 @@
+From bdca4472ca386625a43150a6a90f4c3c454e7fa1 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 12 Nov 2026 14:07:40 -0800
+Subject: [PATCH 10/10] Remove iOS guard for wasm-gc trampoline
+
+It's causing trouble for new versions of iOS that support wasm-gc correctly and
+also support JSPI. Breaks support for iOS 18.x for x < 6, but those old versions
+are vulnerable to various October security issues so hopefully nobody is running
+them.
+---
+ Python/emscripten_trampoline.c | 13 -------------
+ 1 file changed, 13 deletions(-)
+
+diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
+index 1833311ca74..bc851b8c15c 100644
+--- a/Python/emscripten_trampoline.c
++++ b/Python/emscripten_trampoline.c
+@@ -55,19 +55,6 @@ EM_JS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObjec
+ }
+ // Try to compile wasm-gc trampoline if possible.
+ function getPyEMTrampolinePtr() {
+-    // Starting with iOS 18.3.1, WebKit on iOS has an issue with the garbage
+-    // collector that breaks the call trampoline. See #130418 and
+-    // https://bugs.webkit.org/show_bug.cgi?id=293113 for details.
+-    let isIOS = globalThis.navigator && (
+-        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+-        // Starting with iPadOS 13, iPads might send a platform string that looks like a desktop Mac.
+-        // To differentiate, we check if the platform is 'MacIntel' (common for Macs and newer iPads)
+-        // AND if the device has multi-touch capabilities (navigator.maxTouchPoints > 1)
+-        (navigator.platform === 'MacIntel' && typeof navigator.maxTouchPoints !== 'undefined' && navigator.maxTouchPoints > 1)
+-    );
+-    if (isIOS) {
+-        return 0;
+-    }
+     let trampolineModule;
+     try {
+         trampolineModule = getWasmTrampolineModule();
+-- 
+2.55.0
+
