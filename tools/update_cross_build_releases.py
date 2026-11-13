@@ -1,6 +1,5 @@
 import argparse
 import hashlib
-import json
 import os
 import shutil
 import tempfile
@@ -31,8 +30,8 @@ METADATA_FILE_DEBUG_V2 = (
     / "pyodide-cross-build-environments-debug-v2.json"
 )
 
-BASE_URL = "https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-{version}.tar.bz2"
-DEBUG_BASE_URL = "https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-debug-{version}.tar.bz2"
+BASE_URL = "https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-{version}.tar.gz"
+DEBUG_BASE_URL = "https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-debug-{version}.tar.gz"
 
 # Pyodide build version that is compatible with the latest cross-build environment
 # Note for maintainers: update this value when there are breaking changes in the cross-build environment
@@ -81,7 +80,7 @@ def parse_env_var(content: str, var_name: str) -> str:
 def extract_archive(archive: bytes) -> Generator[Path]:
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_dir_path = Path(tmp_dir)
-        archive_path = tmp_dir_path / "xbuildenv.tar.bz2"
+        archive_path = tmp_dir_path / "xbuildenv.tar.gz"
         archive_path.write_bytes(archive)
 
         # Extract the archive
@@ -101,7 +100,7 @@ def add_version(
     min_pyodide_build_version: str | None = None,
     max_pyodide_build_version: str | None = None,
 ) -> str:
-    metadata = CrossBuildEnvMetaSpec.model_validate_json(raw_metadata)
+    metadata = CrossBuildEnvMetaSpec.from_json(raw_metadata)
     new_release = CrossBuildEnvReleaseSpec(
         version=version,
         url=url,
@@ -120,8 +119,7 @@ def add_version(
     metadata.releases = dict(
         sorted(metadata.releases.items(), reverse=True, key=lambda x: Version(x[0]))
     )
-    dictionary = metadata.model_dump(exclude_none=True)
-    return json.dumps(dictionary, indent=2)
+    return metadata.to_json()
 
 
 def main():

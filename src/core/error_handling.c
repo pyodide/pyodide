@@ -10,7 +10,6 @@
 #include <emscripten.h>
 #include <stdio.h>
 
-static PyObject* tbmod = NULL;
 static PyObject* _pyodide_importhook = NULL;
 
 _Py_IDENTIFIER(__qualname__);
@@ -151,7 +150,6 @@ static JsVal
 wrap_exception_inner(PyObject* exc)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  DECLARE_PY_OBJECT(typestr);
 
   if (PyErr_GivenExceptionMatches(exc, PyExc_ModuleNotFoundError)) {
     DECLARE_PY_OBJECT(res);
@@ -180,6 +178,7 @@ wrap_exception_inner(PyObject* exc)
   PyErr_Print();
   JsVal formatted_exception = restore_stderr();
 
+  DECLARE_PY_OBJECT(typestr);
   typestr = _PyObject_GetAttrId((PyObject*)Py_TYPE(exc), &PyId___qualname__);
   FAIL_IF_NULL(typestr);
   const char* typestr_utf8 = PyUnicode_AsUTF8(typestr);
@@ -281,9 +280,6 @@ error_handling_init(PyObject* core_module)
   FAIL_IF_NULL(conversion_error);
 
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
-
-  tbmod = PyImport_ImportModule("traceback");
-  FAIL_IF_NULL(tbmod);
 
   return 0;
 }

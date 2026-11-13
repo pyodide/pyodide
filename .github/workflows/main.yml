@@ -2,10 +2,19 @@ name: main
 
 on:
   push:
+    branches:
+      # development branch
+      - main
+      # latest release branch
+      - stable
+      # older release branches
+      - "[0-9]+.[0-9]+.X"
+      # slightly longer-lived branches for ABI changes
+      - "abi_*"
   pull_request:
 
 concurrency:
-  group: main-${{ github.head_ref }}
+  group: main-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 env:
@@ -16,32 +25,38 @@ permissions: {}
 jobs:
   get_python_version:
     name: Get Python version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
       PYVERSION: ${{ steps.get_python_version.outputs.PYVERSION }}
+      PYVERSION_SETUP_PYTHON: ${{ steps.get_python_version.outputs.PYVERSION_SETUP_PYTHON }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Read the Python version from Makefile.envs
         id: get_python_version
         run: |
-          echo "PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)"  >> "$GITHUB_OUTPUT"
+          PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)
+          # Raw CPython version format (e.g. 3.15.0b3), understood by uv.
+          echo "PYVERSION=$PYVERSION"  >> "$GITHUB_OUTPUT"
+          # Convert CPython version format (e.g. 3.15.0b3) to setup-python format (e.g. 3.15.0-beta.3)
+          PYVERSION_SETUP_PYTHON=$(echo "$PYVERSION" | sed -E 's/a([0-9]+)$/-alpha.\1/; s/b([0-9]+)$/-beta.\1/; s/rc([0-9]+)$/-rc.\1/')
+          echo "PYVERSION_SETUP_PYTHON=$PYVERSION_SETUP_PYTHON"  >> "$GITHUB_OUTPUT"
 
   check-docs:
     name: Check documentation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: get_python_version
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
       - name: Install Python requirements
@@ -63,18 +78,19 @@ jobs:
 
   test-python:
     name: Test Python
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: get_python_version
     permissions:
       contents: read
+      id-token: write  # For tokenless Codecov uploads via OIDC
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION_SETUP_PYTHON }}
       - name: Install requirements
         shell: bash -l {0}
         run: |
@@ -94,54 +110,101 @@ jobs:
               --runtime=host \
               --cov=pyodide \
               src tools/
-      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
+          use_oidc: true
           fail_ci_if_error: false
 
-  build-core:
+  # The Linux and macOS core builds are separate jobs (sharing the same steps
+  # through YAML anchors) so that jobs that only need the Linux build do not
+  # have to wait for the macOS build.
+  build-core-linux:
     name: Build core (${{ matrix.os }})
     strategy:
-      fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             pyodide_packages: "tag:core,tag:pyodide.test,numpy${{ needs.test-scipy-trigger.outputs.test-scipy == 'true' && ',scipy' || '' }}"
-          - os: macos-14
-            pyodide_packages: "tag:core,tag:pyodide.test,numpy"
     runs-on: ${{ matrix.os }}
-    needs: [test-scipy-trigger]
+    needs: [test-scipy-trigger, get_python_version]
     permissions:
       contents: read
-    env:
+    env: &build-core-env
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
       CCACHE_DIR: /tmp/ccache
+    # Use a non-login bash shell everywhere.
+    defaults: &build-core-defaults
+      run:
+        shell: bash
 
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+    steps: &build-core-steps
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
       - name: Cache ccache output
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             /tmp/ccache
-          key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
+          # Make the key unique per run because actions/cache does not update
+          # an existing cache on an exact hit for a fully static key
+          key: ccache-${{ hashFiles('Makefile.envs', 'emsdk/patches/*.patch') }}-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-${{ hashFiles('Makefile.envs', 'emsdk/patches/*.patch') }}-${{ runner.os }}-
 
-      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.21"
 
-      - uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5 # v4.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          activate-environment: pyodide-env
-          environment-file: environment.yml
-          channels: conda-forge
+          node-version: "24"
+
+      - name: Install system dependencies (ubuntu)
+        if: ${{ contains(runner.os, 'Linux') }}
+        run: |
+          sudo apt-get update
+          # f2c/gfortran are only required by the scipy build (not the
+          # numpy-only core build) but are cheap to install unconditionally.
+          sudo apt-get install -y \
+            build-essential git xxd \
+            ccache swig f2c gfortran \
+            autoconf automake libtool libltdl-dev \
+            pkg-config texinfo bison ninja-build
+
+      - name: Install system dependencies (macos)
+        if: ${{ contains(runner.os, 'macOS') }}
+        run: |
+          # The macOS core build only builds numpy, so gfortran/f2c/swig are
+          # not required here. cmake is installed via pip (see requirements.txt).
+          brew install coreutils autoconf automake libtool libffi ccache wget gpatch gnu-sed
+          # Expose the GNU tools (sed/patch/coreutils) with their standard names,
+          # ahead of the BSD versions in /usr/bin.
+          mkdir -p "$HOME/gnu-bin"
+          ln -sf "$(brew --prefix)/bin/gpatch" "$HOME/gnu-bin/patch"
+          echo "$HOME/gnu-bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix)/opt/gnu-sed/libexec/gnubin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix)/opt/coreutils/libexec/gnubin" >> "$GITHUB_PATH"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      - name: Set up Python ${{ needs.get_python_version.outputs.PYVERSION }}
+        env:
+          PYVERSION: ${{ needs.get_python_version.outputs.PYVERSION }}
+        run: |
+          uv venv --seed --python "$PYVERSION" .venv
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Install dependencies (Python)
+        run: |
+          unset RUSTFLAGS && python -m pip install -r requirements.txt
 
       - name: Check Versions
-        shell: bash -l {0}
         run: |
           python --version
           node --version
@@ -151,25 +214,7 @@ jobs:
           which npm
           which go
 
-      - name: Install dependencies (ubuntu)
-        shell: bash -l {0}
-        if: ${{ contains(runner.os, 'ubuntu') }}
-        run: |
-          sudo apt install -y build-essential git xxd
-
-      - name: Install dependencies (macos)
-        shell: bash -l {0}
-        if: ${{ contains(runner.os, 'macos') }}
-        run: |
-          brew install coreutils
-
-      - name: Install dependencies (Python)
-        shell: bash -l {0}
-        run: |
-          python -m pip install -r requirements.txt
-
       - name: Build emsdk
-        shell: bash -l {0}
         run: |
           which ccache
 
@@ -177,8 +222,11 @@ jobs:
           make -C emsdk
           ccache -s
 
+          # Set mtime for EM_CONFIG to avoid ccache cache misses
+          source pyodide_env.sh
+          touch -m -d '1 Jan 2021 12:00' "$EM_CONFIG"
+
       - name: Build Cpython
-        shell: bash -l {0}
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
@@ -190,24 +238,25 @@ jobs:
           ccache -s
 
       - name: build Pyodide with packages ${{ matrix.pyodide_packages }}
-        shell: bash -l {0}
         env:
           PYODIDE_PACKAGES: ${{ matrix.pyodide_packages }}
           PYODIDE_JOBS: ${{ env.PYODIDE_JOBS }}
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
+
+          # Set mtime for EM_CONFIG to avoid ccache cache misses
+          touch -m -d '1 Jan 2021 12:00' "$EM_CONFIG"
+
           ccache -z
           make -j$PYODIDE_JOBS
           ccache -s
 
       - name: Build windows python.exe
-        shell: bash -l {0}
         run: |
           make dist/python.exe
 
       - name: check-size
-        shell: bash -l {0}
         run: |
           ls -lh dist/
 
@@ -215,58 +264,103 @@ jobs:
           ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
       - name: Store artifacts build
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
           retention-days: 60
 
       - name: Store sysconfig
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: core-sysconfig-${{ runner.os }}
           path: ./cpython/installs/
           retention-days: 60
 
-  test-core:
-    name: Test core (${{ matrix.browser }})
+  build-core-macos:
+    name: Build core (${{ matrix.os }})
+    strategy:
+      matrix:
+        include:
+          - os: macos-15
+            pyodide_packages: "tag:core,tag:pyodide.test,numpy"
     runs-on: ${{ matrix.os }}
+    needs: [get_python_version]
+    permissions:
+      contents: read
+    env: *build-core-env
+    defaults: *build-core-defaults
+    steps: *build-core-steps
+
+  test-core:
+    name: Test core (${{ matrix.browser }}, ${{ matrix.shard }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
     permissions:
       contents: read
     env:
       DISPLAY: :99
+      SE_SAFARIDRIVER: /usr/bin/safaridriver
+      PYTEST_PYODIDE_SAFARIDRIVER_LOG_DIR: ${{ github.workspace }}/safari-artifacts/safaridriver-logs
 
-    needs: [build-core]
+    needs: [build-core-linux, get_python_version]
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14]
+        os: [macos-15]
         runner: [selenium]
         browser: [safari]
+        # The tests run serially (one WebDriver session per machine), so split
+        # them over several runners. The split is by test file, to avoid
+        # starting the module-scoped browser for the same module in several
+        # shards. Each shard takes roughly 9-10 minutes on Safari.
+        shard: [core-python, loading, rest]
+        include:
+          - shard: core-python
+            test-paths: src/tests/test_core_python.py
+          - shard: loading
+            test-paths: src/tests/test_package_loading.py src/tests/test_pyodide.py src/tests/test_snapshots.py
+          - shard: rest
+            test-paths: >-
+              src
+              --ignore=src/tests/test_core_python.py
+              --ignore=src/tests/test_package_loading.py
+              --ignore=src/tests/test_pyodide.py
+              --ignore=src/tests/test_snapshots.py
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
 
       - name: Download build artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: core-build-${{ runner.os }}
+          # The build output does not depend on the build platform, so use the
+          # Linux build, which finishes earlier than the macOS one.
+          name: core-build-Linux
           path: ./dist/
 
-      - uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5 # v4.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          activate-environment: pyodide-env
-          python-version: "3.14"
-          channels: conda-forge
-          # pin, as a workaround to avoid macOS conda activation bug in 26.3.2-2
-          # see https://github.com/conda-incubator/setup-miniconda/issues/501
-          miniconda-version: "py312_26.1.1-1"
+          node-version: "24"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      - name: Set up Python ${{ needs.get_python_version.outputs.PYVERSION }}
+        env:
+          PYVERSION: ${{ needs.get_python_version.outputs.PYVERSION }}
+        run: |
+          uv venv --seed --python "$PYVERSION" .venv
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
       - name: install test requirements
-        shell: bash -l {0}
         run: |
           pip install -r requirements.txt -r requirements-deploy.txt
           make pyodide_build
@@ -276,41 +370,45 @@ jobs:
           runner: ${{ matrix.runner }}
           browser: ${{ matrix.browser }}
 
-      - name: Safari pre-test cleanup
+      - name: Safari setup and pre-test cleanup
         if: matrix.browser == 'safari'
-        shell: bash -l {0}
         run: |
-          # Kill any stale Safari/safaridriver processes
-          pkill -9 Safari 2>/dev/null || true
-          pkill -9 safaridriver 2>/dev/null || true
-          sleep 3
+          mkdir -p test-results safari-artifacts "$PYTEST_PYODIDE_SAFARIDRIVER_LOG_DIR"
+          tools/safari_cleanup.sh
 
-          # Verify safaridriver can start and respond
-          safaridriver --port 14444 &
-          DRIVER_PID=$!
-
-          for i in $(seq 1 20); do
-            if curl -sf http://localhost:14444/status > /dev/null 2>&1; then
-              echo "✓ SafariDriver responding"
-              kill $DRIVER_PID 2>/dev/null || true
-              exit 0
+          ENVIRONMENT_FILE="safari-artifacts/environment.txt"
+          set +e
+          {
+            echo "sw_vers:"
+            sw_vers
+            echo
+            echo "safaridriver_version:"
+            /usr/bin/safaridriver --version
+            echo
+            echo "Safari metadata:"
+            if [[ -f /Applications/Safari.app/Contents/Info.plist ]]; then
+              /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' /Applications/Safari.app/Contents/Info.plist \
+                | sed 's/^/CFBundleShortVersionString: /'
+              /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' /Applications/Safari.app/Contents/Info.plist \
+                | sed 's/^/CFBundleVersion: /'
+            else
+              echo "Safari app metadata unavailable"
             fi
-            sleep 1
-          done
-
-          echo "✗ SafariDriver failed to respond"
-          kill $DRIVER_PID 2>/dev/null || true
-          exit 1
+          } > "$ENVIRONMENT_FILE"
+          true
+          set -e
 
       - name: run core tests
+        timeout-minutes: 90
         env:
           BROWSER: ${{ matrix.browser }}
           RUNNER: ${{ matrix.runner }}
-        shell: bash -l {0}
+          TEST_PATHS: ${{ matrix.test-paths }}
         run: |
           ls -lh
           ls -lh dist/
-          tools/pytest_wrapper.py src \
+          # shellcheck disable=SC2086 # TEST_PATHS is a list of arguments
+          tools/pytest_wrapper.py $TEST_PATHS \
             -v \
             -k "not webworker" \
             --runtime="${BROWSER}-no-host" \
@@ -318,11 +416,17 @@ jobs:
             --durations 50 \
             --junitxml=test-results/core_test.xml
 
+      - name: Safari cleanup between core and package tests
+        if: always() && matrix.browser == 'safari' && matrix.shard == 'rest'
+        run: |
+          tools/safari_cleanup.sh || true
+
       - name: run package tests
+        if: matrix.shard == 'rest'
+        timeout-minutes: 30
         env:
           BROWSER: ${{ matrix.browser }}
           RUNNER: ${{ matrix.runner }}
-        shell: bash -l {0}
         run: |
           ls -lh
           ls -lh dist/
@@ -334,41 +438,95 @@ jobs:
             --durations 50 \
             --junitxml=test-results/packages_test.xml
 
+      - name: Collect Safari diagnostics
+        if: always() && matrix.browser == 'safari'
+        run: |
+          set +e
+          mkdir -p safari-artifacts safari-artifacts/diagnostic-reports test-results
+
+          DIAGNOSTICS_FILE="safari-artifacts/post-test-state.txt"
+          {
+            echo "timestamp_utc: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+            echo
+            for process_name in Safari safaridriver com.apple.WebKit.WebContent com.apple.WebKit.Networking com.apple.WebKit.GPU; do
+              echo "process_name: ${process_name}"
+              if process_ids=$(pgrep -u "$(id -u)" -x "$process_name"); then
+                echo "$process_ids"
+                ps -p "$(printf '%s\n' "$process_ids" | paste -sd, -)" -o pid,ppid,stat,start,time,comm
+              else
+                echo "not running"
+              fi
+              echo
+            done
+          } > "$DIAGNOSTICS_FILE"
+
+          if [[ -d "$HOME/Library/Logs/com.apple.WebDriver" ]]; then
+            cp -R "$HOME/Library/Logs/com.apple.WebDriver" safari-artifacts/
+          fi
+
+          shopt -s nullglob
+          for report in \
+            "$HOME"/Library/Logs/DiagnosticReports/Safari*.crash \
+            "$HOME"/Library/Logs/DiagnosticReports/Safari*.ips \
+            "$HOME"/Library/Logs/DiagnosticReports/WebKit*.crash \
+            "$HOME"/Library/Logs/DiagnosticReports/WebKit*.ips \
+            "$HOME"/Library/Logs/DiagnosticReports/com.apple.WebKit*.crash \
+            "$HOME"/Library/Logs/DiagnosticReports/com.apple.WebKit*.ips; do
+            cp "$report" safari-artifacts/diagnostic-reports/
+          done
+          true
+
       - name: Test Summary
         uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # v2.6
         with:
           paths: "test-results/*.xml"
         if: always()
 
+      - name: Upload Safari diagnostics
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: safari-test-diagnostics-${{ matrix.os }}-${{ matrix.shard }}
+          path: |
+            test-results/
+            safari-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
+        if: always() && matrix.browser == 'safari'
+
+      - name: Safari final cleanup
+        if: always() && matrix.browser == 'safari'
+        run: |
+          tools/safari_cleanup.sh || true
+
   test-cmdline-runner:
     name: Test command-line runner (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-24.04, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    needs: [build-core, get_python_version]
+    needs: [build-core-linux, get_python_version]
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION_SETUP_PYTHON }}
 
       - name: Download build artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           # To test Windows cmdline runner we always use the Linux build artifact
           name: core-build-Linux
           path: ./dist/
 
       - name: Download sysconfig artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           # To test Windows cmdline runner we always use the Linux artifact
           name: core-sysconfig-Linux
@@ -385,8 +543,8 @@ jobs:
 
   test-db-integration:
     name: Test DB integrations
-    runs-on: ubuntu-latest
-    needs: [build-core, get_python_version]
+    runs-on: ubuntu-24.04
+    needs: [build-core-linux, get_python_version]
     services:
       mysql:
         image: mysql:8.0.45@sha256:4af1f8815716546f5b12410f7621f37f93db8dd11a184706ef59111930b8c2ff
@@ -426,21 +584,21 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION_SETUP_PYTHON }}
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
 
       - name: Download build artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: core-build-Linux
           path: ./dist/
@@ -477,14 +635,14 @@ jobs:
 
   test-scipy-trigger:
     name: test-scipy-trigger
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
       test-scipy: ${{ steps.check-build-trigger.outputs.trigger }}
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
@@ -510,29 +668,29 @@ jobs:
   test-scipy:
     name: Test SciPy (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    needs: [test-scipy-trigger, build-core]
+    needs: [test-scipy-trigger, build-core-linux]
     if: needs.test-scipy-trigger.outputs.test-scipy
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-24.04]
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Download build artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
 
       - name: run scipy tests inside node
         shell: bash -l {0}
-        run: |
+        run: | # zizmor: ignore[adhoc-packages]
           npm install pyodide
           cp -f dist/* node_modules/pyodide
 
@@ -549,21 +707,21 @@ jobs:
     name: Test Bun (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
 
-    needs: [build-core]
+    needs: [build-core-linux]
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-24.04]
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Download build artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
@@ -584,21 +742,21 @@ jobs:
     name: Test Deno (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
 
-    needs: [build-core]
+    needs: [build-core-linux]
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-24.04]
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Download build artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
@@ -612,3 +770,88 @@ jobs:
       - name: run deno tests
         shell: bash -l {0}
         run: cd src/test-deno && deno task test
+
+  benchmark-pyperformance:
+    name: Benchmark pyperformance
+    runs-on: ubuntu-latest
+    # This is slow, so only run it for PRs with the pyperformance label.
+    if: contains(github.event.pull_request.labels.*.name, 'pyperformance')
+    timeout-minutes: 240
+    needs: [build-core-linux, get_python_version]
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download build artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: core-build-${{ runner.os }}
+          path: ./dist/
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      - name: Set up Python ${{ needs.get_python_version.outputs.PYVERSION }}
+        env:
+          PYVERSION: ${{ needs.get_python_version.outputs.PYVERSION }}
+        run: |
+          uv venv --seed --python "$PYVERSION" .venv
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Compare pyperformance with main
+        env:
+          PYPERFORMANCE_ARGS: --processes 1 --values 3
+          PYPERFORMANCE_OUTPUT_DIR: benchmark-results/pyperformance
+        run: |
+          mkdir -p benchmark-results
+          node benchmark/node/run.mjs \
+            --suite pyperformance \
+            --rounds 2 \
+            --json benchmark-results/pyperformance-compare.json \
+            https://cdn.jsdelivr.net/pyodide/dev/full/ dist
+
+      - name: Significant changes
+        # Comparing a build with itself, changes of up to ~4% were reported
+        # as significant, so hide changes smaller than 5%.
+        run: |
+          {
+            echo "## pyperformance: significant changes compared with main"
+            PYTHONPATH=benchmark/node/.pyperformance python -m pyperf compare_to \
+              --table --table-format md --min-speed 5 \
+              benchmark-results/pyperformance/base.json \
+              benchmark-results/pyperformance/new.json
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Compare with native CPython
+        # Run the same benchmarks with native CPython, to see where Pyodide is
+        # much slower.
+        run: |
+          python --version
+          python benchmark/node/helpers/pyperformance_native.py \
+            benchmark-results/pyperformance/native.json \
+            --processes 1 --values 3
+          {
+            echo "## pyperformance: compared with native CPython $(python -c 'import platform; print(platform.python_version())')"
+            PYTHONPATH=benchmark/node/.pyperformance python -m pyperf compare_to \
+              --table --table-format md \
+              benchmark-results/pyperformance/native.json \
+              benchmark-results/pyperformance/new.json
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Store benchmark results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pyperformance-results
+          path: ./benchmark-results/

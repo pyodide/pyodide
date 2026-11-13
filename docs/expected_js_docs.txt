@@ -27,6 +27,7 @@ js:attribute
   exports.PyodideConfig.jsglobals?
   exports.PyodideConfig.lockFileContents?
   exports.PyodideConfig.lockFileURL?
+  exports.PyodideConfig.maxMemoryBytes?
   exports.PyodideConfig.packageBaseUrl?
   exports.PyodideConfig.packageCacheDir?
   exports.PyodideConfig.packages?
@@ -162,6 +163,7 @@ js:function
   pyodide.loadPackagesFromImports
   pyodide.mountNativeFS
   pyodide.mountNodeFS
+  pyodide.mountOPFS
   pyodide.pyimport
   pyodide.registerComlink
   pyodide.registerJsModule

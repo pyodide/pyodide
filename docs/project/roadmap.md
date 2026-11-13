@@ -40,49 +40,6 @@ performance BLAS library such as BLIS.
 
 See issue {issue}`1120`.
 
-## Find a better way to compile Fortran
-
-Currently, we use f2c to cross compile Fortran to C. This does not work very
-well because f2c only fully supports Fortran 77 code. LAPACK has used more
-modern Fortran features since 2008 and Scipy has adopted more recent Fortran as
-well. f2c still successfully generates code for all but 6 functions in Scipy +
-LAPACK, but much of the generated code is slightly wrong and requires extensive
-patching. There are still a large number of fatal errors due to call signature
-incompatibilities.
-
-If we could use an LLVM-based Fortran compiler as a part of the Emscripten
-toolchain, most of these problems would be solved. There are several promising
-projects heading in that direction including flang and lfortran.
-
-See {issue}`scipy/scipy#15290`.
-
-## Better project sustainability
-
-Some of the challenges that Pyodide faces, such as maintaining a collection of
-build recipes, dependency resolution from PyPI, etc are already solved in either
-Python or JavaScript ecosystems. We should therefore strive to better reuse
-existing tooling, and seeking synergies with existing initiatives in this space,
-such as conda-forge.
-
-See issue {issue}`795`.
-
-## Improve support for WebWorkers
-
-WebWorkers are necessary in order to run computational tasks in the browser
-without hanging the user interface. Currently, Pyodide can run in a WebWorker,
-however the user experience and reliability can be improved.
-
-See issue {issue}`1504`.
-
-## Synchronous IO
-
-The majority of existing I/O APIs are synchronous. Unless we can support
-synchronous IO, much of the existing Python ecosystem cannot be ported. There
-are several different approaches to this, we would like to support at least one
-method.
-
-See issue {issue}`1503`.
-
 (http-client-limit)=
 
 ## Write http.client in terms of Web APIs

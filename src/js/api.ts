@@ -26,6 +26,11 @@ import type { ConnectFunc } from "./fs/wintercg-sockets";
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
 
+// The Pyodide and ABI versions are substituted at build time by esbuild from
+// PYODIDE_VERSION and PYODIDE_ABI_VERSION (see esbuild.config.shared.mjs).
+API.version = API_VERSION;
+API.abiVersion = ABI_VERSION;
+
 /**
  * Runs code after python vm has been initialized but prior to any bootstrapping.
  */
@@ -263,6 +268,8 @@ export class PyodideAPI_ {
    *        Defaults to ``"<exec>"``. If a custom file name is given, the
    *        traceback for any exception that is thrown will show source lines
    *        (unless the given file name starts with ``<`` and ends with ``>``).
+   * @param options.dedent An optional boolean indicating whether ``code``
+   *        should be dedented before being run. Defaults to ``true``.
    * @returns The result of the Python code translated to JavaScript. See the
    *          documentation for :py:func:`~pyodide.code.eval_code` for more info.
    * @example
@@ -283,7 +290,12 @@ export class PyodideAPI_ {
    */
   static runPython(
     code: string,
-    options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
+    options: {
+      globals?: PyProxy;
+      locals?: PyProxy;
+      filename?: string;
+      dedent?: boolean;
+    } = {},
   ): any {
     if (!options.globals) {
       options.globals = API.globals;
@@ -328,11 +340,18 @@ export class PyodideAPI_ {
    *        Defaults to ``"<exec>"``. If a custom file name is given, the
    *        traceback for any exception that is thrown will show source lines
    *        (unless the given file name starts with ``<`` and ends with ``>``).
+   * @param options.dedent An optional boolean indicating whether ``code``
+   *        should be dedented before being run. Defaults to ``true``.
    * @returns The result of the Python code translated to JavaScript.
    */
   static async runPythonAsync(
     code: string,
-    options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
+    options: {
+      globals?: PyProxy;
+      locals?: PyProxy;
+      filename?: string;
+      dedent?: boolean;
+    } = {},
   ): Promise<any> {
     if (!options.globals) {
       options.globals = API.globals;
@@ -576,6 +595,30 @@ export class PyodideAPI_ {
   }
 
   /**
+   * Mounts the Origin Private File System (OPFS) into the target directory.
+   * Must be called from a Web Worker context, as FileSystemSyncAccessHandle
+   * is only available in dedicated workers.
+   *
+   * @param path The absolute path in the Emscripten file system to mount OPFS.
+   * If the directory does not exist, it will be created. If it does exist, it must be empty.
+   */
+  static async mountOPFS(path: string): Promise<void> {
+    if (!navigator?.storage?.getDirectory) {
+      throw new Error("OPFS is not supported in this environment");
+    }
+
+    ensureMountPathExists(path);
+
+    const opfsHandle = await navigator.storage.getDirectory();
+
+    Module.FS.mount(Module.FS.filesystems.OPFS_WORKER_FS, { opfsHandle }, path);
+
+    // Note: FS.mount() returns the mount's root node, not the mount object, so
+    // we pass the mountpoint path explicitly rather than reading it back.
+    await Module.API.loadOPFS(path, opfsHandle);
+  }
+
+  /**
    * Mounts a host directory into Pyodide file system. Only works in node.
    *
    * @param emscriptenPath The absolute path in the Emscripten file system to
@@ -622,12 +665,10 @@ export class PyodideAPI_ {
   }
 
   /**
-   * Tell Pyodide about Comlink.
-   * Necessary to enable importing Comlink proxies into Python.
+   * Deprecated: This function has no effect.
+   * @deprecated
    */
-  static registerComlink(Comlink: any) {
-    API._Comlink = Comlink;
-  }
+  static registerComlink() {}
 
   /**
    * Sets the interrupt buffer to be ``interrupt_buffer``. This is only useful
@@ -794,33 +835,33 @@ API.finalizeBootstrap = function (
   snapshotDeserializer?: (obj: any) => any,
 ): PyodideAPI {
   if (snapshotConfig) {
+    // When restoring a snapshot, _pyodide_core is already in sys.modules.
     syncUpSnapshotLoad1();
-  }
-  let [err, captured_stderr] = API.rawRun("import _pyodide_core");
-  if (err) {
-    API.fatal_loading_error(
-      "Failed to import _pyodide_core\n",
-      captured_stderr,
-    );
+  } else {
+    let [err, captured_stderr] = API.rawRun("import _pyodide_core");
+    if (err) {
+      API.fatal_loading_error(
+        "Failed to import _pyodide_core\n",
+        captured_stderr,
+      );
+    }
   }
 
-  // First make internal dict so that we can use runPythonInternal.
+  const base = API._pyodide._base;
+  const import_module = base.import_module;
+  const builtinsModule = base.builtins;
+
+  // Make internal dict so that we can use runPythonInternal.
   // runPythonInternal uses a separate namespace, so we don't pollute the main
   // environment with variables from our setup.
-  API.runPythonInternal_dict = API._pyodide._base.eval_code("{}") as PyProxy;
-  API.importlib = API.runPythonInternal("import importlib; importlib");
-  let import_module = API.importlib.import_module;
-
+  API.runPythonInternal_dict = builtinsModule.dict() as PyProxy;
+  API.importlib = import_module("importlib");
   API.sys = import_module("sys");
   API.os = import_module("os");
 
   // Set up globals
-  let globals = API.runPythonInternal(
-    "import __main__; __main__.__dict__",
-  ) as PyDict;
-  let builtins = API.runPythonInternal(
-    "import builtins; builtins.__dict__",
-  ) as PyDict;
+  const globals = import_module("__main__").__dict__ as PyDict;
+  const builtins = builtinsModule.__dict__ as PyDict;
   API.globals = wrapPythonGlobals(globals, builtins);
 
   // Set up key Javascript modules.
@@ -836,8 +877,10 @@ API.finalizeBootstrap = function (
     importhook.register_js_finder();
     importhook.register_js_module("js", jsglobals);
     importhook.register_js_module("pyodide_js", pyodide);
-    importhook.register_windows_finder();
   }
+  importhook.register_windows_finder(
+    RUNTIME_ENV.IN_NODE && process.platform === "win32",
+  );
 
   // import pyodide_py. We want to ensure that as much stuff as possible is
   // already set up before importing pyodide_py to simplify development of

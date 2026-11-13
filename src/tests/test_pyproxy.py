@@ -412,6 +412,7 @@ def test_get_empty_buffer(selenium):
         ["u32", "Uint32Array", "I"],
         ["i64", "BigInt64Array", "q"],
         ["u64", "BigUint64Array", "Q"],
+        ["f16", "Float16Array", "e"],
         ["f32", "Float32Array", "f"],
         ["f64", "Float64Array", "d"],
     ],
@@ -443,7 +444,7 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
     result = result.to_py()
     if fmt.lower() == "q":
         assert result == [hex(x).replace("0x", "") for x in list(mv.cast(fmt))]
-    elif fmt in {"d", "f"}:
+    elif fmt in {"e", "d", "f"}:
         from math import isclose, isnan
 
         for x, y in zip(result, list(mv.cast(fmt)), strict=False):
@@ -2573,10 +2574,16 @@ def test_automatic_coroutine_scheduling(selenium):
         pyodide.runPythonAsync("f(4)");
         d(g(5));
         h(6);
-        await sleep(0);
-        await sleep(0);
-        await sleep(0);
         const l = pyodide.globals.get("l");
+        // Wait for the automatically-scheduled coroutines to run. In Node the
+        // webloop schedules callbacks with setImmediate (check phase) while the
+        // test harness `sleep` uses setTimeout (timers phase), so the two can
+        // race under load. Poll a bounded number of event-loop turns until the
+        // expected results have been collected instead of assuming a fixed
+        // number of turns is enough.
+        for (let i = 0; i < 100 && l.length < 3; i++) {
+            await sleep(0);
+        }
         const res = l.toJs();
         for(let p of [f, g, l]) {
             p.destroy();
@@ -2814,3 +2821,109 @@ def test_pyproxy_using(selenium):
         f();
         """
     )
+
+
+@run_in_pyodide
+def test_pyproxy_flags_after_type_modified(selenium):
+    # The flags of a PyProxy are cached per type. Make sure that the cache is
+    # invalidated when the class or one of its bases is modified.
+    from pyodide.code import run_js
+
+    has_length = run_js("(p) => p instanceof pyodide.ffi.PyProxyWithLength")
+
+    class A:
+        pass
+
+    class B(A):
+        pass
+
+    assert not has_length(A())
+    assert not has_length(B())
+
+    A.__len__ = lambda self: 3  # type: ignore[attr-defined]
+    assert has_length(A())
+    assert has_length(B())
+
+    del A.__len__  # type: ignore[attr-defined]
+    assert not has_length(A())
+    assert not has_length(B())
+
+
+@run_in_pyodide
+def test_pyproxy_mutable_sequence_instanceof(selenium):
+    from collections.abc import MutableSequence, Sequence
+
+    from pyodide.code import run_js
+
+    is_sequence = run_js("(p) => p instanceof pyodide.ffi.PySequence")
+    is_mutable_sequence = run_js("(p) => p instanceof pyodide.ffi.PyMutableSequence")
+
+    # A list is a mutable sequence
+    assert is_sequence([1, 2])
+    assert is_mutable_sequence([1, 2])
+
+    # A tuple and a range are immutable sequences
+    for seq in [(1, 2), range(2)]:
+        assert isinstance(seq, Sequence)
+        assert not isinstance(seq, MutableSequence)
+        assert is_sequence(seq)
+        assert not is_mutable_sequence(seq)
+
+    # Not a sequence
+    assert not is_sequence({1: 2})
+    assert not is_mutable_sequence({1: 2})
+
+
+@run_in_pyodide
+def test_pyproxy_instanceof_revoked_proxy(selenium):
+    # `instanceof` on a revoked Proxy throws by default, but PyProxy's
+    # Symbol.hasInstance returns false, like the other PyProxy classes.
+    from pyodide.code import run_js
+
+    assert run_js(
+        """
+        const p = Proxy.revocable({}, {});
+        p.revoke();
+        [
+            p.proxy instanceof pyodide.ffi.PyProxy,
+            p.proxy instanceof pyodide.ffi.PySequence,
+        ]
+        """
+    ).to_py() == [False, False]
+
+
+@run_in_pyodide
+def test_pyproxy_attrs_many_names(selenium):
+    # PyProxy caches the Python strings for attribute names up to a limit.
+    # Check that attribute access still works for names beyond that limit.
+    from types import SimpleNamespace
+
+    from pyodide.code import run_js
+
+    names = [f"attr_{i}" for i in range(2000)] + ["ünïcödé", "名前", "😀"]
+    o = SimpleNamespace(**{name: i for i, name in enumerate(names)})
+    values = run_js(
+        """
+        (o, names) => {
+            const values = [];
+            for (let round = 0; round < 2; round++) {
+                for (const name of names) {
+                    values.push(name in o, o[name]);
+                }
+            }
+            for (const name of names) {
+                o[name] = name;
+            }
+            for (const name of names.slice(0, 1000)) {
+                delete o[name];
+            }
+            return values;
+        }
+        """
+    )(o, names)
+    expected = [x for i in range(len(names)) for x in (True, i)]
+    assert values.to_py() == expected * 2
+    for name in names[:1000]:
+        assert not hasattr(o, name)
+    for name in names[1000:]:
+        assert getattr(o, name) == name

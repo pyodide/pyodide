@@ -1,48 +1,37 @@
-From a86a2304fd925f815bbb0e0753e46a7b863e2de2 Mon Sep 17 00:00:00 2001
+From ad830e6289e8aeec1b06367770ec6708ebe67448 Mon Sep 17 00:00:00 2001
 From: Joe Marshall <joe.marshall@nottingham.ac.uk>
 Date: Wed, 6 Apr 2022 21:25:13 -0700
-Subject: [PATCH 03/12] make int return values
+Subject: [PATCH 2/6] BUG: Fix void return types and declarations
 
 The return values of f2c functions are insignificant in most cases, so often it
 is treated as returning void, when it really should return int (values are
 "returned" by writing to pointers passed as an argument, but an obscure feature
 known as alternative returns can cause the return value to be significant).
 
-There's a big change to scipy/linalg/_cython_wrapper_generators.py, which is
-called on build to generate python wrappers for lapack and BLAS. The change
-makes everything call direct to CLAPACK with the correct function signatures
-and also fixes some fortran -> c linking oddities that occur because f2py assumes
-different function signatures to f2c, which in turn creates different function
-signatures compared to what has been done in CLAPACK.
+emscripten is very strict about void vs int returns and function signatures, so
+we change everything to return int from subroutines, and signatures are altered
+to be consistent. the BLAS/Fortran wrapper declarations are changed to return int
+instead of void to match f2ced OpenBLAS ABI.
 
 f2py is patched in numpy to make subroutines return int.
 
-emscripten is very strict about void vs int returns and function signatures, so
-we change everything to return int from subroutines, and signatures are altered
-to be consistent.
-
-Co-Developed-by: Joe Marshall <joe.marshall@nottingham.ac.uk>
 Co-Authored-By: Joe Marshall <joe.marshall@nottingham.ac.uk>
+Co-Authored-By: Hood Chatham <roberthoodchatham@gmail.com>
+Co-Authored-By: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 ---
- scipy/_build_utils/src/wrap_g77_abi.c         | 16 ++++++------
- scipy/integrate/_odepackmodule.c              |  8 +++---
- scipy/odr/__odrpack.c                         |  2 +-
- .../_dsolve/SuperLU/SRC/ilu_cdrop_row.c       |  8 +++---
- .../_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c   |  2 +-
- .../_dsolve/SuperLU/SRC/scipy_slu_config.h    |  3 +++
- .../linalg/_dsolve/SuperLU/SRC/sgssvx.c       |  7 ++---
- .../linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h |  5 +++-
- .../linalg/_dsolve/SuperLU/SRC/slu_scomplex.h |  5 ++--
- scipy/sparse/linalg/_dsolve/_superlu_utils.c  |  4 +--
- .../linalg/_eigen/arpack/ARPACK/SRC/debug.h   | 20 +++++++-------
- .../linalg/_eigen/arpack/ARPACK/SRC/stat.h    | 26 +++++++++----------
- 12 files changed, 57 insertions(+), 49 deletions(-)
+ scipy/_build_utils/src/wrap_g77_abi.c            | 16 ++++++++--------
+ scipy/odr/__odrpack.c                            |  2 +-
+ .../linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c   |  8 ++++----
+ .../_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c      |  2 +-
+ scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c |  7 ++++---
+ scipy/sparse/linalg/_dsolve/_superlu_utils.c     |  4 ++--
+ 6 files changed, 20 insertions(+), 19 deletions(-)
 
 diff --git a/scipy/_build_utils/src/wrap_g77_abi.c b/scipy/_build_utils/src/wrap_g77_abi.c
-index f35c94f984..1872d335aa 100644
+index 3110d6996f..36ceeffb12 100644
 --- a/scipy/_build_utils/src/wrap_g77_abi.c
 +++ b/scipy/_build_utils/src/wrap_g77_abi.c
-@@ -71,7 +71,7 @@ double_complex F_FUNC(wzdotu,WZDOTU)(CBLAS_INT *n, double_complex *zx, \
+@@ -83,7 +83,7 @@ double_complex F_FUNC(wzdotu,WZDOTU)(CBLAS_INT *n, double_complex *zx, \
      return ret;
  }
  
@@ -51,7 +40,7 @@ index f35c94f984..1872d335aa 100644
      float *retr, float *reti);
  float_complex F_FUNC(wcladiv,WCLADIV)(float_complex *x, float_complex *y){
      float_complex ret;
-@@ -83,7 +83,7 @@ float_complex F_FUNC(wcladiv,WCLADIV)(float_complex *x, float_complex *y){
+@@ -95,7 +95,7 @@ float_complex F_FUNC(wcladiv,WCLADIV)(float_complex *x, float_complex *y){
      return ret;
  }
  
@@ -60,7 +49,7 @@ index f35c94f984..1872d335aa 100644
      double *retr, double *reti);
  double_complex F_FUNC(wzladiv,WZLADIV)(double_complex *x, double_complex *y){
      double_complex ret;
-@@ -95,31 +95,31 @@ double_complex F_FUNC(wzladiv,WZLADIV)(double_complex *x, double_complex *y){
+@@ -107,31 +107,31 @@ double_complex F_FUNC(wzladiv,WZLADIV)(double_complex *x, double_complex *y){
      return ret;
  }
  
@@ -99,7 +88,7 @@ index f35c94f984..1872d335aa 100644
  }
  
 diff --git a/scipy/odr/__odrpack.c b/scipy/odr/__odrpack.c
-index c806e33fbf..c4b822eb92 100644
+index f86a65fdf6..e6133f82e3 100644
 --- a/scipy/odr/__odrpack.c
 +++ b/scipy/odr/__odrpack.c
 @@ -13,7 +13,7 @@
@@ -112,56 +101,42 @@ index c806e33fbf..c4b822eb92 100644
              F_INT *ldifx, F_INT *ideval, double *f, double *fjacb, double *fjacd,
              F_INT *istop),
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
-index c1dc7fcf8f..d1903db4a6 100644
+index 823defad20..971bca2eed 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
 +++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
 @@ -23,10 +23,10 @@ at the top-level directory.
  #include <stdlib.h>
  #include "slu_cdefs.h"
  
--extern void cswap_(int *, singlecomplex [], int *, singlecomplex [], int *);
--extern void caxpy_(int *, singlecomplex *, singlecomplex [], int *, singlecomplex [], int *);
--extern void ccopy_(int *, singlecomplex [], int *, singlecomplex [], int *);
--extern void scopy_(int *, float [], int *, float [], int *);
-+extern int cswap_(int *, singlecomplex [], int *, singlecomplex [], int *);
-+extern int caxpy_(int *, singlecomplex *, singlecomplex [], int *, singlecomplex [], int *);
-+extern int ccopy_(int *, singlecomplex [], int *, singlecomplex [], int *);
-+extern int scopy_(int *, float [], int *, float [], int *);
- extern float scasum_(int *, singlecomplex *, int *);
- extern float scnrm2_(int *, singlecomplex *, int *);
- extern double dnrm2_(int *, double [], int *);
+-extern void cswap_(slu_blasint *, singlecomplex [], slu_blasint *, singlecomplex [], slu_blasint *);
+-extern void caxpy_(slu_blasint *, singlecomplex *, singlecomplex [], slu_blasint *, singlecomplex [], slu_blasint *);
+-extern void ccopy_(slu_blasint *, singlecomplex [], slu_blasint *, singlecomplex [], slu_blasint *);
+-extern void scopy_(slu_blasint *, float [], slu_blasint *, float [], slu_blasint *);
++extern int cswap_(slu_blasint *, singlecomplex [], slu_blasint *, singlecomplex [], slu_blasint *);
++extern int caxpy_(slu_blasint *, singlecomplex *, singlecomplex [], slu_blasint *, singlecomplex [], slu_blasint *);
++extern int ccopy_(slu_blasint *, singlecomplex [], slu_blasint *, singlecomplex [], slu_blasint *);
++extern int scopy_(slu_blasint *, float [], slu_blasint *, float [], slu_blasint *);
+ extern float scasum_(slu_blasint *, singlecomplex *, slu_blasint *);
+ extern float scnrm2_(slu_blasint *, singlecomplex *, slu_blasint *);
+ extern double dnrm2_(slu_blasint *, double [], slu_blasint *);
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
-index 4e2654e8ac..d5b955d40e 100644
+index fbae396c6e..11149cf98a 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
 +++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
 @@ -26,7 +26,7 @@ at the top-level directory.
  int num_drop_U;
  #endif
  
--extern void scopy_(int *, float [], int *, float [], int *);
-+extern int scopy_(int *, float [], int *, float [], int *);
+-extern void scopy_(slu_blasint *, float [], slu_blasint *, float [], slu_blasint *);
++extern int scopy_(slu_blasint *, float [], slu_blasint *, float [], slu_blasint *);
  
  #if 0
  static float *A;  /* used in _compare_ only */
-diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h
-index 5afc93b5d9..7ac5f80fb9 100644
---- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h
-+++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h
-@@ -3,6 +3,9 @@
- 
- #include <stdlib.h>
- 
-+#undef complex
-+#include "f2c.h"
-+#define complex singlecomplex
- /*
-  * Support routines
-  */
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c
-index 1395752d4c..7f5538140d 100644
+index e36db6e6a4..9d1264e0cc 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c
 +++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c
-@@ -21,6 +21,8 @@ at the top-level directory.
+@@ -22,6 +22,8 @@ at the top-level directory.
   */
  #include "slu_sdefs.h"
  
@@ -189,43 +164,11 @@ index 1395752d4c..7f5538140d 100644
          sgscon(norm, L, U, anorm, rcond, stat, &info1);
          utime[RCOND] = SuperLU_timer_() - t0;
      }
-diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h
-index 67e83bcc77..e5757d5c4d 100644
---- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h
-+++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h
-@@ -28,7 +28,10 @@ at the top-level directory.
- #ifndef DCOMPLEX_INCLUDE
- #define DCOMPLEX_INCLUDE
- 
--typedef struct { double r, i; } doublecomplex;
-+#include"scipy_slu_config.h"
-+
-+// defined in clapack
-+//typedef struct { double r, i; } doublecomplex;
- 
- 
- /* Macro definitions */
-diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
-index 83be8c971f..047a07ce9c 100644
---- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
-+++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
-@@ -27,8 +27,9 @@ at the top-level directory.
- 
- #ifndef SCOMPLEX_INCLUDE
- #define SCOMPLEX_INCLUDE
--
--typedef struct { float r, i; } singlecomplex;
-+#include"scipy_slu_config.h"
-+// defined in  CLAPACK
-+//typedef struct { float r, i; } singlecomplex;
- 
- 
- /* Macro definitions */
 diff --git a/scipy/sparse/linalg/_dsolve/_superlu_utils.c b/scipy/sparse/linalg/_dsolve/_superlu_utils.c
-index 49b928a431..0822687719 100644
+index ea7e1bc701..ee696fa2c9 100644
 --- a/scipy/sparse/linalg/_dsolve/_superlu_utils.c
 +++ b/scipy/sparse/linalg/_dsolve/_superlu_utils.c
-@@ -243,12 +243,12 @@ int input_error(char *srname, int *info)
+@@ -237,12 +237,12 @@ int input_error(char *srname, int *info)
   * Stubs for Harwell Subroutine Library functions that SuperLU tries to call.
   */
  
@@ -241,5 +184,5 @@ index 49b928a431..0822687719 100644
  	     int m[], int n[])
  {
 -- 
-2.34.1
+2.50.1 (Apple Git-155)
 

@@ -1,14 +1,14 @@
 package:
   name: numpy
-  version: 2.4.3
+  version: 2.4.6
   tag:
     - cross-build
     - min-scipy-stack
   top-level:
     - numpy
 source:
-  url: https://files.pythonhosted.org/packages/source/n/numpy/numpy-2.4.3.tar.gz
-  sha256: 483a201202b73495f00dbc83796c6ae63137a9bdade074f7648b3e32613412dd
+  url: https://files.pythonhosted.org/packages/source/n/numpy/numpy-2.4.6.tar.gz
+  sha256: f3a3570c4a2a16746ac2c31a7c7c7b0c186b95ce902e33db6f28094ed7387dda
 
 build:
   unvendor-tests: false # we do this on our own using Meson's install tags

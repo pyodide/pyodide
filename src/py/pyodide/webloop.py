@@ -1,6 +1,7 @@
 import asyncio
 import contextvars
 import inspect
+import math
 import os
 import sys
 import time
@@ -19,6 +20,9 @@ if IN_PYODIDE:
 
 T = TypeVar("T")
 S = TypeVar("S")
+
+# setTimeout()'s max delay: a 32-bit signed int, in ms.
+_MAX_TIMEOUT_MS = 2**31 - 1
 
 
 class PyodideFuture(Future[T]):
@@ -213,7 +217,6 @@ class WebLoop(asyncio.AbstractEventLoop):
 
     def __init__(self):
         self._task_factory = None
-        asyncio._set_running_loop(self)
         self._exception_handler = None
         self._current_handle = None
         self._in_progress = 0
@@ -267,6 +270,18 @@ class WebLoop(asyncio.AbstractEventLoop):
         # WebLoop never closes, but keep check for consistency with asyncio
         if not self.is_closed():
             self.call_soon(asyncio.ensure_future, agen.aclose())
+
+    def _install_running_loop(self) -> None:
+        """Make ourselves the running loop.
+
+        Several WebLoops can be alive at once (for instance pytest-asyncio
+        makes a fresh loop for every test) and the newest one to be constructed
+        is the registered running loop. asyncio's enter_task() requires the
+        loop running a task's callbacks to be the running loop, so we claim the
+        spot every time we dispatch a handle.
+        """
+        if asyncio._get_running_loop() is not self:
+            asyncio._set_running_loop(self)
 
     def _install_asyncgen_hooks(self) -> None:
         """Install async generator hooks if not already installed."""
@@ -448,11 +463,14 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         This uses `setTimeout(callback, delay)`
         """
-        if delay < 0:
-            raise ValueError("Can't schedule in the past")
+        # Like CPython's asyncio, a delay in the past runs the callback as soon as possible
+        delay = max(delay, 0)
         h = asyncio.Handle(callback, args, self, context=context)
+        if delay == math.inf:
+            return h
 
         def run_handle():
+            self._install_running_loop()
             self._install_asyncgen_hooks()
 
             if h.cancelled():
@@ -471,7 +489,8 @@ class WebLoop(asyncio.AbstractEventLoop):
                     raise
 
         scheduleCallback(
-            create_once_callable(run_handle, _may_syncify=True), delay * 1000
+            create_once_callable(run_handle, _may_syncify=True),
+            min(delay * 1000, _MAX_TIMEOUT_MS),
         )
 
         return h
@@ -552,14 +571,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         return time.monotonic()
 
-    def create_task(
-        self,
-        coro: Coroutine[Any, Any, T],
-        *,
-        name: str | None = None,
-        context: contextvars.Context | None = None,
-        eager_start: bool | None = None,
-    ) -> Task[T]:
+    def create_task(self, coro: Coroutine[Any, Any, T], **kwargs: Any) -> Task[T]:
         """Schedule a coroutine object.
 
         Return a task object.
@@ -568,17 +580,14 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         self._check_closed()
         if self._task_factory is None:
-            task: PyodideTask[T] = PyodideTask(
-                coro, loop=self, name=name, context=context
-            )
+            task: PyodideTask[T] = PyodideTask(coro, loop=self, **kwargs)
             if task._source_traceback:  # type: ignore[attr-defined]
                 # Added comment:
                 # this only happens if get_debug() returns True.
                 # In that case, remove create_task from _source_traceback.
                 del task._source_traceback[-1]  # type: ignore[attr-defined]
         else:
-            task = self._task_factory(self, coro)
-            asyncio.tasks._set_task_name(task, name)  # type: ignore[attr-defined]
+            task = self._task_factory(self, coro, **kwargs)
 
         self._in_progress += 1
         task.add_done_callback(self._decrement_in_progress)
@@ -847,7 +856,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         return sock
 
-    async def create_connection(  # noqa: PLR0913
+    async def create_connection(
         self,
         protocol_factory,
         host=None,
@@ -1071,18 +1080,18 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore[name-define
     """
 
     def __init__(self):
-        self._default_loop = None
+        self._default_loop: WebLoop | None = None
 
-    def get_event_loop(self):
+    def get_event_loop(self) -> WebLoop:
         """Get the current event loop"""
-        if self._default_loop:
+        if self._default_loop is not None:
             return self._default_loop
-        return self.new_event_loop()
+        self._default_loop = self.new_event_loop()
+        return self._default_loop
 
     def new_event_loop(self) -> WebLoop:
         """Create a new event loop"""
-        self._default_loop = WebLoop()
-        return self._default_loop
+        return WebLoop()
 
     def set_event_loop(self, loop: Any) -> None:
         """Set the current event loop"""
@@ -1122,7 +1131,8 @@ def _initialize_event_loop():
     time.sleep = _sleep
     policy = WebLoopPolicy()
     asyncio.set_event_loop_policy(policy)
-    policy.get_event_loop()
+    loop = policy.get_event_loop()
+    asyncio._set_running_loop(loop)
 
 
 __all__ = ["WebLoop", "WebLoopPolicy", "PyodideFuture", "PyodideTask"]

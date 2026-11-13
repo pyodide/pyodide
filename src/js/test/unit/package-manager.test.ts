@@ -223,3 +223,13 @@ describe("calculateInstallBaseUrl", () => {
     assert.equal(result, "https://user:pass@cdn.example.com/pyodide/");
   });
 });
+
+describe("loadPackage", () => {
+  it("Should reject a requirement specifier with a clear error", async () => {
+    const pm = new PackageManager(genMockAPI(), genMockModule());
+    await assert.rejects(
+      () => pm.loadPackage(["jsonpointer==3.0.0"]),
+      /micropip\.install\(\) handles requirement specifiers/,
+    );
+  });
+});

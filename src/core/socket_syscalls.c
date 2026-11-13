@@ -1,6 +1,7 @@
 #include "emscripten.h"
 #include "error_handling.h"
 #include "jslib.h"
+#include "jsmemops.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -39,7 +40,7 @@ EM_JS(JsVal, _maybe_connect_async, (int fd, intptr_t addr, int addrlen), {
 //   Uint8Array — data received
 //   0       — connection closed (EOF)
 //   number < 0 — errno (e.g. -EAGAIN for non-blocking with no data)
-EM_JS(JsVal, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
+EM_JS_MACROS(JsVal, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   // Will return null for non-NodeSock fds.
@@ -52,13 +53,14 @@ EM_JS(JsVal, _maybe_recvfrom_async, (int fd, intptr_t buf, int len), {
     if (typeof result === "number")
       return result;
     // clang-format on
-    Module.HEAPU8.set(result, buf);
+    Module.HEAPU8.set(result, HEAP_INDEX_8(buf));
     return result.length;
   })();
 })
 
 // Returns a Promise for NodeSock fds, null for everything else.
-EM_JS(JsVal, _maybe_sendto_async, (int fd, intptr_t message, int length), {
+// clang-format off
+EM_JS_MACROS(JsVal, _maybe_sendto_async, (int fd, intptr_t message, int length), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   // Will return null for non-NodeSock fds.
@@ -66,22 +68,24 @@ EM_JS(JsVal, _maybe_sendto_async, (int fd, intptr_t message, int length), {
     return null;
 
   // Copy data out of HEAPU8 before the async boundary — memory may grow.
-  var data = Module.HEAPU8.slice(message, message + length);
+  var start = HEAP_INDEX_8(message);
+  var data = Module.HEAPU8.slice(start, start + length);
   return sock.sock_ops.sendmsgAsync(sock, data);
 })
+// clang-format on
 
 // Emscripten's __syscall_fcntl64(F_SETFL) is noop for F_GETFL and F_SETFL
 // but we would like to allow setting and getting the flags
 // The return value indicates whether the operation was handled by this function
 // If true, the result is stored in *result
-EM_JS(bool, _try_fcntl64, (int fd, int cmd, int arg, int* result), {
+EM_JS_MACROS(bool, _try_fcntl64, (int fd, int cmd, int arg, int* result), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   if (!sock?.sock_ops?.fcntl64)
     return false;
 
-  Module.HEAP32[result >> 2] = sock.sock_ops.fcntl64(sock, cmd, arg);
-  if (Module.HEAP32[result >> 2] < 0)
+  ASSIGN_I32(result, 0, sock.sock_ops.fcntl64(sock, cmd, arg));
+  if (DEREF_I32(result, 0) < 0)
     return false;
 
   // other commands are fallback to emscripten's implementation
@@ -91,7 +95,7 @@ EM_JS(bool, _try_fcntl64, (int fd, int cmd, int arg, int* result), {
 // Returns a Promise for NodeSock fds, null for everything else.
 // CPython socket timeouts call poll() before recv(). Emscripten's poll is
 // synchronous, but NodeSock readiness depends on the async receive pump.
-EM_JS(JsVal, _maybe_poll_async, (intptr_t fds, int nfds, int timeout), {
+EM_JS_MACROS(JsVal, _maybe_poll_async, (intptr_t fds, int nfds, int timeout), {
   if (!Module.SOCKFS.pollAsync) {
     return null;
   }
@@ -100,7 +104,7 @@ EM_JS(JsVal, _maybe_poll_async, (intptr_t fds, int nfds, int timeout), {
   // If not, return null to use emscripten's poll
   for (var i = 0; i < nfds; i++) {
     var pollfd = fds + 8 * i; // 8 == POLLFD_SIZE
-    var fd = Module.HEAP32[pollfd >> 2];
+    var fd = DEREF_I32(pollfd, 0);
     var stream = Module.FS.getStream(fd);
     if (!stream) {
       continue;
@@ -116,83 +120,78 @@ EM_JS(JsVal, _maybe_poll_async, (intptr_t fds, int nfds, int timeout), {
 // Try to handle shutdown syscall for NodeSock fds.
 // Returns true if the operation was handled, false otherwise.
 // If true, the result is stored in *result
-EM_JS(bool, _try_shutdown, (int fd, int how, int* result), {
+EM_JS_MACROS(bool, _try_shutdown, (int fd, int how, int* result), {
   var sock = Module.SOCKFS.getSocket(fd);
 
   if (!sock?.sock_ops?.shutdown)
     return false;
 
-  Module.HEAP32[result >> 2] = sock.sock_ops.shutdown(sock, how);
+  ASSIGN_I32(result, 0, sock.sock_ops.shutdown(sock, how));
   return true;
 })
 
 // clang-format off
 
-int _orig_syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_connect"), __warn_unused_result__));
+int __real___syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3);
 
-int _orig_syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_recvfrom"), __warn_unused_result__));
+int __real___syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen);
 
-int _orig_syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addrlen)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_sendto"), __warn_unused_result__));
+int __real___syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addrlen);
 
-int _orig_syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_shutdown"), __warn_unused_result__));
+int __real___syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4);
 
-int _orig_syscall_fcntl64(int fd, int cmd, intptr_t varargs)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_fcntl64"), __warn_unused_result__));
+int __real___syscall_fcntl64(int fd, int cmd, intptr_t varargs);
 
-int _orig_syscall_poll(intptr_t fds, int nfds, int timeout)
-  __attribute__((__import_module__("env"), __import_name__("__syscall_poll"), __warn_unused_result__));
+int __real___syscall_poll(intptr_t fds, int nfds, int timeout);
 
-int __syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
+
+int __wrap___syscall_connect(int fd, intptr_t addr, int addrlen, int d1, int d2, int d3)
 {
   JsVal p = _maybe_connect_async(fd, addr, addrlen);
   if (__builtin_wasm_ref_is_null_extern(p)) {
-    return _orig_syscall_connect(fd, addr, addrlen, d1, d2, d3);
+    return __real___syscall_connect(fd, addr, addrlen, d1, d2, d3);
   }
   return syscall_syncify(p);
 }
 
-int __syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen)
+int __wrap___syscall_recvfrom(int fd, intptr_t buf, int len, int flags, intptr_t addr, int addrlen)
 {
   JsVal p = _maybe_recvfrom_async(fd, buf, len);
   if (__builtin_wasm_ref_is_null_extern(p)) {
-    return _orig_syscall_recvfrom(fd, buf, len, flags, addr, addrlen);
+    return __real___syscall_recvfrom(fd, buf, len, flags, addr, addrlen);
   }
   return syscall_syncify(p);
 }
 
-int __syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addr_len)
+int __wrap___syscall_sendto(int fd, intptr_t message, int length, int flags, intptr_t addr, int addr_len)
 {
   JsVal p = _maybe_sendto_async(fd, message, length);
   if (__builtin_wasm_ref_is_null_extern(p)) {
-    return _orig_syscall_sendto(fd, message, length, flags, addr, addr_len);
+    return __real___syscall_sendto(fd, message, length, flags, addr, addr_len);
   }
   return syscall_syncify(p);
 }
 
-int __syscall_fcntl64(int fd, int cmd, intptr_t varargs)
+int __wrap___syscall_fcntl64(int fd, int cmd, intptr_t varargs)
 {
   int result = 0;
   bool handled = _try_fcntl64(fd, cmd, varargs, &result);
   if (!handled) {
-    return _orig_syscall_fcntl64(fd, cmd, varargs);
+    return __real___syscall_fcntl64(fd, cmd, varargs);
   }
   return result;
 }
 
-int __syscall_poll(intptr_t fds, int nfds, int timeout)
+int __wrap___syscall_poll(intptr_t fds, int nfds, int timeout)
 {
   JsVal p = _maybe_poll_async(fds, nfds, timeout);
   if (__builtin_wasm_ref_is_null_extern(p)) {
-    return _orig_syscall_poll(fds, nfds, timeout);
+    return __real___syscall_poll(fds, nfds, timeout);
   }
   return syscall_syncify(p);
 }
 
-int __syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
+int __wrap___syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
 {
   int result = 0;
   bool handled = _try_shutdown(fd, how, &result);
@@ -200,7 +199,7 @@ int __syscall_shutdown(int fd, int how, int d1, int d2, int d3, int d4)
     // Emscripten does not support shutdown so this would fail anyways, but
     // we still want to return a meaningful error code
     // https://github.com/emscripten-core/emscripten/issues/13393
-    return _orig_syscall_shutdown(fd, how, d1, d2, d3, d4);
+    return __real___syscall_shutdown(fd, how, d1, d2, d3, d4);
   }
   return result;
 }

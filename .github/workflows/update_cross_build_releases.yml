@@ -21,7 +21,7 @@ concurrency:
 jobs:
   update_cross_build_releases:
     name: Update cross-build metadata files
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write # for pushing cross-build metadata files updates
       pull-requests: write # for creating a PR with the metadata files update
@@ -30,13 +30,13 @@ jobs:
       # Note: we check out the main branch so that the cross-build metadata
       # files are always updated on top of the latest state of the repository.
       - name: Checkout main branch
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           ref: main
           persist-credentials: false
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: 3.14
 

@@ -196,7 +196,8 @@ EM_JS_VAL(JsVal, _python2js_ascii, (const char* ptr, int len), {
     if (!decoder) {
       decoder = Module._asciiTextDecoder = new TextDecoder("latin1");
     }
-    return decoder.decode(Module.HEAPU8.subarray(ptr, ptr + len));
+    const start = HEAP_INDEX_8(ptr);
+    return decoder.decode(Module.HEAPU8.subarray(start, start + len));
   }
   let jsstr = "";
   for (let i = 0; i < len; ++i) {
@@ -206,25 +207,53 @@ EM_JS_VAL(JsVal, _python2js_ascii, (const char* ptr, int len), {
 });
 
 EM_JS_VAL(JsVal, _python2js_ucs1, (const char* ptr, int len), {
+  const start = HEAP_INDEX_8(ptr);
   let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCharCode(DEREF_U8(ptr, i));
+  // Length 12 is the crossover point where the `+=` loop is faster than apply
+  // measured on Node 25.
+  if (len < 12) {
+    for (let i = 0; i < len; ++i) {
+      jsstr += String.fromCharCode(HEAPU8[start + i]);
+    }
+    return jsstr;
+  }
+
+  // The chunk size 8192 is measured to be the fastest in Node 25
+  for (let i = 0; i < len; i += 8192) {
+    jsstr += String.fromCharCode.apply(
+      null, HEAPU8.subarray(start + i, start + Math.min(i + 8192, len)));
   }
   return jsstr;
 });
 
 EM_JS_VAL(JsVal, _python2js_ucs2, (const char* ptr, int len), {
+  const start = HEAP_INDEX_16(ptr);
   let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCharCode(DEREF_U16(ptr, i));
+  if (len < 12) {
+    for (let i = 0; i < len; ++i) {
+      jsstr += String.fromCharCode(HEAPU16[start + i]);
+    }
+    return jsstr;
+  }
+  for (let i = 0; i < len; i += 8192) {
+    jsstr += String.fromCharCode.apply(
+      null, HEAPU16.subarray(start + i, start + Math.min(i + 8192, len)));
   }
   return jsstr;
 });
 
 EM_JS_VAL(JsVal, _python2js_ucs4, (const char* ptr, int len), {
+  const start = HEAP_INDEX_32(ptr);
   let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCodePoint(DEREF_U32(ptr, i));
+  if (len < 256) {
+    for (let i = 0; i < len; ++i) {
+      jsstr += String.fromCodePoint(HEAPU32[start + i]);
+    }
+    return jsstr;
+  }
+  for (let i = 0; i < len; i += 8192) {
+    jsstr += String.fromCodePoint.apply(
+      null, HEAPU32.subarray(start + i, start + Math.min(i + 8192, len)));
   }
   return jsstr;
 });
@@ -283,15 +312,22 @@ _python2js_sequence(ConversionContext* context, PyObject* x)
     DECLARE_PY_OBJECT(pyitem);
     pyitem = PySequence_GetItem(x, i);
     FAIL_IF_NULL(pyitem);
-    JsVal jsitem = _python2js(context, pyitem);
+    JsVal jsitem = _python2js_immutable(pyitem);
     FAIL_IF_JS_ERROR(jsitem);
-    if (JsvNoValue_Check(jsitem)) {
-      JsVal index = JsvNum_fromInt(JsvArray_Push(jsarray, JS_ERROR));
-      _python2js_addto_postprocess_list(
-        hiwire_get(context->jspostprocess_list), jsarray, index, pyitem);
-    } else {
+    if (!JsvNoValue_Check(jsitem)) {
       JsvArray_Push(jsarray, jsitem);
+      continue;
     }
+    jsitem = _python2js(context, pyitem);
+    FAIL_IF_JS_ERROR(jsitem);
+    if (!JsvNoValue_Check(jsitem)) {
+      JsvArray_Push(jsarray, jsitem);
+      continue;
+    }
+    // JsvArray_Push returns the new length, so the index is one less.
+    JsVal index = JsvNum_fromInt(JsvArray_Push(jsarray, JS_ERROR) - 1);
+    _python2js_addto_postprocess_list(
+      hiwire_get(context->jspostprocess_list), jsarray, index, pyitem);
   }
   return jsarray;
 }
@@ -304,9 +340,6 @@ static JsVal
 _python2js_dict(ConversionContext* context, PyObject* x)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  DECLARE_PY_OBJECT(items);
-  DECLARE_PY_OBJECT(iter);
-  DECLARE_PY_OBJECT(item);
 
   _Py_IDENTIFIER(items);
   JsVal jsdict = context->dict_new(context);
@@ -316,11 +349,18 @@ _python2js_dict(ConversionContext* context, PyObject* x)
 
   // PyDict_Next may or may not work on dict subclasses, so get the `.items()`
   // and iterate that instead. See issue #4636.
+  DECLARE_PY_OBJECT(items);
   items = _PyObject_CallMethodIdNoArgs(x, &PyId_items);
   FAIL_IF_NULL(items);
+  DECLARE_PY_OBJECT(iter);
   iter = PyObject_GetIter(items);
   FAIL_IF_NULL(iter);
-  while ((item = PyIter_Next(iter))) {
+  for (;;) {
+    DECLARE_PY_OBJECT(item);
+    item = PyIter_Next(iter);
+    if (item == NULL) {
+      break;
+    }
     if (!PyTuple_Check(item)) {
       PyErr_SetString(PyExc_TypeError, "expected tuple");
       FAIL();
@@ -336,16 +376,22 @@ _python2js_dict(ConversionContext* context, PyObject* x)
         conversion_error, "Cannot use %R as a key for a Javascript Map", pykey);
       FAIL();
     }
-    JsVal jsval = _python2js(context, pyval);
+    JsVal jsval = _python2js_immutable(pyval);
     FAIL_IF_JS_ERROR(jsval);
-    if (JsvNoValue_Check(jsval)) {
-      _python2js_addto_postprocess_list(
-        hiwire_get(context->jspostprocess_list), jsdict, jskey, pyval);
-    } else {
+    if (!JsvNoValue_Check(jsval)) {
       FAIL_IF_MINUS_ONE(
         context->dict_add_keyvalue(context, jsdict, jskey, jsval));
+      continue;
     }
-    Py_CLEAR(item);
+    jsval = _python2js(context, pyval);
+    FAIL_IF_JS_ERROR(jsval);
+    if (!JsvNoValue_Check(jsval)) {
+      FAIL_IF_MINUS_ONE(
+        context->dict_add_keyvalue(context, jsdict, jskey, jsval));
+      continue;
+    }
+    _python2js_addto_postprocess_list(
+      hiwire_get(context->jspostprocess_list), jsdict, jskey, pyval);
   }
   FAIL_IF_ERR_OCCURRED();
   if (context->dict_postprocess) {
@@ -371,13 +417,13 @@ static JsVal
 _python2js_set(ConversionContext* context, PyObject* x)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  DECLARE_PY_OBJECT(iter);
-  DECLARE_PY_OBJECT(pykey);
   // result:
 
   JsVal jsset = JsvSet_New();
+  DECLARE_PY_OBJECT(iter);
   iter = PyObject_GetIter(x);
   FAIL_IF_NULL(iter);
+  DECLARE_PY_OBJECT(pykey);
   while ((pykey = PyIter_Next(iter))) {
     JsVal jskey = _python2js_immutable(pykey);
     if (JsvError_Check(jskey) || JsvNoValue_Check(jskey)) {
@@ -428,9 +474,11 @@ _python2js_immutable(PyObject* x)
     return Jsv_false;
   } else if (x == py_jsnull) {
     return Jsv_null;
-  } else if (PyObject_IsInstance(x, py_JsBigInt)) {
-    return _python2js_bigint(x);
   } else if (PyLong_Check(x)) {
+    if (!PyLong_CheckExact(x) &&
+        PyObject_TypeCheck(x, (PyTypeObject*)py_JsBigInt)) {
+      return _python2js_bigint(x);
+    }
     return _python2js_long(x);
   } else if (PyFloat_Check(x)) {
     return _python2js_float(x);
@@ -469,7 +517,6 @@ static JsVal
 _python2js_deep(ConversionContext* context, PyObject* x)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
-  RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
   if (context->eager_converter) {
     RETURN_IF_HAS_VALUE(
@@ -542,13 +589,14 @@ EMSCRIPTEN_KEEPALIVE JsVal
 _python2js(ConversionContext *context, PyObject* x)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
+  // Immutable values are never in the cache and never become proxies
+  RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   JsVal val = _python2js_cache_lookup(hiwire_get(context->cache), x);
   if (!JsvError_Check(val)) {
     return val;
   }
   FAIL_IF_ERR_OCCURRED();
   if (context->depth == 0) {
-    RETURN_IF_HAS_VALUE(_python2js_immutable(x));
     RETURN_IF_HAS_VALUE(_python2js_proxy(x));
     if (context->default_converter) {
       return python2js__default_converter(hiwire_get(context->jscontext), x);
@@ -957,7 +1005,6 @@ to_js(PyObject* self,
     Py_INCREF(obj);
     return obj;
   }
-  PyObject* py_result = NULL;
 
   JsVal proxies;
   if (!create_proxies) {
@@ -1008,6 +1055,7 @@ to_js(PyObject* self,
                                      js_default_converter,
                                      js_eager_converter);
   FAIL_IF_JS_ERROR(js_result);
+  PyObject* py_result = NULL;
   if (pyproxy_Check(js_result)) {
     // Oops, just created a PyProxy. Wrap it I guess?
     py_result = JsProxy_create(js_result);

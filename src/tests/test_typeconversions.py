@@ -314,7 +314,7 @@ def test_number_conversions_3(selenium_module_scope, n):
     from pyodide.code import run_js
 
     jsty = run_js("(n) => typeof n")(n)
-    if -(2**53) + 1 < n < 2**53 - 1:
+    if -(2**53) < n < 2**53:
         assert jsty == "number"
     else:
         assert jsty == "bigint"
@@ -470,6 +470,28 @@ def test_bigint_conversions3(selenium_module_scope, n, exp):
 
         s = json.dumps(val)
         main(selenium, s)
+
+
+@pytest.mark.parametrize(
+    "n, js_type",
+    [
+        (2**31, "number"),
+        (-(2**31) - 1, "number"),
+        (2**53 - 1, "number"),
+        (-(2**53 - 1), "number"),
+        (2**53, "bigint"),
+        (-(2**53), "bigint"),
+    ],
+)
+@run_in_pyodide
+def test_python_int_to_js_safe_integer_bound(selenium, n, js_type):
+    # Python ints that fit in a safe integer (Number.isSafeInteger) are
+    # converted to a JS number, larger ones to a BigInt.
+    from pyodide.code import run_js
+
+    [result_type, result_str] = run_js("(x) => [typeof x, x.toString()]")(n)
+    assert result_type == js_type
+    assert result_str == str(n)
 
 
 @given(obj=any_equal_to_self_strategy.filter(no_hypothesis))
@@ -1027,6 +1049,7 @@ def test_js2python_bool(selenium, jsval, is_truthy):
         ("Uint16Array", "H"),
         ("Int32Array", "i"),
         ("Uint32Array", "I"),
+        ("Float16Array", "e"),
         ("Float32Array", "f"),
         ("Float64Array", "d"),
     ),
@@ -1092,6 +1115,28 @@ def test_recursive_dict_to_js(selenium):
     from pyodide.ffi import to_js
 
     to_js(x)
+
+
+@run_in_pyodide
+def test_recursive_dict_in_list_to_js(selenium):
+    # A list item that refers to a dict that is still being converted is filled
+    # in at the end of the conversion. Check that it goes to the right index.
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    x: Any = {}
+    x["l"] = [x, 1]
+    check = run_js(
+        """
+        (res) => {
+            const l = res instanceof Map ? res.get("l") : res.l;
+            return l.length === 2 && l[0] === res && l[1] === 1;
+        }
+        """
+    )
+    assert check(to_js(x))
+    assert check(to_js(x, dict_converter=run_js("Object.fromEntries")))
+    assert check(to_js(x, dict_converter=run_js("(entries) => new Map(entries)")))
 
 
 @run_in_pyodide
@@ -1230,6 +1275,29 @@ def test_memoryview_conversion(selenium):
         // (automatically checked in conftest.py)
         """
     )
+
+
+@pytest.mark.parametrize("shape", [[4], [3, 4], [2, 3, 4]])
+@run_in_pyodide
+def test_buffer_suboffsets_conversion(selenium, shape):
+    from _testbuffer import ND_PIL, ndarray
+    from math import prod
+
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    nd = ndarray(list(range(prod(shape))), shape=shape, format="i", flags=ND_PIL)
+    suboffsets = memoryview(nd).suboffsets
+    assert suboffsets and suboffsets[0] >= 0
+
+    to_list = run_js(
+        """
+        const toList = (x) =>
+          ArrayBuffer.isView(x) ? Array.from(x) : Array.from(x, toList);
+        toList
+        """
+    )
+    assert to_list(to_js(nd)).to_py() == memoryview(nd).tolist()
 
 
 def test_python2js_with_depth(selenium):
@@ -1540,6 +1608,32 @@ def test_to_py4(selenium, obj, msg):
         a = run_js(f"pyodide.toPy(new {obj})")
 
 
+@pytest.mark.xfail_browsers(node="No document object")
+@run_in_pyodide
+def test_to_py_dom_collections(selenium):
+    from pyodide.code import run_js
+
+    run_js(
+        """
+        const div = document.createElement("div");
+        div.id = "to-py-dom-collections";
+        div.innerHTML = "<span></span><span></span><span></span>";
+        document.body.appendChild(div);
+        """
+    )
+    try:
+        node_list = run_js('document.querySelectorAll("#to-py-dom-collections > span")')
+        html_collection = run_js(
+            'document.getElementById("to-py-dom-collections").children'
+        )
+        for collection in [node_list, html_collection]:
+            result = collection.to_py()
+            assert isinstance(result, list)
+            assert [el.tagName for el in result] == ["SPAN", "SPAN", "SPAN"]
+    finally:
+        run_js('document.getElementById("to-py-dom-collections").remove()')
+
+
 @run_in_pyodide
 def test_to_py_default_converter(selenium):
     from pyodide.code import run_js
@@ -1749,7 +1843,6 @@ def test_buffer_format_string(selenium):
         ["II", "Unrecognized alignment character I."],
         ["x", "Unrecognized format character 'x'."],
         ["x", "Unrecognized format character 'x'."],
-        ["e", "Javascript has no Float16 support."],
     ]
     for fmt, msg in errors:
         with pytest.raises(selenium.JavascriptException, match=msg):
@@ -2157,6 +2250,45 @@ def test_bind_pre_convert(selenium):
     abound = ajs.bind_sig(a)
     assert abound({"x": "y"}) == ["[object Headers]", '[["x","y"]]']
     _caches[Annotated._getitem.__wrapped__].cache_clear()  # type:ignore[attr-defined]
+
+
+@run_in_pyodide
+def test_converter_copy_refcount(selenium):
+    # Regression test: Converter.copy() used to share pre_convert/post_convert/extra
+    # without incrementing their refcounts, so deallocating a copy released a
+    # reference still owned by the original (double free / use-after-free).
+    import sys
+
+    from _pyodide_core import (
+        create_promise_converter,
+        js2py_deep,
+        py2js_deep,
+    )
+
+    # pre_convert (Py2JsConverter) and post_convert (Js2PyConverter) are settable
+    # members. Work on copies of the shared singletons so we never mutate them.
+    for base, attr in [(py2js_deep, "pre_convert"), (js2py_deep, "post_convert")]:
+        conv = base.copy()
+        sentinel = ["sentinel"]
+        setattr(conv, attr, sentinel)
+        rc = sys.getrefcount(sentinel)
+        copy = conv.copy()
+        assert sys.getrefcount(sentinel) == rc + 1  # copy() took its own reference
+        assert getattr(copy, attr) is sentinel
+        del copy
+        # Deallocating the copy must release only its own reference.
+        assert sys.getrefcount(sentinel) == rc
+        assert getattr(conv, attr) is sentinel
+
+    # `extra` has no public member; create_promise_converter stores the result
+    # converter there, and copy() must propagate and incref it.
+    result_conv = js2py_deep.copy()
+    promise_conv = create_promise_converter(result_conv)
+    rc = sys.getrefcount(result_conv)
+    copy = promise_conv.copy()
+    assert sys.getrefcount(result_conv) == rc + 1
+    del copy
+    assert sys.getrefcount(result_conv) == rc
 
 
 @run_in_pyodide
