@@ -17,8 +17,12 @@ myst:
 
 ## Unreleased
 
-- {{ Fix }} Fixed a bug that `PyProxy.getBuffer()` failed for a buffer stored past
-  2GB of the WebAssembly heap.
+- {{ Fix }} Fixed `toJs()` conversion of a dictionary with a list inside with a
+  circular reference to the outer dictionary.
+  {pr}`6550`
+
+- {{ Fix }} Fixed `PyProxy.getBuffer()` when the address of the buffer is larger
+  than 2GB.
   {pr}`6546`
 
 - {{ Enhancement }} Pyodide now supports `Float16Array`. It will translate half
