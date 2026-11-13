@@ -1,7 +1,7 @@
-From 55c7ddebd480240c874cd2be650c2457779d335b Mon Sep 17 00:00:00 2001
+From dbb0af2db8c09a6504a8be1e90d7b94140d0c82c Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 22 Feb 2025 13:18:18 +0100
-Subject: [PATCH 4/9] Make `from x import *` aware of jsproxy modules
+Subject: [PATCH 04/10] Make `from x import *` aware of jsproxy modules
 
 ---
  Python/intrinsics.c | 8 ++++++++
@@ -34,5 +34,5 @@ index ff44ba0ee64..2921e702ea6 100644
          if (PyObject_GetOptionalAttr(v, &_Py_ID(__dict__), &dict) < 0) {
              return -1;
 -- 
-2.43.0
+2.55.0
 

@@ -770,3 +770,88 @@ jobs:
       - name: run deno tests
         shell: bash -l {0}
         run: cd src/test-deno && deno task test
+
+  benchmark-pyperformance:
+    name: Benchmark pyperformance
+    runs-on: ubuntu-latest
+    # This is slow, so only run it for PRs with the pyperformance label.
+    if: contains(github.event.pull_request.labels.*.name, 'pyperformance')
+    timeout-minutes: 240
+    needs: [build-core-linux, get_python_version]
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download build artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: core-build-${{ runner.os }}
+          path: ./dist/
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      - name: Set up Python ${{ needs.get_python_version.outputs.PYVERSION }}
+        env:
+          PYVERSION: ${{ needs.get_python_version.outputs.PYVERSION }}
+        run: |
+          uv venv --seed --python "$PYVERSION" .venv
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Compare pyperformance with main
+        env:
+          PYPERFORMANCE_ARGS: --processes 1 --values 3
+          PYPERFORMANCE_OUTPUT_DIR: benchmark-results/pyperformance
+        run: |
+          mkdir -p benchmark-results
+          node benchmark/node/run.mjs \
+            --suite pyperformance \
+            --rounds 2 \
+            --json benchmark-results/pyperformance-compare.json \
+            https://cdn.jsdelivr.net/pyodide/dev/full/ dist
+
+      - name: Significant changes
+        # Comparing a build with itself, changes of up to ~4% were reported
+        # as significant, so hide changes smaller than 5%.
+        run: |
+          {
+            echo "## pyperformance: significant changes compared with main"
+            PYTHONPATH=benchmark/node/.pyperformance python -m pyperf compare_to \
+              --table --table-format md --min-speed 5 \
+              benchmark-results/pyperformance/base.json \
+              benchmark-results/pyperformance/new.json
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Compare with native CPython
+        # Run the same benchmarks with native CPython, to see where Pyodide is
+        # much slower.
+        run: |
+          python --version
+          python benchmark/node/helpers/pyperformance_native.py \
+            benchmark-results/pyperformance/native.json \
+            --processes 1 --values 3
+          {
+            echo "## pyperformance: compared with native CPython $(python -c 'import platform; print(platform.python_version())')"
+            PYTHONPATH=benchmark/node/.pyperformance python -m pyperf compare_to \
+              --table --table-format md \
+              benchmark-results/pyperformance/native.json \
+              benchmark-results/pyperformance/new.json
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Store benchmark results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pyperformance-results
+          path: ./benchmark-results/
