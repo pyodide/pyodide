@@ -19,8 +19,11 @@ Examples
 
 import base64
 import json
-from typing import Any, NotRequired, TypedDict, Unpack
+from typing import TYPE_CHECKING, Any, NotRequired, TypedDict, Unpack
 from urllib.parse import urlencode
+
+if TYPE_CHECKING:
+    import http.client
 
 from ..ffi import IN_PYODIDE
 from ._exceptions import HttpStatusError, XHRError, XHRNetworkError
@@ -71,7 +74,7 @@ class XHRResponse:
 
     def __init__(self, xhr: Any):
         self._xhr = xhr
-        self._headers_dict: dict[str, str] | None = None
+        self._headers_cache: http.client.HTTPMessage | None = None
 
     @property
     def status_code(self) -> int:
@@ -95,11 +98,11 @@ class XHRResponse:
         return self.content.decode("utf-8")
 
     @property
-    def headers(self) -> dict[str, str]:
-        """Response headers as dictionary."""
-        if self._headers_dict is None:
-            self._headers_dict = self._parse_headers()
-        return self._headers_dict
+    def headers(self) -> "http.client.HTTPMessage":
+        """Response headers as an :py:class:`http.client.HTTPMessage`."""
+        if self._headers_cache is None:
+            self._headers_cache = self._parse_headers()
+        return self._headers_cache
 
     @property
     def ok(self) -> bool:
@@ -111,17 +114,18 @@ class XHRResponse:
         """Final URL location of response."""
         return self._xhr.responseURL if hasattr(self._xhr, "responseURL") else ""
 
-    def _parse_headers(self) -> dict[str, str]:
-        """Parse response headers from XMLHttpRequest."""
-        headers: dict[str, str] = {}
+    def _parse_headers(self) -> "http.client.HTTPMessage":
+        """Parse response headers from XMLHttpRequest into an HTTPMessage."""
+        # http / email is expensive to import, so only import it when it is needed
+        import email.parser
+        import http.client
+
         headers_str = self._xhr.getAllResponseHeaders()
         if not headers_str:
-            return headers
-        for line in headers_str.strip().split("\r\n"):
-            if ":" in line:
-                key, value = line.split(": ", 1)
-                headers[key.strip().lower()] = value.strip()
-        return headers
+            return http.client.HTTPMessage()
+        return email.parser.Parser(_class=http.client.HTTPMessage).parsestr(
+            headers_str, headersonly=True
+        )
 
     def json(self, **kwargs: Any) -> Any:
         """Parse response content as JSON.
