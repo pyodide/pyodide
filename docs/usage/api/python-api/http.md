@@ -25,6 +25,7 @@ Based on the browser's native Fetch API, `pyfetch` provides:
 ```python
 # Asynchronous HTTP request
 from pyodide.http import pyfetch
+
 response = await pyfetch("https://api.example.com/data")
 data = await response.json()
 ```
@@ -40,6 +41,7 @@ Based on XMLHttpRequest, `pyxhr` provides:
 ```python
 # Synchronous HTTP request
 from pyodide.http import pyxhr
+
 response = pyxhr.get("https://api.example.com/data")
 data = response.json()
 ```

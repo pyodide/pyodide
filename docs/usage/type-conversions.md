@@ -200,9 +200,9 @@ f = run_js(
 )
 
 with f() as x:
-    print(x.disposed) # False
+    print(x.disposed)  # False
 
-print(x.disposed) # True
+print(x.disposed)  # True
 ```
 
 Likewise, if a JavaScript object has a `[Symbol.asyncDispose]()` method, the
@@ -256,6 +256,7 @@ used as attributes. For instance, {js:func}`Array.from` and
 
 ```py
 from pyodide.code import run_js
+
 o = run_js("({finally: 1, return: 2, from: 3, from_: 4})")
 assert set(dir(o)) == {"finally_", "return_", "from_", "from__"}
 ```
@@ -534,8 +535,12 @@ once use {py:func}`~pyodide.ffi.create_once_callable`:
 ```py
 from pyodide.ffi import create_once_callable
 from js import setTimeout
+
+
 def my_callback():
     print("hi")
+
+
 setTimeout(create_once_callable(my_callback), 1000)
 ```
 
@@ -544,8 +549,12 @@ If it's going to be called many times use {py:func}`~pyodide.ffi.create_proxy`:
 ```py
 from pyodide.ffi import create_proxy
 from js import document
+
+
 def my_callback():
     print("hi")
+
+
 proxy = create_proxy(my_callback)
 document.body.addEventListener("click", proxy)
 # ...
@@ -799,8 +808,10 @@ objects into Python.
 
 ```py
 import js
-js.document.title = 'New window title'
+
+js.document.title = "New window title"
 from js.document.location import reload as reload_page
+
 reload_page()
 ```
 

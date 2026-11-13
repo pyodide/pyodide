@@ -124,9 +124,9 @@ These wrappers enable the following sort of code:
 
 ```python
 try:
-  jsfunc()
+    jsfunc()
 except JsException:
-  print("Caught an exception thrown in JavaScript!")
+    print("Caught an exception thrown in JavaScript!")
 ```
 
 ## Structure of functions
@@ -135,16 +135,16 @@ In C it takes special care to correctly and cleanly handle both reference counti
 
 ```python
 def f():
-  try: # implicit
-    a = do_something()
-    b = do_something_else()
-    c = a + b
-    return some_func(c)
-  finally:
-    # implicit, free references both on successful exit and on exception
-    decref(a)
-    decref(b)
-    decref(c)
+    try:  # implicit
+        a = do_something()
+        b = do_something_else()
+        c = a + b
+        return some_func(c)
+    finally:
+        # implicit, free references both on successful exit and on exception
+        decref(a)
+        decref(b)
+        decref(c)
 ```
 
 Freeing all references at the end of the function allows us to separate reference counting boilerplate from the "actual logic" of the function definition. When a function does correct error propagation, there will be many different execution paths, roughly linearly many in the length of the function. For example, the above pseudocode could exit in five different ways: `do_something` could raise an exception, `do_something_else` could raise an exception, `a + b` could raise an exception, `some_func` could raise an exception, or the function could return successfully. (Even a Python function like `def f(a,b,c,d): return (a + b) * c - d` has four execution paths.) The point of the `try`/`finally` block is that we know the resources are freed correctly without checking once for each execution path.

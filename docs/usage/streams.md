@@ -282,6 +282,7 @@ instance after:
 ```py
 print("hello!")
 import sys
+
 print("partial line", end="")
 sys.stdout.flush()
 ```
@@ -304,6 +305,7 @@ For example, the following code:
 ```py
 print("h")
 import sys
+
 print("p ", end="")
 print("l", end="")
 sys.stdout.flush()
@@ -316,7 +318,7 @@ will call the raw handler with the sequence of bytes:
 0x0A - newline
 0x70 - p
 0x20 - space
-0x6c - l
+0x6C - l
 ```
 
 ### A write handler
