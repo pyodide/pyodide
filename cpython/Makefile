@@ -33,7 +33,7 @@ ifdef CPYTHON_DEBUG
 	MAYBE_WITH_PYDEBUG=--with-pydebug
 endif
 
-all: $(PYINSTALL)/lib/$(PYLIB) libffi libhiwire liblzma libzstd
+all: $(PYINSTALL)/lib/$(PYLIB) libffi libhiwire liblzma libzstd pkgconfig
 
 libffi: $(PYINSTALL)/lib/libffi.a
 
@@ -60,6 +60,36 @@ sysconfigdata:
 	mkdir -p $(SYSCONFIGDATA_DIR)
 	cp $(PYBUILDDIR)/*.{py,json} $(PYINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	cp $(PYBUILDDIR)/*.{py,json} $(SYSCONFIGDATA_DIR)
+
+PYVERSION_SHORT=$(PYMAJOR).$(PYMINOR)
+PYLDVERSION=$(PYVERSION_SHORT)$(CPYTHON_ABI_FLAGS)
+PYLIBPC=$(PYINSTALL)/lib/pkgconfig
+
+# Install the pkg-config files for Python. They are not installed by the
+# `inclinstall libinstall` targets that we use. Without them, pkg-config
+# lookups for `python-3.X` (e.g., by meson) can find the host system's
+# Python instead.
+#
+# The pkg-config files are generated with an absolute prefix. Replace it with
+# a prefix relative to the location of the .pc file so that it stays correct
+# when the cross-build environment is installed in a different location.
+.PHONY: pkgconfig
+pkgconfig: $(PYLIBPC)/python-$(PYLDVERSION).pc
+
+# Same file names as CPython's `make install`, but as copies instead of
+# symlinks.
+PYLIBPC_ALIASES=python3 $(if $(CPYTHON_ABI_FLAGS),python-$(PYVERSION_SHORT))
+
+$(PYLIBPC)/python-$(PYLDVERSION).pc: $(PYBUILD)/Makefile
+	mkdir -p $(PYLIBPC)
+	$(SED) -e 's|^prefix=.*|prefix=$${pcfiledir}/../..|' \
+		$(PYBUILD)/Misc/python-embed.pc > $(PYLIBPC)/python-$(PYLDVERSION)-embed.pc
+	$(SED) -e 's|^prefix=.*|prefix=$${pcfiledir}/../..|' \
+		$(PYBUILD)/Misc/python.pc > $@
+	for name in $(PYLIBPC_ALIASES); do \
+		cp $@ $(PYLIBPC)/$$name.pc && \
+		cp $(PYLIBPC)/python-$(PYLDVERSION)-embed.pc $(PYLIBPC)/$$name-embed.pc || exit 1; \
+	done
 
 LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS)
 
