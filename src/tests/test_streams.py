@@ -696,3 +696,45 @@ def test_get_terminal_size_node(selenium, tmp_path):
         os.close(secondary)
         os.close(primary)
     assert res.stderr.strip() == "os.terminal_size(columns=180, lines=50)"
+
+
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
+def test_node_worker_thread_streams(selenium, tmp_path):
+    # In a worker thread, process.stdout etc. are not backed by a file
+    # descriptor. See: https://github.com/pyodide/pyodide/issues/5798
+    target_path = DIST_PATH / "pyodide.mjs"
+    worker_script = (
+        """
+        import { loadPyodide } from "%s";
+
+        const pyodide = await loadPyodide();
+        pyodide.runPython(`
+            import sys
+            print("hello stdout")
+            print("hello stderr", file=sys.stderr)
+            try:
+                input()
+            except OSError as e:
+                print("stdin error", e.errno, file=sys.stderr)
+        `);
+        """
+        % target_path
+    )
+    worker_path = tmp_path / "worker.mjs"
+    worker_path.write_text(worker_script)
+    script_path = tmp_path / "script.mjs"
+    script_path.write_text(
+        """
+        import { Worker } from "node:worker_threads";
+        new Worker(%r);
+        """
+        % str(worker_path)
+    )
+    res = subprocess.run(
+        ["node", script_path],
+        text=True,
+        check=True,
+        capture_output=True,
+    )
+    assert res.stdout == "hello stdout\n"
+    assert res.stderr == "hello stderr\nstdin error 29\n"
