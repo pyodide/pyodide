@@ -65,6 +65,13 @@ def test_zerod_buffers(selenium):
     assert jsUint64Buf.byteLength == 8
     assert jsUint64Buf[0] == 18 + 2 * 256 + 1 * 256 * 256 * 256 + pow(256, 7)
 
+    float16Buf = ZeroDBuffer("e", bytes([0, 71]))
+    jsFloat16Buf = to_js(float16Buf)
+    assert jsFloat16Buf.constructor.name == "Float16Array"
+    assert jsFloat16Buf.length == 1
+    assert jsFloat16Buf.byteLength == 2
+    assert jsFloat16Buf[0] == 7
+
     float32Buf = ZeroDBuffer("f", bytes([0, 0, 224, 64]))
     jsFloat32Buf = to_js(float32Buf)
     assert jsFloat32Buf.constructor.name == "Float32Array"
@@ -78,17 +85,3 @@ def test_zerod_buffers(selenium):
     assert jsFloat64Buf.length == 1
     assert jsFloat64Buf.byteLength == 8
     assert jsFloat64Buf[0] == 7
-
-    # Attempt to convert float16 array should fail with a ConversionError
-    float16Buf = ZeroDBuffer("e", bytes([0, 71]))
-    err = None
-    try:
-        to_js(float16Buf)
-    except Exception as e:
-        err = e
-
-    assert err
-    try:
-        assert str(err.__cause__) == "Error: Javascript has no Float16 support."
-    finally:
-        del err

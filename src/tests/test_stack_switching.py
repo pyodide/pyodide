@@ -192,7 +192,18 @@ def test_syncify_null(selenium):
 
 @requires_jspi
 @pytest.mark.requires_dynamic_linking
-def test_syncify_no_suspender(selenium):
+@pytest.mark.parametrize("debug", [False, True])
+def test_syncify_no_suspender(selenium, debug):
+    # In debug mode, destroying the temporary proxy used to call repr() while
+    # the RuntimeError was set, which lost it and raised a SystemError instead.
+    orig = selenium.run_js(f"return pyodide.setDebug({str(debug).lower()});")
+    try:
+        _check_syncify_no_suspender(selenium)
+    finally:
+        selenium.run_js(f"pyodide.setDebug({str(orig).lower()});")
+
+
+def _check_syncify_no_suspender(selenium):
     selenium.run_js(
         """
         await pyodide.loadPackage("pytest");
@@ -329,17 +340,46 @@ def test_cpp_exceptions_and_syncify(selenium):
 def test_two_way_transfer(selenium):
     res = selenium.run_js(
         """
+        const waiting = {};
+        let onWait;
+        function wait(n) {
+            return new Promise((resolve) => {
+                waiting[n] = resolve;
+                onWait?.();
+            });
+        }
+        async function untilWaiting(n) {
+            while (!waiting[n]) {
+                await new Promise((resolve) => (onWait = resolve));
+            }
+        }
+
         pyodide.runPython(`
             from pyodide.ffi import run_sync
             l = []
-            def f(n, t):
-                from js import sleep
-                for i in range(5):
-                    run_sync(sleep(t))
+            def f(n, wait):
+                for i in range(3):
+                    run_sync(wait(n))
                     l.append([n, i])
         `);
-        f = pyodide.globals.get("f");
-        await Promise.all([f.callPromising("a", 15), f.callPromising("b", 21)])
+        const f = pyodide.globals.get("f");
+        const done = Promise.all([
+            f.callPromising("a", wait),
+            f.callPromising("b", wait),
+        ]);
+        const remaining = { a: 3, b: 3 };
+        for (const n of ["a", "b", "a", "a", "b", "b"]) {
+            await untilWaiting(n);
+            const resolve = waiting[n];
+            delete waiting[n];
+            resolve();
+            remaining[n]--;
+            if (remaining[n] > 0) {
+                // Wait until it ran up to the next run_sync()
+                await untilWaiting(n);
+            }
+        }
+        await done;
         f.destroy();
         const l = pyodide.globals.get("l");
         const res = l.toJs();
@@ -351,13 +391,9 @@ def test_two_way_transfer(selenium):
         ["a", 0],
         ["b", 0],
         ["a", 1],
-        ["b", 1],
         ["a", 2],
-        ["a", 3],
+        ["b", 1],
         ["b", 2],
-        ["a", 4],
-        ["b", 3],
-        ["b", 4],
     ]
 
 

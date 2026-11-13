@@ -114,18 +114,50 @@ function isReservedWord(word) {
 
 function normalizeReservedWords(word) {
   // clang-format off
-  // 1. if word is not a reserved word followed by 0 or more underscores, return
+  // 1. without a trailing underscore the word is always returned unchanged
+  //    95 is the char code of "_".
+  if (word.charCodeAt(word.length - 1) !== 95) {
+    return word;
+  }
+  // 2. if word is not a reserved word followed by 0 or more underscores, return
   //    it unchanged.
   const noTrailing_ = word.replace(/_*$/, "");
   if (!isReservedWord(noTrailing_)) {
     return word;
   }
-  // 2. If there is at least one trailing underscore, return the word with a
+  // 3. If there is at least one trailing underscore, return the word with a
   //    single underscore removed.
   if (noTrailing_ !== word) {
     return word.slice(0, -1);
   }
-  // 3. If the word is exactly a reserved word, return it unchanged
+  // 4. If the word is exactly a reserved word, return it unchanged
   return word;
   // clang-format on
+}
+
+// JS strings for attribute names.
+const attrNames = new Map();
+// Normally there aren't many attribute names, so this is plenty.
+const MAX_ATTR_NAMES = 1000;
+
+/**
+ * Convert the name of an attribute of a JsProxy to JavaScript.
+ *
+ * cname is the name encoded as UTF-8. If pyname is nonzero, it's the Python
+ * string for the name and it's immortal: then we cache the JS string, so that
+ * we don't have to decode the name again and property lookups with it are
+ * faster.
+ */
+function attrNameToJs(cname, pyname) {
+  if (!pyname) {
+    return normalizeReservedWords(UTF8ToString(cname));
+  }
+  let jskey = attrNames.get(pyname);
+  if (jskey === undefined) {
+    jskey = normalizeReservedWords(UTF8ToString(cname));
+    if (attrNames.size < MAX_ATTR_NAMES) {
+      attrNames.set(pyname, jskey);
+    }
+  }
+  return jskey;
 }

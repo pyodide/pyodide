@@ -17,21 +17,24 @@ myst:
 
 ## Unreleased
 
-- {{ Fix }} The Windows `python` CLI now handles paths across multiple drive
-  letters by mounting referenced drives at distinct virtual roots such as `/c`
-  and `/d`.
-
-- {{ Fix }} Fixed a segfault error in the garbage collector due to stack
-  switching. The garbage collector would walk `tstate.current_frame` to find
-  objects it could mark as definitely alive. However, `tstate.current_frame`
-  includes some stack memory which can be evicted when the task is suspended. To
-  fix, we null out `tstate.current_frame` while the task is suspended and
-  restore it when we resume.
-  {pr}`6466`
+### General
 
 - {{ Breaking }} Removed support for JSPI with Node 20. This support used an
   early version of the JSPI proposal. Node 20 is end of life since March 2026.
   {pr}`6465`
+
+- {{ Fix }} Fixed a fatal error when using pybind11 extensions that acquire the
+  GIL. PyBind11 caches a thread state in a TLS variable, which since we only
+  have one thread is a global. It then assumes it can restore this tstate.
+  However, {pr}`6421` gave each stack switching task a thread state of its own,
+  violating this assumption. There is now a single thread state again, just like
+  the way greenlet handles stack switching.
+  {pr}`6466` {pr}`6487`
+
+- {{ Fix }} Stack switching now works with Safari on iOS. This drops support for
+  iOS versions 18.0 -- 18.5 but nobody should be running those versions because
+  they have unpatched security vulnerabilities.
+  {pr}`6552`
 
 - {{ Performance }} Shared libraries inside a package are no longer all
   compiled while the package is installing. By default only libraries of 8MiB
@@ -41,6 +44,79 @@ myst:
   compiling libraries that are never imported. The threshold can be configured
   with the `sharedLibraryPreloadThreshold` option of {js:func}`loadPyodide`;
   pass `0` to get the previous behavior. {pr}`6422`
+
+### JavaScript API
+
+- {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
+  that caps how far the WebAssembly heap of that instance may grow. Once the
+  total heap reaches the limit, further allocations fail with a `MemoryError`.
+  {pr}`6483`
+
+- {{ API }} `pyodide.registerComlink()` is deprecated and has no effect. It
+  never worked as intended: Comlink proxies were always detected like ordinary
+  JavaScript objects.
+  {pr}`6541`
+
+- {{ Fix }} Fixed a `SystemError` caused by `pyodide.setDebug(true)`.
+  {pr}`6524`
+
+- {{ Fix }} Fixed `PyProxy.getBuffer()` when the address of the buffer is larger
+  than 2GB.
+  {pr}`6546`
+
+- {{ Fix }} Fixed a bug that `instanceof pyodide.ffi.PyMutableSequence` was true
+  for every Python sequence, including `tuple`.
+  {pr}`6503`
+
+### Python API
+
+- {{ Fix }} `WebLoop.create_task()` no longer raises an `AttributeError` when a
+  task factory is set. It now passes its arguments on to the task factory like
+  the default asyncio event loop does.
+  {pr}`6525`
+
+- {{ Fix }} `WebLoop.call_later()` and `WebLoop.call_at()` no longer raise
+  `ValueError("Can't schedule in the past")` for a delay in the past: as in
+  CPython, the callback runs as soon as possible.
+  {pr}`6489`
+
+- {{ Fix }} Fixed a new event loop silently replacing the current running loop when
+  `asyncio.new_event_loop()` is called. {pr}`6342`
+
+### Python / JavaScript type conversions
+
+- {{ Enhancement }} Pyodide now supports `Float16Array`. It will translate half
+  float Python buffers into `Float16Array` and vice versa. Converting a half
+  float buffer requires a JavaScript runtime with `Float16Array` support.
+  {pr}`6005`
+
+- {{ Fix }} Fixed `toJs()` conversion of a dictionary with a list inside with a
+  circular reference to the outer dictionary.
+  {pr}`6550`
+
+- {{ Fix }} A Python `int` equal to `Number.MAX_SAFE_INTEGER` or
+  `-Number.MAX_SAFE_INTEGER` is now converted to a `Number` instead of a
+  `BigInt`. {pr}`6510`
+
+- {{ Fix }} `NodeList` and `HTMLCollection` are now converted to a Python list
+  when passed to `to_py()`.
+  {pr}`6498`
+
+- {{ Fix }} Fixed an exception when converting a multidimensional PIL-style
+  buffer to JavaScript with `toJs()`.
+  {pr}`6497`
+
+- {{ Performance }} The internal "no value" sentinel used during Python to
+  JavaScript conversion is now a wasm-gc object, like the error sentinel. This
+  means checking for it no longer requires calling out to JavaScript.
+  {pr}`6519`
+
+### `python` CLI entrypoint
+
+- {{ Fix }} The Windows `python` CLI now handles paths across multiple drive
+  letters by mounting referenced drives at distinct virtual roots such as `/c`
+  and `/d`.
+  {pr}`6467`
 
 ## Version 314.0.7
 

@@ -665,12 +665,10 @@ export class PyodideAPI_ {
   }
 
   /**
-   * Tell Pyodide about Comlink.
-   * Necessary to enable importing Comlink proxies into Python.
+   * Deprecated: This function has no effect.
+   * @deprecated
    */
-  static registerComlink(Comlink: any) {
-    API._Comlink = Comlink;
-  }
+  static registerComlink() {}
 
   /**
    * Sets the interrupt buffer to be ``interrupt_buffer``. This is only useful
@@ -837,33 +835,33 @@ API.finalizeBootstrap = function (
   snapshotDeserializer?: (obj: any) => any,
 ): PyodideAPI {
   if (snapshotConfig) {
+    // When restoring a snapshot, _pyodide_core is already in sys.modules.
     syncUpSnapshotLoad1();
-  }
-  let [err, captured_stderr] = API.rawRun("import _pyodide_core");
-  if (err) {
-    API.fatal_loading_error(
-      "Failed to import _pyodide_core\n",
-      captured_stderr,
-    );
+  } else {
+    let [err, captured_stderr] = API.rawRun("import _pyodide_core");
+    if (err) {
+      API.fatal_loading_error(
+        "Failed to import _pyodide_core\n",
+        captured_stderr,
+      );
+    }
   }
 
-  // First make internal dict so that we can use runPythonInternal.
+  const base = API._pyodide._base;
+  const import_module = base.import_module;
+  const builtinsModule = base.builtins;
+
+  // Make internal dict so that we can use runPythonInternal.
   // runPythonInternal uses a separate namespace, so we don't pollute the main
   // environment with variables from our setup.
-  API.runPythonInternal_dict = API._pyodide._base.eval_code("{}") as PyProxy;
-  API.importlib = API.runPythonInternal("import importlib; importlib");
-  let import_module = API.importlib.import_module;
-
+  API.runPythonInternal_dict = builtinsModule.dict() as PyProxy;
+  API.importlib = import_module("importlib");
   API.sys = import_module("sys");
   API.os = import_module("os");
 
   // Set up globals
-  let globals = API.runPythonInternal(
-    "import __main__; __main__.__dict__",
-  ) as PyDict;
-  let builtins = API.runPythonInternal(
-    "import builtins; builtins.__dict__",
-  ) as PyDict;
+  const globals = import_module("__main__").__dict__ as PyDict;
+  const builtins = builtinsModule.__dict__ as PyDict;
   API.globals = wrapPythonGlobals(globals, builtins);
 
   // Set up key Javascript modules.

@@ -75,6 +75,20 @@ async def test_call_later_skips_scheduling_for_infinite_delay(selenium):
         webloop.scheduleCallback = orig_scheduleCallback  # type: ignore[attr-defined]
 
 
+@run_in_pyodide
+async def test_call_later_negative_delay(selenium):
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    fut = loop.create_future()
+    loop.call_later(-1, fut.set_result, "later")
+    assert await fut == "later"
+
+    fut = loop.create_future()
+    loop.call_at(loop.time() - 1, fut.set_result, "at")
+    assert await fut == "at"
+
+
 def test_cancel_handle(selenium_standalone_refresh):
     selenium_standalone_refresh.run_js(
         """
@@ -93,6 +107,28 @@ def test_cancel_handle(selenium_standalone_refresh):
         `);
         """
     )
+
+
+@run_in_pyodide
+async def test_new_event_loop_does_not_replace_running_loop(selenium_standalone):
+    import asyncio
+
+    startup_loop = asyncio.get_event_loop()
+    running_at_start = asyncio.events._get_running_loop()
+
+    assert running_at_start is startup_loop
+
+    new_loop = asyncio.new_event_loop()
+    running_after_new = asyncio.events._get_running_loop()
+
+    assert new_loop is not startup_loop
+    assert running_after_new is startup_loop
+    assert asyncio.get_event_loop() is startup_loop
+
+    new_loop.close()
+
+    assert asyncio.events._get_running_loop() is startup_loop
+    assert asyncio.get_event_loop() is startup_loop
 
 
 def test_cancel_unhandled(selenium):
@@ -725,3 +761,66 @@ async def test_warning_after_shutdown(selenium):
         await g.aclose()
 
     assert any(issubclass(warn.category, ResourceWarning) for warn in w)
+
+
+@run_in_pyodide
+async def test_create_task_with_task_factory(selenium):
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    calls = []
+
+    def factory(loop, coro, **kwargs):
+        calls.append(kwargs)
+        return asyncio.Task(coro, loop=loop, **kwargs)
+
+    async def f():
+        return 7
+
+    loop.set_task_factory(factory)
+    try:
+        task = loop.create_task(f(), name="my task")
+        assert await task == 7
+        assert task.get_name() == "my task"
+        assert calls == [{"name": "my task"}]
+    finally:
+        loop.set_task_factory(None)
+
+
+@run_in_pyodide
+async def test_eager_task_factory(selenium):
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    started = []
+
+    async def f():
+        started.append(True)
+        return 7
+
+    loop.set_task_factory(asyncio.eager_task_factory)
+    try:
+        task = loop.create_task(f(), name="eager")
+        # An eager task starts running in create_task
+        assert started == [True]
+        assert await task == 7
+        assert task.get_name() == "eager"
+    finally:
+        loop.set_task_factory(None)
+
+
+@run_in_pyodide
+async def test_create_task_eager_start(selenium):
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    started = []
+
+    async def f():
+        started.append(True)
+        return 7
+
+    task = loop.create_task(f(), eager_start=True)
+    # An eager task starts running in create_task
+    assert started == [True]
+    assert await task == 7

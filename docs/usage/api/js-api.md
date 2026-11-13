@@ -43,7 +43,7 @@ If you want to do an instance check, you'll need to access the type via the
 Pyodide API returned from {js:func}`~exports.loadPyodide`:
 
 ```js
-const pyodide = loadPyodide();
+const pyodide = await loadPyodide();
 const result = pyodide.runPython("... code here");
 if (result instanceof pyodide.ffi.PyProxy) {
   // Do something

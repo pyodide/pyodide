@@ -36,6 +36,7 @@ static PyObject* Generator;
 static PyObject* AsyncGenerator;
 static PyObject* Sequence;
 static PyObject* MutableSequence;
+static PyObject* abc_get_cache_token;
 static PyObject* iscoroutinefunction;
 
 _Py_IDENTIFIER(result);
@@ -59,6 +60,11 @@ EM_JS(PyObject*, pyproxy_AsPyObject, (JsVal val), {
 });
 
 EM_JS(void, destroy_proxies, (JsVal proxies, Js_Identifier* msg_ptr), {
+  // clang-format off
+  if (proxies.length === 0) {
+    return;
+  }
+  // clang-format on
   let msg = undefined;
   if (msg_ptr) {
     msg = _JsvString_FromId(msg_ptr);
@@ -88,7 +94,15 @@ EM_JS(void, destroy_proxy, (JsVal px, Js_Identifier* msg_ptr), {
   if (msg_ptr) {
     msg = _JsvString_FromId(msg_ptr);
   }
-  Module.pyproxy_destroy(px, msg, false);
+  // We are often called from cleanup code with a Python error set. In debug
+  // mode pyproxy_destroy calls repr() on the proxy, which would clobber it, so
+  // save the error and restore it afterwards.
+  const exc = _PyErr_GetRaisedException();
+  try {
+    Module.pyproxy_destroy(px, msg, false);
+  } finally {
+    _PyErr_SetRaisedException(exc);
+  }
 });
 
 static PyObject* asyncio;
@@ -261,6 +275,59 @@ type_getflags(PyTypeObject* obj_type)
   return result;
 }
 
+#define TYPE_FLAGS_CACHE_SIZE 256
+
+static struct
+{
+  unsigned int version_tag; // 0 means the entry is unused
+  int flags;
+} type_flags_cache[TYPE_FLAGS_CACHE_SIZE];
+
+static uint64_t type_flags_cache_abc_token = -1;
+
+static uint64_t
+get_abc_cache_token(void)
+{
+  PyObject* token = PyObject_CallNoArgs(abc_get_cache_token);
+  if (token == NULL) {
+    return -1;
+  }
+  uint64_t result = PyLong_AsUnsignedLongLong(token);
+  Py_DECREF(token);
+  return result;
+}
+
+static int
+type_getflags_cached(PyTypeObject* obj_type)
+{
+  // This fails if Python ran out of version tags, then we don't cache.
+  if (!PyUnstable_Type_AssignVersionTag(obj_type)) {
+    return type_getflags(obj_type);
+  }
+  uint64_t abc_token = get_abc_cache_token();
+  if (abc_token == -1 && PyErr_Occurred()) {
+    return -1;
+  }
+  // The token changes whenever a class is registered with any ABC, which can
+  // change the flags of any type, so clear the whole cache.
+  if (abc_token != type_flags_cache_abc_token) {
+    memset(type_flags_cache, 0, sizeof(type_flags_cache));
+    type_flags_cache_abc_token = abc_token;
+  }
+  unsigned int version_tag = obj_type->tp_version_tag;
+  int index = version_tag % TYPE_FLAGS_CACHE_SIZE;
+  if (type_flags_cache[index].version_tag == version_tag) {
+    return type_flags_cache[index].flags;
+  }
+  int flags = type_getflags(obj_type);
+  if (flags == -1) {
+    return -1;
+  }
+  type_flags_cache[index].version_tag = version_tag;
+  type_flags_cache[index].flags = flags;
+  return flags;
+}
+
 static int dict_flags;
 static int tuple_flags;
 static int list_flags;
@@ -292,7 +359,7 @@ pyproxy_getflags(PyObject* pyobj, bool is_json_adaptor)
     return result;
   }
   PyTypeObject* obj_type = Py_TYPE(pyobj);
-  int result = type_getflags(obj_type);
+  int result = type_getflags_cached(obj_type);
   FAIL_IF_MINUS_ONE(result);
   // Check for some flags that depend on the object itself and not just the
   // type.
@@ -385,14 +452,8 @@ _pyproxy_type(PyObject* ptrobj)
 }
 
 EMSCRIPTEN_KEEPALIVE int
-_pyproxy_hasattr(PyObject* pyobj, JsVal jskey)
+_pyproxy_hasattr(PyObject* pyobj, PyObject* pykey)
 {
-  FAIL_RETURN_VALUE(-1);
-  DECLARE_PY_OBJECT(pykey);
-
-  pykey = js2python(jskey);
-  FAIL_IF_NULL(pykey);
-
   return PyObject_HasAttr(pyobj, pykey);
 }
 
@@ -458,8 +519,24 @@ python2js_json_adaptor(PyObject* x, JsVal proxyCache, bool is_json_adaptor)
   return result;
 }
 
+/**
+ * Convert an attribute name to an interned Python string.
+ *
+ * Returns a new reference.
+ */
+EMSCRIPTEN_KEEPALIVE PyObject*
+_pyproxy_intern_attr_name(JsVal key)
+{
+  PyObject* pykey = js2python(key);
+  if (pykey == NULL) {
+    return NULL;
+  }
+  PyUnicode_InternInPlace(&pykey);
+  return pykey;
+}
+
 EMSCRIPTEN_KEEPALIVE JsVal
-_pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
+_pyproxy_getattr(PyObject* pyobj, PyObject* pykey, JsVal proxyCache)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
   ON_FAIL({
@@ -468,9 +545,6 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
     }
   });
 
-  DECLARE_PY_OBJECT(pykey);
-  pykey = js2python(key);
-  FAIL_IF_NULL(pykey);
   // If it's a method, we use the descriptor pointer as the cache key rather
   // than the actual bound method. This allows us to reuse bound methods from
   // the cache.
@@ -510,12 +584,9 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
 };
 
 EMSCRIPTEN_KEEPALIVE int
-_pyproxy_setattr(PyObject* pyobj, JsVal key, JsVal value)
+_pyproxy_setattr(PyObject* pyobj, PyObject* pykey, JsVal value)
 {
   FAIL_RETURN_VALUE(-1);
-  DECLARE_PY_OBJECT(pykey);
-  pykey = js2python(key);
-  FAIL_IF_NULL(pykey);
   DECLARE_PY_OBJECT(pyval);
   pyval = js2python(value);
   FAIL_IF_NULL(pyval);
@@ -525,13 +596,9 @@ _pyproxy_setattr(PyObject* pyobj, JsVal key, JsVal value)
 }
 
 EMSCRIPTEN_KEEPALIVE int
-_pyproxy_delattr(PyObject* pyobj, JsVal idkey)
+_pyproxy_delattr(PyObject* pyobj, PyObject* pykey)
 {
   FAIL_RETURN_VALUE(-1);
-  DECLARE_PY_OBJECT(pykey);
-
-  pykey = js2python(idkey);
-  FAIL_IF_NULL(pykey);
   FAIL_IF_MINUS_ONE(PyObject_DelAttr(pyobj, pykey));
 
   return 0;
@@ -762,8 +829,9 @@ exit_promising_task(void);
  * restore the error flag before calling pythonexc2js(). See
  * test_stack_switching.test_throw_from_switcher for a detailed explanation.
  *
- * We also give the task a thread state of its own for its whole lifetime. See
- * the comment at the top of pystate.c.
+ * We also give the task a frame chain, exception stack, and contextvars
+ * context of its own for its whole lifetime. See the comment at the top of
+ * pystate.c.
  */
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_apply_promising(PyObject* callable,
@@ -776,8 +844,7 @@ _pyproxy_apply_promising(PyObject* callable,
   JsVal res = JS_ERROR;
   if (enter_promising_task() == 0) {
     res = _pyproxy_apply(callable, jsargs, numposargs, jskwnames, numkwargs);
-    // Take the error flag off of the task thread state before handing control
-    // back, otherwise we'd read the error flag of the main thread state.
+    // Take the error flag off of the thread state before exiting the task.
     *exc = PyErr_GetRaisedException();
     exit_promising_task();
   } else {
@@ -1157,8 +1224,9 @@ size_t py_buffer_shape_offset = offsetof(Py_buffer, shape);
 /**
  * Convert a C array of Py_ssize_t to JavaScript.
  */
-EM_JS(JsVal, array_to_js, (Py_ssize_t * array, int len), {
-  return Array.from(HEAP32.subarray(array / 4, array / 4 + len));
+EM_JS_MACROS(JsVal, array_to_js, (Py_ssize_t * array, int len), {
+  const start = HEAP_INDEX_32(array);
+  return Array.from(HEAP32.subarray(start, start + len));
 })
 
 // A macro to help us keep track of the fields we want to produce for the buffer
@@ -1552,6 +1620,12 @@ pyproxy_init(PyObject* core)
   FAIL_IF_NULL(Sequence);
   MutableSequence = PyObject_GetAttrString(collections_abc, "MutableSequence");
   FAIL_IF_NULL(MutableSequence);
+
+  DECLARE_PY_OBJECT(abc);
+  abc = PyImport_ImportModule("abc");
+  FAIL_IF_NULL(abc);
+  abc_get_cache_token = PyObject_GetAttrString(abc, "get_cache_token");
+  FAIL_IF_NULL(abc_get_cache_token);
 
   DECLARE_PY_OBJECT(docstring_source);
   docstring_source = PyImport_ImportModule("_pyodide._core_docs");
