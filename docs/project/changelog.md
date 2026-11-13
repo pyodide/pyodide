@@ -17,54 +17,61 @@ myst:
 
 ## Unreleased
 
-- {{ Fix }} Fixed a bug that `toJs()` put a reference back to a dict at the
-  wrong index of a list, when the list is inside that dict.
+- {{ Fix }} Fixed `toJs()` conversion of a dictionary with a list inside with a
+  circular reference to the outer dictionary.
   {pr}`6550`
+
+- {{ Fix }} Fixed `PyProxy.getBuffer()` when the address of the buffer is larger
+  than 2GB.
+  {pr}`6546`
+
+- {{ Enhancement }} Pyodide now supports `Float16Array`. It will translate half
+  float Python buffers into `Float16Array` and vice versa. Converting a half
+  float buffer requires a JavaScript runtime with `Float16Array` support.
+  {pr}`6005`
 
 - {{ API }} `pyodide.registerComlink()` is deprecated and has no effect. It
   never worked as intended: Comlink proxies were always detected like ordinary
   JavaScript objects.
   {pr}`6541`
 
-- {{ Fix }} Fixed a bug that `WebLoop.create_task()` raised `AttributeError` when a task factory was set.
-  It now passes its arguments on to the task factory like the default asyncio event loop does.
+- {{ Fix }} `WebLoop.create_task()` no longer raises an `AttributeError` when a
+  task factory is set. It now passes its arguments on to the task factory like
+  the default asyncio event loop does.
   {pr}`6525`
 
-- {{ Fix }} Fixed a bug where, with `pyodide.setDebug(true)`, some errors were
-  replaced by an unhelpful `SystemError: ... returned NULL without setting an
-  exception`, for example when calling `run_sync()` where stack switching is
-  not possible. {issue}`6478`
+- {{ Fix }} Fixed a `SystemError` caused by `pyodide.setDebug(true)`.
+  {pr}`6524`
 
-- {{ Fix }} Fixed a bug that a Python `int` equal to `Number.MAX_SAFE_INTEGER` or `-Number.MAX_SAFE_INTEGER` was converted to a JavaScript `BigInt` instead of a `Number`.
+- {{ Fix }} A Python `int` equal to `Number.MAX_SAFE_INTEGER` or
+  `-Number.MAX_SAFE_INTEGER` is now converted to a `Number` instead of a
+  `BigInt`. {pr}`6510`
 
 - {{ Fix }} Fixed a bug that `instanceof pyodide.ffi.PyMutableSequence` was true for every Python sequence, including `tuple`.
+  {pr}`6503`
 
-- {{ Fix }} Fixed a bug that `NodeList` and `HTMLCollection` was not converted to Python list when passed to `to_py()`, contrary to what was specified in the documentation.
+- {{ Fix }} `NodeList` and `HTMLCollection` are now converted to a Python list
+  when passed to `to_py()`.
+  {pr}`6498`
 
-- {{ Fix }} Fixed a bug that converting a multidimensional PIL-style buffer to JavaScript with `toJs()` was failing.
+- {{ Fix }} Fixed an exception when converting a multidimensional PIL-style
+  buffer to JavaScript with `toJs()`.
+  {pr}`6497`
 
 - {{ Fix }} `WebLoop.call_later()` and `WebLoop.call_at()` no longer raise
   `ValueError("Can't schedule in the past")` for a delay in the past: as in
-  CPython, the callback runs as soon as possible. A short `asyncio.wait_for()`
-  or `asyncio.timeout()` timeout could raise it.
+  CPython, the callback runs as soon as possible.
+  {pr}`6489`
 
 - {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
   that caps how far the WebAssembly heap of that instance may grow. Once the
   total heap reaches the limit, further allocations fail with a `MemoryError`.
-  By default there is no limit beyond the build-time maximum.
-  {issue}`6482`
+  {pr}`6483`
 
 - {{ Fix }} The Windows `python` CLI now handles paths across multiple drive
   letters by mounting referenced drives at distinct virtual roots such as `/c`
   and `/d`.
-
-- {{ Fix }} Fixed a segfault error in the garbage collector due to stack
-  switching. The garbage collector would walk `tstate.current_frame` to find
-  objects it could mark as definitely alive. However, `tstate.current_frame`
-  includes some stack memory which can be evicted when the task is suspended. To
-  fix, we null out `tstate.current_frame` while the task is suspended and
-  restore it when we resume.
-  {pr}`6466`
+  {pr}`6467`
 
 - {{ Fix }} Fixed a fatal error when using pybind11 extensions that acquire the
   GIL. PyBind11 caches a thread state in a TLS variable, which since we only
@@ -72,6 +79,7 @@ myst:
   However, {pr}`6421` gave each stack switching task a thread state of its own,
   violating this assumption. There is now a single thread state again, just like
   the way greenlet handles stack switching.
+  {pr}`6466` {pr}`6487`
 
 - {{ Breaking }} Removed support for JSPI with Node 20. This support used an
   early version of the JSPI proposal. Node 20 is end of life since March 2026.
@@ -81,6 +89,11 @@ myst:
   JavaScript conversion is now a wasm-gc object, like the error sentinel. This
   means checking for it no longer requires calling out to JavaScript.
   {pr}`6519`
+
+- {{ Fix }} Stack switching now works with Safari on iOS. This drops support for
+  iOS versions 18.0 -- 18.5 but nobody should be running those versions because
+  they have unpatched security vulnerabilities.
+  {pr}`6467`
 
 ## Version 314.0.7
 
@@ -153,6 +166,9 @@ _July 24, 2026_
 - {{ Enhancement }} Reduced the standard library size by excluding the
   `zoneinfo/_zoneinfo.py` Python implementation; `zoneinfo.ZoneInfo` continues
   to use the `_zoneinfo` C extension. {pr}`6331`
+
+- {{ Fix }} Fixed a new event loop silently replacing the current running loop when
+  `asyncio.new_event_loop()` is called. {pr}`6342`
 
 - {{ Fix }} Fixed startTls() not releasing the stream lock when upgrading a
   socket to TLS, which could cause a crash in some JS runtimes. {pr}`6344`

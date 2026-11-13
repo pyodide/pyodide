@@ -3013,6 +3013,7 @@ let type_to_array_map: Map<string, any> = new Map([
   // undefined rather than raising a ReferenceError.
   ["i64", globalThis.BigInt64Array],
   ["u64", globalThis.BigUint64Array],
+  ["f16", globalThis.Float16Array],
   ["f32", Float32Array],
   ["f64", Float64Array],
   ["dataview", DataView],
@@ -3059,10 +3060,11 @@ export class PyBufferMethods {
    * @param type The type of the :js:attr:`~pyodide.ffi.PyBufferView.data` field
    * in the output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``,
    * ``"i16"``, ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``,
-   * ``"i64"``, ``"u64"``, ``"f32"``, ``"f64"``, or ``"dataview"``. This argument
-   * is optional, if absent :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` will try
-   * to determine the appropriate output type based on the buffer format string
-   * (see :std:ref:`struct-format-strings`).
+   * ``"i64"``, ``"u64"``, ``"f16"``, ``"f32"``, ``"f64"``, or ``"dataview"``.
+   * This argument is optional, if absent
+   * :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` will try to determine the
+   * appropriate output type based on the buffer format string (see
+   * :std:ref:`struct-format-strings`).
    */
   getBuffer(type?: string): PyBufferView {
     let ArrayType: any = undefined;
@@ -3086,9 +3088,6 @@ export class PyBufferMethods {
     }
 
     const {
-      start_ptr,
-      smallest_ptr,
-      largest_ptr,
       readonly,
       format,
       itemsize,
@@ -3098,6 +3097,11 @@ export class PyBufferMethods {
       c_contiguous,
       f_contiguous,
     } = result;
+    // Pointers come from Wasm as signed 32-bit numbers, so they are negative
+    // once the heap grows past 2GB.
+    const start_ptr = result.start_ptr >>> 0;
+    const smallest_ptr = result.smallest_ptr >>> 0;
+    const largest_ptr = result.largest_ptr >>> 0;
 
     let success = false;
     try {
