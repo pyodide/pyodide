@@ -1,7 +1,7 @@
-From e81199b8a2260d7196f5d599e84324a79aa21eef Mon Sep 17 00:00:00 2001
+From f5fbd9a7904478d51a2e51af1245fbd95c175d8c Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Sun, 22 Mar 2026 00:08:21 +0900
-Subject: [PATCH 4/5] Append pic directory when SIDE_MODULE
+Subject: [PATCH 4/7] Append pic directory when SIDE_MODULE
 
 https://github.com/emscripten-core/emscripten/pull/26514
 ---
@@ -36,5 +36,5 @@ index 7de3102fd..ebb0bbd34 100644
      # `-fPIC` alone is not enough to configure trigger the building and
      # caching of `pic` libraries (see `get_lib_dir` in `cache.py`)
 -- 
-2.54.0
+2.55.0
 
