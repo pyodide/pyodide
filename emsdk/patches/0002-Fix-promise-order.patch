@@ -1,7 +1,7 @@
-From 4f9e84cb5946491f67ac852da786aae638f782e9 Mon Sep 17 00:00:00 2001
+From 11a04596d2249d58555f2b07b6e4f2d6410a7ca2 Mon Sep 17 00:00:00 2001
 From: Gyeongjae Choi <def6488@gmail.com>
 Date: Sun, 1 Jun 2025 15:35:17 +0000
-Subject: [PATCH 2/5] Fix promise order
+Subject: [PATCH 2/7] Fix promise order
 
 Upstream PR:
 * https://github.com/emscripten-core/emscripten/pull/24461
@@ -10,7 +10,7 @@ Upstream PR:
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/system/lib/libc/dynlink.c b/system/lib/libc/dynlink.c
-index 786c8ba70..1f14884da 100644
+index 786c8ba70..2902dfb17 100644
 --- a/system/lib/libc/dynlink.c
 +++ b/system/lib/libc/dynlink.c
 @@ -625,12 +625,14 @@ em_promise_t emscripten_dlopen_promise(const char* filename, int flags) {
@@ -31,5 +31,5 @@ index 786c8ba70..1f14884da 100644
  }
  
 -- 
-2.43.0
+2.55.0
 

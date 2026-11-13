@@ -1,0 +1,189 @@
+From 4601d057c8927e72bc5e7bdecb2ded317908b46f Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 12 Nov 2026 16:18:35 -0800
+Subject: [PATCH] Add -sDYLINK_WASM_STUBS setting
+
+This allows the wasm stubs for late-binding symbols to be enabled without
+-sJSPI. This is needed by projects such as Pyodide that cannot build with
+-sJSPI because they need to remain compatible with engines that lack JSPI,
+and so instead feature detect JSPI at runtime and fall back when it is not
+present.
+
+The stub machinery itself only uses MVP wasm features so it works fine in
+engines without JSPI; it simply becomes useful for suspension when JSPI is
+available.
+
+The setting is enabled automatically when -sJSPI is used together with
+-sMAIN_MODULE, so existing JSPI users are unaffected.
+---
+ ChangeLog.md         |  4 ++--
+ src/lib/libdylink.js | 16 +++++++++-------
+ src/settings.js      | 16 ++++++++++++++++
+ test/test_other.py   | 32 ++++++++++++++++++++++++++++++++
+ tools/link.py        |  6 ++++++
+ 5 files changed, 65 insertions(+), 9 deletions(-)
+
+diff --git a/ChangeLog.md b/ChangeLog.md
+index e3bba05ec..298fde93f 100644
+--- a/ChangeLog.md
++++ b/ChangeLog.md
+@@ -23,8 +23,8 @@ See docs/process.md for more on how version tagging works.
+ - Calls from a side module to a symbol that is provided by a library loaded
+   later now work with JSPI.  Such late-bound symbols are resolved via a stub
+   which was previously a JS function (and so could not be suspended through).
+-  With `-sJSPI` these stubs are now generated as small wasm modules instead.
+-  (#23619)
++  With `-sJSPI`, or the new `-sDYLINK_WASM_STUBS` setting, these stubs are
++  now generated as small wasm modules instead. (#23619)
+ - The low level FS.write API now only accepts TypedArray.  The higher level
+   writeFile and createDataFile file still also accept string and Array.
+   (#26413)
+diff --git a/src/lib/libdylink.js b/src/lib/libdylink.js
+index 757395824..621eee442 100644
+--- a/src/lib/libdylink.js
++++ b/src/lib/libdylink.js
+@@ -503,7 +503,7 @@ var LibraryDylink = {
+       end = offset + section_size;
+       var name = getString();
+       failIf(name !== 'dylink.0');
+-#if JSPI
++#if DYLINK_WASM_STUBS
+       // Remember where the remaining (non-custom) sections start so that we
+       // can parse the import signatures below.
+       var sectionsStart = end;
+@@ -565,7 +565,7 @@ var LibraryDylink = {
+     assert(offset == end);
+ #endif
+ 
+-#if JSPI
++#if DYLINK_WASM_STUBS
+     // We need to know the signature of each function import so that we can
+     // generate wasm stubs for late-bound symbols (see `createWasmStub`).
+     // WebAssembly.Module.imports() only exposes types with
+@@ -723,13 +723,15 @@ var LibraryDylink = {
+   },
+ #endif
+ 
+-#if JSPI
++#if DYLINK_WASM_STUBS
+   $stubModuleCache: {},
+   // Late-bound symbols are normally resolved by a JS stub that looks up the
+   // symbol on first call and then forwards the call.  With JSPI, a JS frame in
+   // the middle of the stack prevents suspension (and the JS round trip also
+-  // canonicalizes NaNs), so we instead generate a tiny wasm module per
+-  // signature in which the onward call is made from wasm.
++  // canonicalizes NaNs), so when DYLINK_WASM_STUBS is set we instead generate
++  // a tiny wasm module per signature in which the onward call is made from
++  // wasm.  This is enabled automatically with -sJSPI, but can also be enabled
++  // explicitly when JSPI is used via runtime feature detection.
+   //
+   // The module exports a funcref table `t` of size 1, initially containing
+   // `$init`.  Calling the exported stub `o` does `call_indirect` through slot
+@@ -857,7 +859,7 @@ var LibraryDylink = {
+     '$updateTableMap',
+     '$wasmTable',
+     '$addOnPostCtor',
+-#if JSPI
++#if DYLINK_WASM_STUBS
+     '$createWasmStub',
+ #if ASSERTIONS
+     '$warnOnce',
+@@ -995,7 +997,7 @@ var LibraryDylink = {
+               }
+               return resolved;
+             };
+-#if JSPI
++#if DYLINK_WASM_STUBS
+             // Use a wasm stub so that the onward call doesn't go through a JS
+             // frame (which would prevent suspending with JSPI).  This requires
+             // knowing the import signature, which is only available if we were
+diff --git a/src/settings.js b/src/settings.js
+index e7148433a..269f5d31a 100644
+--- a/src/settings.js
++++ b/src/settings.js
+@@ -1113,6 +1113,22 @@ var MAIN_MODULE = 0;
+ // [compile+link]
+ var SIDE_MODULE = 0;
+ 
++// When a side module imports a symbol that is not yet defined (for example
++// because it is provided by a library that is loaded later), the dynamic
++// linker binds the import to a stub that resolves the symbol on first use.
++// By default these stubs are JS functions.  When this setting is enabled the
++// stubs are instead generated as small WebAssembly modules so that the onward
++// call is made directly from wasm.  This allows calls through late-bound
++// symbols to be suspended with JSPI (JS frames cannot be suspended) and avoids
++// NaN canonicalization of arguments that pass through JS.
++//
++// This is enabled automatically when ``JSPI`` is used together with
++// ``MAIN_MODULE``.  Set it explicitly if JSPI is enabled at runtime via feature
++// detection rather than via ``-sJSPI``.  Only takes effect when a side module
++// is loaded from its binary (not from a pre-compiled ``WebAssembly.Module``).
++// [link]
++var DYLINK_WASM_STUBS = false;
++
+ // Deprecated, list shared libraries directly on the command line instead.
+ // [link]
+ // [deprecated]
+diff --git a/test/test_other.py b/test/test_other.py
+index 971eea354..22bc78462 100644
+--- a/test/test_other.py
++++ b/test/test_other.py
+@@ -2058,6 +2058,38 @@ Module['postRun'] = () => {
+   def test_dylink_legacy(self):
+     self.do_run_in_out_file_test('hello_world.c', cflags=['-sLEGACY_GL_EMULATION', '-sMAIN_MODULE=2'])
+ 
++  def test_dylink_wasm_stubs(self):
++    # DYLINK_WASM_STUBS is enabled automatically with -sJSPI (see
++    # test_dlfcn_jspi) but can also be enabled explicitly, e.g. when JSPI is
++    # used via runtime feature detection rather than -sJSPI.
++    # side_a calls into side_b.  The libraries are loaded in order at startup so
++    # when side_a is instantiated side_b is not yet available and the call goes
++    # via a late-binding stub.
++    self.run_process([EMCC, '-o', 'side_a.so', test_file('core/test_dlfcn_jspi_side_a.c'), '-sSIDE_MODULE'])
++    self.run_process([EMCC, '-o', 'side_b.so', test_file('core/test_dlfcn_jspi_side_b.c'), '-sSIDE_MODULE'])
++    create_file('main.c', r'''
++      #include <stdio.h>
++
++      typedef int (*F)();
++
++      int side_module_trampoline_a(F f);
++
++      int seventy_seven() { return 77; }
++
++      int main() {
++        printf("result %d\n", side_module_trampoline_a(seventy_seven));
++        printf("result %d\n", side_module_trampoline_a(seventy_seven));
++        return 0;
++      }
++    ''')
++    expected = 'side_module_trampoline_a\nside_module_trampoline_b\nresult 77\n' * 2
++    self.do_runf('main.c', expected, cflags=['-sMAIN_MODULE=2', '-sDYLINK_WASM_STUBS', 'side_a.so', 'side_b.so'])
++    self.assertContained('createWasmStub', read_file('main.js'))
++    # Without the setting, JS stubs are used.
++    self.do_runf('main.c', expected, cflags=['-sMAIN_MODULE=2', 'side_a.so', 'side_b.so'])
++    self.assertNotContained('createWasmStub', read_file('main.js'))
++    self.assertContained('DYLINK_WASM_STUBS has no effect without MAIN_MODULE', self.expect_fail([EMCC, test_file('hello_world.c'), '-sDYLINK_WASM_STUBS', '-Werror']))
++
+   def test_dylink_exceptions_and_assertions(self):
+     # Linking side modules using the STL and exceptions should not abort with
+     # "function in Table but not functionsInTableMap" when using ASSERTIONS=2
+diff --git a/tools/link.py b/tools/link.py
+index bf8557e3e..8c25f3614 100644
+--- a/tools/link.py
++++ b/tools/link.py
+@@ -1254,6 +1254,12 @@ def phase_linker_setup(options, linker_args):  # noqa: C901, PLR0912, PLR0915
+     # Called from preamble.js once the main module is instantiated.
+     settings.DEFAULT_LIBRARY_FUNCS_TO_INCLUDE += ['$loadDylibs']
+     settings.REQUIRED_EXPORTS += ['__stack_pointer']
++    if settings.ASYNCIFY == 2:
++      # JS frames cannot be suspended so late-bound symbols need wasm stubs.
++      settings.DYLINK_WASM_STUBS = 1
++
++  if settings.DYLINK_WASM_STUBS and not settings.MAIN_MODULE:
++    diagnostics.warning('unused-command-line-argument', 'DYLINK_WASM_STUBS has no effect without MAIN_MODULE')
+ 
+   if settings.MAIN_MODULE == 1 or settings.SIDE_MODULE == 1:
+     settings.LINKABLE = 1
+-- 
+2.55.0
+
