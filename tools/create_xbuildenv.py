@@ -192,7 +192,6 @@ def _copy_wasm_libs(
     # so pkg-config lookups (e.g., by meson) would otherwise fall back to the
     # host Python. Only copy the Python ones; other .pc files there refer to
     # static libraries that are not shipped in the xbuildenv.
-    # These files use ${pcfiledir} so they stay valid after relocation.
     pkgconfig_dir = pyodide_root / pythoninclude.parent.parent / "lib" / "pkgconfig"
     python_pc_files = sorted(pkgconfig_dir.glob("python*.pc"))
     if not python_pc_files:
