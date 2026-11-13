@@ -712,10 +712,11 @@ def test_node_worker_thread_streams(selenium, tmp_path):
             import sys
             print("hello stdout")
             print("hello stderr", file=sys.stderr)
+            assert sys.stdin.read() == ""
             try:
                 input()
-            except OSError as e:
-                print("stdin error", e.errno, file=sys.stderr)
+            except EOFError:
+                print("stdin EOF", file=sys.stderr)
         `);
         """
         % target_path
@@ -737,4 +738,4 @@ def test_node_worker_thread_streams(selenium, tmp_path):
         capture_output=True,
     )
     assert res.stdout == "hello stdout\n"
-    assert res.stderr == "hello stderr\nstdin error 29\n"
+    assert res.stderr == "hello stderr\nstdin EOF\n"

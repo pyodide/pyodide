@@ -322,8 +322,8 @@ function setDefaultStdin() {
       setStdin(new NodeReader(process.stdin));
     } else {
       // In a worker thread, process.stdin has no file descriptor and we
-      // can't read from it synchronously.
-      setStdinError();
+      // can't read from it synchronously. Behave as if stdin is empty.
+      setStdin({ read: () => 0 });
     }
   } else {
     setStdin({ stdin: () => prompt() });
