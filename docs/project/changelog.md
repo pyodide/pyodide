@@ -48,6 +48,13 @@ myst:
   JavaScript objects.
   {pr}`6541`
 
+- {{ Fix }} In Node.js, the default standard streams now work when
+  `process.stdout`, `process.stderr` or `process.stdin` are not backed by a file
+  descriptor, e.g., in a worker thread. Previously, printing (including the
+  messages printed by `loadPackage`) raised `OSError: [Errno 29] I/O error`.
+  In this case, stdin is now treated as empty and reading from it returns EOF.
+  {issue}`5798`
+
 - {{ Fix }} Fixed a `SystemError` caused by `pyodide.setDebug(true)`.
   {pr}`6524`
 
