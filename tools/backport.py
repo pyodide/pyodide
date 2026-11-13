@@ -512,7 +512,7 @@ def last_tag_tuple() -> tuple[str, str, str]:
     result = run(["git", "tag"], capture_output=True)
     tags = []
     for line in result.stdout.splitlines():
-        if not line.startswith("0") or "a" in line:
+        if "a" in line:
             continue
         try:
             tags.append(tuple(int(p) for p in line.split(".")))

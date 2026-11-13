@@ -64,6 +64,10 @@ _November 13, 2026_
 
 ### Python / JavaScript type conversions
 
+- {{ Fix }} Fixed `toJs()` conversion of a dictionary with a list inside with a
+  circular reference to the outer dictionary.
+  {pr}`6550`
+
 - {{ Fix }} A Python `int` equal to `Number.MAX_SAFE_INTEGER` or
   `-Number.MAX_SAFE_INTEGER` is now converted to a `Number` instead of a
   `BigInt`. {pr}`6510`

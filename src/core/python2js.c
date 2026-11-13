@@ -286,7 +286,8 @@ _python2js_sequence(ConversionContext* context, PyObject* x)
     JsVal jsitem = _python2js(context, pyitem);
     FAIL_IF_JS_ERROR(jsitem);
     if (JsvNoValue_Check(jsitem)) {
-      JsVal index = JsvNum_fromInt(JsvArray_Push(jsarray, JS_ERROR));
+      // JsvArray_Push returns the new length, so the index is one less.
+      JsVal index = JsvNum_fromInt(JsvArray_Push(jsarray, JS_ERROR) - 1);
       _python2js_addto_postprocess_list(
         hiwire_get(context->jspostprocess_list), jsarray, index, pyitem);
     } else {
