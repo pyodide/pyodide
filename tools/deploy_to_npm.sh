@@ -40,6 +40,16 @@ version_gt() {
 }
 
 if [[ -n "${DRY_RUN}" ]]; then
+    # On release branches, package.json keeps the version of the last release
+    # until the next one is tagged, and `npm publish --dry-run` refuses to
+    # publish over an existing version. Since we operate on a copy of
+    # package.json in dist/, rewrite the version to a prerelease that cannot
+    # exist on the registry so the dry run still exercises packaging.
+    if npm view "${PACKAGE_NAME}@${JS_VERSION}" version &> /dev/null; then
+        DRY_RUN_VERSION="${JS_VERSION}-dryrun.$(date +%s)"
+        echo "Version ${JS_VERSION} is already published, using ${DRY_RUN_VERSION} for the dry run"
+        npm version --no-git-tag-version "${DRY_RUN_VERSION}"
+    fi
     echo "Dry run: npm publish --tag dev"
     npm publish --dry-run --tag dev --loglevel verbose
 elif [[ ${JS_VERSION} =~ (alpha|beta|rc|dev) ]]; then
