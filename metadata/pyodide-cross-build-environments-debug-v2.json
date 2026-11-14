@@ -18,6 +18,15 @@
       "published_at": "2026-08-01T03:32:36Z",
       "min_pyodide_build_version": "0.26.0"
     },
+    "314.0.8": {
+      "version": "314.0.8",
+      "url": "https://github.com/pyodide/pyodide/releases/download/314.0.8/xbuildenv-debug-314.0.8.tar.gz",
+      "python_version": "3.14.2",
+      "emscripten_version": "5.0.3",
+      "sha256": "9dbb06f3c1ed46ce0c11a50a11d3b8e0379495f7f2961585a90a03c28d3fcab3",
+      "published_at": "2026-11-13T21:27:32Z",
+      "min_pyodide_build_version": "0.26.0"
+    },
     "314.0.7": {
       "version": "314.0.7",
       "url": "https://github.com/pyodide/pyodide/releases/download/314.0.7/xbuildenv-debug-314.0.7.tar.gz",
