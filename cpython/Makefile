@@ -157,7 +157,7 @@ $(PYINSTALL)/lib/libffi.a :
 		&& git fetch --depth 1 $(LIBFFIREPO) $(LIBFFI_COMMIT) \
 		&& git checkout FETCH_HEAD \
 		&& . $(PYODIDE_EMSDK_DIR)/emsdk_env.sh \
-		&& ./testsuite/emscripten/build.sh --wasm-bigint \
+		&& TARGET_HOST=wasm32 ./testsuite/emscripten/build.sh \
 		&& make install \
 	)
 	cp $(FFIBUILD)/target/include/*.h $(PYBUILD)/Include/
