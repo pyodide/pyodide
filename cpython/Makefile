@@ -12,7 +12,8 @@ PYLIB=libpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS).a
 
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/libffi/libffi
-LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
+# v3.8.1
+LIBFFI_COMMIT=de7afe7aa9e8ab7ac36429428a7222caae1e7988
 
 HIWIREBUILD=$(ROOT)/build/hiwire
 HIWIREREPO=https://github.com/pyodide/hiwire
@@ -156,7 +157,7 @@ $(PYINSTALL)/lib/libffi.a :
 		&& git fetch --depth 1 $(LIBFFIREPO) $(LIBFFI_COMMIT) \
 		&& git checkout FETCH_HEAD \
 		&& . $(PYODIDE_EMSDK_DIR)/emsdk_env.sh \
-		&& ./testsuite/emscripten/build.sh --wasm-bigint \
+		&& TARGET_HOST=wasm32 ./testsuite/emscripten/build.sh \
 		&& make install \
 	)
 	cp $(FFIBUILD)/target/include/*.h $(PYBUILD)/Include/
