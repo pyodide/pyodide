@@ -23,6 +23,10 @@ myst:
   early version of the JSPI proposal. Node 20 is end of life since March 2026.
   {pr}`6465`
 
+- {{ Update }} Upgraded libffi to 3.8.1. This fixes `ctypes` calls and
+  callbacks failing once the WebAssembly heap has grown past 2 GiB.
+  {pr}`6560`
+
 ### JavaScript API
 
 - {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
