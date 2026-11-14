@@ -272,7 +272,6 @@
 - test_ctypes.test_structures:
     skip:
       # Bugs in libffi?
-    - test_array_in_struct
     - test_issue18060*
 - test_ctypes.test_unaligned_structures
 - test_ctypes.test_unicode
