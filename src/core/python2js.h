@@ -17,9 +17,9 @@ JsVal
 python2js(PyObject* x);
 
 /**
- * If x converts to a JavaScript primitive (undefined, null, a boolean, a number,
- * a BigInt or a string), return it. Otherwise return Jsv_novalue. Returns
- * JS_ERROR with an exception set on failure.
+ * If x converts to a JavaScript primitive (undefined, null, a boolean, a
+ * number, a BigInt or a string), return it. Otherwise return Jsv_novalue.
+ * Returns JS_ERROR with an exception set on failure.
  */
 JsVal
 python2js_immutable(PyObject* x);
