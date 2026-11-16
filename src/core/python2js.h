@@ -66,4 +66,11 @@ python2js_init(PyObject* core);
 extern PyObject* py_jsnull;
 extern PyObject* py_JsBigInt;
 
+static inline bool
+python2js_converts_to_primitive(PyObject* x)
+{
+  return Py_IsNone(x) || x == py_jsnull || PyLong_Check(x) ||
+         PyUnicode_Check(x) || PyFloat_CheckExact(x);
+}
+
 #endif /* PYTHON2JS_H */
