@@ -1,0 +1,484 @@
+From daf8c2109b29799e7b95fafedee6f5c69fee9016 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 12 Nov 2026 16:18:22 -0800
+Subject: [PATCH 6/7] Fix late-binding symbols with JSPI
+
+Late-binding symbols get a JS stub import that resolves the symbol and
+then makes an onward call. This breaks JSPI since JS frames cannot be
+suspended through. (It also canonicalizes NaNs by round tripping them
+through JS).
+
+To fix this, when building with JSPI we generate a tiny wasm module per
+import signature. The stub exported by this module makes a `call_indirect`
+through a one-slot table. The slot initially holds an `$init` function that
+calls out to JS to resolve the symbol; JS writes the resolved function into
+the slot and returns, and `$init` then makes the onward call from wasm.
+
+Unlike the earlier version of this change, this does not depend on
+wasm-type-reflection: the signatures of the function imports are parsed
+directly out of the type and import sections of the side module binary in
+`getDylinkMetadata`. When `loadWebAssemblyModule` is given a pre-compiled
+`WebAssembly.Module` instead of bytes we have no access to the signatures
+and fall back to the JS stub (with a warning under ASSERTIONS).
+
+The generated module only uses MVP wasm features (funcref table +
+call_indirect), so there is no dependency on wasm GC either.
+
+Fixes: #23395
+---
+ ChangeLog.md                       |   5 +
+ src/lib/libdylink.js               | 231 ++++++++++++++++++++++++++++-
+ test/core/test_dlfcn_jspi.c        |  48 +++++-
+ test/core/test_dlfcn_jspi.out      |  12 +-
+ test/core/test_dlfcn_jspi_side.c   |   7 -
+ test/core/test_dlfcn_jspi_side_a.c |  10 ++
+ test/core/test_dlfcn_jspi_side_b.c |   8 +
+ test/test_core.py                  |   5 +-
+ 8 files changed, 305 insertions(+), 21 deletions(-)
+ delete mode 100644 test/core/test_dlfcn_jspi_side.c
+ create mode 100644 test/core/test_dlfcn_jspi_side_a.c
+ create mode 100644 test/core/test_dlfcn_jspi_side_b.c
+
+diff --git a/ChangeLog.md b/ChangeLog.md
+index 13d2dfcc8..e3bba05ec 100644
+--- a/ChangeLog.md
++++ b/ChangeLog.md
+@@ -20,6 +20,11 @@ See docs/process.md for more on how version tagging works.
+ 
+ 5.0.3 (in development)
+ ----------------------
++- Calls from a side module to a symbol that is provided by a library loaded
++  later now work with JSPI.  Such late-bound symbols are resolved via a stub
++  which was previously a JS function (and so could not be suspended through).
++  With `-sJSPI` these stubs are now generated as small wasm modules instead.
++  (#23619)
+ - The low level FS.write API now only accepts TypedArray.  The higher level
+   writeFile and createDataFile file still also accept string and Array.
+   (#26413)
+diff --git a/src/lib/libdylink.js b/src/lib/libdylink.js
+index 5c243e49c..f359bdc8c 100644
+--- a/src/lib/libdylink.js
++++ b/src/lib/libdylink.js
+@@ -506,6 +506,11 @@ var LibraryDylink = {
+       end = offset + section_size;
+       var name = getString();
+       failIf(name !== 'dylink.0');
++#if JSPI
++      // Remember where the remaining (non-custom) sections start so that we
++      // can parse the import signatures below.
++      var sectionsStart = end;
++#endif
+     }
+ 
+     var customSection = { neededDynlibs: [], tlsExports: new Set(), weakImports: new Set(), runtimePaths: [] };
+@@ -563,6 +568,83 @@ var LibraryDylink = {
+     assert(offset == end);
+ #endif
+ 
++#if JSPI
++    // We need to know the signature of each function import so that we can
++    // generate wasm stubs for late-bound symbols (see `createWasmStub`).
++    // WebAssembly.Module.imports() only exposes types with
++    // the (unshipped) type reflection proposal, so instead we parse the type
++    // and import sections of the binary directly.  When we are handed a
++    // pre-compiled WebAssembly.Module we have no access to the bytes and
++    // `importSigs` is left undefined.
++    if (sectionsStart !== undefined) {
++      var importSigs = customSection.importSigs = {};
++      var types = [];
++      var typeChars = {0x7f: 'i', 0x7e: 'j', 0x7d: 'f', 0x7c: 'd', 0x6f: 'e'};
++
++      function getValTypes() {
++        var count = getLEB();
++        var rtn = '';
++        while (count--) {
++          var code = getU8();
++          failIf(!(code in typeChars), `unsupported value type in import signature: 0x${code.toString(16)}`);
++          rtn += typeChars[code];
++        }
++        return rtn;
++      }
++
++      function skipLimits() {
++        var limitFlags = getU8();
++        getLEB(); // min
++        if (limitFlags & 0x1) getLEB(); // max
++      }
++
++      offset = sectionsStart;
++      while (offset < binary.length) {
++        var sectionId = getU8();
++        var sectionEnd = getLEB() + offset;
++        if (sectionId === 1 /* type */) {
++          var count = getLEB();
++          while (count--) {
++            failIf(getU8() !== 0x60, 'unsupported type definition (expected func type)');
++            var params = getValTypes();
++            var results = getValTypes();
++            failIf(results.length > 1, 'multivalue import signatures are not supported');
++            types.push((results || 'v') + params);
++          }
++        } else if (sectionId === 2 /* import */) {
++          var count = getLEB();
++          while (count--) {
++            getString(); // module name
++            var fieldName = getString();
++            var kind = getU8();
++            if (kind === 0 /* func */) {
++              importSigs[fieldName] = types[getLEB()];
++            } else if (kind === 1 /* table */) {
++              getU8(); // reftype
++              skipLimits();
++            } else if (kind === 2 /* memory */) {
++              skipLimits();
++            } else if (kind === 3 /* global */) {
++              getU8(); // valtype
++              getU8(); // mutability
++            } else if (kind === 4 /* tag */) {
++              getU8(); // attribute
++              getLEB(); // type index
++            } else {
++              failIf(true, `unknown import kind: ${kind}`);
++            }
++          }
++#if ASSERTIONS
++          assert(offset == sectionEnd);
++#endif
++          // The import section always follows the type section so we are done.
++          break;
++        }
++        offset = sectionEnd;
++      }
++    }
++#endif
++
+ #if DYLINK_DEBUG
+     dbg('dylink needed:', customSection.neededDynlibs);
+ #endif
+@@ -644,6 +726,125 @@ var LibraryDylink = {
+   },
+ #endif
+ 
++#if JSPI
++  $stubModuleCache: {},
++  // Late-bound symbols are normally resolved by a JS stub that looks up the
++  // symbol on first call and then forwards the call.  With JSPI, a JS frame in
++  // the middle of the stack prevents suspension (and the JS round trip also
++  // canonicalizes NaNs), so we instead generate a tiny wasm module per
++  // signature in which the onward call is made from wasm.
++  //
++  // The module exports a funcref table `t` of size 1, initially containing
++  // `$init`.  Calling the exported stub `o` does `call_indirect` through slot
++  // 0.  The first call therefore lands in `$init`, which calls the JS
++  // `resolve` import.  That import looks up the real symbol and writes it
++  // into slot 0, and then `$init` makes the onward call.  Since the JS
++  // resolver frame has returned by the time the target runs, suspending inside
++  // the target only crosses wasm frames.  All subsequent calls go straight
++  // from `o` to the target via `call_indirect`.
++  //
++  // For the signature 'ii' the generated module is equivalent to:
++  //
++  // (module
++  //   (type $sig (func (param i32) (result i32)))
++  //   (import "e" "r" (func $resolve))
++  //   (table $t (export "t") 1 funcref)
++  //   (elem (i32.const 0) $init)
++  //   (func $init (type $sig)
++  //     call $resolve
++  //     local.get 0
++  //     i32.const 0
++  //     call_indirect (type $sig))
++  //   (func (export "o") (type $sig)
++  //     local.get 0
++  //     i32.const 0
++  //     call_indirect (type $sig)))
++  $getStubModule__deps: ['$stubModuleCache', '$uleb128EncodeWithLen', '$generateTypePack'],
++  $getStubModule: (sig) => {
++    var cached = stubModuleCache[sig];
++    if (cached) {
++      return cached;
++    }
++    var numParams = sig.length - 1;
++    var forwardCall = [];
++    for (var i = 0; i < numParams; i++) {
++      forwardCall.push(0x20, i); // local.get i
++    }
++    forwardCall.push(
++      0x41, 0x00, // i32.const 0
++      0x11, 0x00, 0x00, // call_indirect (type 0) (table 0)
++      0x0b, // end
++    );
++    var bytes = Uint8Array.of(
++      0x00, 0x61, 0x73, 0x6d, // magic ("\0asm")
++      0x01, 0x00, 0x00, 0x00, // version: 1
++      0x01, // Type section
++        ...uleb128EncodeWithLen([
++          0x02, // count: 2
++          0x60, // type 0: sig
++            ...generateTypePack(sig.slice(1)),
++            ...generateTypePack(sig[0] === 'v' ? '' : sig[0]),
++          0x60, 0x00, 0x00, // type 1: () -> ()
++        ]),
++      0x02, 0x07, // Import section
++        // (import "e" "r" (func 0 (type 1)))
++        0x01, 0x01, 0x65, 0x01, 0x72, 0x00, 0x01,
++      0x03, 0x03, // Function section
++        0x02, 0x00, 0x00, // two functions (1 and 2), both of type 0
++      0x04, 0x04, // Table section
++        0x01, 0x70, 0x00, 0x01, // one funcref table with min size 1
++      0x07, 0x09, // Export section
++        0x02, // count: 2
++        0x01, 0x6f, 0x00, 0x02, // (export "o" (func 2))
++        0x01, 0x74, 0x01, 0x00, // (export "t" (table 0))
++      0x09, 0x07, // Element section
++        0x01, // count: 1
++        0x00, 0x41, 0x00, 0x0b, // active segment in table 0 at offset (i32.const 0)
++        0x01, 0x01, // one function: func 1 ($init)
++      0x0a, // Code section
++        ...uleb128EncodeWithLen([
++          0x02, // count: 2
++          // func 1 ($init)
++          ...uleb128EncodeWithLen([
++            0x00, // no locals
++            0x10, 0x00, // call 0 ($resolve)
++            ...forwardCall,
++          ]),
++          // func 2 (exported as "o")
++          ...uleb128EncodeWithLen([
++            0x00, // no locals
++            ...forwardCall,
++          ]),
++        ]),
++    );
++    return stubModuleCache[sig] = new WebAssembly.Module(bytes);
++  },
++
++  // Creates a wasm stub function with the given signature.  On first call the
++  // stub calls `resolve()` to find the target function and all calls are then
++  // forwarded to it.  See `getStubModule`.
++  $createWasmStub__deps: ['$getStubModule', '$convertJsFunctionToWasm'],
++  $createWasmStub: (sig, resolve) => {
++    var table;
++    var instance = new WebAssembly.Instance(getStubModule(sig), {'e': {'r': () => {
++      var resolved = resolve();
++      try {
++        table.set(0, resolved);
++      } catch (e) {
++        if (!(e instanceof TypeError)) {
++          throw e;
++        }
++        // `resolved` is not a wasm function (e.g. an EM_JS function from a
++        // side module), so it needs to be wrapped before being placed in the
++        // table.
++        table.set(0, convertJsFunctionToWasm(resolved, sig));
++      }
++    }}});
++    table = instance.exports['t'];
++    return instance.exports['o'];
++  },
++#endif
++
+   // Loads a side module from binary data or compiled Module. Returns the module's exports or a
+   // promise that resolves to its exports if the loadAsync flag is set.
+   $loadWebAssemblyModule__docs: `
+@@ -659,6 +860,12 @@ var LibraryDylink = {
+     '$updateTableMap',
+     '$wasmTable',
+     '$addOnPostCtor',
++#if JSPI
++    '$createWasmStub',
++#if ASSERTIONS
++    '$warnOnce',
++#endif
++#endif
+   ],
+   $loadWebAssemblyModule: (binary, flags, libName, localScope, handle) => {
+ #if DYLINK_DEBUG
+@@ -784,12 +991,30 @@ var LibraryDylink = {
+           // Return a stub function that will resolve the symbol
+           // when first called.
+           if (!(prop in stubs)) {
+-            var resolved;
+-            stubs[prop] = (...args) => {
+-              resolved ||= resolveSymbol(prop);
++            var resolve = () => {
++              var resolved = resolveSymbol(prop);
+               if (!resolved) {
+                 throw new Error(`Dynamic linking error: cannot resolve symbol ${prop}`);
+               }
++              return resolved;
++            };
++#if JSPI
++            // Use a wasm stub so that the onward call doesn't go through a JS
++            // frame (which would prevent suspending with JSPI).  This requires
++            // knowing the import signature, which is only available if we were
++            // given the module bytes rather than a compiled WebAssembly.Module.
++            var sig = metadata.importSigs?.[prop];
++            if (sig) {
++              stubs[prop] = createWasmStub(sig, resolve);
++              return stubs[prop];
++            }
++#if ASSERTIONS
++            warnOnce(`loadWebAssemblyModule: no import signature for '${prop}' (module was not loaded from binary); falling back to a JS stub, which cannot be suspended through with JSPI`);
++#endif
++#endif
++            var resolved;
++            stubs[prop] = (...args) => {
++              resolved ||= resolve();
+               return resolved(...args);
+             };
+           }
+diff --git a/test/core/test_dlfcn_jspi.c b/test/core/test_dlfcn_jspi.c
+index 0c73aa625..b1b259588 100644
+--- a/test/core/test_dlfcn_jspi.c
++++ b/test/core/test_dlfcn_jspi.c
+@@ -3,27 +3,61 @@
+ // University of Illinois/NCSA Open Source License.  Both these licenses can be
+ // found in the LICENSE file.
+ 
++#include <assert.h>
+ #include <emscripten.h>
+ #include <stdio.h>
+ #include <dlfcn.h>
+ 
+-EM_ASYNC_JS(int, test, (), {
++EM_ASYNC_JS(int, test_suspending, (), {
+   console.log("sleeping");
+   await new Promise(res => setTimeout(res, 0));
+   console.log("slept");
+   return 77;
+ });
+ 
+-int test_wrapper() {
+-  return test();
++int test_suspending_wrapper() {
++  return test_suspending();
++}
++
++EM_JS(int, test_sync, (), {
++  console.log("sync");
++  return 77;
++})
++
++int test_sync_wrapper() {
++  return test_sync();
+ }
+ 
+ typedef int (*F)();
++typedef int (*G)(F f);
++
++// side_a.so calls side_module_trampoline_b, which is defined in side_b.so.
++// Since side_b.so is loaded after side_a.so, the call from a to b goes
++// through a late-binding stub.
++void helper(F f) {
++  void* handle = dlopen("side_a.so", RTLD_NOW|RTLD_GLOBAL);
++  assert(handle != NULL);
++  G side_module_trampoline_a = dlsym(handle, "side_module_trampoline_a");
++  assert(side_module_trampoline_a != NULL);
++  int res = side_module_trampoline_a(f);
++  printf("okay %d\n", res);
++}
++
++// Called from JS via a non-promising export: the stub must also work when
++// there is no suspender available.
++EMSCRIPTEN_KEEPALIVE void not_promising() {
++  helper(test_sync_wrapper);
++}
++
++EM_JS(void, js_trampoline, (), {
++  _not_promising();
++})
+ 
+ int main() {
+-  void* handle = dlopen("side.so", RTLD_NOW|RTLD_GLOBAL);
+-  F side_module_trampoline = dlsym(handle, "side_module_trampoline");
+-  int res = side_module_trampoline();
+-  printf("done %d\n", res);
++  printf("Suspending test\n");
++  helper(test_suspending_wrapper);
++  printf("Non suspending test\n");
++  js_trampoline();
++  printf("done\n");
+   return 0;
+ }
+diff --git a/test/core/test_dlfcn_jspi.out b/test/core/test_dlfcn_jspi.out
+index 8daf1b9e7..6b7fe1dbd 100644
+--- a/test/core/test_dlfcn_jspi.out
++++ b/test/core/test_dlfcn_jspi.out
+@@ -1,4 +1,12 @@
+-side_module_trampoline
++Suspending test
++side_module_trampoline_a
++side_module_trampoline_b
+ sleeping
+ slept
+-done 77
++okay 77
++Non suspending test
++side_module_trampoline_a
++side_module_trampoline_b
++sync
++okay 77
++done
+diff --git a/test/core/test_dlfcn_jspi_side.c b/test/core/test_dlfcn_jspi_side.c
+deleted file mode 100644
+index de945dd7e..000000000
+--- a/test/core/test_dlfcn_jspi_side.c
++++ /dev/null
+@@ -1,7 +0,0 @@
+-#include <stdio.h>
+-int test_wrapper(void);
+-
+-int side_module_trampoline() {
+-  printf("side_module_trampoline\n");
+-  return test_wrapper();
+-}
+diff --git a/test/core/test_dlfcn_jspi_side_a.c b/test/core/test_dlfcn_jspi_side_a.c
+new file mode 100644
+index 000000000..ae9c04be1
+--- /dev/null
++++ b/test/core/test_dlfcn_jspi_side_a.c
+@@ -0,0 +1,10 @@
++#include <stdio.h>
++
++typedef int (*F)();
++
++int side_module_trampoline_b(F f);
++
++int side_module_trampoline_a(F f) {
++  printf("side_module_trampoline_a\n");
++  return side_module_trampoline_b(f);
++}
+diff --git a/test/core/test_dlfcn_jspi_side_b.c b/test/core/test_dlfcn_jspi_side_b.c
+new file mode 100644
+index 000000000..16354428c
+--- /dev/null
++++ b/test/core/test_dlfcn_jspi_side_b.c
+@@ -0,0 +1,8 @@
++#include <stdio.h>
++
++typedef int (*F)();
++
++int side_module_trampoline_b(F f) {
++  printf("side_module_trampoline_b\n");
++  return f();
++}
+diff --git a/test/test_core.py b/test/test_core.py
+index ba41c9547..1daf0ee5b 100644
+--- a/test/test_core.py
++++ b/test/test_core.py
+@@ -3820,8 +3820,9 @@ caught outer int: 123
+   @needs_dylink
+   @no_asan('https://github.com/emscripten-core/emscripten/issues/24589')
+   def test_dlfcn_jspi(self):
+-    self.run_process([EMCC, '-o', 'side.so', test_file('core/test_dlfcn_jspi_side.c'), '-sSIDE_MODULE'] + self.get_cflags())
+-    self.do_core_test('test_dlfcn_jspi.c', cflags=['side.so', '-sMAIN_MODULE=2'])
++    self.run_process([EMCC, '-o', 'side_a.so', test_file('core/test_dlfcn_jspi_side_a.c'), '-sSIDE_MODULE'] + self.get_cflags())
++    self.run_process([EMCC, '-o', 'side_b.so', test_file('core/test_dlfcn_jspi_side_b.c'), '-sSIDE_MODULE'] + self.get_cflags())
++    self.do_core_test('test_dlfcn_jspi.c', cflags=['side_a.so', 'side_b.so', '-sMAIN_MODULE=2'])
+ 
+   @needs_dylink
+   def test_dlfcn_rtld_local(self):
+-- 
+2.55.0
+

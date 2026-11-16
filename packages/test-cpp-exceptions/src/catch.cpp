@@ -4,6 +4,7 @@ using namespace std;
 #include <setjmp.h>
 #include <stdexcept>
 #include <stdio.h>
+#include <string.h>
 
 extern "C" char*
 throw_exc(int x);
@@ -49,10 +50,26 @@ catch_call_pyobj(PyObject* x)
   return msg;
 }
 
+// Defined in src/core/stack_switching/pystate.c. A promising entry point has
+// to set up a task for the Python code it runs so that it can stack switch,
+// see _pyproxy_apply_promising in pyproxy.c.
+extern "C" int
+enter_promising_task(void);
+extern "C" void
+exit_promising_task(void);
+
 extern "C" char*
 promising_catch_call_pyobj(PyObject* x)
 {
-  return catch_call_pyobj(x);
+  if (enter_promising_task() != 0) {
+    PyErr_Clear();
+    return strdup("failed to enter promising task");
+  }
+  char* res = catch_call_pyobj(x);
+  // Any pending exception must be cleared before exiting the task.
+  PyErr_Clear();
+  exit_promising_task();
+  return res;
 }
 
 jmp_buf my_jump_buffer;

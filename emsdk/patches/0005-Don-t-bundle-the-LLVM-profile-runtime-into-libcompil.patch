@@ -1,7 +1,7 @@
-From ffc29ff09d431255e64ef6c9bce0b4ef2e7c7f5b Mon Sep 17 00:00:00 2001
+From 9d9d9fc59314e8c7c197e2c60de26646c4a7399e Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 7 Jul 2026 16:00:05 -0700
-Subject: [PATCH 5/5] Don't bundle the LLVM profile runtime into libcompiler_rt
+Subject: [PATCH 5/7] Don't bundle the LLVM profile runtime into libcompiler_rt
 
 Emscripten #24160 (released in 4.0.11) started globbing the
 compiler-rt profile runtime (system/lib/compiler-rt/lib/profile/*)
@@ -43,5 +43,5 @@ index ebb0bbd34..bc75c6d59 100644
        path='system/lib/compiler-rt',
        filenames=[
 -- 
-2.54.0
+2.55.0
 
