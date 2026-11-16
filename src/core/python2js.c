@@ -16,9 +16,6 @@
 static JsVal
 _python2js_unicode(PyObject* x);
 
-static inline JsVal
-_python2js_immutable(PyObject* x);
-
 int
 _python2js_add_to_cache(JsVal cache, PyObject* pyparent, JsVal jsparent);
 
@@ -312,7 +309,7 @@ _python2js_sequence(ConversionContext* context, PyObject* x)
     DECLARE_PY_OBJECT(pyitem);
     pyitem = PySequence_GetItem(x, i);
     FAIL_IF_NULL(pyitem);
-    JsVal jsitem = _python2js_immutable(pyitem);
+    JsVal jsitem = python2js_immutable(pyitem);
     FAIL_IF_JS_ERROR(jsitem);
     if (!JsvNoValue_Check(jsitem)) {
       JsvArray_Push(jsarray, jsitem);
@@ -369,14 +366,14 @@ _python2js_dict(ConversionContext* context, PyObject* x)
     FAIL_IF_NULL(pykey);
     PyObject* pyval = PyTuple_GetItem(item, 1);
     FAIL_IF_NULL(pyval);
-    JsVal jskey = _python2js_immutable(pykey);
+    JsVal jskey = python2js_immutable(pykey);
     if (JsvError_Check(jskey) || JsvNoValue_Check(jskey)) {
       FAIL_IF_ERR_OCCURRED();
       PyErr_Format(
         conversion_error, "Cannot use %R as a key for a Javascript Map", pykey);
       FAIL();
     }
-    JsVal jsval = _python2js_immutable(pyval);
+    JsVal jsval = python2js_immutable(pyval);
     FAIL_IF_JS_ERROR(jsval);
     if (!JsvNoValue_Check(jsval)) {
       FAIL_IF_MINUS_ONE(
@@ -425,7 +422,7 @@ _python2js_set(ConversionContext* context, PyObject* x)
   FAIL_IF_NULL(iter);
   DECLARE_PY_OBJECT(pykey);
   while ((pykey = PyIter_Next(iter))) {
-    JsVal jskey = _python2js_immutable(pykey);
+    JsVal jskey = python2js_immutable(pykey);
     if (JsvError_Check(jskey) || JsvNoValue_Check(jskey)) {
       FAIL_IF_ERR_OCCURRED();
       PyErr_Format(
@@ -463,8 +460,8 @@ _python2js_set(ConversionContext* context, PyObject* x)
  *
  * Return type would be Option<JsRef>
  */
-static inline JsVal
-_python2js_immutable(PyObject* x)
+JsVal
+python2js_immutable(PyObject* x)
 {
   if (Py_IsNone(x)) {
     return Jsv_undefined;
@@ -590,7 +587,7 @@ _python2js(ConversionContext *context, PyObject* x)
 {
   FAIL_RETURN_VALUE(JS_ERROR);
   // Immutable values are never in the cache and never become proxies
-  RETURN_IF_HAS_VALUE(_python2js_immutable(x));
+  RETURN_IF_HAS_VALUE(python2js_immutable(x));
   JsVal val = _python2js_cache_lookup(hiwire_get(context->cache), x);
   if (!JsvError_Check(val)) {
     return val;
@@ -633,7 +630,7 @@ python2js_inner(PyObject* x, JsVal proxies, bool track_proxies, bool gc_register
       PyErr_SetString(internal_error, "Internal error occurred in python2js");
     }
   });
-  RETURN_IF_HAS_VALUE(_python2js_immutable(x));
+  RETURN_IF_HAS_VALUE(python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
   if (track_proxies && JsvError_Check(proxies)) {
     PyErr_SetString(conversion_error, "No conversion known for x.");
@@ -669,12 +666,6 @@ EMSCRIPTEN_KEEPALIVE JsVal
 python2js(PyObject* x)
 {
   return python2js_inner(x, JS_ERROR, false, true, false);
-}
-
-JsVal
-python2js_immutable(PyObject* x)
-{
-  return _python2js_immutable(x);
 }
 
 // taking function pointers to EM_JS functions leads to linker errors.
