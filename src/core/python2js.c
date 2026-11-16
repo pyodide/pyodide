@@ -671,6 +671,12 @@ python2js(PyObject* x)
   return python2js_inner(x, JS_ERROR, false, true, false);
 }
 
+JsVal
+python2js_immutable(PyObject* x)
+{
+  return _python2js_immutable(x);
+}
+
 // taking function pointers to EM_JS functions leads to linker errors.
 static JsVal
 _JsMap_New(ConversionContext *context)
