@@ -1,7 +1,7 @@
-From 5270f28949f81d93897f65f05acf44d50f5ec98f Mon Sep 17 00:00:00 2001
+From 2caf9cc906c34caf40edcfa22190606c6f9babfa Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 31 Jul 2026 16:48:39 -0700
-Subject: [PATCH 6/6] Turn off shared library signature check when configuring
+Subject: [PATCH 6/7] Turn off shared library signature check when configuring
 
 `AC_CHECK_LIB(somelib, func)` writes the following to conftest.c:
 
@@ -27,7 +27,7 @@ signature check.
  2 files changed, 22 insertions(+)
 
 diff --git a/test/test_other.py b/test/test_other.py
-index 27358a9ac..f9a4e7f80 100644
+index 27358a9a..f9a4e7f8 100644
 --- a/test/test_other.py
 +++ b/test/test_other.py
 @@ -12409,6 +12409,21 @@ int main () {
@@ -53,7 +53,7 @@ index 27358a9ac..f9a4e7f80 100644
      # Tests that explicitly exported `_main` does not fail, even though `_start` is the entry
      # point.
 diff --git a/tools/link.py b/tools/link.py
-index 527996f76..d9317b194 100644
+index 527996f7..d9317b19 100644
 --- a/tools/link.py
 +++ b/tools/link.py
 @@ -884,6 +884,13 @@ def phase_linker_setup(options, linker_args):  # ruff: ignore[complex-structure,
@@ -71,5 +71,5 @@ index 527996f76..d9317b194 100644
    if settings.OPT_LEVEL >= 1:
      default_setting('ASSERTIONS', 0)
 -- 
-2.54.0
+2.54.0 (Apple Git-157)
 
