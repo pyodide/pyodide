@@ -1277,8 +1277,9 @@ def test_memoryview_conversion(selenium):
     )
 
 
+@pytest.mark.requires_dynamic_linking  # _testbuffer is a side module in the test package
 @pytest.mark.parametrize("shape", [[4], [3, 4], [2, 3, 4]])
-@run_in_pyodide
+@run_in_pyodide(packages=["test"])
 def test_buffer_suboffsets_conversion(selenium, shape):
     from _testbuffer import ND_PIL, ndarray
     from math import prod
