@@ -1,0 +1,82 @@
+From 0bb3a5d5d270ef51f9207fa566f8d4a05fd7f792 Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <gyeongjae@cloudflare.com>
+Date: Wed, 18 Nov 2026 02:00:00 +0900
+Subject: [PATCH 7/7] Only visit unresolved GOT entries in reportUndefinedSymbols
+
+https://github.com/emscripten-core/emscripten/pull/28303
+
+---
+ src/lib/libdylink.js | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/src/lib/libdylink.js b/src/lib/libdylink.js
+index 5c243e49c..c529b85e7 100644
+--- a/src/lib/libdylink.js
++++ b/src/lib/libdylink.js
+@@ -165,12 +165,19 @@ var LibraryDylink = {
+ 
+   $GOT: {},
+ 
++  // Names of the GOT entries that were created before their symbol was
++  // defined (i.e. whose value is UNDEFINED_ADDR), in creation order.  This
++  // lets `reportUndefinedSymbols` visit only those entries instead of the
++  // whole GOT, which can have many thousands of entries.
++  $pendingGOT__internal: true,
++  $pendingGOT: 'new Set()',
++
+   // Proxy handler used for GOT.mem and GOT.func imports.  Each of these
+   // imports is fulfilled dynamically via the `get` method of this proxy
+   // handler.  We abuse the `target` of the Proxy in order to pass the set of
+   // weak imports to the handler.
+   $GOTHandler__internal: true,
+-  $GOTHandler__deps: ['$GOT'],
++  $GOTHandler__deps: ['$GOT', '$pendingGOT'],
+   $GOTHandler: {
+     get(weakImports, symName) {
+       var rtn = GOT[symName];
+@@ -179,6 +186,7 @@ var LibraryDylink = {
+         dbg(`new GOT entry: ${symName}`);
+ #endif
+         rtn = GOT[symName] = new WebAssembly.Global({'value': '{{{ POINTER_WASM_TYPE }}}', 'mutable': true}, {{{ UNDEFINED_ADDR }}});
++        pendingGOT.add(symName);
+       }
+       if (!weakImports.has(symName)) {
+         // Any non-weak reference to a symbol marks it as `required`, which
+@@ -321,12 +329,15 @@ var LibraryDylink = {
+   },
+ 
+   $reportUndefinedSymbols__internal: true,
+-  $reportUndefinedSymbols__deps: ['$GOT', '$resolveGlobalSymbol'],
++  $reportUndefinedSymbols__deps: ['$GOT', '$pendingGOT', '$resolveGlobalSymbol'],
+   $reportUndefinedSymbols: () => {
+ #if DYLINK_DEBUG
+     dbg('reportUndefinedSymbols');
+ #endif
+-    for (var [symName, entry] of Object.entries(GOT)) {
++    // Entries are visited in creation order, the same order as iterating over
++    // GOT, so table slots are allocated in the same order as before.
++    for (var symName of pendingGOT) {
++      var entry = GOT[symName];
+       if (entry.value == {{{ UNDEFINED_ADDR }}}) {
+ #if DYLINK_DEBUG
+         dbg(`undef GOT entry: ${symName}`);
+@@ -338,6 +349,7 @@ var LibraryDylink = {
+           dbg('ignoring undefined weak symbol:', symName);
+ #endif
+           entry.value = {{{ to64(0) }}};
++          pendingGOT.delete(symName);
+           continue;
+         }
+         else if (!value) {
+@@ -363,6 +375,8 @@ var LibraryDylink = {
+           throw new Error(`bad export type for '${symName}': ${typeof value} (${value})`);
+         }
+       }
++      // Either resolved above or already defined (e.g. by `updateGOT`).
++      pendingGOT.delete(symName);
+     }
+ #if DYLINK_DEBUG
+     dbg('done reportUndefinedSymbols');
+-- 
+2.54.0 (Apple Git-157)
+
