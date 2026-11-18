@@ -51,6 +51,11 @@ myst:
   means checking for it no longer requires calling out to JavaScript.
   {pr}`6519`
 
+- {{ Fix }} `toJs()` no longer raises a `ConversionError` for dictionary keys
+  that are also properties of `Object.prototype`, such as `toString` or
+  `constructor`.
+  {pr}``
+
 ## Version 314.0.8
 
 _November 13, 2026_
