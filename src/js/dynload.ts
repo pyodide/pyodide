@@ -20,10 +20,7 @@ export class DynlibLoader {
   }
 
   /**
-   * Load a dynamic library. This is an async operation and Python imports are
-   * synchronous so we have to do it ahead of time. When we add more support for
-   * synchronous I/O, we could consider doing this later as a part of a Python
-   * import hook.
+   * Compile and load a dynamic library.
    *
    * @param lib The file system path to the library.
    * @private
@@ -85,28 +82,33 @@ export class DynlibLoader {
   }
 
   /**
-   * Load dynamic libraries inside a package.
+   * Precompile the shared libraries of a package that are too large to be compiled
+   * inside dlopen.
    *
-   * This function handles some painful details of loading dynamic libraries:
-   * - We need to load libraries in the correct order considering dependencies.
-   * - We need to load libraries globally if they are required by other libraries.
-   * - We need to tell Emscripten where to search for libraries.
-   * - The dynlib metadata inside a wasm module only contains the library name, not the path.
-   *   So we need to handle them carefully to avoid loading the same library twice.
-   *
-   * @param pkg The package metadata
    * @param dynlibPaths The list of dynamic libraries inside a package
    * @private
    */
-  public async loadDynlibsFromPackage(
-    // TODO: Simplify the type of pkg after removing usage of this function in micropip.
-    pkg: { file_name: string },
-    dynlibPaths: string[],
-  ) {
+  public async preloadDynlibs(dynlibPaths: string[]) {
+    const threshold = this.#api.config.sharedLibraryPreloadThreshold;
     for (const path of dynlibPaths) {
-      await this.loadDynlib(path);
+      const size = this.#module.FS.stat(path).size;
+      if (shouldPreloadDynlib(size, threshold)) {
+        await this.loadDynlib(path);
+      }
     }
   }
+}
+
+/**
+ * Whether a shared library has to be compiled before its package finishes
+ * installing.
+ *
+ * @param size The size of the library in bytes.
+ * @param threshold The size at or above which libraries are preloaded.
+ * @private
+ */
+export function shouldPreloadDynlib(size: number, threshold: number): boolean {
+  return size >= threshold;
 }
 
 if (typeof API !== "undefined" && typeof Module !== "undefined") {

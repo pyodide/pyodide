@@ -605,7 +605,10 @@ export type PackageManagerAPI = Pick<
 > & {
   config: Pick<
     PyodideConfigWithDefaults,
-    "packageCacheDir" | "packageBaseUrl" | "cdnUrl"
+    | "packageCacheDir"
+    | "packageBaseUrl"
+    | "cdnUrl"
+    | "sharedLibraryPreloadThreshold"
   >;
 };
 /**
@@ -613,6 +616,7 @@ export type PackageManagerAPI = Pick<
  */
 export type PackageManagerModule = Pick<
   PyodideModule,
+  | "FS"
   | "PATH"
   | "LDSO"
   | "stringToNewUTF8"

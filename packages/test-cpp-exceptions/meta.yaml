@@ -4,16 +4,14 @@ package:
   tag:
     - core
     - pyodide.test
-    - library
-    - shared_library
+  top-level:
+    - cpp_exceptions_test
 source:
   path: src
 build:
-  type: shared_library
-  script: |
-    em++ ${SIDE_MODULE_CFLAGS} -fwasm-exceptions -I${PYTHONINCLUDE} -flto -fno-lto -std=c++20 -c throw.cpp -o throw.o
-    em++ ${SIDE_MODULE_CFLAGS} -fwasm-exceptions -I${PYTHONINCLUDE} -flto -fno-lto -std=c++20 -c catch.cpp -o catch.o -mreference-types
-    em++ ${SIDE_MODULE_LDFLAGS} -fwasm-exceptions -sSIDE_MODULE=1 -o ${DISTDIR}/cpp-exceptions-test-throw.so throw.o
-    em++ ${SIDE_MODULE_LDFLAGS} -fwasm-exceptions  -sSIDE_MODULE=1 ${DISTDIR}/cpp-exceptions-test-throw.so -o ${DISTDIR}/cpp-exceptions-test-catch.so catch.o
+  vendor-sharedlib: false
+  exports: requested
+  cxxflags: -fwasm-exceptions -std=c++20
+  ldflags: -fwasm-exceptions
 about:
   license: MPL-2.0

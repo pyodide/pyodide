@@ -41,10 +41,7 @@ export class Installer {
         `Found ${dynlibs.length} dynamic libraries inside ${filename}`,
       );
 
-    await this.#dynlibLoader.loadDynlibsFromPackage(
-      { file_name: filename },
-      dynlibs,
-    );
+    await this.#dynlibLoader.preloadDynlibs(dynlibs);
   }
 }
 
