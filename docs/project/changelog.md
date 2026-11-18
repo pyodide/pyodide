@@ -54,7 +54,7 @@ myst:
 - {{ Fix }} `toJs()` no longer raises a `ConversionError` for dictionary keys
   that are also properties of `Object.prototype`, such as `toString` or
   `constructor`.
-  {pr}``
+  {pr}`6566`
 
 ## Version 314.0.8
 
