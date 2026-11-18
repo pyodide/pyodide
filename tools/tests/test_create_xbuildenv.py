@@ -79,6 +79,18 @@ def test_xbuildenv_create(selenium, tmp_path):
     assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()
     assert (envpath / "xbuildenv" / "requirements.txt").exists()
 
+    # pkg-config files for Python must be shipped and relocatable
+    pc_files = list((envpath / "xbuildenv").glob("pyodide-root/**/pkgconfig/*.pc"))
+    assert {f.name for f in pc_files} >= {
+        "python3.pc",
+        "python3-embed.pc",
+    }
+    for pc_file in pc_files:
+        assert pc_file.name.startswith("python")
+        content = pc_file.read_text()
+        assert "prefix=${pcfiledir}/../..\n" in content
+        assert str(root) not in content
+
     # Test that the pins in requirements.txt exactly match the versions of the
     # xbuild packages in our recipes.
     from pyodide_build.recipe.loader import load_all_recipes

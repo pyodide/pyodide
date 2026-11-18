@@ -657,15 +657,14 @@ def test_get_terminal_size(selenium):
 
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
 def test_get_terminal_size_node(selenium, tmp_path):
+    import os
+    import pty
+
     target_path = DIST_PATH / "pyodide.mjs"
     script = (
         """
         import { loadPyodide } from "%s";
         import * as tty from "node:tty";
-        import * as fs from "node:fs";
-
-        fs.closeSync(1);
-        fs.openSync("/dev/tty", 1);
 
         globalThis.process = Object.assign({}, process, {stdout: new tty.WriteStream(1)});
         process.stdout.fd = 1;
@@ -684,7 +683,16 @@ def test_get_terminal_size_node(selenium, tmp_path):
     )
     script_path = tmp_path / "script.mjs"
     script_path.write_text(script)
-    res = subprocess.run(
-        ["node", script_path], text=True, check=True, capture_output=True
-    )
+    primary, secondary = pty.openpty()
+    try:
+        res = subprocess.run(
+            ["node", script_path],
+            text=True,
+            check=True,
+            stdout=secondary,
+            stderr=subprocess.PIPE,
+        )
+    finally:
+        os.close(secondary)
+        os.close(primary)
     assert res.stderr.strip() == "os.terminal_size(columns=180, lines=50)"

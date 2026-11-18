@@ -5,9 +5,10 @@ from collections.abc import Iterable
 from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
 from site import getsitepackages
-from tempfile import NamedTemporaryFile
-from typing import IO, Any, Literal
-from zipfile import ZipFile
+from typing import IO, TYPE_CHECKING, Any, Literal
+
+if TYPE_CHECKING:
+    from zipfile import ZipFile
 
 try:
     from pyodide_js import loadedPackages
@@ -251,6 +252,10 @@ def unpack_buffer(
     extract_path = Path(extract_dir or ".")
     filename = filename.rpartition("/")[-1]
 
+    # Imported here to keep them out of startup
+    from tempfile import NamedTemporaryFile
+    from zipfile import ZipFile
+
     extract_path.mkdir(parents=True, exist_ok=True)
     with NamedTemporaryFile(suffix=filename) as f:
         buffer._into_file(f)
@@ -373,6 +378,7 @@ def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
         but adjusted to point to their unpacked locations.
     """
     import tarfile
+    from zipfile import ZipFile
 
     dynlib_paths_iter: Iterable[str]
     if suffix in ZIP_TYPES:

@@ -21,7 +21,7 @@ concurrency:
 jobs:
   update_cross_build_releases:
     name: Update cross-build metadata files
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write # for pushing cross-build metadata files updates
       pull-requests: write # for creating a PR with the metadata files update

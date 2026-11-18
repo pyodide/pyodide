@@ -29,7 +29,7 @@ concurrency:
 jobs:
   build_docker:
     name: Build Docker image and push to Docker Hub
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: Docker
     permissions:
       contents: read
@@ -79,7 +79,7 @@ jobs:
 
   build_ghcr:
     name: Build Docker image and push to GHCR
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write # for pushing to GHCR

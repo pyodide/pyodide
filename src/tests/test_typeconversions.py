@@ -1049,6 +1049,7 @@ def test_js2python_bool(selenium, jsval, is_truthy):
         ("Uint16Array", "H"),
         ("Int32Array", "i"),
         ("Uint32Array", "I"),
+        ("Float16Array", "e"),
         ("Float32Array", "f"),
         ("Float64Array", "d"),
     ),
@@ -1114,6 +1115,28 @@ def test_recursive_dict_to_js(selenium):
     from pyodide.ffi import to_js
 
     to_js(x)
+
+
+@run_in_pyodide
+def test_recursive_dict_in_list_to_js(selenium):
+    # A list item that refers to a dict that is still being converted is filled
+    # in at the end of the conversion. Check that it goes to the right index.
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    x: Any = {}
+    x["l"] = [x, 1]
+    check = run_js(
+        """
+        (res) => {
+            const l = res instanceof Map ? res.get("l") : res.l;
+            return l.length === 2 && l[0] === res && l[1] === 1;
+        }
+        """
+    )
+    assert check(to_js(x))
+    assert check(to_js(x, dict_converter=run_js("Object.fromEntries")))
+    assert check(to_js(x, dict_converter=run_js("(entries) => new Map(entries)")))
 
 
 @run_in_pyodide
@@ -1254,8 +1277,9 @@ def test_memoryview_conversion(selenium):
     )
 
 
+@pytest.mark.requires_dynamic_linking  # _testbuffer is a side module in the test package
 @pytest.mark.parametrize("shape", [[4], [3, 4], [2, 3, 4]])
-@run_in_pyodide
+@run_in_pyodide(packages=["test"])
 def test_buffer_suboffsets_conversion(selenium, shape):
     from _testbuffer import ND_PIL, ndarray
     from math import prod
@@ -1820,7 +1844,6 @@ def test_buffer_format_string(selenium):
         ["II", "Unrecognized alignment character I."],
         ["x", "Unrecognized format character 'x'."],
         ["x", "Unrecognized format character 'x'."],
-        ["e", "Javascript has no Float16 support."],
     ]
     for fmt, msg in errors:
         with pytest.raises(selenium.JavascriptException, match=msg):

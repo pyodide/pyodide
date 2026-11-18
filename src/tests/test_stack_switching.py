@@ -259,9 +259,58 @@ def test_syncify_getset(selenium):
 
 @requires_jspi
 @pytest.mark.requires_dynamic_linking
-@pytest.mark.skip(reason="Will fix in a followup")
 @run_in_pyodide
-def test_syncify_ctypes(selenium):
+def test_syncify_ctypes_closure(selenium):
+    from ctypes import (
+        POINTER,
+        PYFUNCTYPE,
+        Structure,
+        byref,
+        c_char_p,
+        c_int,
+        py_object,
+        pythonapi,
+    )
+
+    from pyodide.code import run_js
+    from pyodide.ffi import run_sync
+
+    test = run_js(
+        """
+        (async function test() {
+            await sleep(1000);
+            return 7;
+        })
+        """
+    )
+
+    PyCFunction = PYFUNCTYPE(py_object, py_object, py_object)
+
+    class PyMethodDef(Structure):
+        _fields_ = [
+            ("ml_name", c_char_p),
+            ("ml_meth", PyCFunction),
+            ("ml_flags", c_int),
+            ("ml_doc", c_char_p),
+        ]
+
+    @PyCFunction
+    def wrapper(self, arg):
+        return run_sync(test())
+
+    METH_O = 0x0008
+    method_def = PyMethodDef(b"wrapper", wrapper, METH_O, None)
+    pythonapi.PyCFunction_NewEx.argtypes = [POINTER(PyMethodDef), py_object, py_object]
+    pythonapi.PyCFunction_NewEx.restype = py_object
+    func = pythonapi.PyCFunction_NewEx(byref(method_def), None, None)
+    assert func(None) == 7
+
+
+@requires_jspi
+@pytest.mark.requires_dynamic_linking
+@pytest.mark.skip(reason="ffi_call() in libffi does not work with JSPI yet")
+@run_in_pyodide
+def test_syncify_ctypes_call(selenium):
     from pyodide.code import run_js
     from pyodide.ffi import run_sync
 
@@ -335,17 +384,46 @@ def test_cpp_exceptions_and_syncify(selenium):
 def test_two_way_transfer(selenium):
     res = selenium.run_js(
         """
+        const waiting = {};
+        let onWait;
+        function wait(n) {
+            return new Promise((resolve) => {
+                waiting[n] = resolve;
+                onWait?.();
+            });
+        }
+        async function untilWaiting(n) {
+            while (!waiting[n]) {
+                await new Promise((resolve) => (onWait = resolve));
+            }
+        }
+
         pyodide.runPython(`
             from pyodide.ffi import run_sync
             l = []
-            def f(n, t):
-                from js import sleep
-                for i in range(5):
-                    run_sync(sleep(t))
+            def f(n, wait):
+                for i in range(3):
+                    run_sync(wait(n))
                     l.append([n, i])
         `);
-        f = pyodide.globals.get("f");
-        await Promise.all([f.callPromising("a", 15), f.callPromising("b", 21)])
+        const f = pyodide.globals.get("f");
+        const done = Promise.all([
+            f.callPromising("a", wait),
+            f.callPromising("b", wait),
+        ]);
+        const remaining = { a: 3, b: 3 };
+        for (const n of ["a", "b", "a", "a", "b", "b"]) {
+            await untilWaiting(n);
+            const resolve = waiting[n];
+            delete waiting[n];
+            resolve();
+            remaining[n]--;
+            if (remaining[n] > 0) {
+                // Wait until it ran up to the next run_sync()
+                await untilWaiting(n);
+            }
+        }
+        await done;
         f.destroy();
         const l = pyodide.globals.get("l");
         const res = l.toJs();
@@ -357,13 +435,9 @@ def test_two_way_transfer(selenium):
         ["a", 0],
         ["b", 0],
         ["a", 1],
-        ["b", 1],
         ["a", 2],
-        ["a", 3],
+        ["b", 1],
         ["b", 2],
-        ["a", 4],
-        ["b", 3],
-        ["b", 4],
     ]
 
 

@@ -412,6 +412,7 @@ def test_get_empty_buffer(selenium):
         ["u32", "Uint32Array", "I"],
         ["i64", "BigInt64Array", "q"],
         ["u64", "BigUint64Array", "Q"],
+        ["f16", "Float16Array", "e"],
         ["f32", "Float32Array", "f"],
         ["f64", "Float64Array", "d"],
     ],
@@ -443,7 +444,7 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
     result = result.to_py()
     if fmt.lower() == "q":
         assert result == [hex(x).replace("0x", "") for x in list(mv.cast(fmt))]
-    elif fmt in {"d", "f"}:
+    elif fmt in {"e", "d", "f"}:
         from math import isclose, isnan
 
         for x, y in zip(result, list(mv.cast(fmt)), strict=False):
@@ -2889,3 +2890,40 @@ def test_pyproxy_instanceof_revoked_proxy(selenium):
         ]
         """
     ).to_py() == [False, False]
+
+
+@run_in_pyodide
+def test_pyproxy_attrs_many_names(selenium):
+    # PyProxy caches the Python strings for attribute names up to a limit.
+    # Check that attribute access still works for names beyond that limit.
+    from types import SimpleNamespace
+
+    from pyodide.code import run_js
+
+    names = [f"attr_{i}" for i in range(2000)] + ["ünïcödé", "名前", "😀"]
+    o = SimpleNamespace(**{name: i for i, name in enumerate(names)})
+    values = run_js(
+        """
+        (o, names) => {
+            const values = [];
+            for (let round = 0; round < 2; round++) {
+                for (const name of names) {
+                    values.push(name in o, o[name]);
+                }
+            }
+            for (const name of names) {
+                o[name] = name;
+            }
+            for (const name of names.slice(0, 1000)) {
+                delete o[name];
+            }
+            return values;
+        }
+        """
+    )(o, names)
+    expected = [x for i in range(len(names)) for x in (True, i)]
+    assert values.to_py() == expected * 2
+    for name in names[:1000]:
+        assert not hasattr(o, name)
+    for name in names[1000:]:
+        assert getattr(o, name) == name

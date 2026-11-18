@@ -171,16 +171,9 @@ typedef struct
   };
   JsRef js;
   PyObject* signature;
-  // Cache for the type's _js_type_flags, computed lazily by JsProxy_getflags.
-  // JS_TYPE_FLAGS_UNCACHED (-2) means "not yet computed"; it cannot collide
-  // with a valid flags value (>= 0) nor with the -1 error return. The flags
-  // are immutable per type (set once in JsProxy_create_subtype and never
-  // mutated), so caching them per instance is safe.
-  int js_type_flags_cache;
+  int js_type_flags;
 } JsProxy;
 // clang-format on
-
-#define JS_TYPE_FLAGS_UNCACHED (-2)
 
 // Position of dict needs to match between exception objects and other cases.
 _Static_assert(offsetof(PyBaseExceptionObject, dict) == offsetof(JsProxy, dict),
@@ -207,22 +200,7 @@ _Static_assert(offsetof(PyBaseExceptionObject, dict) == offsetof(JsProxy, dict),
 int
 JsProxy_getflags(PyObject* self)
 {
-  int cached = ((JsProxy*)self)->js_type_flags_cache;
-  if (cached != JS_TYPE_FLAGS_UNCACHED) {
-    return cached;
-  }
-  DECLARE_PY_OBJECT(pyflags);
-  pyflags = _PyObject_GetAttrId((PyObject*)Py_TYPE(self), &PyId__js_type_flags);
-  if (pyflags == NULL) {
-    return -1;
-  }
-  int result = PyLong_AsLong(pyflags);
-  // PyLong_AsLong returns -1 on error; don't cache an error result.
-  if (result == -1 && PyErr_Occurred()) {
-    return -1;
-  }
-  ((JsProxy*)self)->js_type_flags_cache = result;
-  return result;
+  return ((JsProxy*)self)->js_type_flags;
 }
 
 #define OBJMAP_HEREDITARY 1
@@ -276,9 +254,6 @@ static int
 JsProxy_clear(PyObject* self)
 {
   int flags = JsProxy_getflags(self);
-  if (flags == -1) {
-    return -1;
-  }
   if ((flags & IS_CALLABLE) && (JsMethod_THIS_REF(self) != NULL)) {
     JsVal this = hiwire_pop(JsMethod_THIS_REF(self));
     if (pyproxy_Check(this)) {
@@ -383,16 +358,29 @@ JsProxy_js_id(PyObject* self, void* _unused)
   return PyLong_FromLong(result_c);
 }
 
-EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
-  const jskey = normalizeReservedWords(UTF8ToString(ptrkey));
+/**
+ * Returns attr if attrNameToJs may cache the JS string for it,
+ * else NULL.
+ */
+static inline PyObject*
+cacheable_attr_name(PyObject* attr)
+{
+  return _Py_IsImmortal(attr) ? attr : NULL;
+}
+
+// clang-format off
+EM_JS_VAL(JsVal,
+JsProxy_GetAttr_js,
+(JsVal jsobj, const char* cname, PyObject* pyname),
+{
+  const jskey = attrNameToJs(cname, pyname);
   const result = jsobj[jskey];
-  // clang-format off
   if (result === undefined && !(jskey in jsobj)) {
-    // clang-format on
     return Module.error;
   }
   return result;
 });
+// clang-format on
 
 // JsMethodCallSingleton is a special structure which we return from
 // JsProxy_GetMethod. The purpose of it is to optimize method calls
@@ -545,7 +533,8 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
     FAIL();
   }
 
-  JsVal jsresult = JsProxy_GetAttr_js(JsProxy_VAL(self), key);
+  JsVal jsresult =
+    JsProxy_GetAttr_js(JsProxy_VAL(self), key, cacheable_attr_name(attr));
   if (JsvError_Check(jsresult)) {
     if (!PyErr_Occurred()) {
       PyErr_SetString(PyExc_AttributeError, key);
@@ -607,17 +596,22 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
 // clang-format off
 EM_JS_NUM(errcode,
 JsProxy_SetAttr_js,
-(JsVal jsobj, const char* ptrkey, JsVal jsval),
+(JsVal jsobj, const char* cname, PyObject* pyname, JsVal jsval),
 {
-  let jskey = normalizeReservedWords(UTF8ToString(ptrkey));
+  let jskey = attrNameToJs(cname, pyname);
   jsobj[jskey] = jsval;
 });
 // clang-format on
 
-EM_JS_NUM(errcode, JsProxy_DelAttr_js, (JsVal jsobj, const char* ptrkey), {
-  let jskey = normalizeReservedWords(UTF8ToString(ptrkey));
+// clang-format off
+EM_JS_NUM(errcode,
+JsProxy_DelAttr_js,
+(JsVal jsobj, const char* cname, PyObject* pyname),
+{
+  let jskey = attrNameToJs(cname, pyname);
   delete jsobj[jskey];
 });
+// clang-format on
 
 /**
  * setattr / delttr overload. TODO: Raise an error if the attribute exists on
@@ -642,10 +636,12 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
   }
 
   if (pyvalue == NULL) {
-    FAIL_IF_MINUS_ONE(JsProxy_DelAttr_js(JsProxy_VAL(self), key));
+    FAIL_IF_MINUS_ONE(
+      JsProxy_DelAttr_js(JsProxy_VAL(self), key, cacheable_attr_name(attr)));
   } else {
     JsVal jsvalue = python2js(pyvalue);
-    FAIL_IF_MINUS_ONE(JsProxy_SetAttr_js(JsProxy_VAL(self), key, jsvalue));
+    FAIL_IF_MINUS_ONE(JsProxy_SetAttr_js(
+      JsProxy_VAL(self), key, cacheable_attr_name(attr), jsvalue));
   }
 
   return 0;
@@ -3170,12 +3166,12 @@ static PyTypeObject JsProxyType = {
 };
 
 static int
-JsProxy_cinit(PyObject* obj, JsVal val, PyObject* sig)
+JsProxy_cinit(PyObject* obj, JsVal val, PyObject* sig, int type_flags)
 {
   JsProxy* self = (JsProxy*)obj;
   self->js = hiwire_new_deduplicate(val);
   self->signature = Py_XNewRef(sig);
-  self->js_type_flags_cache = JS_TYPE_FLAGS_UNCACHED;
+  self->js_type_flags = type_flags;
 #ifdef DEBUG_F
   extern bool tracerefs;
   if (tracerefs) {
@@ -3702,7 +3698,7 @@ JsBuffer_get_info, (JsVal jsobj,
                     Py_ssize_t* size_ptr,
                     bool* checked_ptr),
 {
-  const [format_utf8, size, checked] = Module.get_buffer_datatype(jsobj);
+  const [format_utf8, size, checked] = API.get_buffer_datatype(jsobj);
   DEREF_U32(byteLength_ptr, 0) = jsobj.byteLength;
   DEREF_U32(format_ptr, 0) = format_utf8;
   DEREF_U32(size_ptr, 0) = size;
@@ -4355,7 +4351,7 @@ JsProxy_create_with_type(int type_flags,
   FAIL_IF_NULL(type);
 
   result = type->tp_alloc(type, 0);
-  FAIL_IF_NONZERO(JsProxy_cinit(result, object, sig));
+  FAIL_IF_NONZERO(JsProxy_cinit(result, object, sig, type_flags));
   if (type_flags & IS_CALLABLE) {
     FAIL_IF_NONZERO(JsMethod_cinit(result, this));
   }
@@ -4375,10 +4371,6 @@ JsProxy_create_with_type(int type_flags,
   return result;
 }
 
-EM_JS_BOOL(bool, is_comlink_proxy, (JsVal obj), {
-  return !!(API.Comlink && value[API.Comlink.createEndpoint]);
-});
-
 /**
  * Create a JsProxy. In case it's a method, bind "this" to the argument. (In
  * most cases "this" will be NULL, `JsProxy_create` specializes to this case.)
@@ -4391,18 +4383,12 @@ JsProxy_create_with_this(JsVal object,
                          PyObject* sig,
                          bool is_py_json)
 {
-  int type_flags = 0;
-  if (is_comlink_proxy(object)) {
-    // Comlink proxies are weird and break our feature detection pretty badly.
-    type_flags = IS_CALLABLE | IS_AWAITABLE | IS_ARRAY;
-  } else {
-    type_flags = JsProxy_compute_typeflags(object, is_py_json);
-    if (type_flags == -1) {
-      fail_test();
-      PyErr_SetString(internal_error,
-                      "Internal error occurred in JsProxy_compute_typeflags");
-      return NULL;
-    }
+  int type_flags = JsProxy_compute_typeflags(object, is_py_json);
+  if (type_flags == -1) {
+    fail_test();
+    PyErr_SetString(internal_error,
+                    "Internal error occurred in JsProxy_compute_typeflags");
+    return NULL;
   }
   return JsProxy_create_with_type(type_flags, object, this, sig);
 }
