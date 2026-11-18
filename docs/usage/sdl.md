@@ -43,6 +43,8 @@ For instance, a common code pattern in `pygame` (a SDL-based Python game library
 ```python
 clock = pygame.time.Clock()
 fps = 60
+
+
 def run_game():
     while True:
         do_something()
@@ -55,6 +57,7 @@ To work around this, you need to use async functions and yield control to the br
 
 ```python
 import asyncio
+
 
 async def run_game():
     while True:
