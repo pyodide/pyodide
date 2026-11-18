@@ -27,6 +27,11 @@ myst:
   callbacks failing once the WebAssembly heap has grown past 2 GiB.
   {pr}`6560`
 
+- {{ Feature }} The `sqlite3` module now supports loadable extensions:
+  `sqlite3.Connection.enable_load_extension()` and
+  `sqlite3.Connection.load_extension()` are now available.
+  {pr}`6533`
+
 ### JavaScript API
 
 - {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
