@@ -286,6 +286,10 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 	#   to enable shutdown method in NodeSockFS.
 	cd $(PYBUILD) && $(SED) -i 's/^ac_cv_func_shutdown=no//' $(CONFIG_SITE_FILE)
 
+	# --disable-test-modules :
+	#   Don't link _testcapi and the other C test modules into the main module.
+	#   The test package builds them as side modules.
+	#
 	# --enable-big-digits=30 :
 	#   Python integers have "digits" of size 15 by default on systems with 32
 	#   bit pointers and size 30 on systems with 16 bit pointers. Python uses
@@ -306,6 +310,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 			  --enable-big-digits=30 \
 			  --enable-optimizations \
 			  --with-system-libmpdec=no \
+			  --disable-test-modules \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(PYBUILD)/config.guess) \
 			  --prefix=$(PYINSTALL)  \
