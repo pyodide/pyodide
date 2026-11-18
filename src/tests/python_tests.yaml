@@ -279,8 +279,7 @@
 - test_ctypes.test_structunion
 - test_ctypes.test_structures:
     skip:
-      # Bugs in libffi?
-      - test_array_in_struct
+      # Passes a struct of two doubles to atan2(double, double)
       - test_issue18060*
 - test_ctypes.test_unaligned_structures
 - test_ctypes.test_unicode

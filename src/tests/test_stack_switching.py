@@ -259,9 +259,58 @@ def test_syncify_getset(selenium):
 
 @requires_jspi
 @pytest.mark.requires_dynamic_linking
-@pytest.mark.skip(reason="Will fix in a followup")
 @run_in_pyodide
-def test_syncify_ctypes(selenium):
+def test_syncify_ctypes_closure(selenium):
+    from ctypes import (
+        POINTER,
+        PYFUNCTYPE,
+        Structure,
+        byref,
+        c_char_p,
+        c_int,
+        py_object,
+        pythonapi,
+    )
+
+    from pyodide.code import run_js
+    from pyodide.ffi import run_sync
+
+    test = run_js(
+        """
+        (async function test() {
+            await sleep(1000);
+            return 7;
+        })
+        """
+    )
+
+    PyCFunction = PYFUNCTYPE(py_object, py_object, py_object)
+
+    class PyMethodDef(Structure):
+        _fields_ = [
+            ("ml_name", c_char_p),
+            ("ml_meth", PyCFunction),
+            ("ml_flags", c_int),
+            ("ml_doc", c_char_p),
+        ]
+
+    @PyCFunction
+    def wrapper(self, arg):
+        return run_sync(test())
+
+    METH_O = 0x0008
+    method_def = PyMethodDef(b"wrapper", wrapper, METH_O, None)
+    pythonapi.PyCFunction_NewEx.argtypes = [POINTER(PyMethodDef), py_object, py_object]
+    pythonapi.PyCFunction_NewEx.restype = py_object
+    func = pythonapi.PyCFunction_NewEx(byref(method_def), None, None)
+    assert func(None) == 7
+
+
+@requires_jspi
+@pytest.mark.requires_dynamic_linking
+@pytest.mark.skip(reason="ffi_call() in libffi does not work with JSPI yet")
+@run_in_pyodide
+def test_syncify_ctypes_call(selenium):
     from pyodide.code import run_js
     from pyodide.ffi import run_sync
 
