@@ -6,7 +6,7 @@ RUN apt-get update \
 
 ARG SELENIUM_MANAGER_VERSION=latest
 RUN SELENIUM_MANAGER_VERSION_FULL=$(curl -s https://api.github.com/repos/SeleniumHQ/selenium_manager_artifacts/releases/${SELENIUM_MANAGER_VERSION} | jq -r .name) \
-  && wget --no-verbose https://github.com/SeleniumHQ/selenium_manager_artifacts/releases/download/${SELENIUM_MANAGER_VERSION_FULL}/selenium-manager-linux \
+  && wget --no-verbose https://github.com/SeleniumHQ/selenium_manager_artifacts/releases/download/${SELENIUM_MANAGER_VERSION_FULL}/selenium-manager-linux-x86_64 -O selenium-manager-linux \
   && chmod +x selenium-manager-linux \
   && mv selenium-manager-linux /usr/local/bin/selenium-manager
 
