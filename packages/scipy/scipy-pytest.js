@@ -71,7 +71,7 @@ async function main() {
     let pytest = pyodide.pyimport("pytest");
     let args = process.argv.slice(2);
     console.log("pytest args:", args);
-    exit_code = pytest.main(pyodide.toPy(args));
+    exit_code = await pytest.main.callPromising(pyodide.toPy(args));
   } catch (e) {
     console.error(e);
     // Arbitrary exit code here. I have seen this code reached instead of a
