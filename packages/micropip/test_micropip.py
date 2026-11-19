@@ -63,6 +63,58 @@ def test_install_simple(selenium_standalone_micropip):
     ) == ["go", "go", "goe", "gone"]
 
 
+@pytest.mark.skip_pyproxy_check
+def test_install_propagates_lockfile_load_error(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
+    result = selenium.run_js(
+        """
+        const originalFileName =
+            pyodide._api.lockfile_packages["iniconfig"].file_name;
+        pyodide._api.lockfile_packages["iniconfig"].file_name =
+            "/nonexistent/iniconfig.whl";
+        try {
+            return await pyodide.runPythonAsync(`
+                import micropip
+                import pyodide_js
+                from pyodide.ffi import to_js
+
+                try:
+                    await micropip.install("iniconfig")
+                except Exception as exc:
+                    error = f"{type(exc).__name__}: {exc}"
+                    cause_count = exc.js_error.errors.length
+                else:
+                    error = None
+                    cause_count = 0
+
+                to_js([
+                    error,
+                    cause_count,
+                    "iniconfig" in pyodide_js.loadedPackages.to_py(),
+                ])
+            `);
+        } finally {
+            pyodide._api.lockfile_packages["iniconfig"].file_name =
+                originalFileName;
+        }
+        """
+    )
+
+    expected_error = "JsException: AggregateError: Failed to load iniconfig"
+    assert result == [expected_error, 1, False]
+
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install("iniconfig")
+            import iniconfig
+        `);
+        """
+    )
+    assert selenium.run_js('return pyodide.loadedPackages["iniconfig"] !== undefined;')
+
+
 def test_install_custom_url(selenium_standalone_micropip, httpserver):
     selenium = selenium_standalone_micropip
 

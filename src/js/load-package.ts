@@ -193,6 +193,11 @@ export class PackageManager {
    * more limited in terms of functionality as compared to :mod:`micropip`,
    * however it has less overhead and can be faster.
    *
+   * When a package download or installation fails, the other attempts are
+   * allowed to settle. Successfully installed packages are not rolled back.
+   * The returned Promise then rejects with an ``AggregateError`` whose
+   * ``errors`` property contains the original errors.
+   *
    * When installing binary wheels by URLs it is user's responsibility to check
    * that the installed binary wheel is compatible in terms of Python and
    * Emscripten versions. Compatibility is not checked during installation time
@@ -215,7 +220,7 @@ export class PackageManager {
    *    (optional)
    * @param options.checkIntegrity If true, check the integrity of the downloaded
    *    packages (default: true)
-   * @returns The loaded package data.
+   * @returns The loaded package data when every package loads successfully.
    */
   public async loadPackage(
     names: string | PyProxy | Array<string>,
@@ -324,6 +329,13 @@ export class PackageManager {
       await this.#api.bootstrapFinalizedPromise;
 
       this.#api.importlib.invalidate_caches();
+      if (failed.size > 0) {
+        const failedNames = Array.from(failed.keys()).sort().join(", ");
+        throw new AggregateError(
+          failed.values(),
+          `Failed to load ${failedNames}`,
+        );
+      }
       return Array.from(loadedPackageData, filterPackageData);
     } finally {
       releaseLock();
@@ -579,9 +591,10 @@ export class PackageManager {
       loadedPackages[pkg.name] = pkg.channel;
     } catch (err: any) {
       failed.set(pkg.name, err);
-      // We don't throw error when loading a package fails, but just report it.
-      // pkg.done.reject(err);
+      // Collect the error so the other installation attempts can settle.
+      // loadPackageInner() rejects with all collected errors afterward.
     } finally {
+      // This signals completion even after failure; it does not assert success.
       pkg.done.resolve();
     }
   }

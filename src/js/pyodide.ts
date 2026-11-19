@@ -160,7 +160,9 @@ export interface PyodideConfig {
    * This is the same as loading the packages with
    * :js:func:`pyodide.loadPackage` after Pyodide is loaded except using the
    * ``packages`` option is more efficient because the packages are downloaded
-   * while Pyodide bootstraps itself.
+   * while Pyodide bootstraps itself. If a package fails to load,
+   * :js:func:`loadPyodide` rejects with the ``AggregateError`` from
+   * :js:func:`pyodide.loadPackage`.
    */
   packages?: string[];
 
