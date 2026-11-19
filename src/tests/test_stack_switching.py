@@ -725,7 +725,7 @@ def test(n):
 """
 
 
-@pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
+@pytest.mark.xfail_browsers(safari="requires jspi")
 @pytest.mark.requires_dynamic_linking
 @pytest.mark.parametrize(
     "script", [LEAK_SCRIPT1, LEAK_SCRIPT2, LEAK_SCRIPT3, LEAK_SCRIPT4]
@@ -924,7 +924,7 @@ def test_return_promising_no_crash(selenium):
     """
     selenium.run_js(
         """
-        globalThis.f = function f() {
+        self.f = function f() {
             return task.callPromising();
         };
         pyodide.runPython(`
