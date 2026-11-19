@@ -27,6 +27,10 @@ myst:
   callbacks failing once the WebAssembly heap has grown past 2 GiB.
   {pr}`6560`
 
+- {{ Enhancement }} JSPI is now tested on Firefox, which enables it by default
+  since Firefox 160.
+  {pr}`6571`
+
 ### JavaScript API
 
 - {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
