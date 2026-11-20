@@ -93,9 +93,13 @@ def test_syncify_not_supported(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     selenium.run_js(
         """
-        // Ensure that it's not supported by deleting WebAssembly.Suspender
-        delete WebAssembly.Suspender;
-        delete WebAssembly.Suspending;
+        // Ensure that it's not supported by deleting WebAssembly.Suspender.
+        // Do it from a page script: Firefox runs WebDriver scripts in a
+        // sandbox with its own copy of the JS builtins.
+        const script = document.createElement("script");
+        script.textContent =
+          "delete WebAssembly.Suspender; delete WebAssembly.Suspending;";
+        document.head.appendChild(script);
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
           async () => await pyodide._api.pyodide_code.eval_code.callPromising("1+1"),
