@@ -4,9 +4,15 @@ RUN apt-get update \
     ca-certificates curl jq wget \
   && rm -rf /var/lib/apt/lists/*
 
+# Use the release download redirect instead of the GitHub API, which is
+# rate limited for unauthenticated requests from CI runners.
 ARG SELENIUM_MANAGER_VERSION=latest
-RUN SELENIUM_MANAGER_VERSION_FULL=$(curl -s https://api.github.com/repos/SeleniumHQ/selenium_manager_artifacts/releases/${SELENIUM_MANAGER_VERSION} | jq -r .name) \
-  && wget --no-verbose https://github.com/SeleniumHQ/selenium_manager_artifacts/releases/download/${SELENIUM_MANAGER_VERSION_FULL}/selenium-manager-linux \
+RUN if [ "$SELENIUM_MANAGER_VERSION" = "latest" ]; then \
+    SELENIUM_MANAGER_URL=https://github.com/SeleniumHQ/selenium_manager_artifacts/releases/latest/download; \
+  else \
+    SELENIUM_MANAGER_URL=https://github.com/SeleniumHQ/selenium_manager_artifacts/releases/download/${SELENIUM_MANAGER_VERSION}; \
+  fi \
+  && wget --no-verbose ${SELENIUM_MANAGER_URL}/selenium-manager-linux-x86_64 -O selenium-manager-linux \
   && chmod +x selenium-manager-linux \
   && mv selenium-manager-linux /usr/local/bin/selenium-manager
 

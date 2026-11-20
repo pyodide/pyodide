@@ -403,8 +403,14 @@ def test_pip_install_executable(selenium, venv):
     result = install_pkg(venv, "pytest")
     assert result.returncode == 0
     pytest_script = (venv / "bin/pytest").read_text()
-    shebang = pytest_script.splitlines()[0]
-    assert shebang == "#!" + str((venv / "bin/python").absolute())
+    python = str((venv / "bin/python").absolute())
+    lines = pytest_script.splitlines()
+    if lines[0] == "#!/bin/sh":
+        # pip >= 26.3 (distlib 0.4.4) can't point a shebang at bin/python
+        # because it is a shell script, so it emits a /bin/sh exec wrapper.
+        assert lines[1].startswith(f"'''exec' {python} ")
+    else:
+        assert lines[0] == "#!" + python
 
 
 @only_node

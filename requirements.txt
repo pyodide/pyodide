@@ -14,7 +14,7 @@ pytest-asyncio
 pytest-benchmark
 pytest-cov
 pytest-httpserver
-pytest-pyodide==0.59.4
-PyYAML
+pytest-pyodide==0.60.0
+pyyaml  # Used by test_core_python.py
 setuptools; python_version>='3.12'
 sphinx-click
