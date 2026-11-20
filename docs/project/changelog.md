@@ -29,7 +29,7 @@ myst:
 
 - {{ Enhancement }} JSPI is now tested on Firefox, which enables it by default
   since Firefox 160.
-  {pr}`6571`
+  {pr}`6572`
 
 ### JavaScript API
 
