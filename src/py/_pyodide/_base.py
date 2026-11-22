@@ -279,6 +279,11 @@ class CodeRunner:
         dedent: bool = True,
     ):
         self._compiled = False
+        # handle mis-indented input from multi-line strings. Keep the dedented
+        # text: it is what gets compiled, so linecache must serve it for the
+        # traceback carets to line up with the source lines.
+        if dedent:
+            source = _dedent(source)
         self._source = source
         self._gen = _parse_and_compile_gen(
             source,
@@ -289,7 +294,7 @@ class CodeRunner:
             flags=flags,
             dont_inherit=dont_inherit,
             optimize=optimize,
-            dedent=dedent,
+            dedent=False,
         )
         self.ast = next(self._gen)
 
