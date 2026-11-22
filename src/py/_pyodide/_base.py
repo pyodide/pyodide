@@ -10,7 +10,6 @@ import builtins
 import linecache
 import tokenize
 from collections.abc import Generator
-from copy import deepcopy
 from importlib import import_module
 from io import StringIO
 from textwrap import dedent as _dedent
@@ -37,6 +36,10 @@ def should_quiet(source: str, /) -> bool:
     """
     # largely inspired from IPython:
     # https://github.com/ipython/ipython/blob/86d24741188b0cedd78ab080d498e775ed0e5272/IPython/core/displayhook.py#L84
+
+    # Tokenizing is slow, and there is nothing to find without a semicolon.
+    if ";" not in source:
+        return False
 
     # We need to wrap tokens in a buffer because:
     # "Tokenize requires one argument, readline, which must be
@@ -111,18 +114,36 @@ _raise_template_ast = ast.parse("raise ___EvalCodeResultException[0](x)").body[0
 
 
 def _last_expr_to_raise(mod: ast.Module) -> None:
-    """If the final ast node is a statement, raise an EvalCodeResultException
-    with the value of the statement.
+    """If the last statement is an expression statement (``ast.Expr``), replace
+    it with a statement that raises an EvalCodeResultException with the value
+    of the expression.
     """
     if not mod.body:
         return
     last_node = mod.body[-1]
     if not isinstance(mod.body[-1], ast.Expr | ast.Await):
         return
-    raise_expr = deepcopy(_raise_template_ast)
-    # Replace x with our value in _raise_template_ast.
-    raise_expr.exc.args[0] = last_node.value  # type: ignore[attr-defined]
-    mod.body[-1] = raise_expr
+
+    # Build `raise ___EvalCodeResultException[0](value)` with the locations of
+    # _raise_template_ast. Building the nodes directly is much faster than
+    # deep copying the template.
+    t = _raise_template_ast
+    exc_class = ast.copy_location(
+        ast.Subscript(
+            value=ast.copy_location(
+                ast.Name("___EvalCodeResultException", ast.Load()),
+                t.exc.func.value,  # type: ignore[attr-defined]
+            ),
+            slice=ast.copy_location(ast.Constant(0), t.exc.func.slice),  # type: ignore[attr-defined]
+            ctx=ast.Load(),
+        ),
+        t.exc.func,  # type: ignore[attr-defined]
+    )
+    exc = ast.copy_location(
+        ast.Call(func=exc_class, args=[last_node.value], keywords=[]),  # type: ignore[attr-defined]
+        t.exc,  # type: ignore[attr-defined]
+    )
+    mod.body[-1] = ast.copy_location(ast.Raise(exc=exc, cause=None), t)
 
 
 def _parse_and_compile_gen(
@@ -164,6 +185,15 @@ def _parse_and_compile_gen(
     if return_mode.startswith("last_expr"):  # last_expr or last_expr_or_assign
         _last_expr_to_raise(mod)
 
+    # The nodes we add above have locations. Only fill in missing locations if
+    # compiling fails, which happens when the caller's AST transformations
+    # added nodes without them, because ast.fix_missing_locations walks the
+    # whole tree in Python. If that wasn't the problem, compiling again raises
+    # the same error.
+    try:
+        return compile(mod, filename, mode, flags, dont_inherit, optimize)
+    except TypeError:
+        pass
     ast.fix_missing_locations(mod)
     return compile(mod, filename, mode, flags, dont_inherit, optimize)
 
