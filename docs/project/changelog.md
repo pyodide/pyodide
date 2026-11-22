@@ -49,6 +49,11 @@ myst:
   right characters when the source was indented.
   {pr}`6576`
 
+- {{ Fix }} {py:func}`pyodide.code.eval_code` with
+  `return_mode="last_expr_or_assign"` now returns `None` instead of raising a
+  `NameError` when the last statement is a bare annotation such as `x: int`.
+  {pr}`6583`
+
 ### Python / JavaScript type conversions
 
 - {{ Enhancement }} Pyodide now supports `Float16Array`. It will translate half
