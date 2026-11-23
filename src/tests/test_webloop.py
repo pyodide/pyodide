@@ -289,7 +289,6 @@ def test_run_in_executor(selenium):
     )
 
 
-@pytest.mark.xfail(reason="Works locally but failing in test suite as of #2022.")
 def test_webloop_exception_handler(selenium_standalone_refresh):
     selenium = selenium_standalone_refresh
     selenium.run_async(
@@ -301,7 +300,8 @@ def test_webloop_exception_handler(selenium_standalone_refresh):
         await asyncio.sleep(0.2)
         """
     )
-    assert "Task exception was never retrieved" in selenium.logs
+    assert "Unhandled exception in event loop" in selenium.logs
+    assert "Exception: test" in selenium.logs
     try:
         selenium.run_js(
             """
