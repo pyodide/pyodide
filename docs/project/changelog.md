@@ -33,7 +33,7 @@ myst:
 
 ### JavaScript API
 
-- {{ Fix }} {js:func}`~exports.loadPackage` now rejects with an
+- {{ Fix }} {js:func}`~pyodide.loadPackage` now rejects with an
   `AggregateError` if one or more packages fail to load instead of only logging
   the errors. Successfully loaded packages are not rolled back. This also
   prevents `micropip.install()` from reporting a successful lockfile

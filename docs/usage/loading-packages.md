@@ -200,8 +200,8 @@ installed; the rejection does not roll back a partially successful installation.
 The rejection also propagates through APIs that use
 {js:func}`~pyodide.loadPackage`:
 
-- {js:func}`loadPyodide` rejects if a package supplied in its `packages` option
-  fails to load during startup.
+- {js:func}`~exports.loadPyodide` rejects if a package supplied in its
+  `packages` option fails to load during startup.
 - {js:func}`~pyodide.loadPackagesFromImports` rejects if loading an identified
   package fails.
 - {py:func}`micropip.install` raises a Python `JsException` if loading a Pyodide
