@@ -962,7 +962,6 @@
       - test_coverage_ignore # zipped stdlib
 - test_traceback:
     xfail-safari: safaridriver unexpectedly exited
-    xfail: "RangeError: Maximum call stack size exceeded TODO: why?"
 - test_tracemalloc:
     xfail-safari: safaridriver unexpectedly exited
 - test_tstring
@@ -1025,8 +1024,7 @@
 - test_userlist:
     skip:
       - test_repr_deep
-- test_userstring:
-    xfail: FIXME works locally, timeouts in CI
+- test_userstring
 - test_utf8_mode
 - test_utf8source
 - test_uuid
