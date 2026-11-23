@@ -32,6 +32,10 @@ myst:
   `sqlite3.Connection.load_extension()` are now available.
   {pr}`6533`
 
+- {{ Enhancement }} JSPI is now tested on Firefox, which enables it by default
+  since Firefox 160.
+  {pr}`6572`
+
 ### JavaScript API
 
 - {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`

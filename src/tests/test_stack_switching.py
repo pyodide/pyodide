@@ -93,9 +93,13 @@ def test_syncify_not_supported(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     selenium.run_js(
         """
-        // Ensure that it's not supported by deleting WebAssembly.Suspender
-        delete WebAssembly.Suspender;
-        delete WebAssembly.Suspending;
+        // Ensure that it's not supported by deleting WebAssembly.Suspender.
+        // Do it from a page script: Firefox runs WebDriver scripts in a
+        // sandbox with its own copy of the JS builtins.
+        const script = document.createElement("script");
+        script.textContent =
+          "delete WebAssembly.Suspender; delete WebAssembly.Suspending;";
+        document.head.appendChild(script);
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
           async () => await pyodide._api.pyodide_code.eval_code.callPromising("1+1"),
@@ -721,7 +725,7 @@ def test(n):
 """
 
 
-@pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
+@pytest.mark.xfail_browsers(safari="requires jspi")
 @pytest.mark.requires_dynamic_linking
 @pytest.mark.parametrize(
     "script", [LEAK_SCRIPT1, LEAK_SCRIPT2, LEAK_SCRIPT3, LEAK_SCRIPT4]
@@ -920,7 +924,7 @@ def test_return_promising_no_crash(selenium):
     """
     selenium.run_js(
         """
-        globalThis.f = function f() {
+        self.f = function f() {
             return task.callPromising();
         };
         pyodide.runPython(`
