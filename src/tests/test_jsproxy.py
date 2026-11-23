@@ -117,7 +117,7 @@ def test_jsexception_through_generator_contextmanager(selenium):
 
 
 @run_in_pyodide
-def test_jsexception_traceback_uses_python_descriptor(selenium):
+def test_jsexception_uses_python_descriptors(selenium):
     from js import Error  # type: ignore[attr-defined]
     from pyodide.code import run_js
 
@@ -126,19 +126,79 @@ def test_jsexception_traceback_uses_python_descriptor(selenium):
     except ValueError as exc:
         traceback = exc.__traceback__
 
+    cause = ValueError("cause")
+    context = TypeError("context")
     js_error = Error.new("boom")
     js_id = js_error.js_id
+
     js_error.__traceback__ = traceback
+    js_error.__cause__ = cause
+    js_error.__context__ = context
+    js_error.__suppress_context__ = False
+    js_error.args = ("changed",)
+    js_error.__dict__ = {"python_attribute": 7}
 
     assert js_error.__traceback__ is traceback
+    assert js_error.__cause__ is cause
+    assert js_error.__context__ is context
+    assert js_error.__suppress_context__ is False
+    assert js_error.args == ("changed",)
+    assert js_error.__dict__ == {"python_attribute": 7}
     assert js_error.js_id == js_id
     assert js_error.js_error.js_id == js_id
-    assert not run_js("(error) => Object.hasOwn(error, '__traceback__')")(
-        js_error.js_error
-    )
+
+    has_own = run_js("(error, name) => Object.hasOwn(error, name)")
+    for name in (
+        "__traceback__",
+        "__cause__",
+        "__context__",
+        "__suppress_context__",
+        "args",
+        "__dict__",
+    ):
+        assert not has_own(js_error.js_error, name)
 
     js_error.custom_attribute = 7
     assert js_error.js_error.custom_attribute == 7
+    del js_error.custom_attribute
+    assert not has_own(js_error.js_error, "custom_attribute")
+
+
+@run_in_pyodide
+def test_jsexception_python_descriptor_errors(selenium):
+    import pytest
+
+    from js import Error  # type: ignore[attr-defined]
+    from pyodide.code import run_js
+
+    js_error = Error.new("boom")
+    has_own = run_js("(error, name) => Object.hasOwn(error, name)")
+
+    invalid_assignments = (
+        ("__traceback__", 1, "must be a traceback"),
+        ("__cause__", 1, "exception cause must be None"),
+        ("__context__", 1, "exception context must be None"),
+        ("__suppress_context__", 1, "must be bool"),
+        ("args", 1, "not iterable"),
+        ("__dict__", 1, "must be set to a dictionary"),
+    )
+    for name, value, message in invalid_assignments:
+        with pytest.raises(TypeError, match=message):
+            setattr(js_error, name, value)
+        assert not has_own(js_error.js_error, name)
+
+    deletion_errors = (
+        ("__traceback__", "may not be deleted"),
+        ("__cause__", "may not be deleted"),
+        ("__context__", "may not be deleted"),
+        ("__suppress_context__", "can't delete"),
+        ("args", "may not be deleted"),
+        ("__dict__", "cannot delete"),
+    )
+    for name, message in deletion_errors:
+        with pytest.raises(TypeError, match=message):
+            delattr(js_error, name)
+        assert not has_own(js_error.js_error, name)
 
 
 @pytest.mark.xfail_browsers(node="No document in node")

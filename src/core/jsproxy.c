@@ -625,14 +625,11 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
 
-  // JsException inherits from JsProxy before Exception, so without this
-  // special case, assigning __traceback__ would forward the Python traceback
-  // to the wrapped JavaScript Error as a PyProxy. In particular,
-  // contextlib._GeneratorContextManager.__exit__ assigns __traceback__ while
-  // propagating an exception, which would leave the traceback proxy retained
-  // by the JavaScript Error.
-  if ((JsProxy_getflags(self) & IS_ERROR) &&
-      strcmp(key, "__traceback__") == 0) {
+  // Respect Python data descriptors before forwarding assignments to
+  // JavaScript. In particular, JsException inherits exception state
+  // descriptors from BaseException after JsProxy in its MRO.
+  PyObject* descr = _PyType_Lookup(Py_TYPE(self), attr); // borrowed
+  if (descr != NULL && Py_TYPE(descr)->tp_descr_set != NULL) {
     return PyObject_GenericSetAttr(self, attr, pyvalue);
   }
 
