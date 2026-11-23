@@ -841,15 +841,19 @@ def test_lock_file_contents_relative_file_name(selenium_standalone_noload, tmp_p
     }
     message = 'Lock file file_name for package "dummy_pkg" is relative path "dummy_pkg-0.1.0-py3-none-any.whl" but no packageBaseUrl provided'
     content = json.dumps(lockfile_content)
-    selenium.run_js(
-        """
-        const py = await loadPyodide({
-            lockFileContents: %s,
-        });
-        await py.loadPackage("dummy_pkg");
-        """
-        % content
-    )
+    with pytest.raises(
+        selenium.JavascriptException,
+        match="AggregateError: Failed to load dummy_pkg",
+    ):
+        selenium.run_js(
+            """
+            const py = await loadPyodide({
+                lockFileContents: %s,
+            });
+            await py.loadPackage("dummy_pkg");
+            """
+            % content
+        )
     assert message in selenium.logs
 
 
