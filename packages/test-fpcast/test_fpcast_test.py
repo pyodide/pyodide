@@ -1,6 +1,8 @@
 import pytest
 from pytest_pyodide import run_in_pyodide
 
+from conftest import requires_jspi
+
 
 @pytest.mark.requires_dynamic_linking
 @run_in_pyodide(packages=["test-fpcast"])
@@ -46,3 +48,21 @@ def test_fpcasts(selenium):
     t.getset0  # noqa: B018
     t.getset1  # noqa: B018
     t.getset1 = 5
+
+
+@requires_jspi
+@pytest.mark.requires_dynamic_linking
+@run_in_pyodide(packages=["test-fpcast", "pytest"])
+def test_stack_switch_suspend_error(selenium):
+    from asyncio import sleep
+
+    import fpcast_test
+    import pytest
+
+    from pyodide.ffi import JsException, run_sync
+
+    def callback():
+        run_sync(sleep(0.1))
+
+    with pytest.raises(JsException, match="trying to suspend JS frames"):
+        fpcast_test.test_stack_switch_suspend_error(callback)

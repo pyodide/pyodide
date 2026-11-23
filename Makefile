@@ -72,6 +72,9 @@ src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat $(PY
 src/core/jsverror.wasm: src/core/jsverror.wat $(PYODIDE_EMSDK_DIR)/.complete
 	$(PYODIDE_EMSDK_DIR)/upstream/bin/wasm-as $< -o $@ -all
 
+src/core/stack_switching/syncify_catch_trampoline.o: src/core/stack_switching/syncify_catch_trampoline.s $(PYODIDE_EMSDK_DIR)/.complete
+	$(CC) -o $@ -c $< -fPIC -mexception-handling
+
 src/core/libpyodide.a: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
@@ -90,6 +93,7 @@ src/core/libpyodide.a: \
 	src/core/stack_switching/pystate_pycore.o \
 	src/core/stack_switching/pystate.o \
 	src/core/stack_switching/suspenders.o \
+	src/core/stack_switching/syncify_catch_trampoline.o \
 	src/core/print.o \
 	src/core/socket_syscalls.o
 
@@ -317,9 +321,9 @@ clean-all: clean
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
-# suspenders.c defines `syncifyHandler` which JSPI wraps in a
+# suspenders.c defines `suspendForPromise` which JSPI wraps in a
 # `WebAssembly.Suspending` object at runtime. Global-variable instrumentation
-# turns syncifyHandler into a GOT function pointer. At dylib load time the
+# turns suspendForPromise into a GOT function pointer. At dylib load time the
 # dynamic linker then tries to resolve it as a plain function and aborts with
 # "bad export type". So disable asan's global instrumentation for suspenders.o.
 ifdef PYODIDE_ASAN

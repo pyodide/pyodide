@@ -59,12 +59,16 @@ EM_JS_NUM(int, jslib_init_js, (void), {
 errcode
 jslib_init_buffers(void);
 
+void
+jslib_init_suspenders(void);
+
 errcode
 jslib_init(void)
 {
   FAIL_RETURN_VALUE(-1);
   FAIL_IF_MINUS_ONE(jslib_init_buffers());
   FAIL_IF_MINUS_ONE(jslib_init_js());
+  jslib_init_suspenders();
   return 0;
 }
 
