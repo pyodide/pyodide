@@ -12,7 +12,8 @@ PYLIB=libpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS).a
 
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/libffi/libffi
-LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
+# v3.8.1
+LIBFFI_COMMIT=de7afe7aa9e8ab7ac36429428a7222caae1e7988
 
 HIWIREBUILD=$(ROOT)/build/hiwire
 HIWIREREPO=https://github.com/pyodide/hiwire
@@ -33,7 +34,7 @@ ifdef CPYTHON_DEBUG
 	MAYBE_WITH_PYDEBUG=--with-pydebug
 endif
 
-all: $(PYINSTALL)/lib/$(PYLIB) libffi libhiwire liblzma libzstd
+all: $(PYINSTALL)/lib/$(PYLIB) libffi libhiwire liblzma libzstd pkgconfig
 
 libffi: $(PYINSTALL)/lib/libffi.a
 
@@ -60,6 +61,36 @@ sysconfigdata:
 	mkdir -p $(SYSCONFIGDATA_DIR)
 	cp $(PYBUILDDIR)/*.{py,json} $(PYINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	cp $(PYBUILDDIR)/*.{py,json} $(SYSCONFIGDATA_DIR)
+
+PYVERSION_SHORT=$(PYMAJOR).$(PYMINOR)
+PYLDVERSION=$(PYVERSION_SHORT)$(CPYTHON_ABI_FLAGS)
+PYLIBPC=$(PYINSTALL)/lib/pkgconfig
+
+# Install the pkg-config files for Python. They are not installed by the
+# `inclinstall libinstall` targets that we use. Without them, pkg-config
+# lookups for `python-3.X` (e.g., by meson) can find the host system's
+# Python instead.
+#
+# The pkg-config files are generated with an absolute prefix. Replace it with
+# a prefix relative to the location of the .pc file so that it stays correct
+# when the cross-build environment is installed in a different location.
+.PHONY: pkgconfig
+pkgconfig: $(PYLIBPC)/python-$(PYLDVERSION).pc
+
+# Same file names as CPython's `make install`, but as copies instead of
+# symlinks.
+PYLIBPC_ALIASES=python3 $(if $(CPYTHON_ABI_FLAGS),python-$(PYVERSION_SHORT))
+
+$(PYLIBPC)/python-$(PYLDVERSION).pc: $(PYBUILD)/Makefile
+	mkdir -p $(PYLIBPC)
+	$(SED) -e 's|^prefix=.*|prefix=$${pcfiledir}/../..|' \
+		$(PYBUILD)/Misc/python-embed.pc > $(PYLIBPC)/python-$(PYLDVERSION)-embed.pc
+	$(SED) -e 's|^prefix=.*|prefix=$${pcfiledir}/../..|' \
+		$(PYBUILD)/Misc/python.pc > $@
+	for name in $(PYLIBPC_ALIASES); do \
+		cp $@ $(PYLIBPC)/$$name.pc && \
+		cp $(PYLIBPC)/python-$(PYLDVERSION)-embed.pc $(PYLIBPC)/$$name-embed.pc || exit 1; \
+	done
 
 LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS)
 
@@ -126,7 +157,7 @@ $(PYINSTALL)/lib/libffi.a :
 		&& git fetch --depth 1 $(LIBFFIREPO) $(LIBFFI_COMMIT) \
 		&& git checkout FETCH_HEAD \
 		&& . $(PYODIDE_EMSDK_DIR)/emsdk_env.sh \
-		&& ./testsuite/emscripten/build.sh --wasm-bigint \
+		&& TARGET_HOST=wasm32 ./testsuite/emscripten/build.sh \
 		&& make install \
 	)
 	cp $(FFIBUILD)/target/include/*.h $(PYBUILD)/Include/
@@ -244,6 +275,10 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 	#   to enable shutdown method in NodeSockFS.
 	cd $(PYBUILD) && $(SED) -i 's/^ac_cv_func_shutdown=no//' $(CONFIG_SITE_FILE)
 
+	# --disable-test-modules :
+	#   Don't link _testcapi and the other C test modules into the main module.
+	#   The test package builds them as side modules.
+	#
 	# --enable-big-digits=30 :
 	#   Python integers have "digits" of size 15 by default on systems with 32
 	#   bit pointers and size 30 on systems with 16 bit pointers. Python uses
@@ -263,6 +298,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 			  --disable-ipv6 \
 			  --enable-big-digits=30 \
 			  --enable-optimizations \
+			  --disable-test-modules \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(PYBUILD)/config.guess) \
 			  --prefix=$(PYINSTALL)  \

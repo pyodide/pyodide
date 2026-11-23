@@ -1,0 +1,103 @@
+From 05b6c5069a0d2dd08921d55c0806ae46bc7511f4 Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <gyeongjae@cloudflare.com>
+Date: Mon, 16 Nov 2026 20:30:00 +0900
+Subject: [PATCH 6/6] Cache convertJsFunctionToWasm wrapper module per signature
+
+https://github.com/emscripten-core/emscripten/pull/28274
+---
+ src/lib/libaddfunction.js | 65 +++++++++++++++++++++++----------------
+ 1 file changed, 38 insertions(+), 27 deletions(-)
+
+diff --git a/src/lib/libaddfunction.js b/src/lib/libaddfunction.js
+index ea6efd267..07c6969a4 100644
+--- a/src/lib/libaddfunction.js
++++ b/src/lib/libaddfunction.js
+@@ -78,13 +78,20 @@ addToLibrary({
+   })),
+ 
+ #if !WASM2JS || WASM == 2
++  // Cache of compiled wrapper modules used by convertJsFunctionToWasm, keyed
++  // by signature. The module bytes depend only on the signature, so each
++  // module only needs to be compiled once.
++  $wrapperModuleCache__internal: true,
++  $wrapperModuleCache: {},
++
+   // Wraps a JS function as a wasm function with a given signature.
+   $convertJsFunctionToWasm__deps: [
+     '$uleb128EncodeWithLen',
+ #if WASM_JS_TYPES
+     '$sigToWasmTypes',
+ #endif
+-    '$generateTypePack'
++    '$generateTypePack',
++    '$wrapperModuleCache',
+   ],
+   $convertJsFunctionToWasm: (func, sig) => {
+ #if ASSERTIONS && !WASM_BIGINT
+@@ -100,33 +107,37 @@ addToLibrary({
+     }
+ #endif
+ 
+-    // Rest of the module is static
+-    var bytes = Uint8Array.of(
+-      0x00, 0x61, 0x73, 0x6d, // magic ("\0asm")
+-      0x01, 0x00, 0x00, 0x00, // version: 1
+-      0x01, // Type section code
+-        // The module is static, with the exception of the type section, which is
+-        // generated based on the signature passed in.
+-        ...uleb128EncodeWithLen([
+-          0x01, // count: 1
+-          0x60 /* form: func */,
+-          // param types
+-          ...generateTypePack(sig.slice(1)),
+-          // return types (for now only supporting [] if `void` and single [T] otherwise)
+-          ...generateTypePack(sig[0] === 'v' ? '' : sig[0])
+-        ]),
+-      // The rest of the module is static
+-      0x02, 0x07, // import section
+-        // (import "e" "f" (func 0 (type 0)))
+-        0x01, 0x01, 0x65, 0x01, 0x66, 0x00, 0x00,
+-      0x07, 0x05, // export section
+-        // (export "f" (func 0 (type 0)))
+-        0x01, 0x01, 0x66, 0x00, 0x00,
+-    );
++    var module = wrapperModuleCache[sig];
++    if (!module) {
++      // Rest of the module is static
++      var bytes = Uint8Array.of(
++        0x00, 0x61, 0x73, 0x6d, // magic ("\0asm")
++        0x01, 0x00, 0x00, 0x00, // version: 1
++        0x01, // Type section code
++          // The module is static, with the exception of the type section, which is
++          // generated based on the signature passed in.
++          ...uleb128EncodeWithLen([
++            0x01, // count: 1
++            0x60 /* form: func */,
++            // param types
++            ...generateTypePack(sig.slice(1)),
++            // return types (for now only supporting [] if `void` and single [T] otherwise)
++            ...generateTypePack(sig[0] === 'v' ? '' : sig[0])
++          ]),
++        // The rest of the module is static
++        0x02, 0x07, // import section
++          // (import "e" "f" (func 0 (type 0)))
++          0x01, 0x01, 0x65, 0x01, 0x66, 0x00, 0x00,
++        0x07, 0x05, // export section
++          // (export "f" (func 0 (type 0)))
++          0x01, 0x01, 0x66, 0x00, 0x00,
++      );
++
++      // We can compile this wasm module synchronously because it is very small.
++      // This accepts an import (at "e.f"), that it reroutes to an export (at "f")
++      module = wrapperModuleCache[sig] = new WebAssembly.Module(bytes);
++    }
+ 
+-    // We can compile this wasm module synchronously because it is very small.
+-    // This accepts an import (at "e.f"), that it reroutes to an export (at "f")
+-    var module = new WebAssembly.Module(bytes);
+     var instance = new WebAssembly.Instance(module, { 'e': { 'f': func } });
+     var wrappedFunc = instance.exports['f'];
+     return wrappedFunc;
+-- 
+2.54.0 (Apple Git-157)
+

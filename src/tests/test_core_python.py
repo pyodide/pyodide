@@ -82,6 +82,12 @@ def test_cpython_core(main_test, selenium, request):
                     # This uses raise() which doesn't work.
                     del _testcapi.raise_SIGINT_then_send_None
 
+                # CPython is built with --disable-test-modules, so test.support
+                # thinks the C test modules are missing. The test package
+                # provides them as side modules.
+                import test.support
+                test.support.TEST_MODULES_ENABLED = True
+
                 # Detect module-level skips (e.g. optional C extension not
                 # compiled in) before running libregrtest. libregrtest exits
                 # with code 0 for both "all passed" and "module skipped", so

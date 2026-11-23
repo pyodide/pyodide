@@ -188,6 +188,20 @@ def _copy_wasm_libs(
     to_copy.extend(
         x.relative_to(pyodide_root) for x in (pyodide_root / "dist").glob("pyodide.*")
     )
+    # pkg-config files for Python. sysconfig's LIBPC points to this directory,
+    # so pkg-config lookups (e.g., by meson) would otherwise fall back to the
+    # host Python. Only copy the Python ones; other .pc files there refer to
+    # static libraries that are not shipped in the xbuildenv.
+    pkgconfig_dir = pyodide_root / pythoninclude.parent.parent / "lib" / "pkgconfig"
+    python_pc_files = sorted(pkgconfig_dir.glob("python*.pc"))
+    if not python_pc_files:
+        if skip_missing_files:
+            logging.warning(f"Python pkg-config files not found in '{pkgconfig_dir}'")
+        else:
+            raise FileNotFoundError(
+                f"Python pkg-config files not found in '{pkgconfig_dir}'"
+            )
+    to_copy.extend(x.relative_to(pyodide_root) for x in python_pc_files)
 
     for path in to_copy:
         if not (pyodide_root / path).exists():

@@ -18,7 +18,6 @@ def get_dummy_nonpure_wheel() -> Path:
 
 
 @pytest.mark.skip_refcount_check
-@pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
 def test_load_from_url(selenium_standalone_refresh, httpserver):
     selenium = selenium_standalone_refresh
 
@@ -133,7 +132,6 @@ def test_load_package_return(selenium_standalone_refresh):
     assert package[0]["packageType"] == "package"
 
 
-@pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
 def test_load_package_return_from_url(
     selenium_standalone_refresh,
 ):
@@ -763,7 +761,9 @@ def test_init_loaded_packages(monkeypatch, tmp_path):
         assert getattr(loadedPackages, dist.name) == result
 
 
-@pytest.mark.xfail_browsers(node="Some fetch trouble")
+@pytest.mark.xfail_browsers(
+    node="Absolute URLs in the lock file file_name are resolved as local paths in node"
+)
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 @pytest.mark.requires_dynamic_linking
@@ -797,7 +797,7 @@ def test_custom_lockfile(selenium_standalone_noload):
         custom_lockfile.unlink()
 
 
-@pytest.mark.xfail_browsers(node="Some fetch trouble")
+@pytest.mark.xfail_browsers(node="No localStorage in node")
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 @pytest.mark.requires_dynamic_linking

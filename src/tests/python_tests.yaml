@@ -271,8 +271,7 @@
 - test_ctypes.test_structunion
 - test_ctypes.test_structures:
     skip:
-      # Bugs in libffi?
-    - test_array_in_struct
+      # Passes a struct of two doubles to atan2(double, double)
     - test_issue18060*
 - test_ctypes.test_unaligned_structures
 - test_ctypes.test_unicode
@@ -881,7 +880,6 @@
     - test_coverage_ignore   # zipped stdlib
 - test_traceback:
     xfail-safari: safaridriver unexpectedly exited
-    xfail: 'RangeError: Maximum call stack size exceeded TODO: why?'
 - test_tracemalloc:
     xfail-safari: safaridriver unexpectedly exited
 - test_tstring
@@ -945,8 +943,7 @@
 - test_userlist:
     skip:
     - test_repr_deep
-- test_userstring:
-    xfail: FIXME works locally, timeouts in CI
+- test_userstring
 - test_utf8_mode
 - test_utf8source
 - test_uuid

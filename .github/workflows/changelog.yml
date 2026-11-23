@@ -1,0 +1,27 @@
+name: changelog
+
+on:
+  pull_request:
+    paths:
+      - docs/project/changelog.md
+
+concurrency:
+  group: changelog-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  check-references:
+    name: Check changelog references
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # HEAD is the merge commit of the PR, and HEAD^1 is the base branch.
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Check that new entries have a {pr} or {issue} reference
+        run: python3 tools/check_changelog.py HEAD^1
