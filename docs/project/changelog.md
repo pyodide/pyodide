@@ -46,10 +46,7 @@ myst:
 ### Python API
 
 - {{ Fix }} Tracebacks for code run with a `filename` now show carets under the
-  right characters when the source was indented. {js:func}`pyodide.runPython`
-  and {py:class}`pyodide.code.CodeRunner` dedent the source by default, but
-  `linecache` was given the original, indented text, so the markers were
-  shifted left by the width of the indentation.
+  right characters when the source was indented.
   {pr}`6576`
 
 ### Python / JavaScript type conversions
