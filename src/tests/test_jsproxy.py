@@ -98,6 +98,49 @@ def test_jsproxy_getattr_errors(selenium):
         o.a  # noqa: B018
 
 
+@run_in_pyodide
+def test_jsexception_through_generator_contextmanager(selenium):
+    from contextlib import contextmanager
+
+    import pytest
+
+    from js import Error  # type: ignore[attr-defined]
+    from pyodide.ffi import JsException
+
+    @contextmanager
+    def passthrough():
+        yield
+
+    with pytest.raises(JsException, match="boom"):
+        with passthrough():
+            raise Error.new("boom")
+
+
+@run_in_pyodide
+def test_jsexception_traceback_uses_python_descriptor(selenium):
+    from js import Error  # type: ignore[attr-defined]
+    from pyodide.code import run_js
+
+    try:
+        raise ValueError("traceback source")
+    except ValueError as exc:
+        traceback = exc.__traceback__
+
+    js_error = Error.new("boom")
+    js_id = js_error.js_id
+    js_error.__traceback__ = traceback
+
+    assert js_error.__traceback__ is traceback
+    assert js_error.js_id == js_id
+    assert js_error.js_error.js_id == js_id
+    assert not run_js("(error) => Object.hasOwn(error, '__traceback__')")(
+        js_error.js_error
+    )
+
+    js_error.custom_attribute = 7
+    assert js_error.js_error.custom_attribute == 7
+
+
 @pytest.mark.xfail_browsers(node="No document in node")
 @run_in_pyodide
 def test_jsproxy_document(selenium):
