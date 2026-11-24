@@ -13,13 +13,7 @@ Instead, keep the main module's exports in `mainModuleExports` and only
 store the address of one of them when it is first looked up, i.e. when
 a module imports it via `GOT.mem` / `GOT.func`.
 
-Backport to Emscripten 5.0.3 (on top of the unresolvedSymbols patch) of
-https://github.com/ryanking13/emscripten/tree/lazy-main-got (d74a5de85):
-  4f309ba81 Wrap access to individual GOT entries in helper functions. NFC
-  805bfcb25 Store the GOT addresses of main module symbols lazily
-  b3124d291 Make helper function for Asyncify symbol resolution. NFC
-The test and codesize changes are left out, and the Asyncify helper of
-the last commit is inlined in `_dlsym_catchup_js`.
+https://github.com/emscripten-core/emscripten/pull/28388
 ---
  src/lib/libdylink.js | 120 +++++++++++++++++++++++++++++++++++--------
  src/preamble.js      |   2 +-
