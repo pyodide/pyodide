@@ -39,8 +39,7 @@ myst:
   {pr}`6483`
 
 - {{ Fix }} {js:func}`~exports.loadPyodide` now rejects when `pyodide.asm.wasm`
-  fails to load or instantiate (for example a 404 or a wrong content type).
-  Before, it never settled, and a missing file in Node ended the process.
+  fails to load or instantiate. Before, it never settled.
   {pr}`6584`
 
 - {{ API }} `pyodide.registerComlink()` is deprecated and has no effect. It

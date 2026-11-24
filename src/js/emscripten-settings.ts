@@ -36,10 +36,6 @@ export interface EmscriptenSettings {
   INITIAL_MEMORY: number;
   wasmMemory?: WebAssembly.Memory;
   exitCode?: number;
-  /**
-   * Rejects if our instantiateWasm hook fails. Emscripten gives the hook no
-   * way to report an error, so loadPyodide races the module promise with it.
-   */
   readonly instantiateWasmFailed: Promise<never>;
 }
 
