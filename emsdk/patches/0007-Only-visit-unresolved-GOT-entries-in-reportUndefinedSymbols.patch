@@ -1,7 +1,7 @@
 From fe6770a8d15f65497b43ab4481797c5d837ed565 Mon Sep 17 00:00:00 2001
 From: Gyeongjae Choi <gyeongjae@cloudflare.com>
 Date: Tue, 24 Nov 2026 03:07:42 +0900
-Subject: [PATCH 7/7] Only visit unresolved GOT entries in reportUndefinedSymbols
+Subject: [PATCH 7/8] Only visit unresolved GOT entries in reportUndefinedSymbols
 
 https://github.com/emscripten-core/emscripten/pull/28303
 

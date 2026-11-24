@@ -1,0 +1,230 @@
+From dffc429edeee06caefb4027dd3d6424c325bb00d Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <gyeongjae@cloudflare.com>
+Date: Tue, 24 Nov 2026 20:00:00 +0900
+Subject: [PATCH 8/8] Store the GOT addresses of main module symbols lazily
+
+Previously `receiveInstance` called `updateGOT` on all of the main
+module's exports, which allocated a table slot for every exported
+function and a GOT `WebAssembly.Global` for every export, whether or not
+any side module ever uses them.  For a large `MAIN_MODULE` (e.g. Pyodide,
+with ~8.5k exports) this is a significant part of startup.
+
+Instead, keep the main module's exports in `mainModuleExports` and only
+store the address of one of them when it is first looked up, i.e. when
+a module imports it via `GOT.mem` / `GOT.func`.
+
+Backport to Emscripten 5.0.3 (on top of the unresolvedSymbols patch) of
+https://github.com/ryanking13/emscripten/tree/lazy-main-got (d74a5de85):
+  4f309ba81 Wrap access to individual GOT entries in helper functions. NFC
+  805bfcb25 Store the GOT addresses of main module symbols lazily
+  b3124d291 Make helper function for Asyncify symbol resolution. NFC
+The test and codesize changes are left out, and the Asyncify helper of
+the last commit is inlined in `_dlsym_catchup_js`.
+---
+ src/lib/libdylink.js | 120 +++++++++++++++++++++++++++++++++++--------
+ src/preamble.js      |   2 +-
+ tools/link.py        |   1 +
+ 3 files changed, 100 insertions(+), 23 deletions(-)
+
+diff --git a/src/lib/libdylink.js b/src/lib/libdylink.js
+index b3f85a19a..73a982c4e 100644
+--- a/src/lib/libdylink.js
++++ b/src/lib/libdylink.js
+@@ -171,22 +171,98 @@ var LibraryDylink = {
+   $unresolvedSymbols__internal: true,
+   $unresolvedSymbols: 'new Set()',
+ 
++  // The exports of the main module's wasm instance.
++  // The address of a main module symbol is only stored when it is first needed.
++  $mainModuleExports__internal: true,
++  $mainModuleExports: undefined,
++
++  $getMainModuleExport__internal: true,
++  $getMainModuleExport__deps: ['$mainModuleExports', '$isInternalSym'],
++  $getMainModuleExport: (symName) => {
++    if (!mainModuleExports || isInternalSym(symName)) {
++      return;
++    }
++#if !WASM_BIGINT
++    var value = mainModuleExports['orig$' + symName] ?? mainModuleExports[symName];
++#else
++    var value = mainModuleExports[symName];
++#endif
++    if (typeof value == 'function' || typeof value?.value == {{{ POINTER_JS_TYPE }}}) {
++      return value;
++    }
++  },
++
++  $exportToAddress__internal: true,
++  $exportToAddress__deps: ['$addFunction'],
++  $exportToAddress: (value) => {
++    if (typeof value == 'function') {
++      return {{{ to64('addFunction(value)') }}};
++    }
++    return value.value;
++  },
++
++  $hasSymbolAddress__internal: true,
++  $hasSymbolAddress__deps: ['$GOT', '$getMainModuleExport'],
++  $hasSymbolAddress: (symName) => {
++    var global = GOT[symName];
++    return global ? global.value != {{{ UNDEFINED_ADDR }}} : !!getMainModuleExport(symName);
++  },
++
++  // Returns the `WebAssembly.Global` that holds the address of `symName`.
++  $getSymbolAddressGlobal__internal: true,
++  $getSymbolAddressGlobal__deps: ['$GOT', '$unresolvedSymbols', '$getMainModuleExport', '$exportToAddress'],
++  $getSymbolAddressGlobal: (symName) => {
++    var global = GOT[symName];
++    if (!global) {
++#if DYLINK_DEBUG == 2
++      dbg(`new GOT entry: ${symName}`);
++#endif
++      var exp = getMainModuleExport(symName);
++      global = GOT[symName] = new WebAssembly.Global({'value': '{{{ POINTER_WASM_TYPE }}}', 'mutable': true}, exp ? exportToAddress(exp) : {{{ UNDEFINED_ADDR }}});
++      if (!exp) {
++        unresolvedSymbols.add(symName);
++      }
++    }
++    return global;
++  },
++
++  $setSymbolAddress__internal: true,
++  $setSymbolAddress__deps: ['$GOT'],
++  $setSymbolAddress: (symName, addr) => {
++    var global = GOT[symName];
++    if (global) {
++      global.value = addr;
++    } else {
++      GOT[symName] = new WebAssembly.Global({'value': '{{{ POINTER_WASM_TYPE }}}', 'mutable': true}, addr);
++    }
++  },
++
++  // Called once the main module has been instantiated.
++  $setMainModuleExports__internal: true,
++  $setMainModuleExports__deps: ['$GOT', '$mainModuleExports', '$getMainModuleExport', '$exportToAddress'],
++  $setMainModuleExports: (exports) => {
++    mainModuleExports = exports;
++    // Addresses requested while instantiating the main module itself.
++    for (var symName in GOT) {
++      var global = GOT[symName];
++      if (global.value == {{{ UNDEFINED_ADDR }}}) {
++        var value = getMainModuleExport(symName);
++        if (value) {
++          global.value = exportToAddress(value);
++        }
++      }
++    }
++  },
++
+   // Proxy handler used for GOT.mem and GOT.func imports.  Each of these
+   // imports is fulfilled dynamically via the `get` method of this proxy
+   // handler.  We abuse the `target` of the Proxy in order to pass the set of
+   // weak imports to the handler.
+   $GOTHandler__internal: true,
+-  $GOTHandler__deps: ['$GOT', '$unresolvedSymbols'],
++  $GOTHandler__deps: ['$getSymbolAddressGlobal'],
+   $GOTHandler: {
+     get(weakImports, symName) {
+-      var rtn = GOT[symName];
+-      if (!rtn) {
+-#if DYLINK_DEBUG == 2
+-        dbg(`new GOT entry: ${symName}`);
+-#endif
+-        rtn = GOT[symName] = new WebAssembly.Global({'value': '{{{ POINTER_WASM_TYPE }}}', 'mutable': true}, {{{ UNDEFINED_ADDR }}});
+-        unresolvedSymbols.add(symName);
+-      }
++      var rtn = getSymbolAddressGlobal(symName);
+       if (!weakImports.has(symName)) {
+         // Any non-weak reference to a symbol marks it as `required`, which
+         // enabled `reportUndefinedSymbols` to report undefined symbol errors
+@@ -229,7 +305,7 @@ var LibraryDylink = {
+   },
+ 
+   $updateGOT__internal: true,
+-  $updateGOT__deps: ['$GOT', '$isInternalSym', '$addFunction'],
++  $updateGOT__deps: ['$GOT', '$isInternalSym', '$hasSymbolAddress', '$setSymbolAddress', '$exportToAddress'],
+   $updateGOT__docs: '/** @param {boolean=} replace */',
+   $updateGOT: (exports, replace) => {
+ #if DYLINK_DEBUG
+@@ -248,17 +324,11 @@ var LibraryDylink = {
+       }
+ #endif
+ 
+-      var existingEntry = GOT[symName] && GOT[symName].value != {{{ UNDEFINED_ADDR }}};
+-      if (replace || !existingEntry) {
++      if (replace || !hasSymbolAddress(symName)) {
+ #if DYLINK_DEBUG == 2
+         dbg(`updateGOT: before: ${symName} : ${GOT[symName]?.value}`);
+ #endif
+-        var newValue;
+-        if (typeof value == 'function') {
+-          newValue = {{{ to64('addFunction(value)') }}};
+-        } else if (typeof value.value == {{{ POINTER_JS_TYPE }}}) {
+-          newValue = value;
+-        } else {
++        if (typeof value != 'function' && typeof value.value != {{{ POINTER_JS_TYPE }}}) {
+           // The GOT can only contain addresses (i.e data addresses or function
+           // addresses so we currently ignore other types export here.
+ #if DYLINK_DEBUG
+@@ -266,15 +336,15 @@ var LibraryDylink = {
+ #endif
+           continue;
+         }
++        var newValue = exportToAddress(value);
+ #if DYLINK_DEBUG == 2
+         dbg(`updateGOT:  after: ${symName} : ${newValue} (${value})`);
+ #endif
+-        GOT[symName] ??= new WebAssembly.Global({'value': '{{{ POINTER_WASM_TYPE }}}', 'mutable': true});
+-        GOT[symName].value = newValue;
++        setSymbolAddress(symName, newValue);
+       }
+ #if DYLINK_DEBUG
+-      else if (GOT[symName].value != value) {
+-        dbg(`updateGOT: EXISTING SYMBOL: ${symName} : ${GOT[symName].value} (${value})`);
++      else if (GOT[symName]?.value != value) {
++        dbg(`updateGOT: EXISTING SYMBOL: ${symName} : ${GOT[symName]?.value} (${value})`);
+       }
+ #endif
+     }
+@@ -1367,6 +1437,12 @@ var LibraryDylink = {
+     var symDict = lib.exports;
+     var symName = Object.keys(symDict)[symbolIndex];
+     var sym = symDict[symName];
++#if ASYNCIFY
++    // Asyncify wraps exports, and we need to look through those wrappers.
++    if (sym.orig) {
++      sym = sym.orig;
++    }
++#endif
+     var result = addFunction(sym, sym.sig);
+ #if DYLINK_DEBUG
+     dbg(`_dlsym_catchup: result=${result}`);
+diff --git a/src/preamble.js b/src/preamble.js
+index 98dcd9c55..a6b88f48c 100644
+--- a/src/preamble.js
++++ b/src/preamble.js
+@@ -765,7 +765,7 @@ function getWasmImports() {
+     assignWasmExports(wasmExports);
+ 
+ #if MAIN_MODULE
+-    updateGOT(origExports);
++    setMainModuleExports(origExports);
+ #endif
+ 
+ #if EXPORTED_RUNTIME_METHODS.has('wasmExports')
+diff --git a/tools/link.py b/tools/link.py
+index bf8557e3e..cbcb385e9 100644
+--- a/tools/link.py
++++ b/tools/link.py
+@@ -1277,6 +1277,7 @@ def phase_linker_setup(options, linker_args):  # noqa: C901, PLR0912, PLR0915
+       '$reportUndefinedSymbols',
+       '$relocateExports',
+       '$GOTHandler',
++      '$setMainModuleExports',
+     ]
+     # shared modules need memory utilities to allocate their memory
+     settings.ALLOW_TABLE_GROWTH = 1
+-- 
+2.54.0 (Apple Git-157)
+
