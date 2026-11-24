@@ -1905,6 +1905,54 @@ def test_relative_index_url(selenium, tmp_path):
 
 
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
+@pytest.mark.parametrize("wasm", ["truncated", "missing"])
+def test_loadPyodide_rejects_when_wasm_fails(selenium, tmp_path, wasm):
+    # loadPyodide used to stay pending forever when pyodide.asm.wasm could not
+    # be instantiated, and a missing file ended Node with an unhandled rejection.
+    for name in [
+        "pyodide.mjs",
+        "pyodide.asm.mjs",
+        "pyodide-lock.json",
+        "python_stdlib.zip",
+    ]:
+        shutil.copy(DIST_PATH / name, tmp_path / name)
+    if wasm == "truncated":
+        data = (DIST_PATH / "pyodide.asm.wasm").read_bytes()
+        (tmp_path / "pyodide.asm.wasm").write_bytes(data[:4096])
+
+    result = subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "-e",
+            f"""
+            import {{ loadPyodide }} from "{tmp_path / "pyodide.mjs"}";
+            const timer = setTimeout(() => {{
+                console.log("still pending");
+                process.exit(1);
+            }}, 30000);
+            try {{
+                await loadPyodide({{ indexURL: "{tmp_path}/" }});
+                console.log("loaded");
+            }} catch (e) {{
+                console.log("rejected:", e.name);
+            }}
+            clearTimeout(timer);
+            """,
+        ],
+        capture_output=True,
+        encoding="utf8",
+        check=False,
+    )
+
+    expected = "CompileError" if wasm == "truncated" else "Error"
+    assert result.stdout.strip().split("\n")[-1] == f"rejected: {expected}", (
+        result.stdout + result.stderr
+    )
+    assert result.returncode == 0
+
+
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
 def test_index_url_calculation_source_map(selenium):
     import os
 

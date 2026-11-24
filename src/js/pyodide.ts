@@ -379,7 +379,10 @@ async function instantiatePyodideModule(
   createPyodideModule: CreatePyodideModuleFn,
   emscriptenSettings: EmscriptenSettings,
 ): Promise<PyodideModule> {
-  const module = await createPyodideModule(emscriptenSettings);
+  const module = await Promise.race([
+    createPyodideModule(emscriptenSettings),
+    emscriptenSettings.instantiateWasmFailed,
+  ]);
 
   // Handle early exit
   if (emscriptenSettings.exitCode !== undefined) {

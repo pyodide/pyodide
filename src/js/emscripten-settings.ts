@@ -36,6 +36,11 @@ export interface EmscriptenSettings {
   INITIAL_MEMORY: number;
   wasmMemory?: WebAssembly.Memory;
   exitCode?: number;
+  /**
+   * Rejects if our instantiateWasm hook fails. Emscripten gives the hook no
+   * way to report an error, so loadPyodide races the module promise with it.
+   */
+  readonly instantiateWasmFailed: Promise<never>;
 }
 
 /**
@@ -47,6 +52,10 @@ export function createSettings(
   config: PyodideConfigWithDefaults,
 ): EmscriptenSettings {
   const API = { config, runtimeEnv: RUNTIME_ENV } as API;
+  let rejectInstantiateWasm!: (e: any) => void;
+  const instantiateWasmFailed = new Promise<never>((_, reject) => {
+    rejectInstantiateWasm = reject;
+  });
   const settings: EmscriptenSettings = {
     noImageDecoding: true,
     noAudioDecoding: true,
@@ -73,7 +82,11 @@ export function createSettings(
     // means dependency resolution has already failed and we want to throw an
     // error anyways.
     locateFile: (path: string) => config.indexURL + path,
-    instantiateWasm: getInstantiateWasmFunc(config.indexURL),
+    instantiateWasm: getInstantiateWasmFunc(
+      config.indexURL,
+      rejectInstantiateWasm,
+    ),
+    instantiateWasmFailed,
   };
   return settings;
 }
@@ -201,6 +214,7 @@ function getFileSystemInitializationFuncs(
 
 function getInstantiateWasmFunc(
   indexURL: string,
+  onError: (e: any) => void,
 ): EmscriptenSettings["instantiateWasm"] {
   // @ts-ignore
   if (DISABLE_INSTANTIATE_WASM) {
@@ -210,6 +224,11 @@ function getInstantiateWasmFunc(
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
+  // These are awaited in the hook below, which reports a failure through
+  // onError. Until then, keep a failed read from being an unhandled rejection
+  // (which ends the process in Node).
+  binary?.catch(() => {});
+  response?.catch(() => {});
   const jsvErrorImportPromise = getJsvErrorImport();
   return function (
     imports: { [key: string]: { [key: string]: any } },
@@ -219,17 +238,17 @@ function getInstantiateWasmFunc(
     ) => void,
   ) {
     (async function () {
-      const {
-        Jsv_GetError_import,
-        JsvError_Check,
-        Jsv_GetNoValue_import,
-        JsvNoValue_Check,
-      } = await jsvErrorImportPromise;
-      imports.env.Jsv_GetError_import = Jsv_GetError_import;
-      imports.env.JsvError_Check = JsvError_Check;
-      imports.env.Jsv_GetNoValue_import = Jsv_GetNoValue_import;
-      imports.env.JsvNoValue_Check = JsvNoValue_Check;
       try {
+        const {
+          Jsv_GetError_import,
+          JsvError_Check,
+          Jsv_GetNoValue_import,
+          JsvNoValue_Check,
+        } = await jsvErrorImportPromise;
+        imports.env.Jsv_GetError_import = Jsv_GetError_import;
+        imports.env.JsvError_Check = JsvError_Check;
+        imports.env.Jsv_GetNoValue_import = Jsv_GetNoValue_import;
+        imports.env.JsvNoValue_Check = JsvNoValue_Check;
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {
           res = await WebAssembly.instantiateStreaming(response, imports);
@@ -239,8 +258,8 @@ function getInstantiateWasmFunc(
         const { instance, module } = res;
         successCallback(instance, module);
       } catch (e) {
-        console.warn("wasm instantiation failed!");
-        console.warn(e);
+        // Emscripten would otherwise wait forever for successCallback.
+        onError(e);
       }
     })();
 
