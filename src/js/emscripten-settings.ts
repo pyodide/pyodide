@@ -7,6 +7,7 @@ import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type PyodideModule, type FSType } from "./types";
 import { getJsvErrorImport } from "generated/jsverror";
 import { RUNTIME_ENV } from "./environments";
+import { createResolvable, type ResolvablePromise } from "./common/resolveable";
 
 /**
  * @private
@@ -36,7 +37,7 @@ export interface EmscriptenSettings {
   INITIAL_MEMORY: number;
   wasmMemory?: WebAssembly.Memory;
   exitCode?: number;
-  readonly instantiateWasmFailed: Promise<never>;
+  readonly instantiateWasmFailed: ResolvablePromise;
 }
 
 /**
@@ -48,10 +49,7 @@ export function createSettings(
   config: PyodideConfigWithDefaults,
 ): EmscriptenSettings {
   const API = { config, runtimeEnv: RUNTIME_ENV } as API;
-  let rejectInstantiateWasm!: (e: any) => void;
-  const instantiateWasmFailed = new Promise<never>((_, reject) => {
-    rejectInstantiateWasm = reject;
-  });
+  const instantiateWasmFailed = createResolvable();
   const settings: EmscriptenSettings = {
     noImageDecoding: true,
     noAudioDecoding: true,
@@ -80,7 +78,7 @@ export function createSettings(
     locateFile: (path: string) => config.indexURL + path,
     instantiateWasm: getInstantiateWasmFunc(
       config.indexURL,
-      rejectInstantiateWasm,
+      instantiateWasmFailed.reject,
     ),
     instantiateWasmFailed,
   };
@@ -220,9 +218,11 @@ function getInstantiateWasmFunc(
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
-  // These are awaited in the hook below, which reports a failure through
-  // onError. Until then, keep a failed read from being an unhandled rejection
-  // (which ends the process in Node).
+  // The read starts now, but Emscripten calls the hook below later, and the
+  // hook awaits jsvErrorImportPromise before it awaits these. If the read fails
+  // first (for example pyodide.asm.wasm is missing in Node), the rejection is
+  // unhandled until then and Node ends the process. The hook still gets the
+  // error when it awaits them and passes it to onError.
   binary?.catch(() => {});
   response?.catch(() => {});
   const jsvErrorImportPromise = getJsvErrorImport();
