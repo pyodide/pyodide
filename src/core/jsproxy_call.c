@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include "jsproxy_call.h"
 #include "error_handling.h"
 #include "js2python.h"
