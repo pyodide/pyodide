@@ -93,9 +93,13 @@ def test_syncify_not_supported(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     selenium.run_js(
         """
-        // Ensure that it's not supported by deleting WebAssembly.Suspender
-        delete WebAssembly.Suspender;
-        delete WebAssembly.Suspending;
+        // Ensure that it's not supported by deleting WebAssembly.Suspender.
+        // Do it from a page script: Firefox runs WebDriver scripts in a
+        // sandbox with its own copy of the JS builtins.
+        const script = document.createElement("script");
+        script.textContent =
+          "delete WebAssembly.Suspender; delete WebAssembly.Suspending;";
+        document.head.appendChild(script);
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
           async () => await pyodide._api.pyodide_code.eval_code.callPromising("1+1"),
@@ -259,9 +263,58 @@ def test_syncify_getset(selenium):
 
 @requires_jspi
 @pytest.mark.requires_dynamic_linking
-@pytest.mark.skip(reason="Will fix in a followup")
 @run_in_pyodide
-def test_syncify_ctypes(selenium):
+def test_syncify_ctypes_closure(selenium):
+    from ctypes import (
+        POINTER,
+        PYFUNCTYPE,
+        Structure,
+        byref,
+        c_char_p,
+        c_int,
+        py_object,
+        pythonapi,
+    )
+
+    from pyodide.code import run_js
+    from pyodide.ffi import run_sync
+
+    test = run_js(
+        """
+        (async function test() {
+            await sleep(1000);
+            return 7;
+        })
+        """
+    )
+
+    PyCFunction = PYFUNCTYPE(py_object, py_object, py_object)
+
+    class PyMethodDef(Structure):
+        _fields_ = [
+            ("ml_name", c_char_p),
+            ("ml_meth", PyCFunction),
+            ("ml_flags", c_int),
+            ("ml_doc", c_char_p),
+        ]
+
+    @PyCFunction
+    def wrapper(self, arg):
+        return run_sync(test())
+
+    METH_O = 0x0008
+    method_def = PyMethodDef(b"wrapper", wrapper, METH_O, None)
+    pythonapi.PyCFunction_NewEx.argtypes = [POINTER(PyMethodDef), py_object, py_object]
+    pythonapi.PyCFunction_NewEx.restype = py_object
+    func = pythonapi.PyCFunction_NewEx(byref(method_def), None, None)
+    assert func(None) == 7
+
+
+@requires_jspi
+@pytest.mark.requires_dynamic_linking
+@pytest.mark.skip(reason="ffi_call() in libffi does not work with JSPI yet")
+@run_in_pyodide
+def test_syncify_ctypes_call(selenium):
     from pyodide.code import run_js
     from pyodide.ffi import run_sync
 
@@ -672,7 +725,7 @@ def test(n):
 """
 
 
-@pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
+@pytest.mark.xfail_browsers(safari="requires jspi")
 @pytest.mark.requires_dynamic_linking
 @pytest.mark.parametrize(
     "script", [LEAK_SCRIPT1, LEAK_SCRIPT2, LEAK_SCRIPT3, LEAK_SCRIPT4]
@@ -871,7 +924,7 @@ def test_return_promising_no_crash(selenium):
     """
     selenium.run_js(
         """
-        globalThis.f = function f() {
+        self.f = function f() {
             return task.callPromising();
         };
         pyodide.runPython(`

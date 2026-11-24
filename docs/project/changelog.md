@@ -28,6 +28,19 @@ myst:
   `WebAssembly.SuspendError` that the browser engine raises.
   {pr}`6580`
 
+- {{ Update }} Upgraded libffi to 3.8.1. This fixes `ctypes` calls and
+  callbacks failing once the WebAssembly heap has grown past 2 GiB.
+  {pr}`6560`
+
+- {{ Feature }} The `sqlite3` module now supports loadable extensions:
+  `sqlite3.Connection.enable_load_extension()` and
+  `sqlite3.Connection.load_extension()` are now available.
+  {pr}`6533`
+
+- {{ Enhancement }} JSPI is now tested on Firefox, which enables it by default
+  since Firefox 160.
+  {pr}`6572`
+
 ### JavaScript API
 
 - {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
@@ -39,6 +52,12 @@ myst:
   never worked as intended: Comlink proxies were always detected like ordinary
   JavaScript objects.
   {pr}`6541`
+
+### Python API
+
+- {{ Fix }} Tracebacks for code run with a `filename` now show carets under the
+  right characters when the source was indented.
+  {pr}`6576`
 
 ### Python / JavaScript type conversions
 

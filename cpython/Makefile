@@ -12,7 +12,8 @@ PYLIB=libpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS).a
 
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/libffi/libffi
-LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
+# v3.8.1
+LIBFFI_COMMIT=de7afe7aa9e8ab7ac36429428a7222caae1e7988
 
 HIWIREBUILD=$(ROOT)/build/hiwire
 HIWIREREPO=https://github.com/pyodide/hiwire
@@ -156,7 +157,7 @@ $(PYINSTALL)/lib/libffi.a :
 		&& git fetch --depth 1 $(LIBFFIREPO) $(LIBFFI_COMMIT) \
 		&& git checkout FETCH_HEAD \
 		&& . $(PYODIDE_EMSDK_DIR)/emsdk_env.sh \
-		&& ./testsuite/emscripten/build.sh --wasm-bigint \
+		&& TARGET_HOST=wasm32 ./testsuite/emscripten/build.sh \
 		&& make install \
 	)
 	cp $(FFIBUILD)/target/include/*.h $(PYBUILD)/Include/
@@ -268,12 +269,16 @@ python-makefile: $(PYBUILD)/Makefile
 
 CONFIG_SITE_FILE=./Tools/wasm/emscripten/config.site-wasm32-emscripten
 
-$(PYBUILD)/Makefile: $(PYBUILD)/.patched
+$(PYBUILD)/Makefile: $(PYBUILD)/.patched $(PYINSTALL)/lib/libsqlite3.a
 	# ac_cv_func_shutdown :
 	#   Emscripten does not support shutdown syscall, but we want to enable it
 	#   to enable shutdown method in NodeSockFS.
 	cd $(PYBUILD) && $(SED) -i 's/^ac_cv_func_shutdown=no//' $(CONFIG_SITE_FILE)
 
+	# --disable-test-modules :
+	#   Don't link _testcapi and the other C test modules into the main module.
+	#   The test package builds them as side modules.
+	#
 	# --enable-big-digits=30 :
 	#   Python integers have "digits" of size 15 by default on systems with 32
 	#   bit pointers and size 30 on systems with 16 bit pointers. Python uses
@@ -281,6 +286,13 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 	#   30 on systems with 16 bit pointers. WASM has 32 bit pointers so Python
 	#   will default to the size 15 digits but WASM has native 64 bit arithmetic
 	#   so it is more efficient to use 30 bit digits.
+	#
+	# LIBSQLITE3_CFLAGS / LIBSQLITE3_LIBS :
+	#   Without these, configure checks the sqlite3 features against the
+	#   Emscripten sqlite3 port (-sUSE_SQLITE3), which is built with
+	#   SQLITE_OMIT_LOAD_EXTENSION. Point it to our own build of sqlite3, which
+	#   is the one we actually link with, so that
+	#   --enable-loadable-sqlite-extensions works.
 	( \
 		cd $(PYBUILD); \
 		CONFIG_SITE=$(CONFIG_SITE_FILE) READELF=true emconfigure \
@@ -288,11 +300,15 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 			  CFLAGS="${PYTHON_CFLAGS}" \
 			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1" \
 			  PLATFORM_TRIPLET="$(PLATFORM_TRIPLET)" \
+			  LIBSQLITE3_CFLAGS="-I$(PYINSTALL)/include/sqlite3" \
+			  LIBSQLITE3_LIBS="-L$(PYINSTALL)/lib -lsqlite3" \
+			  --enable-loadable-sqlite-extensions \
 			  --without-pymalloc \
 			  --disable-shared \
 			  --disable-ipv6 \
 			  --enable-big-digits=30 \
 			  --enable-optimizations \
+			  --disable-test-modules \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(PYBUILD)/config.guess) \
 			  --prefix=$(PYINSTALL)  \
