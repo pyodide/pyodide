@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include "python2js.h"
 #include "Python.h"
 #include "docstring.h"
