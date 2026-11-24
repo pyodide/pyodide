@@ -43,6 +43,12 @@ myst:
   JavaScript objects.
   {pr}`6541`
 
+### Python API
+
+- {{ Fix }} Tracebacks for code run with a `filename` now show carets under the
+  right characters when the source was indented.
+  {pr}`6576`
+
 ### Python / JavaScript type conversions
 
 - {{ Enhancement }} Pyodide now supports `Float16Array`. It will translate half

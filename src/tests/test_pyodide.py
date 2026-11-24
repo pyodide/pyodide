@@ -1,7 +1,9 @@
+import linecache
 import re
 import shutil
 import subprocess
 import sys
+import traceback
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from textwrap import dedent
@@ -220,6 +222,45 @@ def test_eval_code_dedent():
     # dedent=False still works for source that is already flush with
     # column 0.
     assert eval_code("1 + 1", {}, dedent=False) == 2
+
+
+def _last_frame_lines(filename: str, source: str, **kwargs: Any) -> list[str]:
+    """Run ``source`` with ``eval_code``, which must raise a ``NameError``.
+    Return the source line and the marker line that the traceback shows for the
+    innermost frame in ``filename``.
+    """
+    try:
+        with pytest.raises(NameError) as excinfo:
+            eval_code(source, {}, filename=filename, **kwargs)
+        lines = "".join(traceback.format_exception(excinfo.value)).splitlines()
+    finally:
+        linecache.cache.pop(filename, None)
+    last = max(i for i, line in enumerate(lines) if f'File "{filename}"' in line)
+    assert lines[last].endswith("line 3, in <module>")
+    return lines[last + 1 : last + 3]
+
+
+def test_eval_code_dedent_traceback_carets():
+    # The leading blank line and the indentation are what a JS template literal
+    # gives runPython. linecache has to hold the dedented text that was
+    # compiled, or the column offsets point at the wrong characters.
+    source = """
+        x = 1
+        print(x + undefined_name)
+    """
+    assert _last_frame_lines("dedent_carets.py", source) == [
+        "    print(x + undefined_name)",
+        "              ^^^^^^^^^^^^^^",
+    ]
+
+
+def test_eval_code_no_dedent_traceback_carets():
+    # Control: source that is already flush with column 0 and dedent=False.
+    source = "\nx = 1\nprint(x + undefined_name)\n"
+    assert _last_frame_lines("no_dedent_carets.py", source, dedent=False) == [
+        "    print(x + undefined_name)",
+        "              ^^^^^^^^^^^^^^",
+    ]
 
 
 def test_eval_code_locals():
@@ -2127,14 +2168,13 @@ def test_runpython_filename(selenium, run_python):
         """\
         File "a.py", line 3, in f1
           f2()
-
+          ~~^^
         File "a.py", line 6, in f2
           raise Exception("oops")
-          ^^^^^^^^^^^^^^^
         """
     ).strip()
 
-    assert dedent("\n".join(msg.splitlines()[-7:-1])) == expected
+    assert dedent("\n".join(msg.splitlines()[-6:-1])) == expected
     msg = selenium.run_js(
         """
         let f1;
