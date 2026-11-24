@@ -1,5 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include <emscripten.h>
 
 static PyObject*
 zero(void)
@@ -69,8 +70,15 @@ test_stack_switch_suspend_error_onward(PyObject* func)
 
 typedef PyObject* (*OneArgFunc)(PyObject* arg);
 
-PyObject*
-test_stack_switch_js_trampoline(OneArgFunc f, PyObject* arg);
+typedef PyObject* (*OneArgFunc)(PyObject* arg);
+
+// testing trampoline to force suspend error
+// clang-format off
+EM_JS(PyObject*, test_stack_switch_js_trampoline, (OneArgFunc f, PyObject* arg),
+{
+  return wasmTable.get(f)(arg);
+})
+// clang-format on
 
 static PyObject*
 test_stack_switch_suspend_error(PyObject* mod, PyObject* func)
