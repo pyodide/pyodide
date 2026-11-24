@@ -62,17 +62,21 @@ set_two_call(PyObject* self, PyObject* value)
 }
 
 static PyObject*
-test_stack_switch_suspend_error_onward(PyObject* func) {
+test_stack_switch_suspend_error_onward(PyObject* func)
+{
   return PyObject_CallNoArgs(func);
 }
 
-typedef PyObject*(*OneArgFunc)(PyObject* arg);
+typedef PyObject* (*OneArgFunc)(PyObject* arg);
 
-PyObject* test_stack_switch_js_trampoline(OneArgFunc f, PyObject* arg);
+PyObject*
+test_stack_switch_js_trampoline(OneArgFunc f, PyObject* arg);
 
 static PyObject*
-test_stack_switch_suspend_error(PyObject* mod, PyObject* func) {
-  return test_stack_switch_js_trampoline(test_stack_switch_suspend_error_onward, func);
+test_stack_switch_suspend_error(PyObject* mod, PyObject* func)
+{
+  return test_stack_switch_js_trampoline(test_stack_switch_suspend_error_onward,
+                                         func);
 }
 
 // These two structs are the same but it's important that they have to be
@@ -110,7 +114,9 @@ static PyMethodDef Test_Methods[] = {
   { "kwargs1", (PyCFunction)one, METH_VARARGS | METH_KEYWORDS },
   { "kwargs2", (PyCFunction)two, METH_VARARGS | METH_KEYWORDS },
   { "kwargs3", (PyCFunction)three, METH_VARARGS | METH_KEYWORDS },
-  { "test_stack_switch_suspend_error", (PyCFunction)test_stack_switch_suspend_error, METH_O },
+  { "test_stack_switch_suspend_error",
+    (PyCFunction)test_stack_switch_suspend_error,
+    METH_O },
   { NULL, NULL, 0, NULL }
 };
 

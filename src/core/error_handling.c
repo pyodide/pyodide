@@ -236,11 +236,14 @@ trigger_fatal_error(PyObject* mod, PyObject* _args)
 typedef PyObject* (*OneArgFunc)(PyObject* arg);
 
 // testing trampoline to force suspend error
-EM_JS(PyObject*, test_stack_switch_js_trampoline_js, (OneArgFunc f, PyObject* arg), {
-  return wasmTable.get(f)(arg);
-})
+EM_JS(PyObject*,
+      test_stack_switch_js_trampoline_js,
+      (OneArgFunc f, PyObject* arg),
+      { return wasmTable.get(f)(arg); })
 
-PyObject* test_stack_switch_js_trampoline(OneArgFunc f, PyObject* arg) {
+PyObject*
+test_stack_switch_js_trampoline(OneArgFunc f, PyObject* arg)
+{
   return test_stack_switch_js_trampoline_js(f, arg);
 }
 

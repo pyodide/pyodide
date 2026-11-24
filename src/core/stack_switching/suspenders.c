@@ -40,8 +40,7 @@ if (jspiSupported) {
 // clang-format on
 
 // syncify_catch_trampoline calls suspendForPromise
-__externref_t
-syncify_catch_trampoline(__externref_t);
+__externref_t syncify_catch_trampoline(__externref_t);
 
 // This is the simplest way I came up with for giving the asm in
 // syncify_catch_trampoline access to JS_ERROR. Maybe there is some tidier
@@ -49,16 +48,16 @@ syncify_catch_trampoline(__externref_t);
 
 void set_js_error_for_syncify_catch_trampoline(__externref_t);
 
-void jslib_init_suspenders(void) {
+void
+jslib_init_suspenders(void)
+{
   set_js_error_for_syncify_catch_trampoline(JS_ERROR);
 }
 
 // Called by syncify_catch_trampoline when it catches an error. Promise
 // rejections are already handled in inner(), so the only thing that reaches
 // here is a SuspendError, which is never a fatal error.
-EM_JS(void, set_syncify_error, (__externref_t e), {
-  Module.syncify_error = e;
-})
+EM_JS(void, set_syncify_error, (__externref_t e), { Module.syncify_error = e; })
 
 EM_JS(void, JsvPromise_Syncify_handleError, (void), {
   if (!Module.syncify_error) {
