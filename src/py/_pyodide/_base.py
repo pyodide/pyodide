@@ -135,7 +135,6 @@ def _parse_and_compile_gen(
     flags: int = 0x0,
     dont_inherit: bool = False,
     optimize: int = -1,
-    dedent: bool = True,
 ) -> Generator[ast.Module, ast.Module, CodeType]:
     """Parse ``source``, then yield the AST, then compile the AST and return the
     code object.
@@ -144,10 +143,6 @@ def _parse_and_compile_gen(
     manipulations. Because generators are annoying to call, this is wrapped in
     the Executor class.
     """
-    # handle mis-indented input from multi-line strings
-    if dedent:
-        source = _dedent(source)
-
     mod = compile(source, filename, mode, flags | ast.PyCF_ONLY_AST)
 
     # Pause here, allow caller to transform ast if they like.
@@ -279,6 +274,8 @@ class CodeRunner:
         dedent: bool = True,
     ):
         self._compiled = False
+        if dedent:
+            source = _dedent(source)
         self._source = source
         self._gen = _parse_and_compile_gen(
             source,
@@ -289,7 +286,6 @@ class CodeRunner:
             flags=flags,
             dont_inherit=dont_inherit,
             optimize=optimize,
-            dedent=dedent,
         )
         self.ast = next(self._gen)
 
