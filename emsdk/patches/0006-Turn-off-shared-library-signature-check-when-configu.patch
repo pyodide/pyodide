@@ -1,7 +1,7 @@
 From 2caf9cc906c34caf40edcfa22190606c6f9babfa Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 31 Jul 2026 16:48:39 -0700
-Subject: [PATCH 6/7] Turn off shared library signature check when configuring
+Subject: [PATCH 6/8] Turn off shared library signature check when configuring
 
 `AC_CHECK_LIB(somelib, func)` writes the following to conftest.c:
 

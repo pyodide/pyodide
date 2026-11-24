@@ -1,7 +1,7 @@
 From 3940de30c5c0b95619b2a434e78850729f75aa81 Mon Sep 17 00:00:00 2001
 From: Gyeongjae Choi <gyeongjae@cloudflare.com>
 Date: Mon, 16 Nov 2026 20:30:00 +0900
-Subject: [PATCH 7/7] Cache convertJsFunctionToWasm wrapper module per
+Subject: [PATCH 7/8] Cache convertJsFunctionToWasm wrapper module per
  signature
 
 https://github.com/emscripten-core/emscripten/pull/28274
