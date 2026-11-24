@@ -74,6 +74,8 @@ def _last_assign_to_expr(mod: ast.Module) -> None:
         # In this case there can be multiple targets as in `a = b = 1`.
         # We just take the first one.
         target = last_node.targets[0]
+    elif isinstance(last_node, ast.AnnAssign) and last_node.value is None:
+        return
     elif isinstance(last_node, ast.AugAssign | ast.AnnAssign):
         target = last_node.target
     else:

@@ -180,6 +180,11 @@ def test_eval_code():
     )
     assert eval_code("a = b = 2", ns, return_mode="last_expr_or_assign") == 2
 
+    # a bare annotation binds nothing, so there is no value to return
+    assert eval_code("z: int", {}, return_mode="last_expr_or_assign") is None
+    assert eval_code("z = 5\nz: int", {}, return_mode="last_expr_or_assign") is None
+    assert eval_code("z: int = 1", {}, return_mode="last_expr_or_assign") == 1
+
     # 'none' return_mode, (useless) semicolon
     assert eval_code("1 + 1", ns, return_mode="none") is None
     assert eval_code("x = 1 + 1", ns, return_mode="none") is None
