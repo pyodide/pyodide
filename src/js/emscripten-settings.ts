@@ -254,7 +254,6 @@ function getInstantiateWasmFunc(
         const { instance, module } = res;
         successCallback(instance, module);
       } catch (e) {
-        // Emscripten would otherwise wait forever for successCallback.
         onError(e);
       }
     })();
