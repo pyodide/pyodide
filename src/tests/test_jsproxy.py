@@ -98,6 +98,8 @@ def test_jsproxy_getattr_errors(selenium):
         o.a  # noqa: B018
 
 
+# The actual regression is the proxy leak detected by strict cleanup after
+# this test finishes.
 @run_in_pyodide
 def test_jsexception_through_generator_contextmanager(selenium):
     from contextlib import contextmanager
