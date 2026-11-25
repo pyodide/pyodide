@@ -27,6 +27,15 @@ myst:
   callbacks failing once the WebAssembly heap has grown past 2 GiB.
   {pr}`6560`
 
+- {{ Feature }} The `sqlite3` module now supports loadable extensions:
+  `sqlite3.Connection.enable_load_extension()` and
+  `sqlite3.Connection.load_extension()` are now available.
+  {pr}`6533`
+
+- {{ Enhancement }} JSPI is now tested on Firefox, which enables it by default
+  since Firefox 160.
+  {pr}`6572`
+
 ### JavaScript API
 
 - {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
@@ -34,10 +43,25 @@ myst:
   total heap reaches the limit, further allocations fail with a `MemoryError`.
   {pr}`6483`
 
+- {{ Fix }} {js:func}`~exports.loadPyodide` now rejects when `pyodide.asm.wasm`
+  fails to load or instantiate. Before, it never settled.
+  {pr}`6584`
+
 - {{ API }} `pyodide.registerComlink()` is deprecated and has no effect. It
   never worked as intended: Comlink proxies were always detected like ordinary
   JavaScript objects.
   {pr}`6541`
+
+### Python API
+
+- {{ Fix }} Tracebacks for code run with a `filename` now show carets under the
+  right characters when the source was indented.
+  {pr}`6576`
+
+- {{ Fix }} {py:func}`pyodide.code.eval_code` with
+  `return_mode="last_expr_or_assign"` now returns `None` instead of raising a
+  `NameError` when the last statement is a bare annotation such as `x: int`.
+  {pr}`6583`
 
 ### Python / JavaScript type conversions
 
