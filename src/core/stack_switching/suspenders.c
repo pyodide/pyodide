@@ -2,8 +2,22 @@
 #include "emscripten.h"
 #include "jslib.h"
 
+// The actual function that suspends.
+//
+// Promise rejections are caught by the JS try/catch in inner() below. However,
+// a SuspendError (thrown when there is no suspender on the stack) is raised by
+// the wasm-to-js wrapper itself before any JS frame runs, so no JS try/catch
+// can see it. Thus, we additionally catch errors from wasm in
+// syncify_catch_trampoline, where we do approximately:
+//
+// try {
+//    return suspendForPromise(x);
+// } catch(e) {
+//    return set_syncify_error(e);
+// }
+
 // clang-format off
-EM_JS(JsVal, syncifyHandler, (JsVal x), {
+EM_JS(JsVal, suspendForPromise, (JsVal x), {
   return Module.error;
 }
 
@@ -19,10 +33,20 @@ async function inner(x) {
   }
 }
 if (jspiSupported) {
-  syncifyHandler = new WebAssembly.Suspending(inner);
+  suspendForPromise = new WebAssembly.Suspending(inner);
 }
 )
 // clang-format on
+
+// syncify_catch_trampoline calls suspendForPromise
+__externref_t syncify_catch_trampoline(__externref_t);
+
+// Called by syncify_catch_trampoline when it catches a SuspendError.
+EM_JS(__externref_t, set_syncify_error, (__externref_t e), {
+  // No fatal guard needed because the error must be a SuspendError.
+  Module.syncify_error = e;
+  return Module.error;
+})
 
 EM_JS(void, JsvPromise_Syncify_handleError, (void), {
   if (!Module.syncify_error) {
@@ -78,7 +102,7 @@ JsvPromise_Syncify(JsVal promise)
   if (JsvError_Check(state)) {
     return JS_ERROR;
   }
-  JsVal result = syncifyHandler(promise);
+  JsVal result = syncify_catch_trampoline(promise);
   restoreState(state);
   if (JsvError_Check(result)) {
     JsvPromise_Syncify_handleError();

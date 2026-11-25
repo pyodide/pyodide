@@ -1705,22 +1705,16 @@ def run_sync(x: Awaitable[T]) -> T:
     current Python call stack was entered via :js:func:`pyodide.runPythonAsync`,
     by calling an async Python function, or via
     :js:func:`~pyodide.ffi.PyCallable.callPromising`.
-
-    .. admonition:: Experimental
-        :class: warning
-
-        This feature is not yet stable.
     """
     raise NotImplementedError
 
 
 def can_run_sync() -> bool:
-    """Returns ``True`` if :py:func:`run_sync` is available and ``False`` if not.
+    """Returns ``True`` if :py:func:`run_sync` is available and will probably succeed and ``False`` if not.
 
-    .. admonition:: Experimental
-        :class: warning
-
-        This feature is not yet stable.
+    This is not perfect and there are cases where it returns True when
+    suspending will fail. In this case ``run_sync`` will raise a JsException
+    wrapping a WebAssembly.SuspendError.
     """
     raise NotImplementedError
 
