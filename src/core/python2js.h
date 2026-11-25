@@ -15,6 +15,14 @@
 JsVal
 python2js(PyObject* x);
 
+/**
+ * If x converts to a JavaScript primitive (undefined, null, a boolean, a
+ * number, a BigInt or a string), return it. Otherwise return Jsv_novalue.
+ * Returns JS_ERROR with an exception set on failure.
+ */
+JsVal
+python2js_immutable(PyObject* x);
+
 JsVal
 python2js_inner(PyObject* x,
                 JsVal proxies,
@@ -64,5 +72,18 @@ python2js_init(PyObject* core);
 
 extern PyObject* py_jsnull;
 extern PyObject* py_JsBigInt;
+
+/**
+ * A fast, inlinable check for whether python2js_immutable converts x, so that
+ * callers can skip the proxy cache. It may return false for some values that
+ * python2js_immutable converts (float subclasses), but must never return true
+ * for a value that it doesn't convert.
+ */
+static inline bool
+python2js_converts_to_primitive(PyObject* x)
+{
+  return Py_IsNone(x) || x == py_jsnull || PyLong_Check(x) ||
+         PyUnicode_Check(x) || PyFloat_CheckExact(x);
+}
 
 #endif /* PYTHON2JS_H */
