@@ -694,7 +694,6 @@ Module.callPyObjectMaybePromising = async function (
 };
 
 Module.callPyObject = function (ptrobj: number, jsargs: any) {
-  // _pyproxy_apply only reads the keyword argument names if num_kwargs > 0.
   return callPyObjectImpl(ptrobj, jsargs, jsargs.length, undefined, 0);
 };
 
