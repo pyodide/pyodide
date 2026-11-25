@@ -370,8 +370,9 @@ function isJsonAdaptor(jsobj: any): boolean {
   );
 }
 
-function _adjustArgs(props: PyProxyProps, jsthis: any, jsargs: any[]): any[] {
-  const { captureThis, boundArgs, boundThis, isBound } = props;
+function _adjustArgs(proxyobj: any, jsthis: any, jsargs: any[]): any[] {
+  const { captureThis, boundArgs, boundThis, isBound } =
+    _getAttrs(proxyobj).props;
   if (captureThis) {
     if (isBound) {
       return [boundThis].concat(boundArgs, jsargs);
@@ -555,8 +556,6 @@ function callPyObjectKwargs(ptrobj: number, jsargs: any[], kwargs: any) {
   );
 }
 
-const NO_KWARGS_NAMES: string[] = [];
-
 /**
  * Call a Python object. jsargs holds the positional arguments followed by the
  * values of the keyword arguments named in kwargs_names.
@@ -565,7 +564,7 @@ function callPyObjectImpl(
   ptrobj: number,
   jsargs: any[],
   num_pos_args: number,
-  kwargs_names: string[],
+  kwargs_names: string[] | undefined,
   num_kwargs: number,
 ) {
   let result;
@@ -695,7 +694,8 @@ Module.callPyObjectMaybePromising = async function (
 };
 
 Module.callPyObject = function (ptrobj: number, jsargs: any) {
-  return callPyObjectImpl(ptrobj, jsargs, jsargs.length, NO_KWARGS_NAMES, 0);
+  // _pyproxy_apply only reads the keyword argument names if num_kwargs > 0.
+  return callPyObjectImpl(ptrobj, jsargs, jsargs.length, undefined, 0);
 };
 
 export interface PyProxy {
@@ -2391,10 +2391,7 @@ const PyProxyHandlers = {
     return result;
   },
   apply(jsobj: PyProxy & Function, jsthis: any, jsargs: any): any {
-    // Same as jsobj.apply(jsthis, jsargs), but jsargs is already a fresh array
-    // so we don't need to copy it, and we look up the attributes only once.
-    const { shared, props } = _getAttrs(jsobj);
-    return Module.callPyObject(shared.ptr, _adjustArgs(props, jsthis, jsargs));
+    return jsobj.apply(jsthis, jsargs);
   },
 };
 
@@ -2772,9 +2769,8 @@ export class PyCallableMethods {
     jsargs = function (...args: any) {
       return args;
     }.apply(undefined, jsargs);
-    const { shared, props } = _getAttrs(this);
-    jsargs = _adjustArgs(props, thisArg, jsargs);
-    return Module.callPyObject(shared.ptr, jsargs);
+    jsargs = _adjustArgs(this, thisArg, jsargs);
+    return Module.callPyObject(_getPtr(this), jsargs);
   }
   /**
    * Calls the function with a given this value and arguments provided
@@ -2788,9 +2784,8 @@ export class PyCallableMethods {
    * @returns The result from the function call.
    */
   call(thisArg: any, ...jsargs: any) {
-    const { shared, props } = _getAttrs(this);
-    jsargs = _adjustArgs(props, thisArg, jsargs);
-    return Module.callPyObject(shared.ptr, jsargs);
+    jsargs = _adjustArgs(this, thisArg, jsargs);
+    return Module.callPyObject(_getPtr(this), jsargs);
   }
 
   /**
