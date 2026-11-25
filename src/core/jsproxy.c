@@ -28,7 +28,6 @@
  * possible by subclassing PyType with a different tp_dealloc method).
  */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "python_unexposed.h"
 
@@ -624,6 +623,14 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
+
+  // Respect Python data descriptors before forwarding assignments to
+  // JavaScript. In particular, JsException inherits exception state
+  // descriptors from BaseException after JsProxy in its MRO.
+  PyObject* descr = _PyType_Lookup(Py_TYPE(self), attr); // borrowed
+  if (descr != NULL && Py_TYPE(descr)->tp_descr_set != NULL) {
+    return PyObject_GenericSetAttr(self, attr, pyvalue);
+  }
 
   if (strncmp(key, "__", 2) == 0) {
     // Avoid creating reference loops between Python and JavaScript with js
