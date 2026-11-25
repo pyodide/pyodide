@@ -313,15 +313,6 @@ export class PackageManager {
         this.logStdout(`Loaded ${successNames}`);
       }
 
-      if (failed.size > 0) {
-        const failedNames = Array.from(failed.keys()).sort().join(", ");
-        this.logStdout(`Failed to load ${failedNames}`);
-        for (const [name, err] of failed) {
-          this.logStderr(`The following error occurred while loading ${name}:`);
-          this.logStderr(err.message);
-        }
-      }
-
       // We have to invalidate Python's import caches, or it won't
       // see the new files.
 
@@ -331,9 +322,16 @@ export class PackageManager {
       this.#api.importlib.invalidate_caches();
       if (failed.size > 0) {
         const failedNames = Array.from(failed.keys()).sort().join(", ");
+        const errors = Array.from(failed.values());
+        const errorMessages = errors.map((error) => error.message).join("; ");
+        this.logStdout(`Failed to load ${failedNames}`);
+        for (const [name, err] of failed) {
+          this.logStderr(`The following error occurred while loading ${name}:`);
+          this.logStderr(err.message);
+        }
         throw new AggregateError(
-          failed.values(),
-          `Failed to load ${failedNames}`,
+          errors,
+          `Failed to load ${failedNames}: ${errorMessages}`,
         );
       }
       return Array.from(loadedPackageData, filterPackageData);

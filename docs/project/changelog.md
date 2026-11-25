@@ -37,7 +37,8 @@ myst:
   `AggregateError` if one or more packages fail to load instead of only logging
   the errors. Successfully loaded packages are not rolled back. This also
   prevents `micropip.install()` from reporting a successful lockfile
-  installation when a package failed to install. See {issue}`6569`.
+  installation when a package failed to install.
+  {pr}`6579`
 
 - {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
   that caps how far the WebAssembly heap of that instance may grow. Once the
