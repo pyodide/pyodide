@@ -99,7 +99,10 @@ def relaxed_call(func: Callable[..., RetType], *args: Any, **kwargs: Any) -> Ret
     If extra positional or keyword arguments are provided they will be
     discarded.
     """
-    sig = _relaxed_call_sig_cached(func)
+    try:
+        sig = _relaxed_call_sig_cached(func)
+    except TypeError:
+        sig = _relaxed_call_sig(func)
     if sig is None:
         return func(*args, **kwargs)
     return _do_call(func, sig, args, kwargs)
