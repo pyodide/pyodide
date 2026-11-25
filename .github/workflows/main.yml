@@ -155,7 +155,7 @@ jobs:
           restore-keys: |
             ccache-${{ hashFiles('Makefile.envs', 'emsdk/patches/*.patch') }}-${{ runner.os }}-
 
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version: "1.21"
 
@@ -190,7 +190,7 @@ jobs:
           echo "$(brew --prefix)/opt/coreutils/libexec/gnubin" >> "$GITHUB_PATH"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
 
       - name: Set up Python ${{ needs.get_python_version.outputs.PYVERSION }}
         env:
@@ -350,7 +350,7 @@ jobs:
           node-version: "24"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
 
       - name: Set up Python ${{ needs.get_python_version.outputs.PYVERSION }}
         env:
@@ -799,7 +799,7 @@ jobs:
           node-version: "24"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
 
       - name: Set up Python ${{ needs.get_python_version.outputs.PYVERSION }}
         env:
