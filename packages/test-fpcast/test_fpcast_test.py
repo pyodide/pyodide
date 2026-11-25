@@ -64,5 +64,5 @@ def test_stack_switch_suspend_error(selenium):
     def callback():
         run_sync(sleep(0.1))
 
-    with pytest.raises(JsException, match="trying to suspend JS frames"):
+    with pytest.raises(JsException, match="SuspendError"):
         fpcast_test.test_stack_switch_suspend_error(callback)
