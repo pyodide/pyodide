@@ -5,4 +5,6 @@ addToLibrary({
   JsvError_Check: () => {},
   Jsv_GetNoValue_import: () => {},
   JsvNoValue_Check: () => {},
+  JSTag:
+    "WebAssembly.JSTag ?? new WebAssembly.Tag({ parameters: ['externref'] })",
 });

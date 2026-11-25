@@ -23,6 +23,11 @@ myst:
   early version of the JSPI proposal. Node 20 is end of life since March 2026.
   {pr}`6465`
 
+- {{ Enhancement }} If JSPI is used and stack switching is not possible, instead
+  of a fatal error, Pyodide will raise a `JsException` wrapping the
+  `WebAssembly.SuspendError` that the browser engine raises.
+  {pr}`6580`
+
 - {{ Update }} Upgraded libffi to 3.8.1. This fixes `ctypes` calls and
   callbacks failing once the WebAssembly heap has grown past 2 GiB.
   {pr}`6560`
