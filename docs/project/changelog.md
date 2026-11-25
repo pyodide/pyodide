@@ -36,6 +36,13 @@ myst:
   since Firefox 160.
   {pr}`6572`
 
+- {{ Fix }} In Node.js, the default standard streams now work when
+  `process.stdout`, `process.stderr` or `process.stdin` are not backed by a file
+  descriptor, e.g., in a worker thread. Previously, printing (including the
+  messages printed by `loadPackage`) raised `OSError: [Errno 29] I/O error`.
+  In this case, stdin is now treated as empty and reading from it returns EOF.
+  {issue}`5798`
+
 ### JavaScript API
 
 - {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
@@ -95,23 +102,6 @@ _November 13, 2026_
   {pr}`6552`
 
 ### JavaScript API
-
-- {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
-  that caps how far the WebAssembly heap of that instance may grow. Once the
-  total heap reaches the limit, further allocations fail with a `MemoryError`.
-  {pr}`6483`
-
-- {{ API }} `pyodide.registerComlink()` is deprecated and has no effect. It
-  never worked as intended: Comlink proxies were always detected like ordinary
-  JavaScript objects.
-  {pr}`6541`
-
-- {{ Fix }} In Node.js, the default standard streams now work when
-  `process.stdout`, `process.stderr` or `process.stdin` are not backed by a file
-  descriptor, e.g., in a worker thread. Previously, printing (including the
-  messages printed by `loadPackage`) raised `OSError: [Errno 29] I/O error`.
-  In this case, stdin is now treated as empty and reading from it returns EOF.
-  {issue}`5798`
 
 - {{ Fix }} Fixed a `SystemError` caused by `pyodide.setDebug(true)`.
   {pr}`6524`
