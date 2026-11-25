@@ -1,5 +1,4 @@
 // clang-format off
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "python_unexposed.h"
 // clang-format on

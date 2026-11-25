@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include <emscripten.h>
 #include <emscripten/eventloop.h>

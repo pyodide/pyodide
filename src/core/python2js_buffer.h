@@ -4,7 +4,6 @@
 /** Utilities to convert Python buffer objects to JavaScript.
  */
 // clang-format off
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 // clang-format on
 #include "jslib.h"

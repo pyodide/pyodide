@@ -1,7 +1,9 @@
+import linecache
 import re
 import shutil
 import subprocess
 import sys
+import traceback
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from textwrap import dedent
@@ -178,6 +180,11 @@ def test_eval_code():
     )
     assert eval_code("a = b = 2", ns, return_mode="last_expr_or_assign") == 2
 
+    # a bare annotation binds nothing, so there is no value to return
+    assert eval_code("z: int", {}, return_mode="last_expr_or_assign") is None
+    assert eval_code("z = 5\nz: int", {}, return_mode="last_expr_or_assign") is None
+    assert eval_code("z: int = 1", {}, return_mode="last_expr_or_assign") == 1
+
     # 'none' return_mode, (useless) semicolon
     assert eval_code("1 + 1", ns, return_mode="none") is None
     assert eval_code("x = 1 + 1", ns, return_mode="none") is None
@@ -220,6 +227,45 @@ def test_eval_code_dedent():
     # dedent=False still works for source that is already flush with
     # column 0.
     assert eval_code("1 + 1", {}, dedent=False) == 2
+
+
+def _last_frame_lines(filename: str, source: str, **kwargs: Any) -> list[str]:
+    """Run ``source`` with ``eval_code``, which must raise a ``NameError``.
+    Return the source line and the marker line that the traceback shows for the
+    innermost frame in ``filename``.
+    """
+    try:
+        with pytest.raises(NameError) as excinfo:
+            eval_code(source, {}, filename=filename, **kwargs)
+        lines = "".join(traceback.format_exception(excinfo.value)).splitlines()
+    finally:
+        linecache.cache.pop(filename, None)
+    last = max(i for i, line in enumerate(lines) if f'File "{filename}"' in line)
+    assert lines[last].endswith("line 3, in <module>")
+    return lines[last + 1 : last + 3]
+
+
+def test_eval_code_dedent_traceback_carets():
+    # The leading blank line and the indentation are what a JS template literal
+    # gives runPython. linecache has to hold the dedented text that was
+    # compiled, or the column offsets point at the wrong characters.
+    source = """
+        x = 1
+        print(x + undefined_name)
+    """
+    assert _last_frame_lines("dedent_carets.py", source) == [
+        "    print(x + undefined_name)",
+        "              ^^^^^^^^^^^^^^",
+    ]
+
+
+def test_eval_code_no_dedent_traceback_carets():
+    # Control: source that is already flush with column 0 and dedent=False.
+    source = "\nx = 1\nprint(x + undefined_name)\n"
+    assert _last_frame_lines("no_dedent_carets.py", source, dedent=False) == [
+        "    print(x + undefined_name)",
+        "              ^^^^^^^^^^^^^^",
+    ]
 
 
 def test_eval_code_locals():
@@ -1864,6 +1910,54 @@ def test_relative_index_url(selenium, tmp_path):
 
 
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
+@pytest.mark.parametrize("wasm", ["truncated", "missing"])
+def test_loadPyodide_rejects_when_wasm_fails(selenium, tmp_path, wasm):
+    # loadPyodide used to stay pending forever when pyodide.asm.wasm could not
+    # be instantiated, and a missing file ended Node with an unhandled rejection.
+    for name in [
+        "pyodide.mjs",
+        "pyodide.asm.mjs",
+        "pyodide-lock.json",
+        "python_stdlib.zip",
+    ]:
+        shutil.copy(DIST_PATH / name, tmp_path / name)
+    if wasm == "truncated":
+        data = (DIST_PATH / "pyodide.asm.wasm").read_bytes()
+        (tmp_path / "pyodide.asm.wasm").write_bytes(data[:4096])
+
+    result = subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "-e",
+            f"""
+            import {{ loadPyodide }} from "{tmp_path / "pyodide.mjs"}";
+            const timer = setTimeout(() => {{
+                console.log("still pending");
+                process.exit(1);
+            }}, 30000);
+            try {{
+                await loadPyodide({{ indexURL: "{tmp_path}/" }});
+                console.log("loaded");
+            }} catch (e) {{
+                console.log("rejected:", e.name);
+            }}
+            clearTimeout(timer);
+            """,
+        ],
+        capture_output=True,
+        encoding="utf8",
+        check=False,
+    )
+
+    expected = "CompileError" if wasm == "truncated" else "Error"
+    assert result.stdout.strip().split("\n")[-1] == f"rejected: {expected}", (
+        result.stdout + result.stderr
+    )
+    assert result.returncode == 0
+
+
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
 def test_index_url_calculation_source_map(selenium):
     import os
 
@@ -2127,14 +2221,13 @@ def test_runpython_filename(selenium, run_python):
         """\
         File "a.py", line 3, in f1
           f2()
-
+          ~~^^
         File "a.py", line 6, in f2
           raise Exception("oops")
-          ^^^^^^^^^^^^^^^
         """
     ).strip()
 
-    assert dedent("\n".join(msg.splitlines()[-7:-1])) == expected
+    assert dedent("\n".join(msg.splitlines()[-6:-1])) == expected
     msg = selenium.run_js(
         """
         let f1;
