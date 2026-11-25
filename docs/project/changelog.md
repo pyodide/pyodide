@@ -65,6 +65,10 @@ myst:
 
 ### Python / JavaScript type conversions
 
+- {{ Fix }} Fixed a memory leak that could occur when a JavaScript error passed
+  through Python exception-handling code.
+  {pr}`6578`
+
 - {{ Enhancement }} Pyodide now supports `Float16Array`. It will translate half
   float Python buffers into `Float16Array` and vice versa. Converting a half
   float buffer requires a JavaScript runtime with `Float16Array` support.
