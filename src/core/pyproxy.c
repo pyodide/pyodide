@@ -507,6 +507,9 @@ python2js_json_adaptor(PyObject* x, JsVal proxyCache, bool is_json_adaptor)
   if (!is_json_adaptor) {
     return python2js(x);
   }
+  if (python2js_converts_to_primitive(x)) {
+    return python2js_immutable(x);
+  }
   JsVal cached_proxy = proxy_cache_get(proxyCache, x); /* borrowed */
   if (!JsvError_Check(cached_proxy)) {
     return cached_proxy;
@@ -554,6 +557,11 @@ _pyproxy_getattr(PyObject* pyobj, PyObject* pykey, JsVal proxyCache)
   DECLARE_PY_OBJECT(pydescr);
   int is_method = _PyObject_GetMethod(pyobj, pykey, &pydescr);
   FAIL_IF_NULL(pydescr);
+  if (!is_method && python2js_converts_to_primitive(pydescr)) {
+    JsVal result = python2js_immutable(pydescr);
+    FAIL_IF_JS_ERROR(result);
+    return result;
+  }
   JsVal cached_proxy = proxy_cache_get(proxyCache, pydescr); /* borrowed */
   if (!JsvError_Check(cached_proxy)) {
     return cached_proxy;
