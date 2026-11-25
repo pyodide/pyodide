@@ -23,6 +23,64 @@ myst:
   early version of the JSPI proposal. Node 20 is end of life since March 2026.
   {pr}`6465`
 
+- {{ Update }} Upgraded libffi to 3.8.1. This fixes `ctypes` calls and
+  callbacks failing once the WebAssembly heap has grown past 2 GiB.
+  {pr}`6560`
+
+- {{ Feature }} The `sqlite3` module now supports loadable extensions:
+  `sqlite3.Connection.enable_load_extension()` and
+  `sqlite3.Connection.load_extension()` are now available.
+  {pr}`6533`
+
+- {{ Enhancement }} JSPI is now tested on Firefox, which enables it by default
+  since Firefox 160.
+  {pr}`6572`
+
+### JavaScript API
+
+- {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
+  that caps how far the WebAssembly heap of that instance may grow. Once the
+  total heap reaches the limit, further allocations fail with a `MemoryError`.
+  {pr}`6483`
+
+- {{ Fix }} {js:func}`~exports.loadPyodide` now rejects when `pyodide.asm.wasm`
+  fails to load or instantiate. Before, it never settled.
+  {pr}`6584`
+
+- {{ API }} `pyodide.registerComlink()` is deprecated and has no effect. It
+  never worked as intended: Comlink proxies were always detected like ordinary
+  JavaScript objects.
+  {pr}`6541`
+
+### Python API
+
+- {{ Fix }} Tracebacks for code run with a `filename` now show carets under the
+  right characters when the source was indented.
+  {pr}`6576`
+
+- {{ Fix }} {py:func}`pyodide.code.eval_code` with
+  `return_mode="last_expr_or_assign"` now returns `None` instead of raising a
+  `NameError` when the last statement is a bare annotation such as `x: int`.
+  {pr}`6583`
+
+### Python / JavaScript type conversions
+
+- {{ Enhancement }} Pyodide now supports `Float16Array`. It will translate half
+  float Python buffers into `Float16Array` and vice versa. Converting a half
+  float buffer requires a JavaScript runtime with `Float16Array` support.
+  {pr}`6005`
+
+- {{ Performance }} The internal "no value" sentinel used during Python to
+  JavaScript conversion is now a wasm-gc object, like the error sentinel. This
+  means checking for it no longer requires calling out to JavaScript.
+  {pr}`6519`
+
+## Version 314.0.8
+
+_November 13, 2026_
+
+### General
+
 - {{ Fix }} Fixed a fatal error when using pybind11 extensions that acquire the
   GIL. PyBind11 caches a thread state in a TLS variable, which since we only
   have one thread is a global. It then assumes it can restore this tstate.
@@ -83,11 +141,6 @@ myst:
 
 ### Python / JavaScript type conversions
 
-- {{ Enhancement }} Pyodide now supports `Float16Array`. It will translate half
-  float Python buffers into `Float16Array` and vice versa. Converting a half
-  float buffer requires a JavaScript runtime with `Float16Array` support.
-  {pr}`6005`
-
 - {{ Fix }} Fixed `toJs()` conversion of a dictionary with a list inside with a
   circular reference to the outer dictionary.
   {pr}`6550`
@@ -104,17 +157,21 @@ myst:
   buffer to JavaScript with `toJs()`.
   {pr}`6497`
 
-- {{ Performance }} The internal "no value" sentinel used during Python to
-  JavaScript conversion is now a wasm-gc object, like the error sentinel. This
-  means checking for it no longer requires calling out to JavaScript.
-  {pr}`6519`
-
 ### `python` CLI entrypoint
 
 - {{ Fix }} The Windows `python` CLI now handles paths across multiple drive
   letters by mounting referenced drives at distinct virtual roots such as `/c`
   and `/d`.
   {pr}`6467`
+
+### Build system
+
+- {{ Fix }} The cross-build environment now ships pkg-config files for Python
+  (`python-3.14.pc`, `python3.pc`) in the directory
+  that `sysconfig.get_config_var("LIBPC")` points to. Before, build systems
+  like meson that look Python up via pkg-config could pick up the host
+  system's Python headers.
+  {pr}`6556`
 
 ## Version 314.0.7
 

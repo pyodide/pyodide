@@ -45,7 +45,6 @@ async def test_pyfetch_create_file(selenium):
     )
 
 
-@pytest.mark.xfail_browsers(node="Request requires fully qualified url")
 @run_in_pyodide
 async def test_pyfetch_js_request(selenium):
     from js import Request

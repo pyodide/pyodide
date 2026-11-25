@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include "jsbind.h"
 #include "Python.h"
 #include "error_handling.h"
