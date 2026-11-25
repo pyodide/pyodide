@@ -686,7 +686,7 @@ _JsObject_New(ConversionContext *context) {
 }
 
 EM_JS_NUM(int, _JsObject_Set_js, (JsVal obj, JsVal key, JsVal value), {
-  if (key in obj) {
+  if (Object.hasOwn(obj, key) || key === "__proto__") {
     return -2;
   }
   obj[key] = value;

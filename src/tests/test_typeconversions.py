@@ -1109,6 +1109,25 @@ def test_recursive_list_to_js(selenium):
 
 
 @run_in_pyodide
+def test_tojs_dict_object_prototype_keys(selenium):
+    # Keys that are also properties of Object.prototype are not collisions
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import ConversionError, to_js
+
+    d = {"toString": 1, "constructor": 2, "hasOwnProperty": 3, "valueOf": 4}
+    result = to_js(d)
+    assert run_js("(o) => Object.entries(o)")(result).to_py() == [
+        list(item) for item in d.items()
+    ]
+
+    # Setting "__proto__" would set the prototype, so it is rejected
+    with pytest.raises(ConversionError, match="Key collision"):
+        to_js({"__proto__": 1})
+
+
+@run_in_pyodide
 def test_recursive_dict_to_js(selenium):
     x: Any = {}
     x[0] = x
