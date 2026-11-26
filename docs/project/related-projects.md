@@ -42,6 +42,7 @@
 - [Pyodios](https://apps.apple.com/us/app/pyodios/id6762922366) is an iOS application that uses Pyodide to run Python code locally on your iPhone and iPad. For examples of the app, see the [documentation website](https://pyodios.caffeinatedmath.com/).
 - [Frappe Playground](https://github.com/lubusIN/frappe-playground) is an in-browser playground for Frappe running entirely client-side using Pyodide.
 - [CodeJo](https://codejo.pages.dev) is an old-school "Just Start Coding" environment, built into a browser window. Nothing fancy. Just start coding!
+- [QueryCase](https://querycase.com/python) is an interactive data course taught through detective cases. Its Python track runs learners' code on Pyodide in a Web Worker, with pandas, SciPy and scikit-learn, checks each step against what the code produces, and includes a notebook-style sandbox for exploring your own CSV files in the browser.
 
 ## Workarounds for common WASM and browser limitations
 
