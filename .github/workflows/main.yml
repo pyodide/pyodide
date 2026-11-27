@@ -731,13 +731,14 @@ jobs:
           source .venv-pyodide/bin/activate
 
           # This uses conftest.py on the current working directory to
-          # skip/xfail tests in scipy
-          cd packages/scipy
-          # XXX for some unknown reason adding a conftest.py in the repo throws off the
-          # other tests trying to import from conftest they find the scipy one ...
-          mv scipy-conftest.py conftest.py
+          # skip/xfail tests in scipy. Run from a directory outside the
+          # repository, so that pytest does not also load the conftest.py at
+          # the repository root, which needs pytest-pyodide.
+          mkdir "$RUNNER_TEMP/scipy-tests"
+          cp packages/scipy/scipy-conftest.py "$RUNNER_TEMP/scipy-tests/conftest.py"
+          cd "$RUNNER_TEMP/scipy-tests"
 
-          python -m pytest -c /dev/null --pyargs scipy -m 'not slow' -ra -v
+          pytest -c /dev/null --pyargs scipy -m 'not slow' -ra -v
 
   test-bun:
     name: Test Bun (${{ matrix.os }})
