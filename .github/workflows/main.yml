@@ -240,6 +240,14 @@ jobs:
           make -C cpython
           ccache -s
 
+      - name: Keep the SciPy tests in the wheel
+        if: needs.test-scipy-trigger.outputs.test-scipy == 'true'
+        run: |
+          # The SciPy test suite is run from a Pyodide virtual environment, and
+          # pip can only install the tests if they are part of the wheel.
+          sed -i.bak 's/unvendor-tests: true/unvendor-tests: false/' packages/scipy/meta.yaml
+          rm packages/scipy/meta.yaml.bak
+
       - name: build Pyodide with packages ${{ matrix.pyodide_packages }}
         env:
           PYODIDE_PACKAGES: ${{ matrix.pyodide_packages }}
@@ -671,7 +679,7 @@ jobs:
   test-scipy:
     name: Test SciPy (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    needs: [test-scipy-trigger, build-core-linux]
+    needs: [test-scipy-trigger, build-core-linux, get_python_version]
     if: needs.test-scipy-trigger.outputs.test-scipy
     permissions:
       contents: read
@@ -683,7 +691,16 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          submodules: recursive
           persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION_SETUP_PYTHON }}
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
 
       - name: Download build artifact
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -691,20 +708,40 @@ jobs:
           name: core-build-${{ runner.os }}
           path: ./dist/
 
-      - name: run scipy tests inside node
+      - name: Download sysconfig artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: core-sysconfig-${{ runner.os }}
+          path: ./cpython/installs/
+
+      - name: Prepare the SciPy test suite
         shell: bash -l {0}
         run: | # zizmor: ignore[adhoc-packages]
-          npm install pyodide
-          cp -f dist/* node_modules/pyodide
+          export PYODIDE_ROOT="$PWD"
+          make pyodide_build
+
+          chmod +x "$(pyodide config get interpreter)"
+
+          # venv goes outside the repo so pytest doesn't load the root conftest.py
+          mkdir "$RUNNER_TEMP/scipy-tests"
+          pyodide venv "$RUNNER_TEMP/scipy-tests/.venv-pyodide"
+          source "$RUNNER_TEMP/scipy-tests/.venv-pyodide/bin/activate"
+
+          pip install pytest hypothesis pooch
+          pip install dist/numpy-*.whl
+          pip install dist/scipy-*.whl
+
+      - name: Run the SciPy test suite
+        shell: bash -l {0}
+        run: |
+          source "$RUNNER_TEMP/scipy-tests/.venv-pyodide/bin/activate"
 
           # This uses conftest.py on the current working directory to
           # skip/xfail tests in scipy
-          cd packages/scipy
-          # XXX for some unknown reason adding a conftest.py in the repo throws off the
-          # other tests trying to import from conftest they find the scipy one ...
-          mv scipy-conftest.py conftest.py
+          cp packages/scipy/scipy-conftest.py "$RUNNER_TEMP/scipy-tests/conftest.py"
+          cd "$RUNNER_TEMP/scipy-tests"
 
-          node scipy-pytest.js --pyargs scipy -m 'not slow' -ra -v
+          pytest -c /dev/null --pyargs scipy -m 'not slow' -ra -v
 
   test-bun:
     name: Test Bun (${{ matrix.os }})
