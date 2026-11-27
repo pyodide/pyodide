@@ -1,5 +1,5 @@
-export PYVERSION ?= 3.15.0rc1
-export PYVERSION_GHA ?= 3.15.0b4
+export PYVERSION ?= 3.15.2
+export PYVERSION_GHA ?= 3.15.2
 export PYODIDE_EMSCRIPTEN_VERSION ?= 6.0.5
 export PYODIDE_EMSDK_DIR=$(PYODIDE_ROOT)/emsdk/emsdk-$(PYODIDE_EMSCRIPTEN_VERSION)
 export PYODIDE_VERSION ?= 315.0.0a2
@@ -7,7 +7,7 @@ export PYODIDE_ABI_VERSION ?= 2026_5
 # Initial size of the WebAssembly heap in bytes, also used by the JS runtime
 export INITIAL_MEMORY ?= 31457280
 
-export PYTHON_ARCHIVE_SHA256=32c2b9878bbd6ac3ceb138c5b6c880345ce9d33388b399378c0da6fc7cb3bfbc
+export PYTHON_ARCHIVE_SHA256=f74e1db0eabd651cd01e4e2a00201bd41866abe74869ab716f9bf33cbbaa0943
 
 export SED ?= sed
 
