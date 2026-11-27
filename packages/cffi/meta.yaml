@@ -1,6 +1,6 @@
 package:
   name: cffi
-  version: 2.0.0
+  version: 2.1.1
   tag:
     - core
     - cross-build
@@ -10,8 +10,8 @@ requirements:
   run:
     - pycparser
 source:
-  url: https://files.pythonhosted.org/packages/source/c/cffi/cffi-2.0.0.tar.gz
-  sha256: 44d1b5909021139fe36001ae048dbdde8214afa20200eda0f64c068cac5d5529
+  url: https://files.pythonhosted.org/packages/source/c/cffi/cffi-2.1.1.tar.gz
+  sha256: dd31f52ea1086513bb9df30f8fcee9b8918323ae067a3d5b78bc826a000712be
 build:
   cross-build-env: true
 about:
