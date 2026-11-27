@@ -1,6 +1,6 @@
 package:
   name: pytest
-  version: 8.3.5
+  version: 9.2.0
   tag:
     - core
     - pytest
@@ -9,8 +9,8 @@ package:
     - _pytest
     - pytest
 source:
-  url: https://files.pythonhosted.org/packages/30/3d/64ad57c803f1fa1e963a7946b6e0fea4a70df53c1a7fed304586539c2bac/pytest-8.3.5-py3-none-any.whl
-  sha256: c69214aa47deac29fad6c2a4f590b9c4a9fdb16a403176fe154b79c0b4d4d820
+  url: https://files.pythonhosted.org/packages/py3/p/pytest/pytest-9.2.0-py3-none-any.whl
+  sha256: 07acdcf88ec174f907dc01af70bf52d49b014bbab03faeeade31c96b18c2e588
 requirements:
   run:
     - packaging
