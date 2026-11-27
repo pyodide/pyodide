@@ -1,6 +1,9 @@
 package:
   name: pytest-asyncio
-  version: 1.5.0
+  # TODO: 1.2.0 and later all fail:
+  # "Runner.run() cannot be called from a running event loop" error
+  # See https://github.com/pyodide/pyodide/issues/6577
+  version: 1.1.1
   tag:
     - core
     - pytest
@@ -8,8 +11,8 @@ package:
   top-level:
     - pytest_asyncio
 source:
-  url: https://files.pythonhosted.org/packages/py3/p/pytest-asyncio/pytest_asyncio-1.5.0-py3-none-any.whl
-  sha256: 557f255ee03cc84f84a8d5f438bc9c6e0f714bf86970ae743c7ecb5a38d7e07d
+  url: https://files.pythonhosted.org/packages/py3/p/pytest-asyncio/pytest_asyncio-1.1.1-py3-none-any.whl
+  sha256: 726339d30fcfde24691f589445b9b67d058b311ac632b1d704e97f20f1d878da
 requirements:
   run:
     - pytest
