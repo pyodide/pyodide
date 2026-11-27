@@ -16,6 +16,13 @@ async def async_coro():
     return "ok"
 
 
+def test_event_loop_fixture(event_loop):
+    """Test the injection of the event_loop fixture."""
+    assert event_loop
+    ret = event_loop.run_until_complete(async_coro())
+    assert ret == "ok"
+
+
 @pytest.mark.asyncio
 async def test_asyncio_marker():
     """Test the asyncio pytest marker."""
