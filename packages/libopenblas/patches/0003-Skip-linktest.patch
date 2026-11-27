@@ -11,13 +11,13 @@ diff --git a/exports/Makefile b/exports/Makefile
 index 7682f851d..86b2cd2f4 100644
 --- a/exports/Makefile
 +++ b/exports/Makefile
-@@ -184,24 +184,24 @@ ifeq ($(F_COMPILER), INTEL)
+@@ -199,24 +199,24 @@ ifeq ($(F_COMPILER), INTEL)
  	$(FC) $(FFLAGS) $(LDFLAGS) -shared -o ../$(LIBSONAME) \
  	-Wl,--whole-archive $< -Wl,--no-whole-archive \
  	-Wl,-soname,$(INTERNALNAME) $(EXTRALIB)
 -	$(CC) $(CFLAGS) $(LDFLAGS) -w -o linktest linktest.c ../$(LIBSONAME) $(FEXTRALIB) && echo OK.
 +	echo OK.
- else ifeq ($(F_COMPILER), FLANG)
+ else ifeq ($(F_COMPILER), $(filter $(F_COMPILER),FLANG FLANGNEW))
  	$(FC) $(FFLAGS) $(LDFLAGS) -shared -o ../$(LIBSONAME) \
  	-Wl,--whole-archive $< -Wl,--no-whole-archive \
  	-Wl,-soname,$(INTERNALNAME) $(EXTRALIB)
@@ -40,7 +40,7 @@ index 7682f851d..86b2cd2f4 100644
  endif
  endif
  	rm -f linktest
-@@ -223,7 +223,7 @@ endif
+@@ -238,7 +238,7 @@ endif
  	$(CC) $(CFLAGS) $(LDFLAGS)  -shared -o ../$(LIBSONAME) \
  	-Wl,--whole-archive $< -Wl,--no-whole-archive \
  	$(FEXTRALIB) $(EXTRALIB)
@@ -49,7 +49,7 @@ index 7682f851d..86b2cd2f4 100644
  	rm -f linktest
  
  endif
-@@ -241,7 +241,7 @@ ifeq ($(OSNAME), SunOS)
+@@ -256,7 +256,7 @@ ifeq ($(OSNAME), SunOS)
  so : ../$(LIBSONAME)
  	$(CC) $(CFLAGS) $(LDFLAGS)  -shared -o ../$(LIBSONAME) \
  	-Wl,--whole-archive ../$(LIBNAME) -Wl,--no-whole-archive $(EXTRALIB)
@@ -58,18 +58,11 @@ index 7682f851d..86b2cd2f4 100644
  	rm -f linktest
  
  endif
-@@ -283,9 +283,8 @@ objcopy.def : $(GENSYM) ../Makefile.system ../getarch.c
- objconv.def : $(GENSYM) ../Makefile.system ../getarch.c
- 	./$(GENSYM) objconv $(ARCH) "$(BU)" $(EXPRECISION) $(NO_CBLAS)  $(NO_LAPACK) $(NO_LAPACKE) $(NEED2UNDERSCORES) $(ONLY_CBLAS) "$(SYMBOLPREFIX)" "$(SYMBOLSUFFIX)" $(BUILD_LAPACK_DEPRECATED) $(BUILD_BFLOAT16) $(BUILD_SINGLE) $(BUILD_DOUBLE) $(BUILD_COMPLEX) $(BUILD_COMPLEX16) > $(@F)
- 
+@@ -315,3 +315,2 @@
 -test : linktest.c
 -	$(CC) $(CFLAGS) $(LDFLAGS) -w -o linktest linktest.c ../$(LIBSONAME) -lm && echo OK.
 -	rm -f linktest
 +test :
 +	echo OK.
- 
- linktest.c : $(GENSYM) ../Makefile.system ../getarch.c
- 	./$(GENSYM) linktest  $(ARCH) "$(BU)" $(EXPRECISION) $(NO_CBLAS) $(NO_LAPACK) $(NO_LAPACKE) $(NEED2UNDERSCORES) $(ONLY_CBLAS) "$(SYMBOLPREFIX)" "$(SYMBOLSUFFIX)" $(BUILD_LAPACK_DEPRECATED) $(BUILD_BFLOAT16) $(BUILD_SINGLE) $(BUILD_DOUBLE) $(BUILD_COMPLEX) $(BUILD_COMPLEX16) > linktest.c
 -- 
 2.34.1
-
