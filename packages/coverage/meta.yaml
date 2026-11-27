@@ -1,14 +1,14 @@
 package:
   name: coverage
-  version: 7.6.12
+  version: 7.17.5
   tag:
     - core
     - pytest
   top-level:
     - coverage
 source:
-  url: https://files.pythonhosted.org/packages/0c/d6/2b53ab3ee99f2262e6f0b8369a43f6d66658eab45510331c0b3d5c8c4272/coverage-7.6.12.tar.gz
-  sha256: 48cfc4641d95d34766ad41d9573cc0f22a48aa88d22657a1fe01dca0dbae4de2
+  url: https://files.pythonhosted.org/packages/source/c/coverage/coverage-7.17.5.tar.gz
+  sha256: 4f41d35b798714a2e79ec2097d6b03c92cd3b7de58e422fce7a1ca2c0c25b276
 about:
   home: https://github.com/nedbat/coveragepy
   PyPI: https://pypi.org/project/coverage
