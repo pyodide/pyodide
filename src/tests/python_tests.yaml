@@ -872,6 +872,14 @@
       - test_set_client_sigalgs # No raise
       - test_set_server_sigalgs # No raise
       - test_set_groups # No raise
+      - test_delete_attributes # SSLContext stub
+      - test_msg_callback # SSLContext stub
+      - test_delete_sslobject_attributes # SSL not supported in Pyodide
+      - test_check_hostname_requires_server_hostname # SSL not supported in Pyodide
+      - test_distrusted_spki # SSL not supported in Pyodide
+      - test_server_side_bad_params # SSL not supported in Pyodide
+      - test_sni_callback_context_released_and_callback_raises # SSL not supported in Pyodide
+      - test_sni_callback_context_released_before_second_client_hello # SSL not supported in Pyodide
 - test_stable_abi_ctypes
 - test_startfile
 - test_stat
