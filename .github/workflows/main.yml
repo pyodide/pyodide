@@ -718,8 +718,11 @@ jobs:
           make pyodide_build
 
           chmod +x "$(pyodide config get interpreter)"
-          pyodide venv .venv-pyodide
-          source .venv-pyodide/bin/activate
+
+          # venv goes outside the repo so pytest doesn't load the root conftest.py
+          mkdir "$RUNNER_TEMP/scipy-tests"
+          pyodide venv "$RUNNER_TEMP/scipy-tests/.venv-pyodide"
+          source "$RUNNER_TEMP/scipy-tests/.venv-pyodide/bin/activate"
 
           pip install pytest hypothesis pooch
           pip install dist/numpy-*.whl
@@ -728,13 +731,10 @@ jobs:
       - name: Run the SciPy test suite
         shell: bash -l {0}
         run: |
-          source .venv-pyodide/bin/activate
+          source "$RUNNER_TEMP/scipy-tests/.venv-pyodide/bin/activate"
 
           # This uses conftest.py on the current working directory to
-          # skip/xfail tests in scipy. Run from a directory outside the
-          # repository, so that pytest does not also load the conftest.py at
-          # the repository root, which needs pytest-pyodide.
-          mkdir "$RUNNER_TEMP/scipy-tests"
+          # skip/xfail tests in scipy
           cp packages/scipy/scipy-conftest.py "$RUNNER_TEMP/scipy-tests/conftest.py"
           cd "$RUNNER_TEMP/scipy-tests"
 
