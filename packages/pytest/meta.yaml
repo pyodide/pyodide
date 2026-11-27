@@ -16,6 +16,7 @@ requirements:
     - packaging
     - pluggy
     - iniconfig
+    - Pygments
 about:
   home: https://docs.pytest.org/en/latest/
   PyPI: https://pypi.org/project/pytest
