@@ -260,6 +260,10 @@ async function main() {
         code = 120;
       }
     } catch (e) {
+      if (e.constructor.name === "ExitStatus") {
+        // An atexit handler called os._exit().
+        process.exit(e.status);
+      }
       // During interpreter finalization, Python modules are being torn down.
       // If a remaining live object triggers an error, we try to format it via sys.excepthook.
       // However when there is a fatal error that we cannot process (e.g. function signature mismatch)

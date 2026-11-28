@@ -549,6 +549,19 @@ def test_sys_exit(selenium, venv):
 
 
 @only_node
+def test_os_exit_in_atexit(selenium):
+    result = subprocess.run(
+        [script_path, "-c", "import atexit, os; atexit.register(os._exit, 12)"],
+        capture_output=True,
+        encoding="utf8",
+        check=False,
+    )
+    assert result.returncode == 12
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+@only_node
 def test_cpp_exceptions(selenium, venv):
     result = install_pkg(venv, "test-cpp-exceptions2")
     print(result.stdout)
