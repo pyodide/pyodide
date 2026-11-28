@@ -1056,7 +1056,9 @@ def test_install_api(selenium_standalone_refresh, httpserver):
           wheelDataArr,
           "{test_file_name}",
           "{install_dir}",
-          new Map([["INSTALLER", "pytest"]])
+          {{
+            "INSTALLER": "pytest",
+          }},
         );
         """
     )

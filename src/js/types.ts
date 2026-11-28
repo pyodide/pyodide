@@ -552,7 +552,7 @@ export interface API {
     buffer: Uint8Array,
     filename: string,
     installDir: string,
-    metadata?: ReadonlyMap<string, string>,
+    metadata?: Record<string, string> | PyProxy,
   ) => Promise<void>;
 
   dsodir: string;
@@ -602,6 +602,7 @@ export type PackageManagerAPI = Pick<
   | "sitepackages"
   | "defaultLdLibraryPath"
   | "version"
+  | "pyVersionTuple"
 > & {
   config: Pick<
     PyodideConfigWithDefaults,
@@ -613,6 +614,7 @@ export type PackageManagerAPI = Pick<
  */
 export type PackageManagerModule = Pick<
   PyodideModule,
+  | "FS"
   | "PATH"
   | "LDSO"
   | "stringToNewUTF8"
