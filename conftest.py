@@ -138,6 +138,10 @@ def maybe_skip_test(item, delayed=False):
         ):
             skip_msg = f"package '{package_name}' is not built."
 
+    # Doctests cannot use the xfail_browsers marker
+    if item.name == "pyodide.console.ConsoleFuture[safari]":
+        skip_msg = "requires jspi"
+
     # TODO: also use this hook to skip doctests we cannot run (or run them
     # inside the selenium wrapper)
 
