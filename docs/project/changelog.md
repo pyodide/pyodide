@@ -68,6 +68,11 @@ myst:
   `NameError` when the last statement is a bare annotation such as `x: int`.
   {pr}`6583`
 
+- {{ Fix }} {py:func}`pyodide.code.relaxed_call` and
+  `PyProxy.callRelaxed` now work on callables that are not hashable,
+  such as instances of a dataclass that defines `__call__`.
+  {pr}`6589`
+
 ### Python / JavaScript type conversions
 
 - {{ Fix }} Fixed a memory leak that could occur when a JavaScript error passed

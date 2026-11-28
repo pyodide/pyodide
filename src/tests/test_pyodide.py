@@ -359,6 +359,26 @@ def test_relaxed_call():
     assert relaxed_call(f5, 1, 2, 3, 4, b=7, c=9) == [1, (2, 3, 4), 7, {"c": 9}]
 
 
+def test_relaxed_call_unhashable():
+    from dataclasses import dataclass
+
+    from pyodide.code import relaxed_call
+
+    @dataclass
+    class Greeter:
+        greeting: str
+
+        def __call__(self, name, punct="!"):
+            return f"{self.greeting}, {name}{punct}"
+
+    g = Greeter("Hello")
+    assert relaxed_call(g, "Ada") == "Hello, Ada!"
+    assert relaxed_call(g, "Ada", "?", "extra") == "Hello, Ada?"
+    assert relaxed_call(g, "Ada", extra=1) == "Hello, Ada!"
+    with pytest.raises(TypeError, match="missing a required argument: 'name'"):
+        relaxed_call(g)
+
+
 def test_relaxed_wrap():
     from pyodide.code import relaxed_wrap
 
