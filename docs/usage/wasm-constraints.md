@@ -103,8 +103,9 @@ def _can_start_thread() -> bool:
         return sys._emscripten_info.pthreads
     return platform.machine() not in ("wasm32", "wasm64")
 
+
 can_start_thread = _can_start_thread()
 
 if not can_start_thread:
-  n_threads = 1
+    n_threads = 1
 ```
