@@ -177,6 +177,22 @@ export interface PyodideConfig {
   checkAPIVersion?: boolean;
 
   /**
+   * The size in bytes at or above which a shared library (``.so`` file) inside
+   * a package is compiled while the package is being installed.
+   *
+   * This exists because on the main thread, browsers limit the size of WASM
+   * modules that can be compiled synchronously. Historically this limit was
+   * 4KiB in Chrome, but now it is 8MiB.
+   *
+   * Set to ``0`` to compile every shared library at install time, or to
+   * ``Infinity`` to never compile them at install time (for instance, in
+   * runtimes without a synchronous compilation limit).
+   *
+   * Default: ``8 * 1024 * 1024`` (8MiB)
+   */
+  sharedLibraryPreloadThreshold?: number;
+
+  /**
    * This is a hook that allows modification of the file system before the
    * main() function is called and the intereter is started. When this is
    * called, it is guaranteed that there is an empty site-packages directory.
@@ -254,6 +270,8 @@ export interface PyodideConfig {
  */
 export type PyodideConfigWithDefaults = Required<PyodideConfig>;
 
+const DEFAULT_SHARED_LIBRARY_PRELOAD_THRESHOLD = 8 * 1024 * 1024; // 8MiB
+
 /**
  * @private
  * Initialize the configuration for Pyodide.
@@ -303,6 +321,7 @@ async function initializeConfiguration(
     packageCacheDir: options.packageBaseUrl,
     enableRunUntilComplete: true,
     checkAPIVersion: true,
+    sharedLibraryPreloadThreshold: DEFAULT_SHARED_LIBRARY_PRELOAD_THRESHOLD,
     BUILD_ID,
   };
   const config = Object.assign(
@@ -310,6 +329,15 @@ async function initializeConfiguration(
     options,
   ) as PyodideConfigWithDefaults;
   config.env.HOME ??= "/home/pyodide";
+
+  config.sharedLibraryPreloadThreshold ??=
+    DEFAULT_SHARED_LIBRARY_PRELOAD_THRESHOLD;
+  const threshold = config.sharedLibraryPreloadThreshold;
+  if (typeof threshold !== "number" || !(threshold >= 0)) {
+    throw new TypeError(
+      `sharedLibraryPreloadThreshold must be a non-negative number, got ${threshold}`,
+    );
+  }
 
   /**
    * `PyErr_Print()` will call `exit()` if the exception is a `SystemError`.
