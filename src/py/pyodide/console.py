@@ -242,20 +242,19 @@ COMPLETE: ConsoleFutureStatus = "complete"
 
 
 class ConsoleFuture(Future[Any]):
-    # TODO: Figure out proper SKIPIF syntax for Firefox and Safari
     """
     A future with extra fields used as the return value for :py:class:`Console` APIs.
 
     Example:
 
-        >>> from pyodide.console import Console # doctest: +SKIP
-        >>> console = Console() # doctest: +SKIP
-        >>> future = console.push("print('Hello, World!')") # doctest: +SKIP
-        >>> print(future.syntax_check) # doctest: +SKIP
-        complete # doctest: +SKIP
-        >>> import asyncio # doctest: +SKIP
-        >>> result = asyncio.run(future) # doctest: +SKIP
-        Hello, World! # doctest: +SKIP
+        >>> from pyodide.console import Console # doctest: +RUN_IN_PYODIDE
+        >>> console = Console()
+        >>> future = console.push("print('Hello, World!')")
+        >>> print(future.syntax_check)
+        complete
+        >>> import asyncio
+        >>> result = asyncio.run(future)
+        Hello, World!
     """
 
     syntax_check: ConsoleFutureStatus
