@@ -205,17 +205,42 @@ def test_load_handle_failure(selenium_standalone_refresh):
 
 @pytest.mark.skip_refcount_check
 def test_load_failure_retry(selenium_standalone_refresh):
-    """Check that a package can be loaded after failing to load previously"""
+    """Check that loadPackage rejects and a failed package can be retried."""
     selenium = selenium_standalone_refresh
-    with pytest.raises(
-        RuntimeError, match="The following error occurred while loading micropip:"
-    ):
-        selenium.load_package("http://invalidurl/micropip-2021.3-py3-none-any.whl")
-    assert selenium.logs.count("Loading micropip") == 1
-    assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == []
-    selenium.load_package("micropip")
-    selenium.run("import micropip")
-    assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == ["micropip"]
+    result = selenium.run_js(
+        """
+        const packageData = pyodide._api.lockfile_packages["iniconfig"];
+        const originalFileName = packageData.file_name;
+        packageData.file_name = "/nonexistent/iniconfig.whl";
+        try {
+            await pyodide.loadPackage(["iniconfig", "micropip"]);
+        } catch (error) {
+            return [
+                error.name,
+                error.message,
+                error.errors.length,
+                error.errors[0].message,
+                "iniconfig" in pyodide.loadedPackages,
+                "micropip" in pyodide.loadedPackages,
+            ];
+        } finally {
+            packageData.file_name = originalFileName;
+        }
+        throw new Error("loadPackage unexpectedly resolved");
+        """
+    )
+
+    error_name, message, cause_count, cause_message, failed, loaded = result
+    assert error_name == "AggregateError"
+    assert message.startswith("Failed to load iniconfig:")
+    assert cause_count == 1
+    assert cause_message in message
+    assert not failed
+    assert loaded
+
+    selenium.load_package("iniconfig")
+    selenium.run("import iniconfig")
+    assert selenium.run_js('return "iniconfig" in pyodide.loadedPackages;')
 
 
 def test_load_twice(selenium_standalone_refresh):
@@ -841,15 +866,19 @@ def test_lock_file_contents_relative_file_name(selenium_standalone_noload, tmp_p
     }
     message = 'Lock file file_name for package "dummy_pkg" is relative path "dummy_pkg-0.1.0-py3-none-any.whl" but no packageBaseUrl provided'
     content = json.dumps(lockfile_content)
-    selenium.run_js(
-        """
-        const py = await loadPyodide({
-            lockFileContents: %s,
-        });
-        await py.loadPackage("dummy_pkg");
-        """
-        % content
-    )
+    with pytest.raises(
+        selenium.JavascriptException,
+        match="AggregateError: Failed to load dummy_pkg",
+    ):
+        selenium.run_js(
+            """
+            const py = await loadPyodide({
+                lockFileContents: %s,
+            });
+            await py.loadPackage("dummy_pkg");
+            """
+            % content
+        )
     assert message in selenium.logs
 
 

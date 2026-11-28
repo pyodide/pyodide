@@ -209,6 +209,10 @@ export class PyodideAPI_ {
    * :js:func:`loadPackagesFromImports` will call
    * ``pyodide.loadPackage(['numpy'])``.
    *
+   * If loading an identified package fails, the returned Promise rejects with
+   * the ``AggregateError`` from :js:func:`pyodide.loadPackage`. Successfully
+   * installed packages are not rolled back.
+   *
    * @param code The code to inspect.
    * @param options Options passed to :js:func:`pyodide.loadPackage`.
    * @param options.messageCallback A callback, called with progress messages

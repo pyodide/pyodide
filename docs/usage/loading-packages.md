@@ -178,8 +178,9 @@ Multiple packages can also be loaded at the same time by passing a list to
 await pyodide.loadPackage(["cycler", "pytz"]);
 ```
 
-{js:func}`~pyodide.loadPackage` returns a {js:class}`Promise` which resolves when all the
-packages are finished loading:
+{js:func}`~pyodide.loadPackage` returns a {js:class}`Promise`. If every package
+loads successfully, the Promise resolves with the data for the packages
+installed by the call:
 
 ```javascript
 let pyodide;
@@ -190,6 +191,11 @@ async function main() {
 }
 main();
 ```
+
+If one or more packages fail to load, the other attempts are allowed to settle
+and the Promise rejects with an `AggregateError`. Its `errors` property contains
+the original errors. Packages installed successfully by the same call remain
+installed; the rejection does not roll back a partially successful installation.
 
 (micropip)=
 
