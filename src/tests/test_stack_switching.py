@@ -27,7 +27,7 @@ def assert_no_stack_leak(request):
     if selenium is None:
         yield
         return
-    if selenium.browser in ("firefox", "safari"):
+    if selenium.browser == "safari":
         yield
         return
     before = selenium.run_js(STACK_CHECK_JS)
