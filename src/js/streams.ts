@@ -9,6 +9,15 @@ const tty: typeof import("node:tty") = RUNTIME_ENV.IN_NODE
   ? require("node:tty")
   : undefined;
 
+/**
+ * Check whether a Node stream is backed by a file descriptor. This is not the
+ * case e.g. in worker threads or when process.stdout has been replaced by a
+ * custom stream (some test runners and serverless emulators do this).
+ */
+function hasFd(stream: any): stream is { fd: number } {
+  return typeof stream?.fd === "number";
+}
+
 function nodeFsync(fd: number): void {
   try {
     fs.fsyncSync(fd);
@@ -309,7 +318,13 @@ API.initializeStreams = function (
  */
 function setDefaultStdin() {
   if (RUNTIME_ENV.IN_NODE) {
-    setStdin(new NodeReader(process.stdin));
+    if (hasFd(process.stdin)) {
+      setStdin(new NodeReader(process.stdin));
+    } else {
+      // In a worker thread, process.stdin has no file descriptor and we
+      // can't read from it synchronously. Behave as if stdin is empty.
+      setStdin({ read: () => 0 });
+    }
   } else {
     setStdin({ stdin: () => prompt() });
   }
@@ -503,7 +518,9 @@ function _setStdwrite(
  */
 function _getStdoutDefaults(): StdWriteOpts {
   if (RUNTIME_ENV.IN_NODE) {
-    return new NodeWriter(process.stdout);
+    return hasFd(process.stdout)
+      ? new NodeWriter(process.stdout)
+      : new NodeStreamWriter(process.stdout);
   } else {
     return { batched: (x) => console.log(x) };
   }
@@ -516,7 +533,9 @@ function _getStdoutDefaults(): StdWriteOpts {
  */
 function _getStderrDefaults(): StdWriteOpts {
   if (RUNTIME_ENV.IN_NODE) {
-    return new NodeWriter(process.stderr);
+    return hasFd(process.stderr)
+      ? new NodeWriter(process.stderr)
+      : new NodeStreamWriter(process.stderr);
   } else {
     return { batched: (x) => console.warn(x) };
   }
@@ -775,5 +794,24 @@ class NodeWriter implements Writer {
 
   getTerminalSize() {
     return this.stream;
+  }
+}
+
+/**
+ * Writer for Node streams that aren't backed by a file descriptor (e.g.,
+ * process.stdout in a worker thread). Writes are passed to stream.write(), so
+ * they are asynchronous but preserve the raw bytes.
+ */
+class NodeStreamWriter implements Writer {
+  stream: NodeJS.WritableStream;
+  isatty: boolean = false;
+  constructor(stream: NodeJS.WritableStream) {
+    this.stream = stream;
+  }
+
+  write(buffer: Uint8Array): number {
+    // buffer is a view into the WebAssembly memory, so it must be copied.
+    this.stream.write(Buffer.from(buffer));
+    return buffer.length;
   }
 }
