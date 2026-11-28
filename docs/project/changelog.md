@@ -41,6 +41,10 @@ myst:
   since Firefox 160.
   {pr}`6572`
 
+- {{ Fix }} The command line runner now exits with the status passed to
+  `os._exit()` when it is called from an `atexit` handler, instead of 120.
+  {pr}`6596`
+
 ### JavaScript API
 
 - {{ Enhancement }} Added a `maxMemoryBytes` option to {js:func}`~exports.loadPyodide`
