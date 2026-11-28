@@ -181,7 +181,8 @@ declare global {
     ptr: number,
     jsargs: any[],
     num_pos_args: number,
-    kwargs_names: string[],
+    // Only read if num_kwargs > 0.
+    kwargs_names: string[] | undefined,
     num_kwargs: number,
   ) => any;
   export const __iscoroutinefunction: (a: number) => number;

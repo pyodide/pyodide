@@ -542,12 +542,22 @@ Module.pyproxy_destroy = function (
 function callPyObjectKwargs(ptrobj: number, jsargs: any[], kwargs: any) {
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
   // which only is used when the keyword arguments come from the user.
-  const num_pos_args = jsargs.length;
   const kwargs_names = Object.keys(kwargs);
-  const kwargs_values = Object.values(kwargs);
-  const num_kwargs = kwargs_names.length;
-  jsargs.push(...kwargs_values);
+  jsargs.push(...Object.values(kwargs));
+  return callPyObjectImpl(ptrobj, jsargs, kwargs_names);
+}
 
+/**
+ * Call a Python object. jsargs holds the positional arguments followed by the
+ * values of the keyword arguments named in kwargs_names.
+ */
+function callPyObjectImpl(
+  ptrobj: number,
+  jsargs: any[],
+  kwargs_names?: string[],
+) {
+  const num_kwargs = kwargs_names?.length ?? 0;
+  const num_pos_args = jsargs.length - num_kwargs;
   let result;
   try {
     Py_ENTER();
@@ -675,7 +685,7 @@ Module.callPyObjectMaybePromising = async function (
 };
 
 Module.callPyObject = function (ptrobj: number, jsargs: any) {
-  return callPyObjectKwargs(ptrobj, jsargs, {});
+  return callPyObjectImpl(ptrobj, jsargs);
 };
 
 export interface PyProxy {
