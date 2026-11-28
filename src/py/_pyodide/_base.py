@@ -10,10 +10,9 @@ import builtins
 import linecache
 import tokenize
 from collections.abc import Generator
-from copy import deepcopy
 from importlib import import_module
 from io import StringIO
-from textwrap import dedent
+from textwrap import dedent as _dedent
 from types import CodeType
 from typing import Any, Literal
 
@@ -37,6 +36,10 @@ def should_quiet(source: str, /) -> bool:
     """
     # largely inspired from IPython:
     # https://github.com/ipython/ipython/blob/86d24741188b0cedd78ab080d498e775ed0e5272/IPython/core/displayhook.py#L84
+
+    # Tokenizing is slow, and there is nothing to find without a semicolon.
+    if ";" not in source:
+        return False
 
     # We need to wrap tokens in a buffer because:
     # "Tokenize requires one argument, readline, which must be
@@ -74,6 +77,8 @@ def _last_assign_to_expr(mod: ast.Module) -> None:
         # In this case there can be multiple targets as in `a = b = 1`.
         # We just take the first one.
         target = last_node.targets[0]
+    elif isinstance(last_node, ast.AnnAssign) and last_node.value is None:
+        return
     elif isinstance(last_node, ast.AugAssign | ast.AnnAssign):
         target = last_node.target
     else:
@@ -111,18 +116,36 @@ _raise_template_ast = ast.parse("raise ___EvalCodeResultException[0](x)").body[0
 
 
 def _last_expr_to_raise(mod: ast.Module) -> None:
-    """If the final ast node is a statement, raise an EvalCodeResultException
-    with the value of the statement.
+    """If the last statement is an expression statement (``ast.Expr``), replace
+    it with a statement that raises an EvalCodeResultException with the value
+    of the expression.
     """
     if not mod.body:
         return
     last_node = mod.body[-1]
     if not isinstance(mod.body[-1], ast.Expr | ast.Await):
         return
-    raise_expr = deepcopy(_raise_template_ast)
-    # Replace x with our value in _raise_template_ast.
-    raise_expr.exc.args[0] = last_node.value  # type: ignore[attr-defined]
-    mod.body[-1] = raise_expr
+
+    # Build `raise ___EvalCodeResultException[0](value)` with the locations of
+    # _raise_template_ast. Building the nodes directly is much faster than
+    # deep copying the template.
+    t = _raise_template_ast
+    exc_class = ast.copy_location(
+        ast.Subscript(
+            value=ast.copy_location(
+                ast.Name("___EvalCodeResultException", ast.Load()),
+                t.exc.func.value,  # type: ignore[attr-defined]
+            ),
+            slice=ast.copy_location(ast.Constant(0), t.exc.func.slice),  # type: ignore[attr-defined]
+            ctx=ast.Load(),
+        ),
+        t.exc.func,  # type: ignore[attr-defined]
+    )
+    exc = ast.copy_location(
+        ast.Call(func=exc_class, args=[last_node.value], keywords=[]),  # type: ignore[attr-defined]
+        t.exc,  # type: ignore[attr-defined]
+    )
+    mod.body[-1] = ast.copy_location(ast.Raise(exc=exc, cause=None), t)
 
 
 def _parse_and_compile_gen(
@@ -143,9 +166,6 @@ def _parse_and_compile_gen(
     manipulations. Because generators are annoying to call, this is wrapped in
     the Executor class.
     """
-    # handle mis-indented input from multi-line strings
-    source = dedent(source)
-
     mod = compile(source, filename, mode, flags | ast.PyCF_ONLY_AST)
 
     # Pause here, allow caller to transform ast if they like.
@@ -162,6 +182,15 @@ def _parse_and_compile_gen(
     if return_mode.startswith("last_expr"):  # last_expr or last_expr_or_assign
         _last_expr_to_raise(mod)
 
+    # The nodes we add above have locations. Only fill in missing locations if
+    # compiling fails, which happens when the caller's AST transformations
+    # added nodes without them, because ast.fix_missing_locations walks the
+    # whole tree in Python. If that wasn't the problem, compiling again raises
+    # the same error.
+    try:
+        return compile(mod, filename, mode, flags, dont_inherit, optimize)
+    except TypeError:
+        pass
     ast.fix_missing_locations(mod)
     return compile(mod, filename, mode, flags, dont_inherit, optimize)
 
@@ -227,6 +256,11 @@ class CodeRunner:
         Specifies the optimization level of the compiler. See the documentation
         for the built-in :external:py:func:`compile` function.
 
+    dedent :
+
+        If ``True``, ``source`` is passed through :py:func:`textwrap.dedent` before being parsed.
+        ``True`` by default.
+
     Examples
     --------
     >>> source = "1 + 1"
@@ -269,8 +303,11 @@ class CodeRunner:
         flags: int = 0x0,
         dont_inherit: bool = False,
         optimize: int = -1,
+        dedent: bool = True,
     ):
         self._compiled = False
+        if dedent:
+            source = _dedent(source)
         self._source = source
         self._gen = _parse_and_compile_gen(
             source,
@@ -426,6 +463,7 @@ def eval_code(
     flags: int = 0x0,
     dont_inherit: bool = False,
     optimize: int = -1,
+    dedent: bool = True,
 ) -> Any:
     """Runs a string as Python source code.
 
@@ -474,6 +512,11 @@ def eval_code(
         The flags to compile with. See the documentation for the built-in
         :external:py:func:`compile` function.
 
+    dedent :
+
+        If ``True``, ``source`` is passed through :py:func:`textwrap.dedent` before being parsed.
+        ``True`` by default.
+
     Returns
     -------
         If the last nonwhitespace character of ``source`` is a semicolon, return
@@ -518,6 +561,7 @@ def eval_code(
             flags=flags,
             dont_inherit=dont_inherit,
             optimize=optimize,
+            dedent=dedent,
         )
         .compile()
         .run(globals, locals)
@@ -535,6 +579,7 @@ async def eval_code_async(
     flags: int = 0x0,
     dont_inherit: bool = False,
     optimize: int = -1,
+    dedent: bool = True,
 ) -> Any:
     """Runs a code string asynchronously.
 
@@ -585,6 +630,11 @@ async def eval_code_async(
         The flags to compile with. See the documentation for the built-in
         :external:py:func:`compile` function.
 
+    dedent :
+
+        If ``True``, ``source`` is passed through :py:func:`textwrap.dedent` before being parsed.
+        ``True`` by default.
+
     Returns
     -------
         If the last nonwhitespace character of ``source`` is a semicolon, return
@@ -602,6 +652,7 @@ async def eval_code_async(
             flags=flags,
             dont_inherit=dont_inherit,
             optimize=optimize,
+            dedent=dedent,
         )
         .compile()
         .run_async(globals, locals)
@@ -641,7 +692,7 @@ def find_imports(source: str) -> list[str]:
     ['numpy', 'scipy', 'scipy.stats']
     """
     # handle mis-indented input from multi-line strings
-    source = dedent(source)
+    source = _dedent(source)
 
     try:
         mod = ast.parse(source)

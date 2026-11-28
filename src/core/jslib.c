@@ -15,7 +15,7 @@ bool tracerefs;
   JS_BUILTIN(true)                                                             \
   JS_BUILTIN(false)                                                            \
   JS_CONST(error, _Jsv_GetError())                                             \
-  JS_CONST(novalue, { noValueMarker : 1 })
+  JS_CONST(novalue, _Jsv_GetNoValue())
 
 // we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
 // definitions of HIWIRE_INIT_CONST to ensure everything lines up properly
@@ -30,13 +30,23 @@ JS_INIT_CONSTS();
 JsVal
 Jsv_GetError_import(void);
 
+JsVal
+Jsv_GetNoValue_import(void);
+
 EMSCRIPTEN_KEEPALIVE JsVal
 Jsv_GetError(void)
 {
   return Jsv_GetError_import();
 }
 
+EMSCRIPTEN_KEEPALIVE JsVal
+Jsv_GetNoValue(void)
+{
+  return Jsv_GetNoValue_import();
+}
+
 int JsvError_Check(JsVal);
+int JsvNoValue_Check(JsVal);
 
 EM_JS_NUM(int, jslib_init_js, (void), {
   JS_INIT_CONSTS();
@@ -57,12 +67,6 @@ jslib_init(void)
   FAIL_IF_MINUS_ONE(jslib_init_js());
   return 0;
 }
-
-// clang-format off
-EM_JS(int, JsvNoValue_Check, (JsVal v), {
-  return v === Module.novalue;
-});
-// clang-format on
 
 // ==================== Conversions between JsRef and JsVal ====================
 
@@ -128,8 +132,8 @@ JsvBigInt_fromDigits,
 
 EM_JS(JsVal,
 Jsv_BigIntToNum, (JsVal x), {
-  if (-Number.MAX_SAFE_INTEGER < x &&
-      x < Number.MAX_SAFE_INTEGER) {
+  if (-Number.MAX_SAFE_INTEGER <= x &&
+      x <= Number.MAX_SAFE_INTEGER) {
     return Number(x);
   }
   return x;
@@ -399,7 +403,7 @@ EM_JS_VAL(JsVal, JsvPromise_Resolve, (JsVal obj), {
 
 // clang-format off
 EM_JS_NUM(errcode, jslib_init_buffers_js, (), {
-  const dtypes_str = Array.from("bBhHiIqQfd").join(
+  const dtypes_str = Array.from("bBhHiIqQefd").join(
     String.fromCharCode(0)
   );
   const dtypes_ptr = stringToNewUTF8(dtypes_str);
@@ -413,6 +417,7 @@ EM_JS_NUM(errcode, jslib_init_buffers_js, (), {
     ["Uint8ClampedArray", [dtypes_map["B"], 1, true]],
     ["Int16Array", [dtypes_map["h"], 2, true]],
     ["Uint16Array", [dtypes_map["H"], 2, true]],
+    ["Float16Array", [dtypes_map["e"], 2, true]],
     ["Int32Array", [dtypes_map["i"], 4, true]],
     ["Uint32Array", [dtypes_map["I"], 4, true]],
     ["Float32Array", [dtypes_map["f"], 4, true]],
@@ -436,7 +441,7 @@ EM_JS_NUM(errcode, jslib_init_buffers_js, (), {
    * get_buffer_datatype wrapper for use from C. Used in js2python and
    * in jsproxy.c for buffers.
    */
-  Module.get_buffer_datatype = function (jsobj) {
+  API.get_buffer_datatype = function (jsobj) {
     return buffer_datatype_map.get(jsobj.constructor.name) || [0, 0, false];
   };
 });
@@ -450,12 +455,13 @@ jslib_init_buffers(void)
 }
 
 EM_JS_NUM(errcode, JsvBuffer_assignToPtr, (JsVal buf, void* ptr), {
-  Module.HEAPU8.set(bufferAsUint8Array(buf), ptr);
+  Module.HEAPU8.set(bufferAsUint8Array(buf), HEAP_INDEX_8(ptr));
 });
 
 EM_JS_NUM(errcode, JsvBuffer_assignFromPtr, (JsVal buf, void* ptr), {
+  const start = HEAP_INDEX_8(ptr);
   bufferAsUint8Array(buf).set(
-    Module.HEAPU8.subarray(ptr, ptr + buf.byteLength));
+    Module.HEAPU8.subarray(start, start + buf.byteLength));
 });
 
 EM_JS_NUM(errcode, JsvBuffer_readFromFile, (JsVal buf, int fd), {

@@ -307,7 +307,7 @@ export async function initializeNodeSockFS(
         return sock.stream.flags;
       }
       if (cmd === cDefs.F_SETFL) {
-        sock.stream.flags = module.HEAP32[varargs / 4];
+        sock.stream.flags = module.HEAP32[varargs >>> 2];
         return 0;
       }
       return -cDefs.EINVAL;
@@ -342,11 +342,15 @@ export async function initializeNodeSockFS(
       }
 
       sock.connecting = true;
-      sock.daddr = addr;
+      // Emscripten's getaddrinfo() returns a fake address for hostnames,
+      // which is converted back to the original hostname by lookup_addr.
+      // If a user passes the fake address to connectAsync(), we need to convert it back.
+      const hostname = Module.DNS.lookup_addr(addr) ?? addr;
+      sock.daddr = hostname;
       sock.dport = port;
 
       const wcgSocket = connectFunc(
-        { hostname: addr, port },
+        { hostname, port },
         {
           secureTransport: options?.secureTransport ?? "starttls",
           allowHalfOpen: false,
@@ -655,11 +659,11 @@ export async function initializeNodeSockFS(
       const waits: Promise<void>[] = [];
       for (let i = 0; i < nfds; i++) {
         const pollfd = fds + POLLFD_SIZE * i;
-        const fd = module.HEAP32[(pollfd + POLLFD_FD) >> 2];
-        const events = module.HEAP16[(pollfd + POLLFD_EVENTS) >> 1];
+        const fd = module.HEAP32[(pollfd + POLLFD_FD) >>> 2];
+        const events = module.HEAP16[(pollfd + POLLFD_EVENTS) >>> 1];
         const setRevents = (flags: number): void => {
           flags &= events | cDefs.POLLERR | cDefs.POLLHUP;
-          module.HEAP16[(pollfd + POLLFD_REVENTS) >> 1] = flags;
+          module.HEAP16[(pollfd + POLLFD_REVENTS) >>> 1] = flags;
           if (flags) {
             count++;
           }

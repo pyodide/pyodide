@@ -45,5 +45,7 @@ tools/symlinks
 xbuildenv/
 .pyodide-xbuildenv*
 DS_Store
+.DS_Store
 .pyodide_build_installed
 test-cmdline-runner/
+benchmark/node/.pyperformance/

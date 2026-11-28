@@ -26,10 +26,10 @@ await pyodide.useNodeSockFS();
 
 This feature requires JavaScript Promise Integration.
 
-If you are using Node.js <= 24, enable it explicitly with the `--experimental-wasm-stack-switching` flag:
+If you are using Node.js versions 22--24, enable it explicitly with the `--experimental-wasm-jspi` flag:
 
 ```bash
-node --experimental-wasm-stack-switching
+node --experimental-wasm-jspi
 ```
 
 If you are using Node.js >= 25, Promise Integration is enabled by default.

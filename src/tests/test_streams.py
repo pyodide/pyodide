@@ -3,7 +3,7 @@ import subprocess
 import pytest
 from pytest_pyodide import run_in_pyodide
 
-from conftest import DIST_PATH, strip_assertions_stderr
+from conftest import DIST_PATH, only_node, strip_assertions_stderr
 
 
 @pytest.mark.skip_refcount_check
@@ -579,12 +579,18 @@ def test_custom_stdout_interrupts(selenium, method):
         )
 
 
-@pytest.mark.xfail(reason="flaky")
-# @only_node
+# EAGAIN is handled with a synchronous Atomics.wait() sleep, which is not
+# allowed on the browser main thread.
+@only_node
 @run_in_pyodide
 def test_node_eagain(selenium):
+    import sys
+
     from pyodide.code import run_js
 
+    # Flush output left over from earlier tests so that it doesn't end up in
+    # the stdout handler below (input() flushes stdout).
+    sys.stdout.flush()
     result = run_js(
         """
         pyodide.setStdin({
@@ -617,11 +623,13 @@ def test_node_eagain(selenium):
     try:
         assert input() == "abcdefg"
         print("hi there!")
-        assert result[0] == "hi there!\n"
+        sys.stdout.flush()
+        assert "".join(result) == "hi there!\n"
     finally:
         run_js(
             """
             pyodide.setStdin();
+            pyodide.setStdout();
             """
         )
 
@@ -657,15 +665,14 @@ def test_get_terminal_size(selenium):
 
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
 def test_get_terminal_size_node(selenium, tmp_path):
+    import os
+    import pty
+
     target_path = DIST_PATH / "pyodide.mjs"
     script = (
         """
         import { loadPyodide } from "%s";
         import * as tty from "node:tty";
-        import * as fs from "node:fs";
-
-        fs.closeSync(1);
-        fs.openSync("/dev/tty", 1);
 
         globalThis.process = Object.assign({}, process, {stdout: new tty.WriteStream(1)});
         process.stdout.fd = 1;
@@ -684,7 +691,16 @@ def test_get_terminal_size_node(selenium, tmp_path):
     )
     script_path = tmp_path / "script.mjs"
     script_path.write_text(script)
-    res = subprocess.run(
-        ["node", script_path], text=True, check=True, capture_output=True
-    )
+    primary, secondary = pty.openpty()
+    try:
+        res = subprocess.run(
+            ["node", script_path],
+            text=True,
+            check=True,
+            stdout=secondary,
+            stderr=subprocess.PIPE,
+        )
+    finally:
+        os.close(secondary)
+        os.close(primary)
     assert res.stderr.strip() == "os.terminal_size(columns=180, lines=50)"

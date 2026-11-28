@@ -67,6 +67,7 @@ const constants = {
   DISABLE_INSTANTIATE_WASM,
   API_VERSION: getBuildVar("PYODIDE_VERSION"),
   ABI_VERSION: getBuildVar("PYODIDE_ABI_VERSION"),
+  DEFAULT_INITIAL_MEMORY: Number(getBuildVar("INITIAL_MEMORY")),
   cDefs: origConstants.defines,
 };
 const DEFINES = Object.fromEntries(toDefines(constants));

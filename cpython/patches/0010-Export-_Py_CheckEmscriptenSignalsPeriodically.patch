@@ -1,0 +1,29 @@
+From 11b6ee29cf19be8a2dcb4e6ac01be80de955f3f0 Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Fri, 27 Nov 2026 15:39:28 +0530
+Subject: [PATCH 10/10] Export _Py_CheckEmscriptenSignalsPeriodically
+
+The test interpreter in Modules/_testinternalcapi/interpreter.c uses the
+ceval macros, which call this function on Emscripten. When
+_testinternalcapi is built as a shared extension, the symbol has to be
+visible in the main module.
+---
+ Python/emscripten_signal.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Python/emscripten_signal.c b/Python/emscripten_signal.c
+index 8d91e29..35ca5bf 100644
+--- a/Python/emscripten_signal.c
++++ b/Python/emscripten_signal.c
+@@ -43,7 +43,7 @@ _Py_CheckEmscriptenSignals(void)
+ #define PY_EMSCRIPTEN_SIGNAL_INTERVAL 50
+ EMSCRIPTEN_KEEPALIVE int _Py_emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
+ 
+-void
++EMSCRIPTEN_KEEPALIVE void
+ _Py_CheckEmscriptenSignalsPeriodically(void)
+ {
+     if (_Py_emscripten_signal_clock == 0) {
+-- 
+2.54.0 (Apple Git-157)
+

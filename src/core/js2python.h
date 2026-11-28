@@ -4,7 +4,6 @@
 /**
  * Translate JavaScript objects to Python objects.
  */
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "jslib.h"
 

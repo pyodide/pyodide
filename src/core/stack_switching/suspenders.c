@@ -2,24 +2,28 @@
 #include "emscripten.h"
 #include "jslib.h"
 
-EM_JS(void, set_suspender, (JsVal suspender), {
-  suspenderGlobal.value = suspender;
-})
+// The actual function that suspends.
+//
+// Promise rejections are caught by the JS try/catch in inner() below. However,
+// a SuspendError (thrown when there is no suspender on the stack) is raised by
+// the wasm-to-js wrapper itself before any JS frame runs, so no JS try/catch
+// can see it. Thus, we additionally catch errors from wasm in
+// syncify_catch_trampoline, where we do approximately:
+//
+// try {
+//    return suspendForPromise(x);
+// } catch(e) {
+//    return set_syncify_error(e);
+// }
 
 // clang-format off
-EM_JS(JsVal, get_suspender, (), {
-  return suspenderGlobal.value;
-})
-
-EM_JS(JsVal, syncifyHandler, (JsVal x, JsVal y), {
+EM_JS(JsVal, suspendForPromise, (JsVal x), {
   return Module.error;
 }
 
-async function inner(x, y) {
-  // In the old JSPI API, we get the promise as first argument.
-  // In the new JSPI API we get it as the second argument.
+async function inner(x) {
   try {
-    return await (x ?? y);
+    return await x;
   } catch (e) {
     if (e && e.pyodide_fatal_error) {
       throw e;
@@ -28,17 +32,21 @@ async function inner(x, y) {
     return Module.error;
   }
 }
-if (newJspiSupported) {
-  syncifyHandler = new WebAssembly.Suspending(inner);
-} else if (oldJspiSupported) {
-  syncifyHandler = new WebAssembly.Function(
-    { parameters: ["externref", "externref"], results: ["externref"] },
-    inner,
-    { suspending: "first" }
-  );
+if (jspiSupported) {
+  suspendForPromise = new WebAssembly.Suspending(inner);
 }
 )
 // clang-format on
+
+// syncify_catch_trampoline calls suspendForPromise
+__externref_t syncify_catch_trampoline(__externref_t);
+
+// Called by syncify_catch_trampoline when it catches a SuspendError.
+EM_JS(__externref_t, set_syncify_error, (__externref_t e), {
+  // No fatal guard needed because the error must be a SuspendError.
+  Module.syncify_error = e;
+  return Module.error;
+})
 
 EM_JS(void, JsvPromise_Syncify_handleError, (void), {
   if (!Module.syncify_error) {
@@ -52,38 +60,38 @@ EM_JS(void, JsvPromise_Syncify_handleError, (void), {
 })
 
 /**
- * Record the current Python thread state and the wasm call stack and argument
- * stack state. This is called by the hiwire_syncify wasm module just prior to
- * suspending the thread. `hiwire_syncify` uses `externref` for the return value
- * so we don't need to wrap this in a hiwire ID.
+ * Record the per-task part of the Python thread state and the wasm argument
+ * stack state. This is called by the JsvPromise_syncify just prior to
+ * suspending the thread.
+ *
+ * _captureTaskState() moves the task's state off the thread state and puts the
+ * caller's state back, see pystate.c.
  */
 EM_JS(JsVal, saveState, (void), {
   if (!validSuspender.value) {
     return Module.error;
   }
-  const stackState = new StackState();
-  const threadState = _captureThreadState();
+  const taskState = _captureTaskState();
   // clang-format off
-  if (threadState === 0) {
+  if (taskState === 0) {
     return Module.error;
   }
   // clang-format on
+  const stackState = new StackState();
   return {
-    threadState,
+    taskState,
     stackState,
-    suspender : suspenderGlobal.value,
   };
 });
 
 /**
- * Restore the Python thread state and the wasm argument stack state. This is
- * called by the hiwire_syncify wasm module upon resuming the thread. The
- * argument is the return value from save_state.
+ * Restore the per-task Python state and the wasm argument stack state. This is
+ * called by JsvPromise_syncify upon resuming the thread. The argument is the
+ * return value from save_state.
  */
 EM_JS(void, restoreState, (JsVal state), {
   state.stackState.restore();
-  _restoreThreadState(state.threadState);
-  suspenderGlobal.value = state.suspender;
+  _restoreTaskState(state.taskState);
   validSuspender.value = true;
 });
 
@@ -94,8 +102,7 @@ JsvPromise_Syncify(JsVal promise)
   if (JsvError_Check(state)) {
     return JS_ERROR;
   }
-  JsVal suspender = get_suspender();
-  JsVal result = syncifyHandler(suspender, promise);
+  JsVal result = syncify_catch_trampoline(promise);
   restoreState(state);
   if (JsvError_Check(result)) {
     JsvPromise_Syncify_handleError();

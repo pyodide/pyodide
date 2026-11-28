@@ -59,10 +59,27 @@ declare function Py_EXIT(): void;
 // end-pyodide-skip
 declare function enterTask(): void;
 
+// The default `instanceof` behavior, which ignores Symbol.hasInstance
+const hasInstance = Function.prototype[Symbol.hasInstance];
+
+// PyProxy[Symbol.hasInstance] calls this. We don't use `instanceof` here since
+// V8 doesn't inline an `instanceof` with a custom Symbol.hasInstance, while it
+// can inline a call to this function.
 function isPyProxy(jsobj: any): jsobj is PyProxy {
+  // Fast path for primitives, which are the most common input
+  if (
+    (typeof jsobj !== "object" || jsobj === null) &&
+    typeof jsobj !== "function"
+  ) {
+    return false;
+  }
   try {
-    return jsobj instanceof PyProxy;
+    return (
+      hasInstance.call(PyProxy, jsobj) ||
+      hasInstance.call(PyProxyFunction, jsobj)
+    );
   } catch (e) {
+    // Revoked proxies throw
     return false;
   }
 }
@@ -567,11 +584,8 @@ function callPyObjectKwargs(ptrobj: number, jsargs: any[], kwargs: any) {
  * It returns a promise. Inside Python, JS promises can be syncified, which
  * switches the stack to synchronously wait for them to be resolved.
  *
- * Pretty much everything is the same as callPyObjectKwargs except we use the
- * special JSPI-friendly promisingApply wrapper of `__pyproxy_apply`. This
- * causes the VM to invent a suspender and call a wrapper module which stores it
- * into suspenderGlobal (for later use by JsvPromise_syncify). Then it calls
- * _pyproxy_apply with the same arguments we gave to `promisingApply`.
+ * Pretty much everything is the same as callPyObjectKwargs except we use
+ * `_pyproxy_apply_promising`.
  */
 async function callPyObjectKwargsPromising(
   ptrobj: number,
@@ -631,7 +645,7 @@ async function callPyObjectKwargsPromising(
     // Unwrap result
     result = result[0];
     if (result === Module.error) {
-      _PyErr_SetRaisedException(HEAPU32[exc / 4]);
+      _PyErr_SetRaisedException(DEREF_U32(exc, 0));
       _pythonexc2js();
     }
     // Automatically schedule coroutines
@@ -680,9 +694,7 @@ export class PyProxy {
 
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return [PyProxy, PyProxyFunction].some((cls) =>
-      Function.prototype[Symbol.hasInstance].call(cls, obj),
-    );
+    return isPyProxy(obj);
   }
 
   /**
@@ -1915,7 +1927,7 @@ export class PySequenceMethods {
 export class PyMutableSequence extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyMutableSequence {
-    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_SEQUENCE);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_MUTABLE_SEQUENCE);
   }
 }
 
@@ -2084,12 +2096,16 @@ export class PyMutableSequenceMethods {
 // deal with straining out the spurious "Function" properties "prototype",
 // "arguments", and "length", to deal with correctly satisfying the Proxy
 // invariants, and to deal with the mro
-function python_hasattr(jsobj: PyProxy, jskey: any) {
+function python_hasattr(jsobj: PyProxy, jskey: string) {
   let ptrobj = _getPtr(jsobj);
-  let result;
+  let result = -1;
   try {
     Py_ENTER();
-    result = __pyproxy_hasattr(ptrobj, jskey);
+    const pykey = attrNameToPy(jskey);
+    if (pykey !== 0) {
+      result = __pyproxy_hasattr(ptrobj, pykey);
+      releaseAttrName(jskey, pykey);
+    }
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2100,16 +2116,52 @@ function python_hasattr(jsobj: PyProxy, jskey: any) {
   return result !== 0;
 }
 
+// Interned Python strings for attribute names, see _pyproxy_intern_attr_name.
+// We hold a reference to each of them, so we limit how many we keep.
+const MAX_INTERNED_ATTR_NAMES = 1000;
+const internedAttrNames: Map<string, number> = new Map();
+
+// Converts an attribute name to a Python string. Returns 0 on error. Call
+// releaseAttrName() when done with the result.
+function attrNameToPy(key: string): number {
+  let pykey = internedAttrNames.get(key);
+  if (pykey !== undefined) {
+    return pykey;
+  }
+  if (internedAttrNames.size < MAX_INTERNED_ATTR_NAMES) {
+    pykey = __pyproxy_intern_attr_name(key);
+    if (pykey !== 0) {
+      internedAttrNames.set(key, pykey);
+    }
+    return pykey;
+  }
+  return _js2python(key);
+}
+
+function releaseAttrName(key: string, pykey: number) {
+  if (
+    // Only release if we're at the limit and the key isn't in the cache
+    internedAttrNames.size === MAX_INTERNED_ATTR_NAMES &&
+    !internedAttrNames.has(key)
+  ) {
+    _Py_DecRef(pykey);
+  }
+}
+
 // Returns a JsRef in order to allow us to differentiate between "not found"
 // (in which case we return 0) and "found 'None'" (in which case we return
 // undefined).
-function python_getattr(jsobj: PyProxy, key: any) {
+function python_getattr(jsobj: PyProxy, key: string) {
   const { shared } = _getAttrs(jsobj);
   let cache = shared.cache.map;
-  let result;
+  let result = Module.error;
   try {
     Py_ENTER();
-    result = __pyproxy_getattr(shared.ptr, key, cache);
+    const pykey = attrNameToPy(key);
+    if (pykey !== 0) {
+      result = __pyproxy_getattr(shared.ptr, pykey, cache);
+      releaseAttrName(key, pykey);
+    }
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2123,12 +2175,16 @@ function python_getattr(jsobj: PyProxy, key: any) {
   return result;
 }
 
-function python_setattr(jsobj: PyProxy, jskey: any, jsval: any) {
+function python_setattr(jsobj: PyProxy, jskey: string, jsval: any) {
   let ptrobj = _getPtr(jsobj);
-  let err;
+  let err = -1;
   try {
     Py_ENTER();
-    err = __pyproxy_setattr(ptrobj, jskey, jsval);
+    const pykey = attrNameToPy(jskey);
+    if (pykey !== 0) {
+      err = __pyproxy_setattr(ptrobj, pykey, jsval);
+      releaseAttrName(jskey, pykey);
+    }
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2138,12 +2194,16 @@ function python_setattr(jsobj: PyProxy, jskey: any, jsval: any) {
   }
 }
 
-function python_delattr(jsobj: PyProxy, jskey: any) {
+function python_delattr(jsobj: PyProxy, jskey: string) {
   let ptrobj = _getPtr(jsobj);
-  let err;
+  let err = -1;
   try {
     Py_ENTER();
-    err = __pyproxy_delattr(ptrobj, jskey);
+    const pykey = attrNameToPy(jskey);
+    if (pykey !== 0) {
+      err = __pyproxy_delattr(ptrobj, pykey);
+      releaseAttrName(jskey, pykey);
+    }
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2953,6 +3013,7 @@ let type_to_array_map: Map<string, any> = new Map([
   // undefined rather than raising a ReferenceError.
   ["i64", globalThis.BigInt64Array],
   ["u64", globalThis.BigUint64Array],
+  ["f16", globalThis.Float16Array],
   ["f32", Float32Array],
   ["f64", Float64Array],
   ["dataview", DataView],
@@ -2999,10 +3060,11 @@ export class PyBufferMethods {
    * @param type The type of the :js:attr:`~pyodide.ffi.PyBufferView.data` field
    * in the output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``,
    * ``"i16"``, ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``,
-   * ``"i64"``, ``"u64"``, ``"f32"``, ``"f64"``, or ``"dataview"``. This argument
-   * is optional, if absent :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` will try
-   * to determine the appropriate output type based on the buffer format string
-   * (see :std:ref:`struct-format-strings`).
+   * ``"i64"``, ``"u64"``, ``"f16"``, ``"f32"``, ``"f64"``, or ``"dataview"``.
+   * This argument is optional, if absent
+   * :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` will try to determine the
+   * appropriate output type based on the buffer format string (see
+   * :std:ref:`struct-format-strings`).
    */
   getBuffer(type?: string): PyBufferView {
     let ArrayType: any = undefined;
@@ -3026,9 +3088,6 @@ export class PyBufferMethods {
     }
 
     const {
-      start_ptr,
-      smallest_ptr,
-      largest_ptr,
       readonly,
       format,
       itemsize,
@@ -3038,6 +3097,11 @@ export class PyBufferMethods {
       c_contiguous,
       f_contiguous,
     } = result;
+    // Pointers come from Wasm as signed 32-bit numbers, so they are negative
+    // once the heap grows past 2GB.
+    const start_ptr = result.start_ptr >>> 0;
+    const smallest_ptr = result.smallest_ptr >>> 0;
+    const largest_ptr = result.largest_ptr >>> 0;
 
     let success = false;
     try {

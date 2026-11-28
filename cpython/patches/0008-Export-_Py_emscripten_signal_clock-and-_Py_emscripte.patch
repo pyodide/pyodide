@@ -1,7 +1,7 @@
-From 02cec9dce83f2cfcdef957d29b2b6f5c3ed1ed19 Mon Sep 17 00:00:00 2001
+From fb8f2cc30ec6c2f11f4e282c5a9a44aeb42e1cf5 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 20 Feb 2026 17:02:46 +0100
-Subject: [PATCH 8/8] Export _Py_emscripten_signal_clock and
+Subject: [PATCH 08/10] Export _Py_emscripten_signal_clock and
  _Py_emscripten_signal_in_memory
 
 Needed by signal handling in Cloudflare's JS runtime. This way we can trip a
@@ -15,7 +15,7 @@ _Py_emscripten_signal_clock = 0
  1 file changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/Python/emscripten_signal.c b/Python/emscripten_signal.c
-index 561b5b73cd6..8d91e29c1a6 100644
+index 561b5b7..8d91e29 100644
 --- a/Python/emscripten_signal.c
 +++ b/Python/emscripten_signal.c
 @@ -25,21 +25,23 @@ EM_JS(int, _Py_CheckEmscriptenSignals_Helper, (void), {
@@ -47,5 +47,5 @@ index 561b5b73cd6..8d91e29c1a6 100644
  void
  _Py_CheckEmscriptenSignalsPeriodically(void)
 -- 
-2.54.0
+2.54.0 (Apple Git-157)
 

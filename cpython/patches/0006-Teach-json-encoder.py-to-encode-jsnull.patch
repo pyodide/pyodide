@@ -1,7 +1,7 @@
-From 63d5dfcc5df2c884ec690cc0cf92a5505b62ab39 Mon Sep 17 00:00:00 2001
+From 30943eaeae15ceaae5095a2177d44dc9d4e4cf23 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 9 Jul 2025 17:00:12 +0200
-Subject: [PATCH 6/8] Teach json encoder.py to encode jsnull
+Subject: [PATCH 06/10] Teach json encoder.py to encode jsnull
 
 ---
  Lib/json/encoder.py | 9 +++++++++
@@ -9,7 +9,7 @@ Subject: [PATCH 6/8] Teach json encoder.py to encode jsnull
  2 files changed, 14 insertions(+), 3 deletions(-)
 
 diff --git a/Lib/json/encoder.py b/Lib/json/encoder.py
-index 718b3254241..1e7699a689a 100644
+index 718b325..1e7699a 100644
 --- a/Lib/json/encoder.py
 +++ b/Lib/json/encoder.py
 @@ -33,6 +33,7 @@
@@ -57,7 +57,7 @@ index 718b3254241..1e7699a689a 100644
              yield 'true'
          elif o is False:
 diff --git a/Modules/_json.c b/Modules/_json.c
-index 6c4f3883463..a003ae4e2d4 100644
+index 858702e..cf40361 100644
 --- a/Modules/_json.c
 +++ b/Modules/_json.c
 @@ -1487,11 +1487,13 @@ encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
@@ -94,5 +94,5 @@ index 6c4f3883463..a003ae4e2d4 100644
                         True and False are also 1 and 0.*/
          keystr = _encoded_const(key);
 -- 
-2.54.0
+2.54.0 (Apple Git-157)
 

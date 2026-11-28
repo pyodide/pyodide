@@ -4,9 +4,15 @@ RUN apt-get update \
     ca-certificates curl jq wget \
   && rm -rf /var/lib/apt/lists/*
 
+# Use the release download redirect instead of the GitHub API, which is
+# rate limited for unauthenticated requests from CI runners.
 ARG SELENIUM_MANAGER_VERSION=latest
-RUN SELENIUM_MANAGER_VERSION_FULL=$(curl -s https://api.github.com/repos/SeleniumHQ/selenium_manager_artifacts/releases/${SELENIUM_MANAGER_VERSION} | jq -r .name) \
-  && wget --no-verbose https://github.com/SeleniumHQ/selenium_manager_artifacts/releases/download/${SELENIUM_MANAGER_VERSION_FULL}/selenium-manager-linux \
+RUN if [ "$SELENIUM_MANAGER_VERSION" = "latest" ]; then \
+    SELENIUM_MANAGER_URL=https://github.com/SeleniumHQ/selenium_manager_artifacts/releases/latest/download; \
+  else \
+    SELENIUM_MANAGER_URL=https://github.com/SeleniumHQ/selenium_manager_artifacts/releases/download/${SELENIUM_MANAGER_VERSION}; \
+  fi \
+  && wget --no-verbose ${SELENIUM_MANAGER_URL}/selenium-manager-linux-x86_64 -O selenium-manager-linux \
   && chmod +x selenium-manager-linux \
   && mv selenium-manager-linux /usr/local/bin/selenium-manager
 
@@ -37,7 +43,7 @@ RUN if [ $CHROME_VERSION = "latest" ]; then SE_CHROME_VERSION="stable"; \
 FROM node:24.7-bookworm-slim AS node-image
 FROM golang:1.21-alpine AS golang-image
 
-FROM python:3.15.0b4-slim-bookworm
+FROM python:3.15.2-slim-bookworm
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \

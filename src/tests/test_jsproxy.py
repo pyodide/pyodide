@@ -98,6 +98,111 @@ def test_jsproxy_getattr_errors(selenium):
         o.a  # noqa: B018
 
 
+# The actual regression is the proxy leak detected by strict cleanup after
+# this test finishes.
+@run_in_pyodide
+def test_jsexception_through_generator_contextmanager(selenium):
+    from contextlib import contextmanager
+
+    import pytest
+
+    from js import Error  # type: ignore[attr-defined]
+    from pyodide.ffi import JsException
+
+    @contextmanager
+    def passthrough():
+        yield
+
+    with pytest.raises(JsException, match="boom"):
+        with passthrough():
+            raise Error.new("boom")
+
+
+@run_in_pyodide
+def test_jsexception_uses_python_descriptors(selenium):
+    from js import Error  # type: ignore[attr-defined]
+    from pyodide.code import run_js
+
+    try:
+        raise ValueError("traceback source")
+    except ValueError as exc:
+        traceback = exc.__traceback__
+
+    cause = ValueError("cause")
+    context = TypeError("context")
+    js_error = Error.new("boom")
+    js_id = js_error.js_id
+
+    js_error.__traceback__ = traceback
+    js_error.__cause__ = cause
+    js_error.__context__ = context
+    js_error.__suppress_context__ = False
+    js_error.args = ("changed",)
+    js_error.__dict__ = {"python_attribute": 7}
+
+    assert js_error.__traceback__ is traceback
+    assert js_error.__cause__ is cause
+    assert js_error.__context__ is context
+    assert js_error.__suppress_context__ is False
+    assert js_error.args == ("changed",)
+    assert js_error.__dict__ == {"python_attribute": 7}
+    assert js_error.js_id == js_id
+    assert js_error.js_error.js_id == js_id
+
+    has_own = run_js("(error, name) => Object.hasOwn(error, name)")
+    for name in (
+        "__traceback__",
+        "__cause__",
+        "__context__",
+        "__suppress_context__",
+        "args",
+        "__dict__",
+    ):
+        assert not has_own(js_error.js_error, name)
+
+    js_error.custom_attribute = 7
+    assert js_error.js_error.custom_attribute == 7
+    del js_error.custom_attribute
+    assert not has_own(js_error.js_error, "custom_attribute")
+
+
+@run_in_pyodide
+def test_jsexception_python_descriptor_errors(selenium):
+    import pytest
+
+    from js import Error  # type: ignore[attr-defined]
+    from pyodide.code import run_js
+
+    js_error = Error.new("boom")
+    has_own = run_js("(error, name) => Object.hasOwn(error, name)")
+
+    invalid_assignments = (
+        ("__traceback__", 1, "must be a traceback"),
+        ("__cause__", 1, "exception cause must be None"),
+        ("__context__", 1, "exception context must be None"),
+        ("__suppress_context__", 1, "must be bool"),
+        ("args", 1, "not iterable"),
+        ("__dict__", 1, "must be set to a dictionary"),
+    )
+    for name, value, message in invalid_assignments:
+        with pytest.raises(TypeError, match=message):
+            setattr(js_error, name, value)
+        assert not has_own(js_error.js_error, name)
+
+    deletion_errors = (
+        ("__traceback__", "may not be deleted"),
+        ("__cause__", "may not be deleted"),
+        ("__context__", "may not be deleted"),
+        ("__suppress_context__", "can't delete"),
+        ("args", "may not be deleted"),
+        ("__dict__", "cannot delete"),
+    )
+    for name, message in deletion_errors:
+        with pytest.raises(TypeError, match=message):
+            delattr(js_error, name)
+        assert not has_own(js_error.js_error, name)
+
+
 @pytest.mark.xfail_browsers(node="No document in node")
 @run_in_pyodide
 def test_jsproxy_document(selenium):
@@ -3091,3 +3196,39 @@ async def test_jsproxy_async_dispose_returns_synchronously(selenium):
     except Exception:
         pass
     assert o.closed
+
+
+@run_in_pyodide
+def test_jsproxy_attr_name_cache(selenium):
+    # JsProxy caches the JS strings for attribute names, up to a limit.
+    # Check that attribute access works for names beyond the limit and for names that aren't immortal.
+    import sys
+
+    from pyodide.code import run_js
+
+    o = run_js("({})")
+    n = 2000
+    # Names in compiled code are immortal
+    exec("\n".join(f"o.attr_{i} = {i}" for i in range(n)), {"o": o})
+    for _ in range(2):
+        values = eval("[" + ",".join(f"o.attr_{i}" for i in range(n)) + "]", {"o": o})
+        assert values == list(range(n))
+    assert run_js("(o) => Object.keys(o).length")(o) == n
+
+    name = "".join(["attr_", "5"])
+    assert not sys._is_immortal(name)
+    assert getattr(o, name) == 5
+    setattr(o, name, "five")
+    assert run_js("(o) => o.attr_5")(o) == "five"
+    delattr(o, name)
+    exec("del o.attr_6", {"o": o})
+    assert run_js("(o) => [o.attr_5, o.attr_6, o.attr_7]")(o).to_py() == [
+        None,
+        None,
+        7,
+    ]
+
+    # Reserved words keep working with the cache
+    o.from_ = 1
+    assert run_js("(o) => o.from")(o) == 1
+    assert o.from_ == 1

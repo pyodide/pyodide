@@ -1,14 +1,14 @@
 package:
   name: packaging
-  version: "26.1"
+  version: "26.4"
   tag:
     - pytest
     - core
   top-level:
     - packaging
 source:
-  sha256: f042152b681c4bfac5cae2742a55e103d27ab2ec0f3d88037136b6bfe7c9c5de
-  url: https://files.pythonhosted.org/packages/source/p/packaging/packaging-26.1.tar.gz
+  sha256: c4b671c41ddb9bf26e543c37723610d28fb6bf7affc4da17cf048d419d2c062a
+  url: https://files.pythonhosted.org/packages/source/p/packaging/packaging-26.4.tar.gz
   patches:
     - patches/0001-Add-backwards-compatibility-for-wheels-with-pyodide-.patch
 about:

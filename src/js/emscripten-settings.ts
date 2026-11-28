@@ -2,10 +2,12 @@
 
 import { PyodideConfigWithDefaults } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
+import { initializeOPFS } from "./fs/opfs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type PyodideModule, type FSType } from "./types";
 import { getJsvErrorImport } from "generated/jsverror";
 import { RUNTIME_ENV } from "./environments";
+import { createResolvable, type ResolvablePromise } from "./common/resolveable";
 
 /**
  * @private
@@ -32,8 +34,10 @@ export interface EmscriptenSettings {
   readonly locateFile: (file: string) => string;
 
   noInitialRun?: boolean;
-  INITIAL_MEMORY?: number;
+  INITIAL_MEMORY: number;
+  wasmMemory?: WebAssembly.Memory;
   exitCode?: number;
+  readonly instantiateWasmFailed: ResolvablePromise;
 }
 
 /**
@@ -45,10 +49,12 @@ export function createSettings(
   config: PyodideConfigWithDefaults,
 ): EmscriptenSettings {
   const API = { config, runtimeEnv: RUNTIME_ENV } as API;
+  const instantiateWasmFailed = createResolvable();
   const settings: EmscriptenSettings = {
     noImageDecoding: true,
     noAudioDecoding: true,
     noWasmDecoding: false,
+    INITIAL_MEMORY: DEFAULT_INITIAL_MEMORY,
     preRun: getFileSystemInitializationFuncs(config),
     print: config.stdout,
     printErr: config.stderr,
@@ -70,7 +76,11 @@ export function createSettings(
     // means dependency resolution has already failed and we want to throw an
     // error anyways.
     locateFile: (path: string) => config.indexURL + path,
-    instantiateWasm: getInstantiateWasmFunc(config.indexURL),
+    instantiateWasm: getInstantiateWasmFunc(
+      config.indexURL,
+      instantiateWasmFailed.reject,
+    ),
+    instantiateWasmFailed,
   };
   return settings;
 }
@@ -191,12 +201,14 @@ function getFileSystemInitializationFuncs(
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
     initializeNativeFS,
+    initializeOPFS,
     ...callFsInitHook(config.fsInit),
   ];
 }
 
 function getInstantiateWasmFunc(
   indexURL: string,
+  onError: (e: any) => void,
 ): EmscriptenSettings["instantiateWasm"] {
   // @ts-ignore
   if (DISABLE_INSTANTIATE_WASM) {
@@ -206,6 +218,12 @@ function getInstantiateWasmFunc(
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
+  // The read starts now, but Emscripten calls the hook below later, and the
+  // hook awaits jsvErrorImportPromise before it awaits these. If the read fails
+  // before we await or handle the promise, Node would immediately abort the process.
+  // Mark them as handled now to prevent that.
+  binary?.catch(() => {});
+  response?.catch(() => {});
   const jsvErrorImportPromise = getJsvErrorImport();
   return function (
     imports: { [key: string]: { [key: string]: any } },
@@ -215,11 +233,17 @@ function getInstantiateWasmFunc(
     ) => void,
   ) {
     (async function () {
-      const { Jsv_GetError_import, JsvError_Check } =
-        await jsvErrorImportPromise;
-      imports.env.Jsv_GetError_import = Jsv_GetError_import;
-      imports.env.JsvError_Check = JsvError_Check;
       try {
+        const {
+          Jsv_GetError_import,
+          JsvError_Check,
+          Jsv_GetNoValue_import,
+          JsvNoValue_Check,
+        } = await jsvErrorImportPromise;
+        imports.env.Jsv_GetError_import = Jsv_GetError_import;
+        imports.env.JsvError_Check = JsvError_Check;
+        imports.env.Jsv_GetNoValue_import = Jsv_GetNoValue_import;
+        imports.env.JsvNoValue_Check = JsvNoValue_Check;
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {
           res = await WebAssembly.instantiateStreaming(response, imports);
@@ -229,8 +253,7 @@ function getInstantiateWasmFunc(
         const { instance, module } = res;
         successCallback(instance, module);
       } catch (e) {
-        console.warn("wasm instantiation failed!");
-        console.warn(e);
+        onError(e);
       }
     })();
 

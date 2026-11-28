@@ -15,6 +15,19 @@ export function canonicalizePackageName(name: string): string {
   return name.replace(canonicalizeNameRegex, "-").toLowerCase();
 }
 
+// Regexp for a bare package name, per the PEP 503 name format
+const packageNameRegex = /^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?$/;
+
+/**
+ * Check whether a string is a bare package name, as opposed to a requirement specifier.
+ * @param name The string to check.
+ * @returns Whether the string is a valid bare package name.
+ * @private
+ */
+export function isValidPackageName(name: string): boolean {
+  return packageNameRegex.test(name);
+}
+
 type ParsedPackageData = {
   name: string;
   version: string;

@@ -18,6 +18,8 @@ ignore-vcs = true
 include = [
   "_test*.so",
   "_ctypes_test.so",
+  "_xxtestfuzz.so",
+  "xxsubtype.so",
   "test/",
 ]
 exclude = [

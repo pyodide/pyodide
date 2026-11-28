@@ -118,8 +118,10 @@
     skip:
       - test_super_deep # stack overflow
 - test_capi.test_abstract
+- test_capi.test_build
 - test_capi.test_bytearray
 - test_capi.test_bytes
+- test_capi.test_capsule
 - test_capi.test_codecs
 - test_capi.test_complex
 - test_capi.test_config
@@ -155,6 +157,7 @@
       - test_run_anyfile*
       - test_run_simplefile*
 - test_capi.test_set
+- test_capi.test_slice
 - test_capi.test_slots
 - test_capi.test_structmembers
 - test_capi.test_sys
@@ -279,8 +282,7 @@
 - test_ctypes.test_structunion
 - test_ctypes.test_structures:
     skip:
-      # Bugs in libffi?
-      - test_array_in_struct
+      # Passes a struct of two doubles to atan2(double, double)
       - test_issue18060*
 - test_ctypes.test_unaligned_structures
 - test_ctypes.test_unicode
@@ -378,12 +380,15 @@
     skip:
       - test_repr_deep
 - test_free_threading.test_bisect
+- test_free_threading.test_bytes_object
 - test_free_threading.test_bz2
 - test_free_threading.test_capi
 - test_free_threading.test_code
 - test_free_threading.test_collections
+- test_free_threading.test_context
 - test_free_threading.test_cprofile
 - test_free_threading.test_csv
+- test_free_threading.test_datetime
 - test_free_threading.test_dbm_gnu
 - test_free_threading.test_dict
 - test_free_threading.test_dict_watcher
@@ -391,6 +396,7 @@
 - test_free_threading.test_exceptions
 - test_free_threading.test_frame
 - test_free_threading.test_func_annotations
+- test_free_threading.test_functions
 - test_free_threading.test_functools
 - test_free_threading.test_gc
 - test_free_threading.test_generators
@@ -406,14 +412,17 @@
 - test_free_threading.test_methodcaller
 - test_free_threading.test_mmap
 - test_free_threading.test_monitoring
+- test_free_threading.test_os
 - test_free_threading.test_pickle
 - test_free_threading.test_pwd
 - test_free_threading.test_races
 - test_free_threading.test_re
+- test_free_threading.test_readline
 - test_free_threading.test_resource
 - test_free_threading.test_reversed
 - test_free_threading.test_set
 - test_free_threading.test_slots
+- test_free_threading.test_sqlite3
 - test_free_threading.test_str
 - test_free_threading.test_string_template_race
 - test_free_threading.test_suggestions
@@ -424,6 +433,7 @@
 - test_free_threading.test_type
 - test_free_threading.test_types
 - test_free_threading.test_uuid
+- test_free_threading.test_weakref
 - test_free_threading.test_zip
 - test_free_threading.test_zlib
 - test_frozen:
@@ -604,6 +614,7 @@
 - test_json.test_pass1
 - test_json.test_pass2
 - test_json.test_pass3
+- test_json.test_pickleable
 - test_json.test_recursion:
     skip:
       - test_endless_recursion
@@ -760,6 +771,7 @@
 - test_profiling.test_sampling_profiler.test_live_collector_ui
 - test_profiling.test_sampling_profiler.test_modes
 - test_profiling.test_sampling_profiler.test_profiler
+- test_profiling.test_sampling_profiler.test_sync_coordinator
 - test_profiling.test_sampling_profiler.test_trend_tracker
 - test_profiling.test_tracing_profiler
 - test_property
@@ -873,6 +885,14 @@
       - test_set_client_sigalgs # No raise
       - test_set_server_sigalgs # No raise
       - test_set_groups # No raise
+      - test_delete_attributes # SSLContext stub
+      - test_msg_callback # SSLContext stub
+      - test_delete_sslobject_attributes # SSL not supported in Pyodide
+      - test_check_hostname_requires_server_hostname # SSL not supported in Pyodide
+      - test_distrusted_spki # SSL not supported in Pyodide
+      - test_server_side_bad_params # SSL not supported in Pyodide
+      - test_sni_callback_context_released_and_callback_raises # SSL not supported in Pyodide
+      - test_sni_callback_context_released_before_second_client_hello # SSL not supported in Pyodide
 - test_stable_abi_ctypes
 - test_startfile
 - test_stat
@@ -963,7 +983,6 @@
       - test_coverage_ignore # zipped stdlib
 - test_traceback:
     xfail-safari: safaridriver unexpectedly exited
-    xfail: "RangeError: Maximum call stack size exceeded TODO: why?"
 - test_tracemalloc:
     xfail-safari: safaridriver unexpectedly exited
 - test_tstring
@@ -1026,8 +1045,7 @@
 - test_userlist:
     skip:
       - test_repr_deep
-- test_userstring:
-    xfail: FIXME works locally, timeouts in CI
+- test_userstring
 - test_utf8_mode
 - test_utf8source
 - test_uuid

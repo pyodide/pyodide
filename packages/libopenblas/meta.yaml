@@ -1,13 +1,13 @@
 package:
   name: libopenblas
-  version: 0.3.28
+  version: 0.3.31
   tag:
     - core
     - library
     - shared_library
 source:
-  sha256: f1003466ad074e9b0c8d421a204121100b0751c96fc6fcf3d1456bd12f8a00a1
-  url: https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.28/OpenBLAS-0.3.28.tar.gz
+  sha256: 6dd2a63ac9d32643b7cc636eab57bf4e57d0ed1fff926dfbc5d3d97f2d2be3a6
+  url: https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.31/OpenBLAS-0.3.31.tar.gz
   patches:
     - patches/0001-Add-Wno-return-type-flag.patch
     - patches/0002-Align-xerbla_array-signature-with-scipy-expectation.patch
@@ -26,6 +26,7 @@ build:
     sed -ri 's/void(\s+)(C?NAME)/int\1\2/g' interface/*.c
     sed -ri 's/((extern)?.+) void ([a-z0-9]+_)/\1\2 int \3/g' lapack-netlib/SRC/*.c \
         lapack-netlib/SRC/DEPRECATED/*.c
+    sed -ri 's/^void (LAED4|LACPY|LASET)\(/int \1(/g' lapack/laed3/*.c
     # For some functions (mostly handling complex I think) f2c actually
     # generate a function that returns void so I need to revert the void to int
     # change the previous line does.

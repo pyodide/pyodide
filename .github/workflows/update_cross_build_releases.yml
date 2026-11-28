@@ -21,7 +21,7 @@ concurrency:
 jobs:
   update_cross_build_releases:
     name: Update cross-build metadata files
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write # for pushing cross-build metadata files updates
       pull-requests: write # for creating a PR with the metadata files update
@@ -36,7 +36,7 @@ jobs:
           ref: main
           persist-credentials: false
 
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: 3.14
 

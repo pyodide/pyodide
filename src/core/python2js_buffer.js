@@ -86,14 +86,20 @@ Module.processBufferFormatString = function (formatStr, errorMessage = "") {
       }
       arrayType = BigUint64Array;
       break;
+    case "e":
+      if (globalThis.Float16Array === undefined) {
+        throw new Error(
+          "Float16Array is not supported on this browser." + errorMessage,
+        );
+      }
+      arrayType = Float16Array;
+      break;
     case "f":
       arrayType = Float32Array;
       break;
     case "d":
       arrayType = Float64Array;
       break;
-    case "e":
-      throw new Error("Javascript has no Float16 support.");
     default:
       throw new Error(
         `Unrecognized format character '${formatChar}'.` + errorMessage,
@@ -116,7 +122,8 @@ Module.processBufferFormatString = function (formatStr, errorMessage = "") {
 Module.python2js_buffer_1d_contiguous = function (ptr, stride, n) {
   let byteLength = stride * n;
   // Note: slice here is a copy (as opposed to subarray which is not)
-  return HEAP8.slice(ptr, ptr + byteLength).buffer;
+  const start = HEAP_INDEX_8(ptr);
+  return HEAP8.slice(start, start + byteLength).buffer;
 };
 
 /**
@@ -149,7 +156,8 @@ Module.python2js_buffer_1d_noncontiguous = function (
     if (suboffset >= 0) {
       curptr = DEREF_U32(curptr, 0) + suboffset;
     }
-    buffer.set(HEAP8.subarray(curptr, curptr + itemsize), i * itemsize);
+    const start = HEAP_INDEX_8(curptr);
+    buffer.set(HEAP8.subarray(start, start + itemsize), i * itemsize);
   }
   return buffer.buffer;
 };
@@ -209,7 +217,7 @@ Module._python2js_buffer_recursive = function (ptr, curdim, bufferData) {
     // https://docs.python.org/3/c-api/buffer.html#pil-style-shape-strides-and-suboffsets
     let curPtr = ptr + i * stride;
     if (suboffset >= 0) {
-      curptr = DEREF_U32(curptr, 0) + suboffset;
+      curPtr = DEREF_U32(curPtr, 0) + suboffset;
     }
     result.push(
       Module._python2js_buffer_recursive(curPtr, curdim + 1, bufferData),
